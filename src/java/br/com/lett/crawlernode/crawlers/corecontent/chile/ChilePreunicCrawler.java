@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -14,14 +15,14 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChilePreunicCrawler extends Crawler {
 
@@ -34,38 +35,41 @@ public class ChilePreunicCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
+      JSONObject jsonScript = getJsonFromScript(doc);
+
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "span#product__sku", true).replace("SKU: ", "");
-         String name = scrapNameWithBrand(doc);
-         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div#main-image img", "src");
-         List<String> secondaryImages = scrapImages(doc);
+         String internalPid = jsonScript.optString("groupId");
+         JSONObject productsSkus = jsonScript.optJSONObject("products");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("div.description-tabs"));
          CategoryCollection categories = scrapCategories(doc);
+         for (Iterator<String> it = productsSkus.keys(); it.hasNext(); ) {
+            String internalId = it.next();
+            Object valueKey = productsSkus.opt(internalId);
+            if (valueKey instanceof JSONObject) {
+               JSONObject variation = (JSONObject) valueKey;
+               String name = scrapNameWithBrand(variation, jsonScript);
+               String primaryImage = variation.optString("pictureUrl");
+               List<String> secondaryImages = crawlSecondaryImages(variation, doc);
+               boolean available = variation.optBoolean("isAvailable");
+               Offers offers = available ? scrapOffers(variation) : new Offers();
 
-         //Cannot find any unnavailable product
-         boolean available = true;
-         Offers offers = available ? scrapOffers(doc) : new Offers();
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setOffers(offers)
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setCategories(categories)
+                  .build();
 
-         //In this website, the reviews contain only 2 options: thumbs up or thumbs down.
-         //So, we can capture the total ratings, but I can't  think in a way to capture the average rating in this format
-         //RatingsReviews ratings = crawlRating(doc);
-
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalPid)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setOffers(offers)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setCategories(categories)
-//            .setRatingReviews(ratings)
-            .build();
-
-         products.add(product);
+               products.add(product);
+            }
+         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -73,15 +77,51 @@ public class ChilePreunicCrawler extends Crawler {
       return products;
    }
 
-   private String scrapNameWithBrand(Document doc){
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h3.product__title", true);
-      String brand = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-info .product__brand", true);
+   private JSONObject getJsonFromScript(Document doc) {
+      Element script = doc.selectFirst(".col-sm-12 script");
+      String matcherToConvert = null;
 
-      if ( name != null && brand != null){
-         return name + " - " + brand;
+      if (script != null) {
+         Pattern pattern = Pattern.compile("\\((.+?)\\);");
+         Matcher matcher = pattern.matcher(script.toString());
+         if (matcher.find()) {
+            matcherToConvert = matcher.group(1);
+         }
       }
 
-      return name;
+      return CrawlerUtils.stringToJson(matcherToConvert);
+   }
+
+   private List<String> crawlSecondaryImages(JSONObject variation, Document doc) {
+      Integer variantId = JSONUtils.getValueRecursive(variation, "params.variant_id", Integer.class);
+      List<String> secondaryImages = new ArrayList<>();
+      Elements images = doc.select(".products-vertical.slider div a[data-id='" + variantId.toString() + "'] img");
+      if (!images.isEmpty()) {
+         for (Element e : images) {
+            secondaryImages.add(e.attr("src"));
+         }
+      }
+
+      return secondaryImages;
+   }
+
+   private String scrapNameWithBrand(JSONObject variation, JSONObject jsonScript) {
+      StringBuilder nameComplete = new StringBuilder();
+      String name = variation.optString("name");
+      String brand = jsonScript.optString("vendor");
+      String params = JSONUtils.getValueRecursive(variation, "params.option_text", String.class);
+
+      if (name != null) {
+         nameComplete.append(name).append(" ");
+         if (brand != null) {
+            nameComplete.append(brand).append(" ");
+         }
+         if (params != null) {
+            nameComplete.append(params);
+         }
+
+      }
+      return nameComplete.toString();
 
    }
 
@@ -89,36 +129,21 @@ public class ChilePreunicCrawler extends Crawler {
       return doc.selectFirst("div#product-info") != null;
    }
 
-   private List<String> scrapImages(Document doc) {
-      List<String> imgs = new ArrayList<>();
-
-      Elements imgList = doc.select("div.product-details.image-box a.active.inner-product-box");
-      for (Element el : imgList) {
-         String url = el.attr("href");
-
-         if (url != null) {
-            imgs.add(url);
-         }
-      }
-
-      return imgs;
-   }
-
    private CategoryCollection scrapCategories(Document doc) {
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ol.breadcrumb li span[itemprop=name]", true);
 
-      if(categories.getCategory(0).equals("Productos")){
+      if (categories.getCategory(0).equals("Productos")) {
          categories.remove(0);
       }
 
       return categories;
    }
 
-   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(JSONObject variation) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       List<String> sales = new ArrayList<>();
 
-      Pricing pricing = scrapPricing(doc);
+      Pricing pricing = scrapPricing(variation);
       sales.add(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
@@ -134,16 +159,16 @@ public class ChilePreunicCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.offer-price", null, true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.original-price span", null, true, ',', session);
+   private Pricing scrapPricing(JSONObject variation) throws MalformedPricingException {
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(variation, "price", true);
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(variation, "oldPrice", true);
 
-      if(spotlightPrice == null){
+      if (spotlightPrice == null) {
          spotlightPrice = priceFrom;
          priceFrom = null;
       }
 
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
@@ -156,7 +181,7 @@ public class ChilePreunicCrawler extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
       installments.add(Installment.InstallmentBuilder.create()
@@ -174,35 +199,9 @@ public class ChilePreunicCrawler extends Crawler {
             .build());
       }
 
-      if (doc.selectFirst("div.discount-price-preunic") != null) {
-         creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(Card.SHOP_CARD.toString())
-            .setInstallments(scrapShopcardPrice(doc))
-            .setIsShopCard(true)
-            .build());
-      }
       return creditCards;
    }
 
-   private Installments scrapShopcardPrice(Document doc) throws MalformedPricingException {
-      Installments installments = new Installments();
-      Double shopcardPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.discount-price-preunic", null, true, ',', session);
 
-      installments.add(Installment.InstallmentBuilder.create()
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(shopcardPrice)
-         .build());
-
-      return installments;
-   }
-
-//   private RatingsReviews crawlRating(Document doc) {
-//      RatingsReviews ratingReviews = new RatingsReviews();
-//      ratingReviews.setDate(session.getDate());
-//
-//      ratingReviews.setTotalRating(CrawlerUtils.scrapIntegerFromHtml(doc, "div.details-qualification span.title rating", true, 0));
-//      ratingReviews.setTotalWrittenReviews(CrawlerUtils.scrapIntegerFromHtml(doc, "div.details-qualification span.title rating", true, 0));
-//
-//      return ratingReviews;
-//   }
 }
+
