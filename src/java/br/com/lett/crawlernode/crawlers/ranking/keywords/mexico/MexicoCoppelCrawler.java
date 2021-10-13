@@ -22,10 +22,9 @@ import java.util.Map;
 
 
 public class MexicoCoppelCrawler extends CrawlerRankingKeywords{
-   private String keyword = this.keywordEncoded;
-   protected String storeId;
-   protected String store;
-   protected String cep;
+   protected Integer PRODUCT_ID_SIZE = 7;
+   protected Integer PRODUCTS_PER_PAGE = 12;
+
 
    private static final String HOME_PAGE = "https://www.coppel.com/";
 
@@ -36,12 +35,11 @@ public class MexicoCoppelCrawler extends CrawlerRankingKeywords{
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      this.pageSize = 48;
       this.log("Página " + this.currentPage);
-      Integer currentPageUrl = (this.currentPage - 1) * 12;
+      Integer currentPageUrl = (this.currentPage - 1) * PRODUCTS_PER_PAGE;
 
       String url = HOME_PAGE + "SearchDisplay?categoryId=&storeId=10151&sType=SimpleSearch&showResultsPage=true&beginIndex=" +
-         currentPageUrl.toString() + "&searchSource=Q&pageView=&pageGroup=Search&beginIndex=0&searchTerm=" +
+         currentPageUrl + "&searchSource=Q&pageView=&pageGroup=Search&beginIndex=0&searchTerm=" +
          this.keywordEncoded;
 
       this.log("Link onde são feitos os crawlers: " + url);
@@ -97,7 +95,7 @@ public class MexicoCoppelCrawler extends CrawlerRankingKeywords{
    private String scrapInternalId(Element doc) {
       String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,".product_name a", "href");
 
-      return productUrl.substring(productUrl.length() - 7);
+      return productUrl.substring(productUrl.length() - PRODUCT_ID_SIZE);
    }
 
    protected Document fetch(String url) {
