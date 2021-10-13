@@ -164,7 +164,9 @@ public class MexicoCoppelCrawler extends Crawler {
       String installmentNumbers = CrawlerUtils.scrapStringSimpleInfo(doc, ".p_credito", false);
 
       ArrayList<String> installmentPriceList = new ArrayList<> (Arrays.asList(installmentPriceScrap.replaceAll("\\$","").split(" ")));
-      ArrayList<String> installmentList = new ArrayList<>(Arrays.asList(installmentNumbers.replaceAll("\\$","").replaceAll(",",".").replaceAll("\\(","").replaceAll("\\)","").split(" ")));
+      ArrayList<String> installmentList = new ArrayList<>(Arrays.asList(installmentNumbers
+         .replaceAll("[^0-9\\s]","")
+         .split(" ")));
 
       Integer installmentNumber = Integer.parseInt(installmentList.get(2));//TODO format prices
       double finalPrice = Double.parseDouble(installmentList.get(0));
@@ -172,7 +174,7 @@ public class MexicoCoppelCrawler extends Crawler {
 
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(installmentNumber)
-         .setInstallmentPrice(price)
+         .setInstallmentPrice(installmentPrice)
          .setFinalPrice(finalPrice)
          .build());
 
