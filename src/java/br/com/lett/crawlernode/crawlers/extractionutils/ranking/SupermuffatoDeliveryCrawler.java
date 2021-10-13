@@ -51,6 +51,7 @@ public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords
             String internalId = null;
             String internalPid = crawlInternalPid(productsIdList.get(index));
             String urlProduct = CrawlerUtils.scrapUrl(product, ".prd-list-item-desc > a", "href", "https", BASE_URL);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".prd-list-item-price-sell", null, true, ',', session,null);
 
             RankingProduct rankingProduct = RankingProductBuilder.create()
                .setName(CrawlerUtils.scrapStringSimpleInfo(product, ".prd-list-item-name", true))
@@ -58,7 +59,7 @@ public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords
                .setInternalPid(internalPid)
                .setImageUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "li[layout] .prd-list-item-img img", "src"))
                .setAvailability(true)
-               .setPriceInCents(CrawlerUtils.scrapPriceInCentsFromHtml(product, "prd-list-item-price-sell", null, true, ',', session,null))
+               .setPriceInCents(price)
                .build();
 
 
