@@ -74,7 +74,7 @@ public class BrasilAmazonCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "no");
       headers.put("authority", "www.amazon.com.br");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36");
 
       Request requestApache = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
@@ -82,7 +82,7 @@ public class BrasilAmazonCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
@@ -206,10 +206,11 @@ public class BrasilAmazonCrawler extends Crawler {
    }
 
    private Offer scrapMainPageOffer(Document doc) throws OfferException, MalformedPricingException {
-      String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text a", false);
+      String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#tabular-buybox .tabular-buybox-text[tabular-attribute-name=\"Vendido por\"] span", false);
       if (seller == null) {
          seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text", false);
       }
+
       String sellerUrl = CrawlerUtils.scrapUrl(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text a", "href", "https", HOST);
       String sellerId = scrapSellerIdByUrl(sellerUrl);
 
