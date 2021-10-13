@@ -38,7 +38,7 @@ public class SaopauloPadovaniCrawler extends Crawler {
 
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"#___rc-p-id","value");
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc,".productID .skuReference", false);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc,".productName",false);
 
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home):not(.product) a");
