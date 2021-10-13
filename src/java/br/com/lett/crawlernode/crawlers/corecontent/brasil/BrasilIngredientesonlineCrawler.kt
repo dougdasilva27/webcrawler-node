@@ -55,17 +55,21 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
          return mutableListOf()
       }
 
-      val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-shop .product-name", false)
-      val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li:not(:first-child):not(:last-child) a span")
-      val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-shop input[name=product]", "value")
-      val primaryImage = doc.selectFirst(".product-view .product-image img")?.attr("src")
+      val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title", false)
+      val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li:not(:first-child):not(:last-child) a span")//TODO
+      val internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=sku]", false)
+      val primaryImage = doc.selectFirst(".gallery-placeholder__image")?.attr("src")
 
       val secondaryImages = doc.select(".product-view .product-image div:not(:first-child) img").map { it?.attr("src") }
-          .toMutableList().filterNotNull()
-
-      val description = doc.select("#descricao .contentDescWrap")?.first {
+          .toMutableList().filterNotNull()//TODO
+      println("secondaryImages "+ secondaryImages)
+      println("\nsecondaryImages "+ primaryImage)
+      println("\nsecondaryImages "+ categories)
+      println("\nsecondaryImages "+ name)
+      val description = doc.select(".content .value p")?.first {
          it.attr("id") != "tabelanutricional"
       }?.html()
+      println("\ndescription "+ description)
 
       val offers = scrapOffers(doc)
 
@@ -86,7 +90,7 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
 
-	   if(doc.select(".alert-stock").isEmpty()) {
+	   if(doc.select(".alert-stock").isEmpty()) { //#product-addtocart-button span
         val installments = scrapInstallments(doc)
   
         val priceText = doc.selectFirst(".old-price .price")?.text() ?: ""
