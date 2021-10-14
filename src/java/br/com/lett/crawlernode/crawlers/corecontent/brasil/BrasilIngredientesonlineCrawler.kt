@@ -19,6 +19,7 @@ import models.pricing.Installments
 import models.pricing.Pricing
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import java.util.*
 
 class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
    companion object {
@@ -47,13 +48,10 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
 
       val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title", false)
       val internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=sku]", false)
-      val primaryImage = doc.selectFirst(".gallery-placeholder__image")?.attr("src")
-
+      val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder__image", Arrays.asList("src"), "https", "")
       val secondaryImages = doc.select(".product-view .product-image div:not(:first-child) img").map { it?.attr("src") }
       .toMutableList().filterNotNull()//TODO
-
-      val description = doc.select(".content .value p")?.html()
-
+      val description = CrawlerUtils.scrapStringSimpleInfo(doc, ".content .value p", false)
       val offers = scrapOffers(doc)
 
       val product = ProductBuilder()
@@ -73,12 +71,12 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
       val offers = Offers()
       val re = Regex("[^0-9]")
 
-      val buyButton = doc.select("#product-addtocart-button span")?: null
+      val buyButton = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-addtocart-button span", false)?: null
 
       if (buyButton != null) {
          val installments = scrapInstallments(doc)
 
-         val priceText = doc.selectFirst(".old-price .price")?.text()
+         val priceText = CrawlerUtils.scrapStringSimpleInfo(doc, ".old-price .price", false)
 
          var priceFrom = if (priceText != null) {
             MathUtils.parseDoubleWithComma(priceText)
@@ -87,14 +85,12 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
          }
 
          val spotlightText = if (priceFrom != null) {
-            doc.selectFirst(".special-price .price")?.text()
+            CrawlerUtils.scrapStringSimpleInfo(doc, ".special-price .price", false)
          } else {
-            doc.selectFirst(".product-info-price .price")?.text()
+            CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info-price .price", false)
          }
 
          var spotlightPrice = spotlightText.toDoubleComma()?.round()
-
-         println("spotlightPrice" + spotlightPrice)
 
          spotlightPrice.let {
             val creditCards = CreditCards(
@@ -110,9 +106,8 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
                   throw RuntimeException(e)
                }
             })
-
-            val bankSlipPrice = doc.selectFirst(".bankslip_excerpt .price")?.text().toDoubleComma()?.round()
-            val bankSlipDiscountPercentage = doc.selectFirst(".bankslip_excerpt small")
+            val bankSlipPrice = CrawlerUtils.scrapStringSimpleInfo(doc, ".bankslip_excerpt .price", false).toDoubleComma()?.round()
+            val bankSlipDiscountPercentage = CrawlerUtils.scrapStringSimpleInfo(doc, ".bankslip_excerpt small", false)
 
             var bankSlipDiscountValue = re.replace(bankSlipDiscountPercentage.toString(), "").toDouble()
 
@@ -149,8 +144,8 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
    private fun scrapInstallments(doc: Document): Installments {
       val installments = Installments()
 
-      var parcel = doc.selectFirst(".installment_period") ?: 0
-      val price = doc.selectFirst(".installment_value").toDoubleComma() ?: 0.0
+      val parcel = CrawlerUtils.scrapStringSimpleInfo(doc, ".installment_period", false) ?: 0
+      val price = CrawlerUtils.scrapStringSimpleInfo(doc, ".installment_value", false).toDoubleComma() ?: 0.0
 
       val re = Regex("[^0-9]")
       var parcelNumber = re.replace(parcel.toString(), "").toInt()
@@ -166,7 +161,7 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
       return installments
    }
 
-   private fun isProductPage(document: Document): Boolean {
-      return document.selectFirst(".product-name") != null
+   private fun isProductPage(doc: Document): Boolean {
+      return CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false) != null
    }
 }
