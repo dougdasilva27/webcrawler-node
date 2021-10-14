@@ -113,7 +113,6 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
                   RankingProduct productRanking = RankingProductBuilder.create()
                      .setUrl(productUrl)
                      .setInternalId(internalId)
-                     .setInternalId(null)
                      .setInternalPid(internalPid)
                      .setName(name)
                      .setPriceInCents(price)

@@ -7,8 +7,11 @@ import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
@@ -160,7 +163,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
       this.pageSize = 50;
 
@@ -183,10 +186,25 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.completeUrl(product.optString("linkText") + "/p", "https",
                getHomePage().replace("https://", "").replace("/", ""));
             String internalPid = product.optString("productId");
+            String name = product.optString("productName");
+            Number numberPrice = JSONUtils.getValueRecursive(product, "priceRange.sellingPrice.lowPrice", Number.class);
+            Double doublePrice = numberPrice != null ? numberPrice.doubleValue() : null;
+            Integer price = doublePrice != null ? (int) (doublePrice * 100) : null;
+            String imageUrl = JSONUtils.getValueRecursive(product, "items.0.images.0.imageUrl", String.class);
 
-            saveDataProduct(internalPid, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(price != null)
+               .setImageUrl(imageUrl)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalPid + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
+
+
+//            this.log("Position: " + this.position + " - InternalId: " + internalPid + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
@@ -259,7 +277,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
       return searchApi;
    }
 
-   protected String getUrlLocate(){
+   protected String getUrlLocate() {
       return "pt-BR";
    }
 
