@@ -120,7 +120,7 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
                .setUrl(productUrl)
                .setImageUrl(imgUrl)
                .setPriceInCents(price)
-               .setAvailability(isAvailable)
+               .setAvailability(true)
                .setIsSponsored(false)
                .setKeyword(this.keywordEncoded)
                .setPosition(this.position)

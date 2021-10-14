@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -30,7 +31,7 @@ public class MexicoCoppelCrawler extends CrawlerRankingKeywords{
 
    public MexicoCoppelCrawler(Session session) {
       super(session);
-      dataFetcher = new JsoupDataFetcher();
+      super.fetchMode = FetchMode.JSOUP;
    }
 
    @Override

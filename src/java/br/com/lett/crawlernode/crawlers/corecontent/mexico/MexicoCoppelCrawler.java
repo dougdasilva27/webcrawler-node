@@ -69,9 +69,9 @@ public class MexicoCoppelCrawler extends Crawler {
          this.pageId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=pageId]", "content");
          String description = getDescription(doc, "#product_longdescription_");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#productMainImage ", Arrays.asList("src"), "https", "");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,"[class=mz-lens] img", Arrays.asList("src"),"https", "padovani.vteximg.com.br", primaryImage);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,".mz-lens img", Arrays.asList("src"),"https", "padovani.vteximg.com.br", primaryImage);
          CategoryCollection categories = getCategories(doc, "[name=keywords]", "content");
-         boolean available = doc.selectFirst("[class=available]") != null;
+         boolean available = doc.selectFirst("p .available") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
@@ -168,9 +168,11 @@ public class MexicoCoppelCrawler extends Crawler {
          .replaceAll("[^0-9\\s]","")
          .split(" ")));
 
-      Integer installmentNumber = Integer.parseInt(installmentList.get(2));//TODO format prices
-      double finalPrice = Double.parseDouble(installmentList.get(0));
-      double installmentPrice = Double.parseDouble(installmentPriceList.get(0));
+      Integer installmentNumber = (installmentList.size() >= 2) ? Integer.parseInt(installmentList.get(2)) : 1;
+      
+      double finalPrice = (!installmentList.get(0).isEmpty()) ? Double.parseDouble(installmentList.get(0)) : price;
+
+      double installmentPrice = (!installmentPriceList.get(0).isEmpty()) ? Double.parseDouble(installmentPriceList.get(0)) : price;
 
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(installmentNumber)
