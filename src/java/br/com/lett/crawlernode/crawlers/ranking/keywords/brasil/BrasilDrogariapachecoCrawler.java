@@ -61,7 +61,7 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
                String internalPid = product.optString("id");
                String internalId = internalPid;
                String productName = product.optString("name");
-               String productImg = getImageUrl(product.optJSONObject("images"));
+               String productImg = JSONUtils.getValueRecursive(product,"images.1000x1000", String.class);
                Integer productPrice = getPrice(product.optInt("price"));
                boolean isAvailable = product.optString("status").equals("AVAILABLE");
 
@@ -102,10 +102,6 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
       String productUrl = (urlApi != null ) ? "https://" + urlApi : null;
 
       return productUrl;
-   }
-
-   private String getImageUrl(JSONObject product) {
-      return product.optString("1000x1000");
    }
 
    private int getPrice(int price) {
