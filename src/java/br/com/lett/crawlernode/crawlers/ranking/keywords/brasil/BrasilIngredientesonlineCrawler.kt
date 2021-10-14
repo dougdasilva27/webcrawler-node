@@ -27,10 +27,6 @@ class BrasilIngredientesonlineCrawler(session: Session) : CrawlerRankingKeywords
 
       val elements = currentDoc.select(".products li")
       if (!elements.isEmpty()) {
-         if (this.totalProducts == 0) {
-            this.totalProducts = elements.size;
-         }
-
          for (e in elements) {
             val productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "strong a.product-item-link", "href")
             val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".actions-primary form", "data-product-sku")
@@ -38,7 +34,6 @@ class BrasilIngredientesonlineCrawler(session: Session) : CrawlerRankingKeywords
             val name = CrawlerUtils.scrapStringSimpleInfo(e, "strong .product-item-link ", false)
             val price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price-wrapper span", null, false, ',', session, 0)
             var isAvailable: Boolean = price != 0
-            println("internalId" + internalId)
 
             var productRanking: RankingProduct? = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -50,10 +45,6 @@ class BrasilIngredientesonlineCrawler(session: Session) : CrawlerRankingKeywords
                .build()
 
             saveDataProduct(productRanking);
-            this.log(
-               "Position: " + this.position +
-                  " - InternalId: " + internalId +
-                  " - Url: " + productUrl);
          }
       } else {
          this.result = false;

@@ -50,7 +50,7 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
       val internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=sku]", false)
       val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder__image", Arrays.asList("src"), "https", "")
       val secondaryImages = doc.select(".product-view .product-image div:not(:first-child) img").map { it?.attr("src") }
-      .toMutableList().filterNotNull()//TODO
+      .toMutableList().filterNotNull()
       val description = CrawlerUtils.scrapStringSimpleInfo(doc, ".content .value p", false)
       val offers = scrapOffers(doc)
 
@@ -78,19 +78,23 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
 
          val priceText = CrawlerUtils.scrapStringSimpleInfo(doc, ".old-price .price", false)
 
-         var priceFrom = if (priceText != null) {
-            MathUtils.parseDoubleWithComma(priceText)
-         } else {
+         var priceFrom = if (priceText == null) {
             null
-         }
-
-         val spotlightText = if (priceFrom != null) {
-            CrawlerUtils.scrapStringSimpleInfo(doc, ".special-price .price", false)
          } else {
-            CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info-price .price", false)
+            MathUtils.parseDoubleWithComma(priceText)
          }
 
-         var spotlightPrice = spotlightText.toDoubleComma()?.round()
+         var spotlightText = CrawlerUtils.scrapStringSimpleInfo(doc, ".normal-price .price", false)
+
+         if (spotlightText == null) {
+            spotlightText = CrawlerUtils.scrapStringSimpleInfo(doc, ".special-price .price", false)
+         }
+
+         var spotlightPrice = if (spotlightText.toDoubleComma()?.round() == null) {
+            CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info-price .price", false).toDoubleComma()?.round()
+         } else {
+            spotlightText.toDoubleComma()?.round()
+         }
 
          spotlightPrice.let {
             val creditCards = CreditCards(
