@@ -2,12 +2,17 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,52 +41,76 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 48;
 
       this.log("Página" + this.currentPage);
 
       JSONObject json = extractJsonFromApi();
-      JSONArray productsArray = json.optJSONArray("products");
+      JSONArray products = json.optJSONArray("products");
 
-      if (productsArray != null && !productsArray.isEmpty()) {
+      if (products != null && !products.isEmpty()) {
          if (this.totalProducts == 0) {
             setTotalProducts(json);
          }
-         for (Object obj : productsArray) {
+         for (Object obj : products) {
             if (obj instanceof JSONObject) {
                JSONObject product = (JSONObject) obj;
 
                String productUrl = getUrl(product);
                String internalPid = product.optString("id");
                String internalId = internalPid;
+               String productName = product.optString("name");
+               String productImg = getImageUrl(product.optJSONObject("images"));
+               Integer productPrice = getPrice(product.optInt("price"));
+               boolean isAvailable = product.optString("status").equals("AVAILABLE");
 
-               saveDataProduct(null, internalPid, productUrl);
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(productName)
+                  .setImageUrl(productImg)
+                  .setPriceInCents(productPrice)
+                  .setAvailability(isAvailable)
+                  .build();
 
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+               saveDataProduct(productRanking);
 
+               this.log(
+                  "Position: " + this.position +
+                     " - InternalId: " + internalId +
+                     " - internalPid: " + internalPid +
+                     " - name: " + productName +
+                     " - Url: " + productUrl);
 
                if (this.arrayProducts.size() == productsLimit) {
                   break;
                }
             }
          }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-
    }
 
    private String getUrl(JSONObject product) {
-      String productUrl = null;
-      String incompleteUrl = product.optString("url");
-      if (incompleteUrl != null) {
-         productUrl = "https://" + incompleteUrl;
-      }
+      String urlApi = product.optString("url");
+
+      String productUrl = (urlApi != null ) ? "https://" + urlApi : null;
 
       return productUrl;
    }
 
+   private String getImageUrl(JSONObject product) {
+      return product.optString("1000x1000");
+   }
+
+   private int getPrice(int price) {
+      return (price != 0) ? (price * 100) : 0;
+   }
 
    protected void setTotalProducts(JSONObject json) {
       this.totalProducts = json.optInt("size");
