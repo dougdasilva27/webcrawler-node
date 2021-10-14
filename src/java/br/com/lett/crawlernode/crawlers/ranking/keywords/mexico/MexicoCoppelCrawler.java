@@ -122,7 +122,7 @@ public class MexicoCoppelCrawler extends CrawlerRankingKeywords{
 
    @Override
    protected boolean hasNextPage(){
-      return true; //TODO: verificação de paginação
+      return true;
    }
 
 }
