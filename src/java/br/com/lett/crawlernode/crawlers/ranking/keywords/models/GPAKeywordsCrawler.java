@@ -111,7 +111,6 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
             String imgUrl = crawlProductImgUrl(product);
             String name  = crawlProductName(product);
             Integer price  = crawlProductPrice(product);
-            boolean isAvailable = price != 0;
 
             RankingProduct rankingProducts = RankingProductBuilder.create()
                .setInternalId(internalId)
