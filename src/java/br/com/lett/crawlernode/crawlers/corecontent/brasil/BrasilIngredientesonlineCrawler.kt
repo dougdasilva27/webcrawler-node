@@ -57,6 +57,7 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
       val product = ProductBuilder()
       .setUrl(session.originalURL)
       .setInternalId(internalId)
+      .setInternalPid(internalId)
       .setName(name)
       .setPrimaryImage(primaryImage)
       .setSecondaryImages(secondaryImages)
