@@ -50,19 +50,17 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
       JSONArray products = json.optJSONArray("products");
 
       if (products != null && !products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts(json);
-         }
          for (Object obj : products) {
             if (obj instanceof JSONObject) {
                JSONObject product = (JSONObject) obj;
 
-               String productUrl = getUrl(product);
+               String url = JSONUtils.getValueRecursive(product,"skus.0.properties.url", String.class);
+               String productUrl = CrawlerUtils.completeUrl(url,"https","www.drogariaspacheco.com.br");
                String internalPid = product.optString("id");
                String internalId = internalPid;
                String productName = product.optString("name");
                String productImg = JSONUtils.getValueRecursive(product,"images.1000x1000", String.class);
-               Integer productPrice = getPrice(product.optInt("price"));
+               Integer productPrice = product.optInt("price");
                boolean isAvailable = product.optString("status").equals("AVAILABLE");
 
                RankingProduct productRanking = RankingProductBuilder.create()
@@ -77,13 +75,6 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
 
                saveDataProduct(productRanking);
 
-               this.log(
-                  "Position: " + this.position +
-                     " - InternalId: " + internalId +
-                     " - internalPid: " + internalPid +
-                     " - name: " + productName +
-                     " - Url: " + productUrl);
-
                if (this.arrayProducts.size() == productsLimit) {
                   break;
                }
@@ -94,18 +85,6 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
          this.log("Keyword sem resultado!");
       }
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-   }
-
-   private String getUrl(JSONObject product) {
-      String urlApi = product.optString("url");
-
-      String productUrl = (urlApi != null ) ? "https://" + urlApi : null;
-
-      return productUrl;
-   }
-
-   private int getPrice(int price) {
-      return (price != 0) ? (price * 100) : 0;
    }
 
    protected void setTotalProducts(JSONObject json) {

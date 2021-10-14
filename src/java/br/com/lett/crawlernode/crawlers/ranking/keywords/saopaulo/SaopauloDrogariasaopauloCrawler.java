@@ -58,7 +58,7 @@ public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
                String url = JSONUtils.getValueRecursive(product,"skus.0.properties.url", String.class);
                String productUrl = CrawlerUtils.completeUrl(url,"https","www.drogariasaopaulo.com.br");
                String productImg = JSONUtils.getValueRecursive(product,"images.1000x1000", String.class);
-               Integer productPrice = getPrice(product.optInt("price"));
+               Integer productPrice = product.optInt("price");
                boolean isAvailable = product.optString("status").equals("AVAILABLE");
 
                RankingProduct productRanking = RankingProductBuilder.create()
@@ -73,13 +73,6 @@ public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
 
                saveDataProduct(productRanking);
 
-               this.log(
-                  "Position: " + this.position +
-                     " - InternalId: " + internalId +
-                     " - internalPid: " + internalPid +
-                     " - name: " + productName +
-                     " - Url: " + productUrl);
-
                if (this.arrayProducts.size() == productsLimit) {
                   break;
                }
@@ -90,10 +83,6 @@ public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
          this.log("Keyword sem resultado!");
       }
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-   }
-
-   private int getPrice(int price) {
-      return (price != 0) ? (price * 100) : 0;
    }
 
    @Override
