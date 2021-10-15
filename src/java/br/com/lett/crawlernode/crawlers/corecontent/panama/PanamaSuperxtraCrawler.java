@@ -43,10 +43,10 @@ public class PanamaSuperxtraCrawler extends Crawler {
       headers.put("accept", "*/*");
       headers.put("origin", "https://domicilio.superxtra.com");
       headers.put("accept-encoding", "gzip, deflate, br");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36");
 
       String productSlug = CommonMethods.getLast(session.getOriginalURL().split("/"));
-      String payload = "{\"variables\":{\"storeId\":\"22\",\"filter\":{\"sku\":{\"eq\":\"" + productSlug + "\"}}},\"query\":\"query( $pagination: paginationInput $search: SearchInput $storeId: ID! $categoryId: ID $onlyThisCategory: Boolean $filter: ProductsFilterInput $orderBy: productsSortInput ) { getProducts( pagination: $pagination search: $search storeId: $storeId categoryId: $categoryId onlyThisCategory: $onlyThisCategory filter: $filter orderBy: $orderBy ) { redirectTo products { id name photosUrls sku unit price specialPrice promotion { description type isActive conditions __typename } stock nutritionalDetails clickMultiplier subQty subUnit maxQty minQty specialMaxQty ean boost showSubUnit isActive slug categories { id name __typename } __typename } paginator { pages page __typename } __typename } } \"}";
+      String payload = "{\"variables\":{\"storeId\":\"70\",\"filter\":{\"sku\":{\"eq\":\"" + productSlug + "\"}}},\"query\":\"query( $pagination: paginationInput $search: SearchInput $storeId: ID! $categoryId: ID $onlyThisCategory: Boolean $filter: ProductsFilterInput $orderBy: productsSortInput ) { getProducts( pagination: $pagination search: $search storeId: $storeId categoryId: $categoryId onlyThisCategory: $onlyThisCategory filter: $filter orderBy: $orderBy ) { redirectTo products { id name photosUrls sku unit price specialPrice promotion { description type isActive conditions __typename } stock nutritionalDetails clickMultiplier subQty subUnit maxQty minQty specialMaxQty ean boost showSubUnit isActive slug categories { id name __typename } __typename } paginator { pages page __typename } __typename } } \"}";
 
       String url = "https://deadpool.instaleap.io/api/v2";
 
