@@ -49,10 +49,9 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    protected String storeId() {
-      if(session.getOptions().optBoolean("newUnification", false)){
+      if (session.getOptions().optBoolean("newUnification", false)) {
          return session.getOptions().optString("storeId");
-      }
-      else {
+      } else {
          return getStoreId();
       }
    }
@@ -78,7 +77,6 @@ public abstract class RappiCrawler extends Crawler {
 
 
       if (newUnification) {
-
          if (!checkUrl(productUrl)) {
             throw new MalformedUrlException("Formato da URL incorreto");
          } else if (!productUrl.contains(storeId)) {
@@ -126,7 +124,7 @@ public abstract class RappiCrawler extends Crawler {
       }
    }
 
-   protected JSONObject fetchProduct(String productId, String storeId, String token){
+   protected JSONObject fetchProduct(String productId, String storeId, String token) {
       String url = "https://services." + getHomeDomain() + "/api/ms/web-proxy/dynamic-list/cpgs";
 
       Map<String, String> headers = new HashMap<>();
@@ -136,10 +134,9 @@ public abstract class RappiCrawler extends Crawler {
       headers.put("content-type", "application/json");
       headers.put("authorization", token);
 
-      String productFriendlyUrl = storeId+"_"+productId;
+      String productFriendlyUrl = storeId + "_" + productId;
 
-      String payload = "{\"dynamic_list_request\":{\"context\":\"product_detail\",\"state\":{\"lat\":\"1\",\"lng\":\"1\"},\"limit\":100,\"offset\":0},\"dynamic_list_endpoint\":\"context/content\",\"proxy_input\":{\"product_friendly_url\":\""+productFriendlyUrl+"\"}}";
-
+      String payload = "{\"dynamic_list_request\":{\"context\":\"product_detail\",\"state\":{\"lat\":\"1\",\"lng\":\"1\"},\"limit\":100,\"offset\":0},\"dynamic_list_endpoint\":\"context/content\",\"proxy_input\":{\"product_friendly_url\":\"" + productFriendlyUrl + "\"}}";
 
 
       Request request = Request.RequestBuilder.create()
@@ -209,7 +206,7 @@ public abstract class RappiCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(getUrl(productJson))
+            .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
