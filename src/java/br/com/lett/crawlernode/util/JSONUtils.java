@@ -7,6 +7,9 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class JSONUtils {
 
    private static final Logger LOGGER = LoggerFactory.getLogger(JSONUtils.class);
@@ -218,5 +221,65 @@ public class JSONUtils {
       }
 
       return value;
+   }
+
+
+
+   /**
+    * This method simply adds all the string values inside a json array to a string list.
+    * @param jsonArray Json Array.
+    * @return String list with all the values inside the array
+    */
+   public static List<String> jsonArrayToStringList(JSONArray jsonArray){
+      return jsonArrayToStringList(jsonArray, null, null);
+   }
+
+   /**
+    * This method simply adds all the string values inside a json array to a string list.
+    * The path is similar with the getValueRecursive method.
+    * Example: 'produts.images.url'
+    * @param jsonArray Json Array.
+    * @param path If its a {@link JSONObject} array, it's necessary to specify the path containing the key that must be added to the list.
+    *              If its array of strings, just pass a null path.
+    * @return String list with all the values inside the array
+    */
+   public static List<String> jsonArrayToStringList(JSONArray jsonArray, String path){
+      return jsonArrayToStringList(jsonArray, path, null);
+   }
+
+   /**
+    * This method simply adds all the string values inside a json array to a string list.
+    * The path is similar with the getValueRecursive method.
+    * Example: 'produts.images.url'
+    * @param jsonArray Json Array.
+    * @param path If its a {@link JSONObject} array, it's necessary to specify the path containing the key that must be added to the list.
+    *              If its array of strings, just pass a null path.
+    * @param pathSeparator Separator to the json keys in the path, default '.'
+    * @return String list with all the values inside the array
+    */
+   public static List<String> jsonArrayToStringList(JSONArray jsonArray, String path, String pathSeparator) {
+      List<String> list = new ArrayList<>();
+
+      if(jsonArray != null && !jsonArray.isEmpty()){
+         if(path != null && !path.equals("")){
+            if(pathSeparator == null){
+               pathSeparator = ".";
+            }
+
+            for (Object o : jsonArray) {
+               JSONObject jsonObject = (JSONObject) o;
+
+               String str = getValueRecursive(jsonObject, path, pathSeparator, String.class, null);
+
+               list.add(str);
+            }
+         }else{
+            for (Object o : jsonArray) {
+               list.add(o.toString());
+            }
+         }
+      }
+
+      return list;
    }
 }
