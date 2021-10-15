@@ -60,7 +60,10 @@ public abstract class CarrefourMercadoRanking extends CrawlerRankingKeywords {
    protected abstract String getLocation();
 
    protected String getRegionId() {
-      JSONObject locationJson = JSONUtils.stringToJson(new String(Base64.getDecoder().decode(getLocation()), StandardCharsets.UTF_8));
+      String[] chunks = getLocation().split("\\.");
+
+      JSONObject locationJson = JSONUtils.stringToJson(new String(Base64.getDecoder().decode(chunks[1]), StandardCharsets.UTF_8));
+
       return locationJson.optString("regionId", null);
    }
 
@@ -120,7 +123,7 @@ public abstract class CarrefourMercadoRanking extends CrawlerRankingKeywords {
 
             JSONObject product = (JSONObject) object;
             String productUrl = CrawlerUtils.completeUrl(product.optString("linkText"), "https",
-               this.getHomePage().replace("https://", "".replace("http://", "")));
+               this.getHomePage().replace("https://", "".replace("http://", ""))) + "/p";
             String internalPid = product.optString("id");
             String name = product.optString("productName");
             String image = scrapImage(product);
