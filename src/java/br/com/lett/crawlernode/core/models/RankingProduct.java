@@ -8,9 +8,9 @@ import org.bson.Document;
 
 public class RankingProduct {
 
-	protected String internalPid;
-	protected int position;
-	protected String url;
+   protected String internalPid;
+   protected int position;
+   protected String url;
 
    //New fields that must captured in ranking
    protected Boolean isSponsored = false;
@@ -24,61 +24,61 @@ public class RankingProduct {
    protected String keyword;
    protected Timestamp timestamp;
 
-	protected List<Long> processedIds = new ArrayList<>();
-	protected String screenshot;
-	
-	
-	public Document getDocument(){
-		
-		return new Document()
-			.append("position", this.position)
-			//.append("url", this.url)
-			.append("processed_ids", this.processedIds);
-	}
-	
-	public String getInteranlPid() {
-		return internalPid;
-	}
-	
-	public void setInteranlPid(String interanlPid) {
-		this.internalPid = interanlPid;
-	}
-	
-	public int getPosition() {
-		return position;
-	}
-	
-	public void setPosition(int position) {
-		this.position = position;
-	}
-	
-	public List<Long> getProcessedIds() {
-		return processedIds;
-	}
-	
-	public void addProcessedId(String x){
-		
-	}
-	
-	public void setProcessedIds(List<Long> processedIds) {
-		this.processedIds = processedIds;
-	}
-	
-	public String getUrl() {
-		return url;
-	}
+   protected List<Long> processedIds = new ArrayList<>();
+   protected String screenshot;
 
-	public void setUrl(String url) {
-		this.url = url;
-	}
 
-	public String getScreenshot() {
-		return screenshot;
-	}
+   public Document getDocument() {
 
-	public void setScreenshot(String screenshot) {
-		this.screenshot = screenshot;
-	}
+      return new Document()
+         .append("position", this.position)
+         //.append("url", this.url)
+         .append("processed_ids", this.processedIds);
+   }
+
+   public String getInteranlPid() {
+      return internalPid;
+   }
+
+   public void setInteranlPid(String interanlPid) {
+      this.internalPid = interanlPid;
+   }
+
+   public int getPosition() {
+      return position;
+   }
+
+   public void setPosition(int position) {
+      this.position = position;
+   }
+
+   public List<Long> getProcessedIds() {
+      return processedIds;
+   }
+
+   public void addProcessedId(String x) {
+
+   }
+
+   public void setProcessedIds(List<Long> processedIds) {
+      this.processedIds = processedIds;
+   }
+
+   public String getUrl() {
+      return url;
+   }
+
+   public void setUrl(String url) {
+      this.url = url;
+   }
+
+   public String getScreenshot() {
+      return screenshot;
+   }
+
+   public void setScreenshot(String screenshot) {
+      this.screenshot = screenshot;
+   }
 
    public Boolean getIsSponsored() {
       return isSponsored;
@@ -162,15 +162,16 @@ public class RankingProduct {
 
    @Override
    public String toString() {
-      return "Position " + position + " - " +
-         "internalPid=" + internalPid +
-         ", internalId=" + internalId +
-         ", name=" + name +
-         ", url=" + url +
-         ", isSponsored=" + isSponsored +
-         ", priceInCents=" + priceInCents +
-         ", isAvailable=" + isAvailable +
-         ", pageNumber=" + pageNumber +
-         ", imageUrl=" + imageUrl;
+      return
+         " PageNumber= " + pageNumber +
+            ", position= " + position +
+            ", internalPid= " + internalPid +
+            ", internalId= " + internalId +
+            ", priceInCents= " + priceInCents +
+            ", isAvailable= " + isAvailable +
+            ", isSponsored= " + isSponsored +
+            ", name= " + name +
+            ", url= " + url +
+            ", imageUrl= " + imageUrl;
    }
 }
