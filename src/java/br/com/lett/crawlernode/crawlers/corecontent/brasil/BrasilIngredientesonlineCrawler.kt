@@ -7,10 +7,7 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.CrawlerUtils
-import br.com.lett.crawlernode.util.MathUtils
-import br.com.lett.crawlernode.util.round
-import br.com.lett.crawlernode.util.toDoubleComma
+import br.com.lett.crawlernode.util.*
 import exceptions.MalformedPricingException
 import models.Offer
 import models.Offers
@@ -22,15 +19,9 @@ import models.pricing.Installments
 import models.pricing.Pricing
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import java.util.*
 
-/**
- * Date: 21/07/20
- *
- * @author Fellype Layunne
- *
- */
 class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
-
    companion object {
       const val SELLER_NAME: String = "Ingredientes Online"
    }
@@ -55,124 +46,127 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
          return mutableListOf()
       }
 
-      val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-shop .product-name", false)
-      val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li:not(:first-child):not(:last-child) a span")
-      val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-shop input[name=product]", "value")
-      val primaryImage = doc.selectFirst(".product-view .product-image img")?.attr("src")
-
+      val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title", false)
+      val internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=sku]", false)
+      val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder__image", Arrays.asList("src"), "https", "")
       val secondaryImages = doc.select(".product-view .product-image div:not(:first-child) img").map { it?.attr("src") }
-          .toMutableList().filterNotNull()
-
-      val description = doc.select("#descricao .contentDescWrap")?.first {
-         it.attr("id") != "tabelanutricional"
-      }?.html()
-
+      .toMutableList().filterNotNull()
+      val description = CrawlerUtils.scrapStringSimpleInfo(doc, ".content .value p", false)
       val offers = scrapOffers(doc)
 
       val product = ProductBuilder()
-         .setUrl(session.originalURL)
-         .setInternalId(internalId)
-         .setName(name)
-         .setCategories(categories)
-         .setPrimaryImage(primaryImage)
-         .setSecondaryImages(secondaryImages)
-         .setDescription(description)
-         .setOffers(offers)
-         .build()
+      .setUrl(session.originalURL)
+      .setInternalId(internalId)
+      .setInternalPid(internalId)
+      .setName(name)
+      .setPrimaryImage(primaryImage)
+      .setSecondaryImages(secondaryImages)
+      .setDescription(description)
+      .setOffers(offers)
+      .build()
 
       return mutableListOf(product)
    }
 
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
+      val re = Regex("[^0-9]")
 
-	   if(doc.select(".alert-stock").isEmpty()) {
-        val installments = scrapInstallments(doc)
-  
-        val priceText = doc.selectFirst(".old-price .price")?.text() ?: ""
-  
-        var priceFrom = MathUtils.parseDoubleWithComma(priceText)
-  
-        val spotlightText = if ((priceFrom ?: 0.0) > 0) {
-           doc.selectFirst(".special-price .price")?.text()
-        } else {
-           doc.selectFirst(".regular-price .price")?.text()
-        } ?: ""
-  
-        val spotlightPrice = MathUtils.parseDoubleWithComma(spotlightText)
-  
-        spotlightPrice?.let {
-           if (spotlightPrice == priceFrom) {
-              priceFrom = null
-           }
-           val creditCards = CreditCards(
-              listOf(Card.MASTERCARD, Card.VISA, Card.AMEX, Card.DINERS, Card.ELO,
-                 Card.HIPERCARD).map { card: Card ->
-                 try {
-                    return@map CreditCardBuilder.create()
-                       .setBrand(card.toString())
-                       .setIsShopCard(false)
-                       .setInstallments(installments)
-                       .build()
-                 } catch (e: MalformedPricingException) {
-                    throw RuntimeException(e)
-                 }
-              })
-  
-           val bankSlipPrice = doc.selectFirst(".preco-comprar .boletoBox .price")?.text().toDoubleComma()?.round()
-           val bankSlipDiscount = doc.selectFirst(".preco-comprar .boletoBox .descontoBoleto")?.text()?.toDouble()
-  
-           var bankSlip: BankSlip? = BankSlip.BankSlipBuilder()
-              .setFinalPrice(bankSlipPrice)
-  
-              // convert from int to decimal percent
-              .setOnPageDiscount(((bankSlipDiscount ?: 0.0) / 100).round())
-              .build()
-  
-           if ((bankSlipPrice ?: 0.0) <= 0) {
-              bankSlip = null
-           }
-           offers.add(
-              Offer.OfferBuilder.create()
-                 .setPricing(
-                    Pricing.PricingBuilder.create()
-                       .setCreditCards(creditCards)
-                       .setSpotlightPrice(spotlightPrice)
-                       .setBankSlip(bankSlip)
-                       .setPriceFrom(priceFrom)
-                       .build()
-                 )
-                 .setSales(listOf())
-                 .setIsMainRetailer(true)
-                 .setIsBuybox(false)
-                 .setUseSlugNameAsInternalSellerId(true)
-                 .setSellerFullName(SELLER_NAME)
-                 .build()
-           )
-        }
-	   }
-     
-	   return offers
+      val buyButton = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-addtocart-button span", false)?: null
+
+      if (buyButton != null) {
+         val installments = scrapInstallments(doc)
+
+         val priceText = CrawlerUtils.scrapStringSimpleInfo(doc, ".old-price .price", false)
+
+         var priceFrom = if (priceText == null) {
+            null
+         } else {
+            MathUtils.parseDoubleWithComma(priceText)
+         }
+
+         var spotlightText = CrawlerUtils.scrapStringSimpleInfo(doc, ".normal-price .price", false)
+
+         if (spotlightText == null) {
+            spotlightText = CrawlerUtils.scrapStringSimpleInfo(doc, ".special-price .price", false)
+         }
+
+         var spotlightPrice = if (spotlightText.toDoubleComma()?.round() == null) {
+            CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info-price .price", false).toDoubleComma()?.round()
+         } else {
+            spotlightText.toDoubleComma()?.round()
+         }
+
+         spotlightPrice.let {
+            val creditCards = CreditCards(
+               listOf(Card.MASTERCARD, Card.VISA, Card.AMEX, Card.DINERS, Card.ELO,
+               Card.HIPERCARD).map { card: Card ->
+               try {
+                  return@map CreditCardBuilder.create()
+                  .setBrand(card.toString())
+                  .setIsShopCard(false)
+                  .setInstallments(installments)
+                  .build()
+               } catch (e: MalformedPricingException) {
+                  throw RuntimeException(e)
+               }
+            })
+            val bankSlipPrice = CrawlerUtils.scrapStringSimpleInfo(doc, ".bankslip_excerpt .price", false).toDoubleComma()?.round()
+            val bankSlipDiscountPercentage = CrawlerUtils.scrapStringSimpleInfo(doc, ".bankslip_excerpt small", false)
+
+            var bankSlipDiscountValue = re.replace(bankSlipDiscountPercentage.toString(), "").toDouble()
+
+            var bankSlip: BankSlip? = BankSlip.BankSlipBuilder()
+            .setFinalPrice(bankSlipPrice)
+            .setOnPageDiscount(((bankSlipDiscountValue) / 100)) // convert from int to decimal percent
+            .build()
+
+            if ((bankSlipPrice ?: 0.0) <= 0) {
+               bankSlip = null
+            }
+               offers.add(
+               Offer.OfferBuilder.create()
+               .setPricing(
+                  Pricing.PricingBuilder.create()
+                  .setCreditCards(creditCards)
+                  .setSpotlightPrice(spotlightPrice)
+                  .setBankSlip(bankSlip)
+                  .setPriceFrom(priceFrom)
+                  .build()
+               )
+               .setSales(listOf())
+               .setIsMainRetailer(true)
+               .setIsBuybox(false)
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(SELLER_NAME)
+               .build()
+            )
+         }
+      }
+      return offers
    }
 
    private fun scrapInstallments(doc: Document): Installments {
       val installments = Installments()
 
-      val parcel = doc.selectFirst(".parcelaBloco")?.attr("data-maximo_parcelas_sem_juros")?.toInt() ?: 0
-      val price = doc.selectFirst(".parcelaBloco")?.attr("data-valor_produto")?.toDouble()?.round() ?: 0.0
-      for (i: Int in 1..parcel) {
-         val installment = InstallmentBuilder()
-            .setInstallmentNumber(i)
-            .setInstallmentPrice((price / i).round())
-            .setFinalPrice(price)
-            .build()
+      val parcel = CrawlerUtils.scrapStringSimpleInfo(doc, ".installment_period", false) ?: 0
+      val price = CrawlerUtils.scrapStringSimpleInfo(doc, ".installment_value", false).toDoubleComma() ?: 0.0
 
-         installments.add(installment)
-      }
+      val re = Regex("[^0-9]")
+      var parcelNumber = re.replace(parcel.toString(), "").toInt()
+
+      val installment = InstallmentBuilder()
+      .setInstallmentNumber(parcelNumber)
+      .setInstallmentPrice(price.round())
+      .setFinalPrice(parcelNumber * price)
+      .build()
+
+      installments.add(installment)
+
       return installments
    }
 
-   private fun isProductPage(document: Document): Boolean {
-      return document.selectFirst(".product-name") != null
+   private fun isProductPage(doc: Document): Boolean {
+      return CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false) != null
    }
 }
