@@ -38,15 +38,15 @@ public class SaopauloPadovaniCrawler extends Crawler {
 
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc,".productID .skuReference", false);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc,".productName",false);
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".productID .skuReference", false);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".productName", false);
 
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home):not(.product) a");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-short-description", "#details"));
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image a #image-main", Arrays.asList("src"), "https", "padovani.vteximg.com.br");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,".thumbs li a img",Arrays.asList("src"),"https", "padovani.vteximg.com.br",primaryImage);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".thumbs li a img", Arrays.asList("src"), "https", "padovani.vteximg.com.br", primaryImage);
 
-         boolean available = doc.selectFirst(".buy-button.buy-button-ref") != null;
+         boolean available = !doc.select(".plugin-preco").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
@@ -96,7 +96,7 @@ public class SaopauloPadovaniCrawler extends Crawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".skuBestPrice", null, true, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".skuListPrice", null, true, ',', session);
 
-      if(priceFrom == 0D){
+      if (priceFrom == 0D) {
          priceFrom = null;
       }
 
