@@ -13,27 +13,18 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
 import models.Offer;
 import models.Offers;
-import models.pricing.BankSlip;
-import models.pricing.CreditCard;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
-import models.pricing.Installments;
-import models.pricing.Pricing;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.*;
 
 /**
  * date: 02/04/2019
  *
  * @author gabriel
- *
  */
 public class BrasilGazinCrawler extends Crawler {
 
@@ -55,18 +46,18 @@ public class BrasilGazinCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
-   private String createApiUrl(){
+   private String createApiUrl() {
 
       String[] urlSplitId = session.getOriginalURL().split("/");
       String[] urlSplitParams = session.getOriginalURL().split("\\?");
       String id = "";
       String params = "";
 
-      if(urlSplitId.length > 3){
+      if (urlSplitId.length > 3) {
          id = urlSplitId[4];
       }
 
-      if(urlSplitParams.length > 1){
+      if (urlSplitParams.length > 1) {
          params = CommonMethods.getLast(urlSplitParams);
       }
 
@@ -74,7 +65,7 @@ public class BrasilGazinCrawler extends Crawler {
    }
 
    @Override
-   protected Object fetch(){
+   protected Object fetch() {
 
       HashMap<String, String> headers = new HashMap<>();
       headers.put("Canal", "gazin-ecommerce");
@@ -97,9 +88,9 @@ public class BrasilGazinCrawler extends Crawler {
          String internalPid = json.optString("id");
          String description = scrapDescription(internalPid) + json.optString("descricao");
 
-         if(variations != null){
+         if (variations != null) {
 
-            for(Object e: variations){
+            for (Object e : variations) {
 
                JSONObject variation = (JSONObject) e;
 
@@ -143,14 +134,14 @@ public class BrasilGazinCrawler extends Crawler {
       return json.has("slug");
    }
 
-   private boolean isAvailable(JSONObject variation){
+   private boolean isAvailable(JSONObject variation) {
       JSONArray advertising = variation.optJSONArray("anuncios");
 
-      for(Object e: advertising){
+      for (Object e : advertising) {
 
          JSONObject offer = (JSONObject) e;
 
-         if(offer.optInt("estoque") > 0){
+         if (offer.optInt("estoque") > 0) {
             return true;
          }
       }
@@ -158,19 +149,19 @@ public class BrasilGazinCrawler extends Crawler {
       return false;
    }
 
-   private String scrapName(String name, JSONObject variation){
+   private String scrapName(String name, JSONObject variation) {
 
       if (name != null) {
          JSONArray combinations = variation.getJSONArray("combinacoes");
 
-         if(combinations != null){
+         if (combinations != null) {
 
             StringBuilder nameBuilder = new StringBuilder(name);
-            for(Object e: combinations){
+            for (Object e : combinations) {
 
                JSONObject combination = (JSONObject) e;
 
-               if(!combination.optString("valor").equals("Sem Cor") && !combination.optString("valor").equals("Sem Voltagem")){
+               if (!combination.optString("valor").equals("Sem Cor") && !combination.optString("valor").equals("Sem Voltagem")) {
                   nameBuilder.append(" - ").append(combination.optString("valor"));
                }
             }
@@ -181,7 +172,7 @@ public class BrasilGazinCrawler extends Crawler {
       return name;
    }
 
-   private String scrapDescription(String internalPid){
+   private String scrapDescription(String internalPid) {
 
       String url = PRODUCT_API + internalPid + "/informacoes";
 
@@ -192,7 +183,7 @@ public class BrasilGazinCrawler extends Crawler {
       JSONArray response = JSONUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
       StringBuilder description = new StringBuilder();
-      for(Object e: response){
+      for (Object e : response) {
 
          JSONObject info = (JSONObject) e;
 
@@ -205,14 +196,14 @@ public class BrasilGazinCrawler extends Crawler {
       return description.toString();
    }
 
-   private List<String> scrapImages(JSONObject variation){
+   private List<String> scrapImages(JSONObject variation) {
 
       List<String> imagensUrl = new ArrayList<>();
       JSONArray imagens = variation.getJSONArray("imagens");
 
-      if(imagens != null){
+      if (imagens != null) {
 
-         for(Object e: imagens){
+         for (Object e : imagens) {
 
             JSONObject imagem = (JSONObject) e;
 
@@ -223,33 +214,33 @@ public class BrasilGazinCrawler extends Crawler {
       return imagensUrl;
    }
 
-   private List<String> scrapSecondaryImages(JSONObject variation){
+   private List<String> scrapSecondaryImages(JSONObject variation) {
 
       List<String> images = scrapImages(variation);
 
-      if(!images.isEmpty()){
+      if (!images.isEmpty()) {
          images.remove(0);
       }
 
       return images;
    }
 
-   private CategoryCollection scrapCategories(JSONObject categoriesJson){
+   private CategoryCollection scrapCategories(JSONObject categoriesJson) {
 
       CategoryCollection categoryCollection = new CategoryCollection();
       boolean hasAnotherCategories = true;
 
-      if(categoriesJson != null){
+      if (categoriesJson != null) {
          String lastCategories = categoriesJson.optString("nome");
          categoryCollection.add(lastCategories);
 
-         if(categoriesJson.has("categoria_pai")){
-            do{
+         if (categoriesJson.has("categoria_pai")) {
+            do {
                JSONArray categoriesArray = categoriesJson.optJSONArray("categoria_pai");
-               if(!categoriesArray.isEmpty()){
-                  categoryCollection.add(((JSONObject)categoriesArray.get(0)).optString("nome"));
-                  categoriesJson = ((JSONObject)categoriesArray.get(0));
-               } else{
+               if (!categoriesArray.isEmpty()) {
+                  categoryCollection.add(((JSONObject) categoriesArray.get(0)).optString("nome"));
+                  categoriesJson = ((JSONObject) categoriesArray.get(0));
+               } else {
                   hasAnotherCategories = false;
                }
             } while (hasAnotherCategories);
@@ -267,11 +258,11 @@ public class BrasilGazinCrawler extends Crawler {
 
       JSONArray advertising = variation.optJSONArray("anuncios");
 
-      for(Object e: advertising){
+      for (Object e : advertising) {
 
          JSONObject offer = (JSONObject) e;
 
-         if(offer.optInt("estoque") > 1){
+         if (offer.optInt("estoque") > 1) {
             Pricing pricing = scrapPricing(offer);
             List<String> sales = new ArrayList<>();
 
@@ -293,19 +284,19 @@ public class BrasilGazinCrawler extends Crawler {
 
    }
 
-   private String scrapSellerId(JSONObject offer){
+   private String scrapSellerId(JSONObject offer) {
 
       JSONObject seller = offer.optJSONObject("seller");
 
       return Integer.toString(seller.optInt("id"));
    }
 
-   private String scrapSellerName(JSONObject offer){
+   private String scrapSellerName(JSONObject offer) {
 
       JSONObject seller = offer.optJSONObject("seller");
       String sellerName = "";
 
-      if(seller != null){
+      if (seller != null) {
          return seller.optString("nome_fantasia");
       }
 
@@ -321,7 +312,7 @@ public class BrasilGazinCrawler extends Crawler {
       Double priceFrom = null;
       Double spotlightPrice = null;
 
-      if(bankslipPayment != null){
+      if (bankslipPayment != null) {
          bankSlipPrice = bankslipPayment.optDouble("por");
          spotlightPrice = bankSlipPrice;
          priceFrom = bankslipPayment.optDouble("de");
@@ -347,18 +338,18 @@ public class BrasilGazinCrawler extends Crawler {
 
    private CreditCards scrapCreditCards(JSONObject priceInfo, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-      JSONObject installmentsInfo = null;
+      Double priceInstallment = null;
 
-      if(priceInfo != null){
+      if (priceInfo != null) {
 
-         installmentsInfo = priceInfo.optJSONObject("parcelamento");
+         priceInstallment = priceInfo.optDouble("por");
       }
 
-      Installments installments = scrapInstallments(installmentsInfo);
+      Installments installments = new Installments();
       if (installments.getInstallments().isEmpty()) {
          installments.add(Installment.InstallmentBuilder.create()
             .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
+            .setInstallmentPrice(priceInstallment != null ? priceInstallment : spotlightPrice)
             .build());
       }
 
@@ -379,11 +370,11 @@ public class BrasilGazinCrawler extends Crawler {
       Double value;
       int installmentsNumbers;
 
-      if(installmentsInfo != null){
+      if (installmentsInfo != null) {
          value = installmentsInfo.optDouble("valor");
          installmentsNumbers = installmentsInfo.optInt("quantidade");
 
-         for(int i = 1; i <= installmentsNumbers; i++){
+         for (int i = 1; i <= installmentsNumbers; i++) {
             installments.add(Installment.InstallmentBuilder.create()
                .setInstallmentNumber(i)
                .setInstallmentPrice(value)
