@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -9,18 +8,10 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebDriverException;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
 
@@ -28,6 +19,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
 
    public RiodejaneiroZonasulCrawler(Session session) {
       super(session);
+
    }
 
    protected String getHomePage() {
@@ -48,20 +40,25 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
       this.pageSize = 48;
-       String url = "https://www.zonasul.com.br/" + this.keywordEncoded + "?_q=" + this.keywordEncoded + "&map=ft&page=" + this.currentPage;
+      String url = "https://www.zonasul.com.br/" + this.keywordEncoded + "?_q=" + this.keywordEncoded + "&map=ft&page=" + this.currentPage;
 
       if (this.currentPage > 1 && this.categoryUrl != null) {
          url = this.categoryUrl + "?page=" + this.currentPage;
       }
-
-      this.currentDoc = fetchDocument(url);
-
+/*
+   To first request is using webdriver, because without not capturing redirection and this site have difference in url of category
+ */
       if (this.currentPage == 1) {
+      this.currentDoc = fetchDocumentWithWebDriver(url);
+
          String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
 
          if (!url.equals(redirectUrl)) {
             this.categoryUrl = redirectUrl;
+            this.currentDoc = fetchDocument(this.categoryUrl);
          }
+      } else {
+         this.currentDoc = fetchDocument(url);
       }
 
       Elements products = this.currentDoc.select(".vtex-search-result-3-x-galleryItem.vtex-search-result-3-x-galleryItem--normal.pa4");
