@@ -9,25 +9,21 @@ import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.kinesis.producer.Attempt;
-import com.amazonaws.services.kinesis.producer.KinesisProducer;
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
-import com.amazonaws.services.kinesis.producer.UserRecordFailedException;
-import com.amazonaws.services.kinesis.producer.UserRecordResult;
+import com.amazonaws.services.kinesis.producer.*;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class KPLProducer {
 
@@ -87,21 +83,20 @@ public class KPLProducer {
    }
 
    public static void sendMessageCatalogToKinesis(Task task, Session session) {
-      if (GlobalConfigurations.executionParameters.mustSendToKinesis()) {
 
-         long productStartTime = System.currentTimeMillis();
+      long productStartTime = System.currentTimeMillis();
 
-         SkuStatus skuStatus = ((Crawler) task).getSkuStatus();
-         Message message = Message.build(skuStatus, session.getSessionId());
+      SkuStatus skuStatus = ((Crawler) task).getSkuStatus();
+      Message message = Message.build(skuStatus, session.getSessionId());
 
-         KPLProducer.getInstance().put(message, session);
+      getInstance().put(message, session);
 
-         JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
-            .put("aws_type", "kinesis")
-            .put("kinesis_flow_type", "product");
+      JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
+         .put("aws_type", "kinesis")
+         .put("kinesis_flow_type", "product");
 
-         Logging.logInfo(LOGGER, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
-      }
+      Logging.logInfo(LOGGER, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
+
    }
 
    /**

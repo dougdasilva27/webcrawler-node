@@ -79,7 +79,6 @@ public class CrawlerTaskEndpoint extends HttpServlet {
 
          if (executionParameters.isSendToKinesisCatalog()) {
                KPLProducer.sendMessageCatalogToKinesis(task, session);
-
          }
       }
 
