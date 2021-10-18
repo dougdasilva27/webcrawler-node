@@ -3,10 +3,14 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -18,7 +22,7 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
 
    public MexicoSorianasuperCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.APACHE;
    }
 
    private static final String PROTOCOL = "https://";
@@ -26,54 +30,41 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
    private static final String DOMAIN = "superentucasa.soriana.com/Default.aspx";
 
 
-   private Document webdriverRequest(String url) {
-      Document doc;
-
-      try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
-         if (webdriver != null) {
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-            webdriver.terminate();
-         } else {
-            throw new WebDriverException("Failed to instantiate webdriver");
-         }
-      } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-         throw e;
-      }
-
-      return doc;
-   }
-
-
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
 
-      String url = "https://superentucasa.soriana.com/Default.aspx?p=13365&Txt_Bsq_Descripcion=" + this.keywordWithoutAccents.replace(" ", "%20") + "&Paginacion=" + this.currentPage;
+
+      String url = "https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Search-UpdateGrid?q="+this.keywordEncoded+"&start=" + (this.currentPage - 1) * 12 + "&sz=12";
 
       this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = webdriverRequest(url);
+      this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".product-item");
+      Elements products = this.currentDoc.select("body > div[class*=product-tile]");
 
       if (!products.isEmpty()) {
-         if (pages == 0){
-            Elements pagination = this.currentDoc.select(".pagination li a");
-            pages = pagination.size();
-         }
-
          for (Element e : products) {
 
-            String internalId = crawlInternalId(e);
-            String productUrl = PROTOCOL + DOMAIN + CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a[href]:first-child", "href");
 
-            saveDataProduct(internalId, null, productUrl);
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product", "data-pid");
+            String internalPid = internalId;
+            String productUrl = CrawlerUtils.scrapUrl(e, ".product a", "href", "https", "www.soriana.com/");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product .product-tile--link", true);
+            int price = CommonMethods.doublePriceToIntegerPrice(CrawlerUtils.scrapDoublePriceFromHtml(e, " .product .value", "content", true, '.', session), 0);
+            boolean isAvailable = price != 0;
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
-            }
+            //New way to send products to save data product
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(productRanking);
+
          }
       } else {
          this.result = false;
@@ -86,7 +77,7 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
    @Override
    protected boolean hasNextPage() {
 
-      return this.currentPage < pages;
+      return this.currentDoc.selectFirst(".show-more") != null;
 
    }
 
