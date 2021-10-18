@@ -43,7 +43,7 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
          String description = crawlDescription(doc);
          String primaryImage = json.optString("image");
 
-         boolean available = JSONUtils.getValueRecursive(json, "offers.offers.0.availability", String.class).contains("InStock");
+         boolean available = doc.selectFirst(".btn-addcart-product-detail") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
