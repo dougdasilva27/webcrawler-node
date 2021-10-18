@@ -37,6 +37,7 @@ public class RequestConverter {
    private static final String MARKET_REGEX= "regex";
    private static final String MARKET_USE_BROWSER= "use_browser";
    private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
+   private static final String SESSION_ID = "sessionId";
 
    private RequestConverter() {
    }
@@ -68,6 +69,7 @@ public class RequestConverter {
       request.setQueueName(body.optString(BODY_QUEUE));
       request.setMessageId(req.getHeader(MSG_ID_HEADER));
       request.setClassName(body.optString(BODY_CLASS_NAME));
+      request.setSessionId(body.optString(SESSION_ID));
 
       String options = body.optString(BODY_OPTIONS);
       if(options!=null && !options.isEmpty()) {

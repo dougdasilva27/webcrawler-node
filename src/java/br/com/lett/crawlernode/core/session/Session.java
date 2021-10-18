@@ -114,7 +114,7 @@ public class Session {
       crawlerSessionErrors = new ArrayList<>();
       redirectionMap = new HashMap<>();
       requestProxyMap = new HashMap<>();
-      sessionId = request.getMessageId();
+      sessionId = request.getSessionId();
       this.market = market;
       supplierId = request.getSupplierId();
 

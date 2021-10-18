@@ -18,6 +18,7 @@ public class EnvironmentVariables {
    public static final String IMAGES_BUCKET_NAME = "IMAGES_BUCKET_NAME";
    public static final String IMAGES_BUCKET_NAME_NEW = "IMAGES_BUCKET_NAME_NEW";
    public static final String KINESIS_STREAM = "KINESIS_STREAM";
+   public static final String KINESIS_STREAM_CATALOG = "KINESIS_STREAM_CATALOG";
    public static final String LOGS_BUCKET_NAME = "LOGS_BUCKET_NAME";
    public static final String QUEUE_URL_FIRST_PART = "QUEUE_URL_FIRST_PART";
    public static final String REPLICATOR_URL = "REPLICATOR_URL";
@@ -26,6 +27,7 @@ public class EnvironmentVariables {
    public static final String S3_BATCH_USER = "S3_BATCH_USER";
    public static final String S3_BATCH_PASS = "S3_BATCH_PASS";
    public static final String SEND_TO_KINESIS = "SEND_TO_KINESIS";
+   public static final String SEND_TO_KINESIS_CATALOG = "SEND_TO_KINESIS_CATALOG";
    public static final String USE_FETCHER = "USE_FETCHER";
    public static final String CHROME_PATH = "CHROME_PATH";
    public static final String HTML_PATH = "HTML_PATH";

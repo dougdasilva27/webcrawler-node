@@ -48,7 +48,7 @@ public class Main {
       GlobalConfigurations.setConfigurations();
 
       // Create Kinesis KPL child process
-      KPLProducer.getInstance();
+      //KPLProducer.getInstance();
 
       // Check resources
       Logging.printLogInfo(LOGGER, "Checking files...");

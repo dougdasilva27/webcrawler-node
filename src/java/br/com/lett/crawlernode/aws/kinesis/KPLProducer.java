@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.aws.kinesis;
 
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.base.Task;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -21,6 +24,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,6 +85,42 @@ public class KPLProducer {
 
       Futures.addCallback(f, myCallback, callbackThreadPool);
    }
+
+   public static void sendMessageCatalogToKinesis(Task task, Session session) {
+      if (GlobalConfigurations.executionParameters.mustSendToKinesis()) {
+
+         long productStartTime = System.currentTimeMillis();
+
+         SkuStatus skuStatus = ((Crawler) task).getSkuStatus();
+         Message message = Message.build(skuStatus, session.getSessionId());
+
+         KPLProducer.getInstance().put(message, session);
+
+         JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
+            .put("aws_type", "kinesis")
+            .put("kinesis_flow_type", "product");
+
+         Logging.logInfo(LOGGER, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
+      }
+   }
+
+   /**
+    * Asynchronously put an event to the kinesis internal queue
+    *
+    * @param m       message to send
+    * @param session session
+    */
+   public void put(Message m, Session session) {
+      ByteBuffer data = ByteBuffer.wrap((m.serializeToKinesis() + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
+
+      FutureCallback<UserRecordResult> myCallback = getCallback(session);
+
+      ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(GlobalConfigurations.executionParameters.getKinesisStreamCatalog(),
+         m.getTaskFinish(), randomExplicitHashKey(), data);
+
+      Futures.addCallback(f, myCallback, callbackThreadPool);
+   }
+
 
    private static FutureCallback<UserRecordResult> getCallback(Session session) {
       return new FutureCallback<UserRecordResult>() {

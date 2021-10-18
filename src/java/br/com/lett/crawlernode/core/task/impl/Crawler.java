@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.core.task.impl;
 
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
+import br.com.lett.crawlernode.aws.kinesis.Message;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
@@ -98,6 +99,10 @@ public abstract class Crawler extends Task {
       this.cookies = new ArrayList<>();
 
       createDefaultConfig();
+   }
+
+   public SkuStatus getSkuStatus() {
+      return skuStatus;
    }
 
    /**
@@ -565,6 +570,8 @@ public abstract class Crawler extends Task {
          Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
       }
    }
+
+
 
    protected final <T> T cache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
       String component = getClass().getSimpleName() + ":" + key;

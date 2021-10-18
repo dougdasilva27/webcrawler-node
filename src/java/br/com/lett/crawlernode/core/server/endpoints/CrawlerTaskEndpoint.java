@@ -1,15 +1,18 @@
 package br.com.lett.crawlernode.core.server.endpoints;
 
+import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.core.models.RequestConverter;
 import br.com.lett.crawlernode.core.server.ServerCrawler;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.server.request.checkers.CrawlerTaskRequestChecker;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
+import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
-import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.metrics.Exporter;
+import br.com.lett.crawlernode.util.Logging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +20,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+
+import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
 
 public class CrawlerTaskEndpoint extends HttpServlet {
 
@@ -69,6 +74,15 @@ public class CrawlerTaskEndpoint extends HttpServlet {
          res.setStatus(ServerCrawler.HTTP_STATUS_CODE_SERVER_ERROR);
          Logging.printLogDebug(logger, "TASK RESPONSE STATUS: " + ServerCrawler.HTTP_STATUS_CODE_SERVER_ERROR);
       }
+
+      if (task instanceof Crawler && task.getSession() instanceof InsightsCrawlerSession) {
+
+         if (executionParameters.isSendToKinesisCatalog()) {
+               KPLProducer.sendMessageCatalogToKinesis(task, session);
+
+         }
+      }
+
 
       return response;
    }
