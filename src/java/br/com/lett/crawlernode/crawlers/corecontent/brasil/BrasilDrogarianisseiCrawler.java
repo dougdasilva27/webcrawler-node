@@ -34,10 +34,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       super(session);
       super.config.setFetcher(FetchMode.JSOUP);
-      cacheConfig.setRequest(Request.RequestBuilder.create()
-         .setUrl(HOME_PAGE)
-         .build());
-      cacheConfig.setRequestMethod(RequestMethod.GET);
    }
 
    @Override

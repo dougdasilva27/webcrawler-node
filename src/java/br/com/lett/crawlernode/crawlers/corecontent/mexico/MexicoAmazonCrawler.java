@@ -57,8 +57,6 @@ public class MexicoAmazonCrawler extends Crawler {
 
    public MexicoAmazonCrawler(Session session) {
       super(session);
-      cacheConfig.setRequest(this.amazonScraperUtils.getRequestCookies(HOME_PAGE, cookies, dataFetcher));
-      cacheConfig.setRequestMethod(RequestMethod.GET);
    }
 
    @Override
