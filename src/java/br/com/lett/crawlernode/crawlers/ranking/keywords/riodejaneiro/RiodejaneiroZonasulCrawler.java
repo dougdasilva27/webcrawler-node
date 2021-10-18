@@ -19,7 +19,6 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
 
    public RiodejaneiroZonasulCrawler(Session session) {
       super(session);
-      //super.fetchMode = FetchMode.JSOUP;
 
    }
 
