@@ -1,27 +1,23 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
-import models.prices.Prices;
-import org.jsoup.Jsoup;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.openqa.selenium.WebDriverException;
 
 import java.util.*;
 
@@ -37,64 +33,44 @@ import java.util.*;
  */
 public class MexicoSorianasuperCrawler extends Crawler {
 
-   private static final String DOMAIN = "superentucasa.soriana.com";
-   private static final String HOME_PAGE = "https://superentucasa.soriana.com";
+   private static final String SELLER_FULL_NAME = "Soriana";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public MexicoSorianasuperCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
    }
 
-   @Override
-   protected Document fetch() {
-      return webdriverRequest(session.getOriginalURL());
-   }
-
-   private Document webdriverRequest(String url) {
-      Document doc;
-
-      try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
-         if (webdriver != null) {
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-         } else {
-            throw new WebDriverException("Failed to instantiate webdriver");
-         }
-      } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-         throw e;
-      }
-
-      return doc;
-   }
-
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = crawlInternalId(doc);
-         String internalPid = crawlInternalPid(doc);
-         String name = crawlName(doc);
-         Float price = crawlPrice(doc);
-         Prices prices = crawlPrices(price);
-         boolean available = crawlAvailability(doc);
-         CategoryCollection categories = crawlCategories(doc);
-         String primaryImage = crawlPrimaryImage(doc);
-         String secondaryImages = crawlSecondaryImages(doc);
-         String description = crawlDescription(doc);
-         Integer stock = null;
-         Marketplace marketplace = crawlMarketplace(doc);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-wrapper [data-pid]", "data-pid");
+         String internalPid = internalId;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail .d-none", false);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li", true);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".carousel-item.active img", Arrays.asList("src"), "https", "www.soriana.com");
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".carousel-item img", Arrays.asList("src"), "https", "www.soriana.com", primaryImage);
+         boolean available = doc.selectFirst(".btn-add-to-cart") != null;
+         Offers offers = available? scrapOffers(doc) : new Offers();
+
 
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).build();
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setOffers(offers)
+            .build();
 
          products.add(product);
 
@@ -106,132 +82,83 @@ public class MexicoSorianasuperCrawler extends Crawler {
 
    }
 
-   private boolean isProductPage(Document doc) {
-      return doc.select("#DivDesc").first() != null;
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+
+      Pricing pricing = scrapPricing(doc);
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .build());
+
+      return offers;
    }
 
-   private String crawlInternalId(Document document) {
-      String internalId = null;
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = scrapSpotlightPrice(doc);
+      Double priceFrom = scrapPriceFrom(doc, spotlightPrice);
 
-      Element internalIdElement = document.select("form[target=EditarCarrito] input[name=s]").first();
-      if (internalIdElement != null) {
-         internalId = internalIdElement.val();
-      }
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
-      return internalId;
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .build();
    }
 
-   /**
-    * There is no internalPid.
-    *
-    * @param document
-    * @return
-    */
-   private String crawlInternalPid(Document document) {
-      String internalPid = null;
 
-      return internalPid;
+   private CreditCards scrapCreditCards( Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
    }
 
-   private String crawlName(Document document) {
-      String name = null;
-      Element nameElement = document.select("#DivDesc").first();
-
-      if (nameElement != null) {
-         name = nameElement.text().trim();
+   private Double scrapSpotlightPrice(Document doc) {
+      Double price = null;
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".strike-through .product-price", null, false, ',', session);
+      Double priceDiscount = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sales .product-price", null, false, '.', session);
+      if (priceDiscount != null) {
+         price = priceDiscount;
+      } else {
+         price = spotlightPrice;
       }
-
-      return name;
-   }
-
-   private Float crawlPrice(Document document) {
-      Float price = null;
-
-      String priceText = null;
-      Element salePriceElement = document.select("#DivPrecio .precioarticulo").first();
-
-      if (salePriceElement != null) {
-         priceText = salePriceElement.ownText();
-      }
-
-      if (priceText != null && !priceText.isEmpty()) {
-         price = Float.parseFloat(priceText.replaceAll(MathUtils.PRICE_REGEX, ""));
-      }
-
       return price;
    }
 
-   private boolean crawlAvailability(Document document) {
-      boolean available = false;
-
-      Element outOfStockElement = document.select("#DivObsart textarea").first();
-      if (outOfStockElement != null) {
-         available = true;
+   private Double scrapPriceFrom(Document doc, Double spotlightPrice) {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio", null, false, '.', session);
+      if (spotlightPrice.equals(priceFrom)) {
+         priceFrom = null;
       }
-
-      return available;
-   }
-
-   private Marketplace crawlMarketplace(Document document) {
-      return new Marketplace();
+      return priceFrom;
    }
 
 
 
-   private String crawlPrimaryImage(Document document) {
-      String primaryImage = null;
-      Element primaryImageElement = document.select("#ImgArt img").first();
-
-      if (primaryImageElement != null) {
-         primaryImage = primaryImageElement.attr("src").trim();
-      }
-
-      return primaryImage;
+   private boolean isProductPage(Document doc) {
+      return doc.select(".product-detail").first() != null;
    }
 
-   private String crawlSecondaryImages(Document document) {
-      return null;
-   }
-
-   private CategoryCollection crawlCategories(Document document) {
-      CategoryCollection categories = new CategoryCollection();
-      return categories;
-   }
-
-   private String crawlDescription(Document document) {
-      StringBuilder description = new StringBuilder();
-
-      Elements activeSubstancesElements = document.select("div.DivSustanciasActivas");
-      if (!activeSubstancesElements.isEmpty())
-         description.append(activeSubstancesElements.html());
-
-      return description.toString();
-   }
-
-   /**
-    * There is no bankSlip price.
-    * <p>
-    * There is no card payment options, other than cash price. So for installments, we will have only
-    * one installment for each card brand, and it will be equals to the price crawled on the sku main
-    * page.
-    *
-    * @param doc
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-
-         installmentPriceMap.put(1, price);
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      }
-
-      return prices;
-   }
 
 }
