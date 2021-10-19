@@ -197,6 +197,10 @@ public class MexicoAmazonCrawler extends Crawler {
          if (spotlightPrice == null) {
             spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#soldByThirdParty span", null, false, ',', session);
          }
+
+         if (spotlightPrice == null) {
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.a-price.a-text-price.a-size-medium span", null, false, '.', session);
+         }
       }
 
       CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
