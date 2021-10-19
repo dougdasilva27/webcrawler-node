@@ -152,17 +152,6 @@ public class BrasilMarabrazCrawler extends Crawler {
       return ratingReviews;
    }
 
-   private boolean scrapAvailability(Document doc) {
-      Element buttonElement = doc.selectFirst("div.outOfStock");
-      boolean availability = false;
-
-      if (buttonElement != null) {
-         availability = buttonElement.toString().contains("Produto Esgotado");
-      }
-
-      return availability;
-   }
-
    private JSONObject getJsonPrices(String internalPid) {
       String url = "https://www.marabraz.com.br/ajax/product/prices?product_ids[]=" + internalPid + "&";
 
