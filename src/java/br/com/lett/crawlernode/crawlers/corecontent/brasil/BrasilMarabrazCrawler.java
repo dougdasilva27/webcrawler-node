@@ -46,7 +46,7 @@ public class BrasilMarabrazCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".special-price .price", "content", false, '.', session);
          Prices prices = scrapPrices(internalPid);
-         boolean available = scrapAvailability(doc);
+         boolean available = doc.selectFirst("div.outOfStock") == null;
          CategoryCollection categories = scrapCategories(doc);
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-image img", "src");
          String secondaryImages = scrapSecondaryImages(doc);
@@ -153,11 +153,11 @@ public class BrasilMarabrazCrawler extends Crawler {
    }
 
    private boolean scrapAvailability(Document doc) {
-      Element buttonElement = doc.selectFirst(".add-to-cart-buttons button");
+      Element buttonElement = doc.selectFirst("div.outOfStock");
       boolean availability = false;
 
       if (buttonElement != null) {
-         availability = buttonElement.hasAttr("title") ? buttonElement.attr("title").equalsIgnoreCase("comprar") : false;
+         availability = buttonElement.toString().contains("Produto Esgotado");
       }
 
       return availability;
