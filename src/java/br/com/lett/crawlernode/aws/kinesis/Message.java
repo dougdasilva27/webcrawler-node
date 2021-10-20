@@ -63,7 +63,7 @@ public class Message implements Serializable {
 
       linkedMap.put("status", getStatus());
       linkedMap.put("taskFinish", getTaskFinish());
-      linkedMap.put("productStatus", getStatus());
+      linkedMap.put("productStatus", getProductStatus());
       linkedMap.put("sessionId", getSessionId());
 
       return new org.bson.Document(linkedMap).toJson();
