@@ -47,6 +47,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
       }
 /*
    To first request is using webdriver, because without not capturing redirection and this site have difference in url of category
+   The selectors change with webdriver, so is necessary do another request without
  */
       if (this.currentPage == 1) {
       this.currentDoc = fetchDocumentWithWebDriver(url);
@@ -56,10 +57,15 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
          if (!url.equals(redirectUrl)) {
             this.categoryUrl = redirectUrl;
             this.currentDoc = fetchDocument(this.categoryUrl);
+         } else {
+            this.currentDoc = fetchDocument(url);
          }
+
       } else {
          this.currentDoc = fetchDocument(url);
       }
+
+
 
       Elements products = this.currentDoc.select(".vtex-search-result-3-x-galleryItem.vtex-search-result-3-x-galleryItem--normal.pa4");
       if (!products.isEmpty()) {
