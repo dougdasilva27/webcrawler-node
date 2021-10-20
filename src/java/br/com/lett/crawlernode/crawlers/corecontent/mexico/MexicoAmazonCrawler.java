@@ -153,11 +153,19 @@ public class MexicoAmazonCrawler extends Crawler {
          }
       }
 
+      if(seller == null){
+         seller = CrawlerUtils.scrapStringSimpleInfo(doc, "div.a-column.a-span12.a-text-left.truncate span:last-child", false);
+      }
+
       if (seller != null && !seller.isEmpty()) {
          boolean isMainRetailer = seller.equalsIgnoreCase(SELLER_NAME) || seller.equalsIgnoreCase(SELLER_NAME_2) || seller.equalsIgnoreCase(SELLER_NAME_3) || seller.equalsIgnoreCase(SELLER_NAME_4);
          Pricing pricing = scrapMainPagePricing(doc);
          if (sellerId == null) {
             sellerId = CommonMethods.toSlug(seller);
+         }
+
+         if(seller.contains("México")){
+            seller = seller.replace("México", "").trim();
          }
 
          return Offer.OfferBuilder.create()
