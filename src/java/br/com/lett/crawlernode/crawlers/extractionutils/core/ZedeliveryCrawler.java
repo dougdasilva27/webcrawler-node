@@ -99,12 +99,12 @@ public abstract class ZedeliveryCrawler extends Crawler {
    @Override
    protected Document fetch() {
       Map<String, String> headers = new HashMap<>();
-//      validateUUID();
-//      JSONObject apiJson = validateUUID();
-//      System.out.println("apiJson" + apiJson);
-//      String userAddress = JSONUtils.getValueRecursive(apiJson,"data.manageCheckout.checkout.id", String.class);
-//      System.out.println("userAddress" + userAddress);
-      String cookie = "visitorId=%22d7aaa4b5-546b-4353-b9f5-1a3104d7c2b3%22;  userAddress=%7B%22latitude%22%3A-23.5602401%2C%22longitude%22%3A-46.69625509999999%2C%22zipcode%22%3A%2205426-200%22%2C%22street%22%3A%22Avenida%20Brigadeiro%20Faria%20Lima%22%2C%22neighborhood%22%3A%22Pinheiros%22%2C%22city%22%3A%22S%C3%A3o%20Paulo%22%2C%22province%22%3A%22SP%22%2C%22country%22%3A%22BR%22%2C%22number%22%3A%22100%22%2C%22referencePoint%22%3A%22%22%2C%22type%22%3A%7B%22displayName%22%3A%22%22%2C%22id%22%3A%22HOME%22%7D%7D; deliveryOptions=%7B%22address%22%3A%7B%22latitude%22%3A-23.5602401%2C%22longitude%22%3A-46.69625509999999%2C%22zipcode%22%3A%2205426-200%22%2C%22country%22%3A%22BR%22%2C%22province%22%3A%22SP%22%2C%22city%22%3A%22S%C3%A3o%20Paulo%22%2C%22neighborhood%22%3A%22Pinheiros%22%2C%22street%22%3A%22Avenida%20Brigadeiro%20Faria%20Lima%22%2C%22number%22%3A%22100%22%2C%22addressLine2%22%3Anull%2C%22referencePoint%22%3A%22%22%7D%2C%22deliveryMethod%22%3A%22DELIVERY%22%2C%22schedule%22%3A%22NOW%22%2C%22scheduleDateTime%22%3Anull%2C%22pickupPoc%22%3Anull%7D; ";//"visitorId=%22" + visitorId + "%22;" ;
+      JSONObject apiJson = validateUUID();
+      JSONObject userAddress = JSONUtils.getValueRecursive(apiJson,"data.manageCheckout.checkout.deliveryOption.address", JSONObject.class);
+      JSONObject deliveryOptions = JSONUtils.getValueRecursive(apiJson,"data.manageCheckout.checkout.deliveryOption", JSONObject.class);
+      String cookie = "visitorId=%22" + visitorId +
+         "%22; userAddress=" + URLEncoder.encode(userAddress.toString(), StandardCharsets.UTF_8) +
+         "; deliveryOptions=" + URLEncoder.encode(deliveryOptions.toString(), StandardCharsets.UTF_8) +";";
 
       headers.put("Accept","*/*");
       headers.put("Accept-Encoding","gzip, deflate, br");
