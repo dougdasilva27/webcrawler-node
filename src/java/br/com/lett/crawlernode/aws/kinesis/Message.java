@@ -51,7 +51,7 @@ public class Message implements Serializable {
    public static Message build(SkuStatus skuStatus, String sessionId) {
       Message message = new Message();
 
-      message.setTaskFinish(LocalDateTime.now().toString());
+      message.setTaskFinish(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")).toString());
       message.setStatus("DONE");
       message.setProductStatus(skuStatus.toString());
       message.setSessionId(sessionId);
@@ -60,11 +60,10 @@ public class Message implements Serializable {
 
    public String serializeToKinesis() {
       Map<String, Object> linkedMap = new LinkedHashMap<>();
-
-      linkedMap.put("status", getStatus());
-      linkedMap.put("taskFinish", getTaskFinish());
-      linkedMap.put("productStatus", getProductStatus());
       linkedMap.put("sessionId", getSessionId());
+      linkedMap.put("status", getStatus());
+      linkedMap.put("productStatus", getProductStatus());
+      linkedMap.put("taskFinish", getTaskFinish());
 
       return new org.bson.Document(linkedMap).toJson();
    }
