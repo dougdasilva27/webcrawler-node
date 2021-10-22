@@ -87,7 +87,8 @@ public class KPLProducer {
       long productStartTime = System.currentTimeMillis();
 
       SkuStatus skuStatus = ((Crawler) task).getSkuStatus();
-      Message message = Message.build(skuStatus, session.getSessionId());
+      String internalId = ((Crawler) task).getCrawledInternalId();
+      Message message = Message.build(skuStatus, session.getSessionId(), internalId, session.getMarket().getId(), session.getSupplierId());
 
       getInstance().put(message, session);
 

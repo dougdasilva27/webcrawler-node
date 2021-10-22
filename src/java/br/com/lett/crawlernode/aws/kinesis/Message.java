@@ -14,7 +14,9 @@ public class Message implements Serializable {
    private String status;
    private String productStatus;
    private String sessionId;
-
+   private String supplierId;
+   private String internalId;
+   private String marketId;
 
    public String getStatus() {
       return status;
@@ -48,13 +50,40 @@ public class Message implements Serializable {
       this.sessionId = sessionId;
    }
 
-   public static Message build(SkuStatus skuStatus, String sessionId) {
+   public String getSupplierId() {
+      return supplierId;
+   }
+
+   public void setSupplierId(String supplierId) {
+      this.supplierId = supplierId;
+   }
+
+   public String getInternalId() {
+      return internalId;
+   }
+
+   public void setInternalId(String internalId) {
+      this.internalId = internalId;
+   }
+
+   public String getMarketId() {
+      return marketId;
+   }
+
+   public void setMarketId(String marketId) {
+      this.marketId = marketId;
+   }
+
+   public static Message build(SkuStatus skuStatus, String sessionId, String internalId, Integer marketId, Long supplierId) {
       Message message = new Message();
 
       message.setTaskFinish(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")).toString());
       message.setStatus("DONE");
       message.setProductStatus(skuStatus.toString());
       message.setSessionId(sessionId);
+      message.setMarketId(marketId.toString());
+      message.setInternalId(internalId);
+      message.setSupplierId(supplierId != null ? supplierId.toString() : null);
       return message;
    }
 
