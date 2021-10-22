@@ -17,19 +17,19 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public abstract class SupermarketCrawler extends CrawlerRankingKeywords {
+public class SupermarketCrawler extends CrawlerRankingKeywords {
 
    private static final String BASE_URL = "https://app.bigdatawifi.com.br/";
    private final String store = getStore();
    private String token;
 
-   protected SupermarketCrawler(Session session) {
+   public SupermarketCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
    }
 
    public String getStore() {
-      return store;
+      return session.getOptions().optString("store");
    }
 
    public String fetchCookiesFromAPage() {
