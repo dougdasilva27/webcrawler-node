@@ -660,7 +660,7 @@ public abstract class Crawler extends Task {
 
             if (session instanceof TestCrawlerSession) {
                throw new MalformedProductException("THIS PRODUCT IS AVAILABLE BUT THIS MARKET REGEX DOES NOT MATCHES "
-                  + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS");
+                  + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS " + getFirstPartyRegex(product) );
             }
          }
 
@@ -689,6 +689,21 @@ public abstract class Crawler extends Task {
 
       return status;
    }
+
+   private String getFirstPartyRegex(Product product) {
+
+      StringBuilder stringBuilder = new StringBuilder();
+      Offers offers = product.getOffers();
+      if (offers != null && !offers.isEmpty()){
+         for (Offer offer : offers.getOffersList()) {
+            stringBuilder.append("\n--");
+             stringBuilder.append(offer.getSlugSellerName());
+             stringBuilder.append("--");
+         }
+      }
+      return stringBuilder.toString();
+   }
+
 
    @Override
    public void onFinish() {
