@@ -60,7 +60,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
    public BrasilAmazonCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.FETCHER);
 
    }
 
@@ -72,9 +72,9 @@ public class BrasilAmazonCrawler extends Crawler {
    @Override
    protected Document fetch() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("Accept-Encoding", "no");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
       headers.put("authority", "www.amazon.com.br");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.104 Safari/537.36");
 
       Request requestApache = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
@@ -82,7 +82,7 @@ public class BrasilAmazonCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
