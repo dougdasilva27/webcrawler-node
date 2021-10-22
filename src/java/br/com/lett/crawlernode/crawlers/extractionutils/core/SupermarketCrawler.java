@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-public abstract class SupermarketCrawler extends Crawler {
+public class SupermarketCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Super Market";
    private final String store = getStore();
    private final Pattern urlPattern = Pattern.compile("^https:\\/\\/app[.]bigdatawifi[.]com[.]br[\\/]" + store + ".*");
@@ -38,7 +38,7 @@ public abstract class SupermarketCrawler extends Crawler {
    }
 
    public String getStore() {
-      return store;
+      return session.getOptions().optString("store");
    }
 
    @Override
