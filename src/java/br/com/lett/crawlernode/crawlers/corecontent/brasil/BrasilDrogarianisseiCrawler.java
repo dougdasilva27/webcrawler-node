@@ -2,8 +2,12 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.models.*;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -31,19 +35,19 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.farmaciasnissei.com.br/";
 
    public BrasilDrogarianisseiCrawler(Session session) {
-
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
-      cacheConfig.setRequest(Request.RequestBuilder.create()
-         .setUrl(HOME_PAGE)
-         .build());
-      cacheConfig.setRequestMethod(RequestMethod.GET);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, "www.farmaciasnissei.com.br", "/", cookies, session, null, dataFetcher);
    }
 
    @Override
@@ -188,7 +192,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       headers.put("cookie", cookies);
       headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put("referer", session.getOriginalURL());
-
 
       String payload = "csrfmiddlewaretoken=" + token + "&produtos_ids%5B%5D=" + internalId;
 
