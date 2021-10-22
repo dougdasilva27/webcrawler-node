@@ -91,6 +91,9 @@ public class Message implements Serializable {
       Map<String, Object> linkedMap = new LinkedHashMap<>();
       linkedMap.put("sessionId", getSessionId());
       linkedMap.put("status", getStatus());
+      linkedMap.put("supplier_id)", getSupplierId());
+      linkedMap.put("market_id)", getMarketId());
+      linkedMap.put("internal_id)", getInternalId());
       linkedMap.put("productStatus", getProductStatus());
       linkedMap.put("taskFinish", getTaskFinish());
 
