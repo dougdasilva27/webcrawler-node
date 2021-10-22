@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -40,7 +39,8 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
       this.pageSize = 48;
-      String url = "https://www.zonasul.com.br/" + this.keywordEncoded + "?_q=" + this.keywordEncoded + "&map=ft&page=" + this.currentPage;
+      String keyword = this.keywordEncoded.replace("+", "%20");
+      String url = "https://www.zonasul.com.br/" + keyword + "?_q=" + keyword + "&map=ft&page=" + this.currentPage;
 
       if (this.currentPage > 1 && this.categoryUrl != null) {
          url = this.categoryUrl + "?page=" + this.currentPage;
@@ -50,7 +50,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
    The selectors change with webdriver, so is necessary do another request without
  */
       if (this.currentPage == 1) {
-      this.currentDoc = fetchDocumentWithWebDriver(url);
+         this.currentDoc = fetchDocumentWithWebDriver(url);
 
          String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
 
@@ -64,7 +64,6 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
       } else {
          this.currentDoc = fetchDocument(url);
       }
-
 
 
       Elements products = this.currentDoc.select(".vtex-search-result-3-x-galleryItem.vtex-search-result-3-x-galleryItem--normal.pa4");
