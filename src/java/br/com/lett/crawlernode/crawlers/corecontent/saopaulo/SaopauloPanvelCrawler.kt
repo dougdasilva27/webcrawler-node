@@ -25,8 +25,6 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
    init {
       config.fetcher = FetchMode.APACHE
       cookies.add(BasicClientCookie("stc112189", LocalDate.now().toEpochDay().toString()))
-      cacheConfig.request = Request.RequestBuilder.create().setCookies(cookies).setUrl("https://www.panvel.com/panvel/main.do").build()
-      cacheConfig.requestMethod = RequestMethod.GET
    }
 
    override fun fetch(): Any? {

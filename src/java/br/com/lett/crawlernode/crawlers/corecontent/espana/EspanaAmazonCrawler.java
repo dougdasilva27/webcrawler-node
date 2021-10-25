@@ -69,8 +69,6 @@ public class EspanaAmazonCrawler extends Crawler {
    public EspanaAmazonCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
-      cacheConfig.setRequest(this.amazonScraperUtils.getRequestCookies(HOME_PAGE, cookies, dataFetcher));
-      cacheConfig.setRequestMethod(RequestMethod.GET);
    }
 
    @Override
