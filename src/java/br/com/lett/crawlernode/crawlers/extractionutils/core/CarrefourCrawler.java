@@ -139,7 +139,7 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       return internalPid;
    }
 
-   @SneakyThrows
+
    @Override
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
 
