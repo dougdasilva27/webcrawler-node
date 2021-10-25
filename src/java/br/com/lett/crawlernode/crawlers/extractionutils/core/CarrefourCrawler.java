@@ -1,22 +1,5 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import exceptions.OfferException;
-import lombok.SneakyThrows;
-import models.Offer;
-import models.Offers;
-import models.pricing.CreditCards;
-import models.pricing.Pricing;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
@@ -32,14 +15,29 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.AdvancedRatingReview;
+import models.Offer;
+import models.Offers;
 import models.RatingsReviews;
 import models.pricing.BankSlip;
+import models.pricing.CreditCards;
+import models.pricing.Pricing;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.yaml.snakeyaml.util.UriEncoder;
 
-public abstract class CarrefourCrawler extends VTEXNewScraper {
+import java.io.UnsupportedEncodingException;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class CarrefourCrawler extends VTEXNewScraper {
 
    private static final List<String> SELLERS = Collections.singletonList("Carrefour");
+   public static final String HOME_PAGE = "https://mercado.carrefour.com.br/";
    private JSONArray crawlerApi;
    private JSONObject productObject;
 
@@ -48,12 +46,19 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       super.config.setFetcher(FetchMode.APACHE);
    }
 
+   @Override
+   protected String getHomePage() {
+      return homePage;
+   }
+
    /**
     * Usually it is the "vtex_segment" cookie
     *
     * @return location token string
     */
-   protected abstract String getLocationToken();
+   protected String getLocationToken(){
+      return session.getOptions().optString("vtex_segment");
+   }
 
    protected String getCep() {
       return null;
