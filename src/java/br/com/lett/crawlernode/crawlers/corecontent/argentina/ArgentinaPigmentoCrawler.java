@@ -1,19 +1,26 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.pricing.BankSlip.BankSlipBuilder;
@@ -24,131 +31,167 @@ import models.pricing.Installments;
 import models.pricing.Pricing.PricingBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class ArgentinaPigmentoCrawler extends Crawler {
 
-  public ArgentinaPigmentoCrawler(Session session) {
-    super(session);
-  }
+   public ArgentinaPigmentoCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  public List<Product> extractInformation(Document document) throws Exception {
-    List<Product> products = new ArrayList<>();
+   @Override
+   public List<Product> extractInformation(Document document) throws Exception {
+      List<Product> products = new ArrayList<>();
 
-    if (document.selectFirst(".product-info-wrap.wrap-content") != null) {
+      if (document.selectFirst("div.vtex-store-components-3-x-container") != null) {
+         JSONObject json = CrawlerUtils.selectJsonFromHtml(document, "script[type=application/ld+json]", null, null, false, false);
+         String internalPid = json.optString("mpn");
+         String description = document.selectFirst("div.vtex-tab-layout-0-x-container.vtex-tab-layout-0-x-container--titulos-tab-pdp").wholeText();
 
-      String internalId =
-          document.selectFirst(".price-box.price-final_price").attr("data-product-id");
+         JSONArray variations = json.has("offers") ? json.optJSONObject("offers").optJSONArray("offers") : new JSONArray();
 
-      String name = document.selectFirst(".base").text();
+         for (Object o : variations) {
+            JSONObject variation = (JSONObject) o;
+            Document variationPage = document;
 
-      String description = document.selectFirst(".data.item.content").wholeText();
+            String internalId = variation.optString("sku");
 
-      List<String> categories = document.select("ul.items strong").eachText();
+            if (variations.length() > 1 && !session.getOriginalURL().contains(internalId)) {
+               variationPage = scrapVariation(internalId);
+            }
 
-      Offers offers = scrapOffers(document);
+            if (variationPage != null) {
+               String name = json.optString("name");
+               name += " " + scrapName(variationPage);
+               List<String> categories = variationPage.select("div.vtex-breadcrumb-1-x-container a[href]").eachText();
+               List<String> images = scrapImages(variationPage);
+               String primaryImage = images.isEmpty() ? "" : images.remove(0);
 
-      List<JSONObject> jsonImages = scrapJsonImages(document);
-      JSONArray secondaryImages = new JSONArray();
-      String primaryImage = null;
-      for (JSONObject jsonImage : jsonImages) {
-        String image = jsonImage.optString("full");
-        if (jsonImage.optBoolean("isMain")) {
-          primaryImage = image;
-        } else {
-          secondaryImages.put(image);
-        }
+               Offers offers = scrapOffers(document);
+
+               products.add(
+                  ProductBuilder.create()
+                     .setUrl(session.getOriginalURL())
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setOffers(offers)
+                     .setCategories(categories)
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(images)
+                     .setDescription(description)
+                     .build());
+            }
+         }
       }
 
-      products.add(
-          ProductBuilder.create()
-              .setUrl(session.getOriginalURL())
-              .setInternalId(internalId)
-              .setName(name)
-              .setOffers(offers)
-              .setCategories(categories)
-              .setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages.toString())
-              .setDescription(description)
-              .build());
-    }
-    return products;
-  }
+      return products;
+   }
 
-  private List<JSONObject> scrapJsonImages(Document doc) {
-    List<JSONObject> listJson = new ArrayList<>();
-    Optional<Element> optElem =
-        doc.select("script[type='text/x-magento-init']").stream()
-            .filter(element -> element.html().contains("full"))
-            .findFirst();
-    JSONObject jsonObject =
-        optElem.map(element -> new JSONObject(element.html())).orElseGet(JSONObject::new);
+   private List<String> scrapImages(Document doc) {
+      List<String> images = new ArrayList<>();
+      String imagesAttr = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "img.vtex-store-components-3-x-productImageTag.vtex-store-components-3-x-productImageTag--main", "srcset");
 
-    JSONObject jsonObject1 = jsonObject.optJSONObject("[data-gallery-role=gallery-placeholder]");
-    if (jsonObject1 != null) {
-      JSONObject jsonObject2 = jsonObject1.optJSONObject("mage/gallery/gallery");
-      if (jsonObject2 != null) {
-        for (Object data : jsonObject2.optJSONArray("data")) {
-          listJson.add((JSONObject) data);
-        }
+      if (imagesAttr != null && !imagesAttr.equals("")) {
+         String[] urls = imagesAttr.split(" ");
+
+         if (urls.length != 0) {
+            for (String url : urls) {
+               if (url.contains("https")) {
+                  images.add(url);
+               }
+            }
+         }
       }
-    }
 
-    return listJson;
-  }
+      return images;
+   }
 
-  private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
-    Offers offers = new Offers();
-    Double price =
-        MathUtils.parseDoubleWithComma(
-            doc.selectFirst("span[data-price-type=finalPrice] .price").text());
+   private Document scrapVariation(String internalId) {
+      try {
+         URI uri = new URI(session.getOriginalURL());
+         String url = uri.toString();
 
-    Double priceFrom = null;
-    Element priceFromElem = doc.selectFirst("span[data-price-type=oldPrice] .price");
-    if (priceFromElem != null) {
-      priceFrom = MathUtils.parseDoubleWithComma(priceFromElem.text());
-    }
+         if (uri.getQuery() != null) {
+            url = url.substring(0, url.indexOf("=")) + "=" + internalId;
+         } else {
+            url += "?skuId=" + internalId;
+         }
 
-    CreditCards creditCards =
-        new CreditCards(
+         Request request = new Request.RequestBuilder()
+            .setUrl(url)
+            .build();
+
+         Response response = this.dataFetcher.get(session, request);
+         return Jsoup.parse(response.getBody());
+      } catch (Exception e) {
+         Logging.printLogDebug(logger, e.getMessage());
+      }
+
+      return null;
+   }
+
+   //vtex-store-components-3-x-productNameContainer vtex-store-components-3-x-productNameContainer--product-name-pdp mv0 t-heading-4
+
+   private String scrapName(Document doc) {
+      String name = "";
+      Elements elements = doc.select("span.vtex-store-components-3-x-productBrand.vtex-store-components-3-x-productBrand--product-name-pdp");
+
+      if (!elements.isEmpty()) {
+         Element el = elements.last();
+
+         name = el.html();
+      }
+
+      return name;
+   }
+
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.vtex-product-price-1-x-sellingPriceValue span.vtex-product-price-1-x-currencyContainer", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.vtex-product-price-1-x-listPriceValue.strike span.vtex-product-price-1-x-currencyContainer", null, false, ',', session);
+
+      CreditCards creditCards =
+         new CreditCards(
             Stream.of(Card.MASTERCARD, Card.VISA, Card.AMEX, Card.DINERS, Card.HIPERCARD)
-                .map(
-                    card -> {
-                      try {
+               .map(
+                  card -> {
+                     try {
                         return CreditCardBuilder.create()
-                            .setBrand(card.toString())
-                            .setIsShopCard(false)
-                            .setInstallments(
-                                new Installments(
-                                    Collections.singleton(
-                                        InstallmentBuilder.create()
-                                            .setInstallmentPrice(price)
-                                            .setInstallmentNumber(1)
-                                            .build())))
-                            .build();
-                      } catch (MalformedPricingException e) {
+                           .setBrand(card.toString())
+                           .setIsShopCard(false)
+                           .setInstallments(
+                              new Installments(
+                                 Collections.singleton(
+                                    InstallmentBuilder.create()
+                                       .setInstallmentPrice(price)
+                                       .setInstallmentNumber(1)
+                                       .build())))
+                           .build();
+                     } catch (MalformedPricingException e) {
                         throw new RuntimeException(e);
-                      }
-                    })
-                .collect(Collectors.toList()));
+                     }
+                  })
+               .collect(Collectors.toList()));
 
-    offers.add(
-        OfferBuilder.create()
+      offers.add(
+         OfferBuilder.create()
             .setSellerFullName("Pigmento")
             .setIsBuybox(false)
             .setPricing(
-                PricingBuilder.create()
-                    .setSpotlightPrice(price)
-                    .setPriceFrom(priceFrom)
-                    .setBankSlip(BankSlipBuilder.create().setFinalPrice(price).build())
-                    .setCreditCards(creditCards)
-                    .build())
+               PricingBuilder.create()
+                  .setSpotlightPrice(price)
+                  .setPriceFrom(priceFrom)
+                  .setBankSlip(BankSlipBuilder.create().setFinalPrice(price).build())
+                  .setCreditCards(creditCards)
+                  .build())
             .setIsMainRetailer(true)
             .setUseSlugNameAsInternalSellerId(true)
             .build());
 
-    return offers;
-  }
+      return offers;
+   }
 }
