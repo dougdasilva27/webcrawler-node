@@ -25,7 +25,7 @@ class SalvadorHiperidealCrawler(session: Session) : VTEXOldScraper(session) {
 	override fun crawlProductApi(internalPid: String?, parameters: String?): JSONObject {
 		  var productApi = JSONObject();
 
-      val url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid + "&sc=9";
+      val url = homePage + "api/catalog_system/pub/products/search?fq=skuId:" + internalPid;
 
       val request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
       val array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());

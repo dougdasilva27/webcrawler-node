@@ -151,11 +151,19 @@ public class MexicoAmazonCrawler extends Crawler {
          }
       }
 
+      if(seller == null){
+         seller = CrawlerUtils.scrapStringSimpleInfo(doc, "div.tabular-buybox div.tabular-buybox-text span.a-size-small", false);
+      }
+
       if (seller != null && !seller.isEmpty()) {
          boolean isMainRetailer = seller.equalsIgnoreCase(SELLER_NAME) || seller.equalsIgnoreCase(SELLER_NAME_2) || seller.equalsIgnoreCase(SELLER_NAME_3) || seller.equalsIgnoreCase(SELLER_NAME_4);
          Pricing pricing = scrapMainPagePricing(doc);
          if (sellerId == null) {
             sellerId = CommonMethods.toSlug(seller);
+         }
+
+         if(seller.contains("México")){
+            seller = seller.replace("México", "").trim();
          }
 
          return Offer.OfferBuilder.create()
@@ -194,6 +202,10 @@ public class MexicoAmazonCrawler extends Crawler {
 
          if (spotlightPrice == null) {
             spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#soldByThirdParty span", null, false, ',', session);
+         }
+
+         if (spotlightPrice == null) {
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.a-price.a-text-price.a-size-medium span", null, false, '.', session);
          }
       }
 

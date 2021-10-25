@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -27,9 +29,25 @@ public class ColombiaTiendasjumboCrawler extends Crawler {
   private static final String MAIN_SELLER_NAME_LOWER_2 = "jumbo colombia food";
   private static final List<String> SELLERS = Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2);
 
+  private String vtex_segment = getVtex_segment();
+
   public ColombiaTiendasjumboCrawler(Session session) {
     super(session);
   }
+
+   private String getVtex_segment(){
+      return session.getOptions().optString("vtex_segment");
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch(){
+      if(vtex_segment != null){
+         BasicClientCookie cookie = new BasicClientCookie("vtex_segment", vtex_segment);
+         cookie.setDomain("www.tiendasjumbo.co");
+         cookie.setPath("/");
+         this.cookies.add(cookie);
+      }
+   }
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {

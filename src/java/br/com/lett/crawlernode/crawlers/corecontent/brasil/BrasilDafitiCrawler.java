@@ -187,9 +187,15 @@ public class BrasilDafitiCrawler extends Crawler {
       if (priceElement != null) {
          Double price = MathUtils.parseDoubleWithComma(priceElement.ownText());
          CreditCards creditCards = scrapCard(doc, skuJson);
+
+         BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+            .setFinalPrice(price)
+            .build();
+
          pricing = Pricing.PricingBuilder.create()
             .setSpotlightPrice(price)
             .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
             .build();
       }
 

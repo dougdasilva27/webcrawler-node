@@ -274,11 +274,15 @@ public class ColombiaLarebajaCrawler extends Crawler {
       }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
          .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
          .build();
    }
 

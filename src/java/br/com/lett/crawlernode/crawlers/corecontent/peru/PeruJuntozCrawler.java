@@ -28,10 +28,11 @@ public class PeruJuntozCrawler extends Crawler {
 
    public PeruJuntozCrawler(Session session) {
       super(session);
+      this.config.setParser(Parser.JSON);
    }
 
    @Override
-   protected JSONObject fetch() {
+   protected Response fetchResponse() {
       String productSlug = session.getOriginalURL().substring(28).replaceAll("\\?ref=.*", "");
       String url = "https://juntoz.com/proxy/products/" + productSlug + "/variations";
 
@@ -39,8 +40,7 @@ public class PeruJuntozCrawler extends Crawler {
          .setUrl(url)
          .build();
 
-      Response response = this.dataFetcher.get(session, request);
-      return JSONUtils.stringToJson(response.getBody());
+      return this.dataFetcher.get(session, request);
    }
 
    protected JSONObject fetchRatings(String internalPid) {
