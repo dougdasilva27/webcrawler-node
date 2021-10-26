@@ -13,6 +13,7 @@ import models.pricing.Installment
 import models.pricing.Installments
 import models.pricing.Pricing
 import org.jsoup.nodes.Document
+import java.util.*
 
 class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
 
@@ -38,14 +39,16 @@ class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
 
          val internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-reference", true)
 
-         val primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-detail .produto-imagem img", "src")
-         val secondaryImages = doc.select(".product-detail .produto-imagem-miniatura img").toSecondaryImagesBy("src", arrayOf(0))
+         val images = scrapImages(doc)
+         val primaryImage = if (images.isNotEmpty()) images.removeAt(0) else ""
 
          val description = CrawlerUtils.scrapSimpleDescription(doc, listOf(".product-tabs .description"))
 
          val isAvailable = doc.selectFirst(".produto-preco .PrecoPrincipal span") != null
 
-         val offers = if(isAvailable) scrapOffers(doc) else Offers()
+         val offers = if (isAvailable) scrapOffers(doc) else Offers()
+
+         val ean = scrapEan(doc);
 
          val product = ProductBuilder()
             .setUrl(session.originalURL)
@@ -54,9 +57,10 @@ class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
+            .setSecondaryImages(images)
             .setDescription(description)
             .setOffers(offers)
+            .setEans(Collections.singletonList(ean))
             .build()
 
          products.add(product)
@@ -68,6 +72,29 @@ class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
 
    private fun isProductPage(doc: Document): Boolean {
       return doc.selectFirst(".product-detail") != null
+   }
+
+   private fun scrapImages(doc: Document): MutableList<String> {
+      val imgList: MutableList<String> = ArrayList()
+
+      val elements = doc.select("div.image-show div.zoom img")
+      for (el in elements) {
+         imgList.add(el?.attr("data-src").toString())
+      }
+      return imgList
+   }
+
+   private fun scrapEan(doc: Document): String {
+      var ean = ""
+      val elements = doc.select("div#ficha tbody tr")
+
+      for (el in elements) {
+         if (el.toString().contains("código de barras")) {
+            ean = el.select("td")?.last()?.html().toString()
+            break
+         }
+      }
+      return ean
    }
 
    private fun scrapOffers(doc: Document): Offers {
