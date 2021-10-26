@@ -27,9 +27,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public abstract class CarrefourMercadoRanking extends CrawlerRankingKeywords {
+public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
 
-   protected CarrefourMercadoRanking(Session session) {
+   public CarrefourMercadoRanking(Session session) {
       super(session);
       dataFetcher = new JsoupDataFetcher();
       this.pageSize = 12;
@@ -37,6 +37,7 @@ public abstract class CarrefourMercadoRanking extends CrawlerRankingKeywords {
 
    private static final String OPERATION_NAME = "SearchQuery";
    private static final String SHA256 = "e0cccb090ae312126d6b49303fa1fb8105e6cf883d8d307c5b73b1436c427cce";
+   public static final String HOME_PAGE = "https://mercado.carrefour.com.br/";
 
    @Override
    protected void processBeforeFetch() {
@@ -55,14 +56,18 @@ public abstract class CarrefourMercadoRanking extends CrawlerRankingKeywords {
       }
    }
 
-   protected abstract String getHomePage();
+   protected  String getHomePage(){
+      return HOME_PAGE;
+   }
 
-   protected abstract String getLocation();
+   protected String getLocation(){
+      return session.getOptions().optString("vtex_segment");
+   }
 
    protected String getRegionId() {
       String[] chunks = getLocation().split("\\.");
 
-      JSONObject locationJson = JSONUtils.stringToJson(new String(Base64.getDecoder().decode(chunks[1]), StandardCharsets.UTF_8));
+      JSONObject locationJson = JSONUtils.stringToJson(new String(Base64.getDecoder().decode(chunks[0]), StandardCharsets.UTF_8));
 
       return locationJson.optString("regionId", null);
    }
