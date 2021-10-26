@@ -164,19 +164,14 @@ public class BrasilAmazonCrawler extends Crawler {
 
          String description = crawlDescription(doc);
          Integer stock = null;
-
+         List<String> eans = crawlEan(doc);
          Offer mainPageOffer = scrapMainPageOffer(doc);
          List<Document> docOffers = fetchDocumentsOffers(doc, internalId);
          Offers offers = scrapOffers(doc, docOffers, mainPageOffer);
 
-         String ean = crawlEan(doc);
-
          RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
          ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
          RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
-
-         List<String> eans = new ArrayList<>();
-         eans.add(ean);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -700,22 +695,23 @@ public class BrasilAmazonCrawler extends Crawler {
       return description.toString();
    }
 
-   private String crawlEan(Document doc) {
+   private List<String> crawlEan(Document doc) {
       String ean = null;
 
-      List<String> eanKeys = Arrays.asList("código de barras:", "ean:", "eans:", "código de barras", "codigo de barras", "ean", "eans");
+      List<String> eanKeys = Arrays.asList("código de barras:", "ean:", "eans:", "código de barras", "codigo de barras", "ean", "eans", "EAN");
 
-      Elements attributes = doc.select(".pdTab table tr:not([class]):not([id]):not(:last-child)");
+      Elements attributes = doc.select(".a-keyvalue.prodDetTable tbody tr");
       for (Element att : attributes) {
-         String key = CrawlerUtils.scrapStringSimpleInfo(att, ".label", true).toLowerCase();
+         String key = CrawlerUtils.scrapStringSimpleInfo(att, ".prodDetSectionEntry", true);
 
-         if (eanKeys.contains(key)) {
-            ean = CrawlerUtils.scrapStringSimpleInfo(att, ".value", true);
+         if (key != null && eanKeys.contains(key.toLowerCase())) {
+            ean = CrawlerUtils.scrapStringSimpleInfo(att, ".a-size-base.prodDetAttrValue", true);
 
             break;
          }
       }
 
-      return ean;
+      return ean != null ? new ArrayList<>(Arrays.asList(ean.split(","))) : null;
+
    }
 }
