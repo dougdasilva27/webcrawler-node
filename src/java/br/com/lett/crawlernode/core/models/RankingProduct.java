@@ -167,11 +167,11 @@ public class RankingProduct {
             ", position= " + position +
             ", internalPid= " + internalPid +
             ", internalId= " + internalId +
+            ", url= " + url +
+            ", name= " + name +
             ", priceInCents= " + priceInCents +
             ", isAvailable= " + isAvailable +
             ", isSponsored= " + isSponsored +
-            ", name= " + name +
-            ", url= " + url +
             ", imageUrl= " + imageUrl;
    }
 }

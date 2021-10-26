@@ -329,6 +329,17 @@ public abstract class CrawlerRanking extends Task {
       rankingProducts.setUrl(url);
       rankingProducts.setPosition(position);
 
+      JSONObject metadataJson = new JSONObject();
+      metadataJson.put("keyword", this.location);
+      metadataJson.put("position", position);
+      metadataJson.put("url", url);
+
+      Logging.logInfo(logger, session, metadataJson, "Keyword= " + this.location + ","+ " PageNumber= " + currentPage +
+         ", position= " + position +
+         ", internalPid= " + pid +
+         ", internalId= " + internalId +
+         ", url= " + url);
+
       if (!screenshotsAddress.isEmpty()) {
          switch (this.currentPage) {
             case 1:
@@ -365,6 +376,12 @@ public abstract class CrawlerRanking extends Task {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
 
+               Logging.logInfo(logger, session, metadataJson, "Product already found - Keyword= " + this.location +
+                  ", processed= " + p.getId() +
+                  ", internal id= " + internalId +
+                  ", pid= " + pid +
+                  ", url= " + p.getUrl());
+
                if (p.isVoid() && url != null && !p.getUrl().equals(url)) {
                   saveProductUrlToQueue(url);
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + url);
@@ -372,6 +389,10 @@ public abstract class CrawlerRanking extends Task {
             }
 
          } else if (url != null && processedIds.isEmpty()) {
+            Logging.logInfo(logger, session, metadataJson, "New product found - Keyword= " + this.location + "," +
+               ", internal id= " + internalId +
+               ", pid= " + pid +
+               ", url= " + url);
             saveProductUrlToQueue(url);
          }
 
@@ -396,7 +417,12 @@ public abstract class CrawlerRanking extends Task {
       product.setPageNumber(this.currentPage);
       product.setMarketId(session.getMarket().getId());
 
-      this.log(product.toString());
+      JSONObject metadataJson = new JSONObject();
+      metadataJson.put("keyword", this.location);
+      metadataJson.put("position", product.getPosition());
+      metadataJson.put("url", product.getUrl());
+
+      Logging.logInfo(logger, session, metadataJson, "Keyword= " + this.location + "," + product.toString());
 
       if (!screenshotsAddress.isEmpty()) {
          switch (this.currentPage) {
@@ -434,6 +460,12 @@ public abstract class CrawlerRanking extends Task {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
 
+               Logging.logInfo(logger, session, metadataJson, "Product already found - Keyword= " + this.location +
+                  ", processed= " + p.getId() +
+                  ", internal id= " + product.getInternalId() +
+                  ", pid= " + product.getInternalId() +
+                  ", url= " + p.getUrl());
+
                if (p.isVoid() && product.getUrl() != null && !p.getUrl().equals(product.getUrl())) {
                   saveProductUrlToQueue(product.getUrl());
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + product.getUrl());
@@ -441,6 +473,10 @@ public abstract class CrawlerRanking extends Task {
             }
 
          } else if (product.getUrl() != null && processedIds.isEmpty()) {
+            Logging.logInfo(logger, session, metadataJson, "New product found - Keyword= " + this.location + "," +
+               ", internal id= " + product.getInternalId() +
+               ", pid= " + product.getInternalId() +
+               ", url= " + product.getUrl());
             saveProductUrlToQueue(product.getUrl());
          }
 
