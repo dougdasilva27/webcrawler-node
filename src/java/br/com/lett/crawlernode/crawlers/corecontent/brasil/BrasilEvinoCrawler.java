@@ -9,14 +9,26 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
 import models.prices.Prices;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 
 public class BrasilEvinoCrawler extends Crawler {
+
+   private static final String SELLER_FULL_NAME = "evino";
+   protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString());
+
 
    public BrasilEvinoCrawler(Session session) {
       super(session);
@@ -30,15 +42,13 @@ public class BrasilEvinoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONObject skuJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "var TC = ", null, false, false);
+         JSONObject skuJson = getScriptJson(doc);
          JSONObject productBiggyJson = skuJson.has("productBiggyJson") ? new JSONObject(skuJson.get("productBiggyJson").toString()) : new JSONObject();
          JSONArray biggyJson = productBiggyJson.has("skus") ? productBiggyJson.getJSONArray("skus") : new JSONArray();
 
          String name = crawlName(productBiggyJson);
          String primaryImage = crawlPrimaryImage(productBiggyJson);
-         Float price = crawlPrice(productBiggyJson);
          CategoryCollection categories = crawlCategories(productBiggyJson);
-         Prices prices = crawlPrices(productBiggyJson);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".Product__details"));
          String internalPid = crawlInternalPid(productBiggyJson);
 
@@ -48,12 +58,13 @@ public class BrasilEvinoCrawler extends Crawler {
             String internalId = crawlInternalId(variation);
             Boolean available = crawlAvailability(variation);
             Integer stock = crawlStock(variation);
+            Offers offers = available ? scrapOffers(productBiggyJson) : new Offers();
 
             // Creating the product
             Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-                  .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description)
-                  .setStock(stock).setMarketplace(null).setEans(null).build();
+                 .setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description).setOffers(offers)
+                  .setStock(stock).setEans(null).build();
 
             products.add(product);
          }
@@ -64,30 +75,28 @@ public class BrasilEvinoCrawler extends Crawler {
       return products;
    }
 
+   private JSONObject getScriptJson(Document doc){
+      JSONObject jsonObject = new JSONObject();
+      Elements scripts = doc.select("script[type=\"text/javascript\"]");
+      for (Element e : scripts){
+         String script = e.html();
+
+         if (script.contains("var TC = ")){
+            String[] withoutToken = script.split("var TC = ");
+            if (withoutToken.length > 0){
+               jsonObject = CrawlerUtils.stringToJson(withoutToken[1].split("if")[0]);
+            }
+         }
+      }
+
+      return jsonObject;
+
+   }
+
    private Integer crawlStock(JSONObject variation) {
       return variation.has("stockQuantity") ? variation.getInt("stockQuantity") : null;
    }
 
-   private Prices crawlPrices(JSONObject productBiggyJson) {
-
-      Prices prices = new Prices();
-      Double priceFrom = productBiggyJson.has("oldPrice") ? MathUtils.parseDoubleWithDot(productBiggyJson.get("oldPrice").toString()) : null;
-      Float price = productBiggyJson.has("price") ? MathUtils.parseFloatWithDots(productBiggyJson.get("price").toString()) : null;
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      installmentPriceMap.put(1, price);
-
-      prices.setBankTicketPrice(price);
-      prices.setPriceFrom(priceFrom);
-
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-
-      return prices;
-   }
 
    private CategoryCollection crawlCategories(JSONObject productBiggyJson) {
       CategoryCollection categories = new CategoryCollection();
@@ -100,10 +109,6 @@ public class BrasilEvinoCrawler extends Crawler {
       }
 
       return categories;
-   }
-
-   private Float crawlPrice(JSONObject productBiggyJson) {
-      return productBiggyJson.has("price") ? MathUtils.parseFloatWithDots(productBiggyJson.get("price").toString()) : null;
    }
 
    private String crawlPrimaryImage(JSONObject productBiggyJson) {
@@ -141,5 +146,70 @@ public class BrasilEvinoCrawler extends Crawler {
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".Product") != null;
    }
+
+   private Offers scrapOffers(JSONObject productBiggyJson) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(productBiggyJson);
+      List<String> sales = scrapSales(pricing);
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setSales(sales)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .build());
+
+      return offers;
+
+   }
+
+   private Pricing scrapPricing(JSONObject productBiggyJson) throws MalformedPricingException {
+      Double priceFrom = productBiggyJson.has("oldPrice") ? MathUtils.parseDoubleWithDot(productBiggyJson.get("oldPrice").toString()) : null;
+      Double spotlightPrice = productBiggyJson.has("price") ? MathUtils.parseDoubleWithDot(productBiggyJson.get("price").toString()) : null;
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+   private List<String> scrapSales(Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+
+      String saleDiscount = CrawlerUtils.calculateSales(pricing);
+
+      if (saleDiscount != null) {
+         sales.add(saleDiscount);
+      }
+
+      return sales;
+   }
+
 
 }
