@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class Message implements Serializable {
 
-   private String taskFinish;
+   private String timestamp;
    private String status;
    private String productStatus;
    private String sessionId;
@@ -34,12 +34,12 @@ public class Message implements Serializable {
       this.productStatus = productStatus;
    }
 
-   public String getTaskFinish() {
-      return taskFinish;
+   public String getTimestamp() {
+      return timestamp;
    }
 
-   public void setTaskFinish(String scheduled) {
-      this.taskFinish = scheduled;
+   public void setTimestamp(String scheduled) {
+      this.timestamp = timestamp;
    }
 
    public String getSessionId() {
@@ -77,7 +77,7 @@ public class Message implements Serializable {
    public static Message build(SkuStatus skuStatus, String sessionId, String internalId, Integer marketId, Long supplierId) {
       Message message = new Message();
 
-      message.setTaskFinish(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")).toString());
+      message.setTimestamp(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")).toString());
       message.setStatus("DONE");
       message.setProductStatus(skuStatus.toString());
       message.setSessionId(sessionId);
@@ -95,7 +95,7 @@ public class Message implements Serializable {
       linkedMap.put("market_id", getMarketId());
       linkedMap.put("internal_id", getInternalId());
       linkedMap.put("productStatus", getProductStatus());
-      linkedMap.put("taskFinish", getTaskFinish());
+      linkedMap.put("timestamp", getTimestamp());
 
       return new org.bson.Document(linkedMap).toJson();
    }
