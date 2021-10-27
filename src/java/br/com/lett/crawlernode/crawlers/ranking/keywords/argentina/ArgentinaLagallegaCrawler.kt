@@ -2,10 +2,12 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.models.Request
+import br.com.lett.crawlernode.core.models.RankingProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CommonMethods
 import br.com.lett.crawlernode.util.CrawlerUtils
+import br.com.lett.crawlernode.util.product
 import br.com.lett.crawlernode.util.toDoc
 import org.apache.http.cookie.Cookie
 import org.apache.http.impl.cookie.BasicClientCookie
@@ -51,7 +53,6 @@ class ArgentinaLagallegaCrawler(session: Session) : CrawlerRankingKeywords(sessi
    }
 
    override fun extractProductsFromCurrentPage() {
-
       val url1 = "https://www.lagallega.com.ar/Productos.asp?cpoBuscar=${getKeyword()}"
       val url2 = "https://www.lagallega.com.ar/productos.asp?page=${currentPage}&N1=&N2=&N3=&N4="
 
@@ -60,12 +61,23 @@ class ArgentinaLagallegaCrawler(session: Session) : CrawlerRankingKeywords(sessi
       val products = currentDoc.select(".listaProds li")
 
       for (productDoc in products) {
-
          val internalId = scrapInternalId(productDoc)
+         val productUrl = "https://www.lagallega.com.ar/Detalle.asp?Pr=${internalId}&P="
+         val name = CrawlerUtils.scrapStringSimpleInfo(productDoc, "div.desc", true)
+         val imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(productDoc, "div.FotoProd img", "src")
+         val price = CrawlerUtils.scrapPriceInCentsFromHtml(productDoc, "div.precio div.izq", null, false, ',', session, 0)
+         val isAvailable = price != 0
 
-         val productUrl = "https://www.lagallega.com.ar/carrito.asp?Pr=${internalId}&P="
-         saveDataProduct(internalId, null, productUrl)
-         log("Position: $position - internalId: $internalId - internalPid null - url: $productUrl")
+         val product = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setName(name)
+            .setImageUrl(imageUrl)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build()
+
+         saveDataProduct(product)
       }
    }
 
