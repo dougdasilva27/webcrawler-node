@@ -112,7 +112,7 @@ public class KPLProducer {
       FutureCallback<UserRecordResult> myCallback = getCallback(session);
 
       ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(GlobalConfigurations.executionParameters.getKinesisStreamCatalog(),
-         m.getTaskFinish(), randomExplicitHashKey(), data);
+         m.getTimestamp(), randomExplicitHashKey(), data);
 
       Futures.addCallback(f, myCallback, callbackThreadPool);
    }

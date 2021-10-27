@@ -38,7 +38,7 @@ public class Message implements Serializable {
       return timestamp;
    }
 
-   public void setTimestamp(String scheduled) {
+   public void setTimestamp(String timestamp) {
       this.timestamp = timestamp;
    }
 
