@@ -64,7 +64,7 @@ class ArgentinaLagallegaCrawler(session: Session) : CrawlerRankingKeywords(sessi
          val internalId = scrapInternalId(productDoc)
          val productUrl = "https://www.lagallega.com.ar/Detalle.asp?Pr=${internalId}&P="
          val name = CrawlerUtils.scrapStringSimpleInfo(productDoc, "div.desc", true)
-         val imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(productDoc, "div.FotoProd img", "src")
+         val imageUrl = "https://www.lagallega.com.ar/" + CrawlerUtils.scrapStringSimpleInfoByAttribute(productDoc, "div.FotoProd img", "src")
          val price = CrawlerUtils.scrapPriceInCentsFromHtml(productDoc, "div.precio div.izq", null, false, ',', session, 0)
          val isAvailable = price != 0
 
