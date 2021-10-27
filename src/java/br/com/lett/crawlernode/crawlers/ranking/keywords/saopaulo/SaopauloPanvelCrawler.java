@@ -3,9 +3,12 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -23,7 +26,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 16;
       this.log("Página " + this.currentPage);
 
@@ -42,11 +45,22 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
          String urlProduct = "https://www.panvel.com" + e.selectFirst(".details").attr("href");
          String internalId = CommonMethods.getLast(urlProduct.split("-"));
+         String name = CrawlerUtils.scrapStringSimpleInfo(e, "p.name", true);
+         String image = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.image img.ng-star-inserted", "src");
+         int price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "div.price div.deal-price.ng-star-inserted", null, true, ',', session, 0);
+         boolean isAvailable = price != 0;
 
-         saveDataProduct(internalId, null, urlProduct);
+         //New way to send products to save data product
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(urlProduct)
+            .setInternalId(internalId)
+            .setName(name)
+            .setImageUrl(image)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
 
-         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + null + " - Url: " + urlProduct);
+         saveDataProduct(productRanking);
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
