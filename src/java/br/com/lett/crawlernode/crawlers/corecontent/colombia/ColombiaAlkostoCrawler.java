@@ -53,6 +53,8 @@ public class ColombiaAlkostoCrawler extends Crawler {
          boolean available = doc.selectFirst("span.product-price-pickup")!=null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
          RatingsReviews ratingReviews = scrapRating(doc, internalId);
+         List<String> eans = new ArrayList<>();
+         eans.add(internalId);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -65,6 +67,7 @@ public class ColombiaAlkostoCrawler extends Crawler {
             .setDescription(description)
             .setOffers(offers)
             .setRatingReviews(ratingReviews)
+            .setEans(eans)
             .build();
 
          products.add(product);
