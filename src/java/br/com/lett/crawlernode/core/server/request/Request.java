@@ -107,7 +107,7 @@ public class Request {
 
    @Override
    public String toString() {
-      return "Request[[sessionId= " + sessionId + ", messageId=" + messageId + ", messageBody=" + parameter + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
+      return "Request[sessionId= " + sessionId + ", messageId=" + messageId + ", messageBody=" + parameter + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
             + ", internalId=" + internalId + ", processedId=" + processedId + ", marketId=" + market + ", queueName=" + queueName
             + ", supplierId=" + supplierId + "]";
    }
