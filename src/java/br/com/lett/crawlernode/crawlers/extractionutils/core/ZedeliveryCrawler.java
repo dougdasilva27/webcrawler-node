@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import models.pricing.*;
 import org.apache.commons.lang3.StringUtils;
@@ -60,39 +61,42 @@ public abstract class ZedeliveryCrawler extends Crawler {
     * sending an address: postal code 05426-100 Address is hard coded in payload
     */
    private JSONObject validateUUID() {
-      visitorId = UUID.randomUUID().toString();
-
       Map<String, String> headers = new HashMap<>();
-      headers.put("x-visitorid", visitorId);
-      headers.put("content-type:", "application/json");
+      headers.put("content-type", "application/json");
       ZedeliveryInfo zeDeliveryInfo = getZedeliveryInfo();
 
-      String initPayload = "{\"operationName\":\"setDeliveryOption\",\"variables\":{\"deliveryOption\":" +
-         "{\"address\":{\"latitude\":"+ zeDeliveryInfo.getLatitude() +",\"longitude\":"+ zeDeliveryInfo.getLongitude() +"," +
-         "\"zipcode\":\""+ zeDeliveryInfo.getZipcode() +"\",\"street\":\""+ zeDeliveryInfo.getStreet() +"\"," +
-         "\"neighborhood\":\""+ zeDeliveryInfo.getNeighborhood() +"\",\"city\":\""+ zeDeliveryInfo.getCity() +"\"," +
-         "\"province\":\""+ zeDeliveryInfo.getProvince() +"\",\"country\":\"BR\",\"number\":\"45\",\"referencePoint\":\"\"}," +
-         "\"deliveryMethod\":\"DELIVERY\",\"schedule\":\"NOW\"},\"forceOverrideProducts\":false}," +
-         "\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) " +
-         "{\\n  manageCheckout(deliveryOption: $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    " +
-         "messages {\\n      category\\n      target\\n      key\\n      args\\n      message\\n    }\\n    checkout {\\n " +
-         "     id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n          zipcode\\n" +
-         "          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n " +
-         "         addressLine2\\n          referencePoint\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n " +
-         "       pickupPoc {\\n          id\\n          tradingName\\n          address {\\n            latitude\\n            longitude\\n " +
-         "           zipcode\\n            country\\n            province\\n            city\\n            neighborhood\\n            street\\n " +
-         "           number\\n            addressLine2\\n            referencePoint\\n          }\\n        }\\n      }\\n      paymentMethod {\\n " +
-         "       id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
+      String initPayload = "{\n" +
+         "  \"operationName\": \"setDeliveryOption\",\n" +
+         "  \"variables\": {\n" +
+         "    \"deliveryOption\": {\n" +
+         "      \"address\": {\n" +
+         "        \"latitude\": " + zeDeliveryInfo.getLatitude() + ",\n" +
+         "        \"longitude\": " + zeDeliveryInfo.getLongitude() + ",\n" +
+         "        \"zipcode\": \"" + zeDeliveryInfo.getZipcode() + "\",\n" +
+         "        \"street\": \"" + zeDeliveryInfo.getStreet() + "\",\n" +
+         "        \"neighborhood\": \"" + zeDeliveryInfo.getNeighborhood() + "\",\n" +
+         "        \"city\": \"" + zeDeliveryInfo.getCity() + "\",\n" +
+         "        \"province\": \"" + zeDeliveryInfo.getProvince() + "\",\n" +
+         "        \"country\": \"BR\",\n" +
+         "        \"number\": \"" + zeDeliveryInfo.getNumber() + "\",\n" +
+         "        \"referencePoint\": \"\"\n" +
+         "      },\n" +
+         "      \"deliveryMethod\": \"DELIVERY\",\n" +
+         "      \"schedule\": \"NOW\"\n" +
+         "    },\n" +
+         "    \"forceOverrideProducts\": false\n" +
+         "  },\n" +
+         "  \"query\": \"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption: $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n          addressLine2\\n          referencePoint\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n            referencePoint\\n          }\\n        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"\n" +
+         "}";
 
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
          .setPayload(initPayload)
-         .setCookies(cookies)
          .setHeaders(headers)
-//         .setProxyservice(Collections.singletonList(ProxyCollection.NO_PROXY))
          .mustSendContentEncoding(false)
          .build();
 
-      Response response = this.dataFetcher.post(session, request);
+      Response response = new JsoupDataFetcher().post(session, request);
+      visitorId = response.getHeaders().get("x-visitorid");
       return CrawlerUtils.stringToJson(response.getBody());
    }
 
@@ -100,15 +104,15 @@ public abstract class ZedeliveryCrawler extends Crawler {
    protected Document fetch() {
       Map<String, String> headers = new HashMap<>();
       JSONObject apiJson = validateUUID();
-      JSONObject userAddress = JSONUtils.getValueRecursive(apiJson,"data.manageCheckout.checkout.deliveryOption.address", JSONObject.class);
-      JSONObject deliveryOptions = JSONUtils.getValueRecursive(apiJson,"data.manageCheckout.checkout.deliveryOption", JSONObject.class);
+      JSONObject userAddress = JSONUtils.getValueRecursive(apiJson, "data.manageCheckout.checkout.deliveryOption.address", JSONObject.class);
+      JSONObject deliveryOptions = JSONUtils.getValueRecursive(apiJson, "data.manageCheckout.checkout.deliveryOption", JSONObject.class);
       String cookie = "visitorId=%22" + visitorId +
          "%22; userAddress=" + URLEncoder.encode(userAddress.toString(), StandardCharsets.UTF_8) +
-         "; deliveryOptions=" + URLEncoder.encode(deliveryOptions.toString(), StandardCharsets.UTF_8) +";";
+         "; deliveryOptions=" + URLEncoder.encode(deliveryOptions.toString(), StandardCharsets.UTF_8) + ";";
 
-      headers.put("Accept","*/*");
-      headers.put("Accept-Encoding","gzip, deflate, br");
-      headers.put("Connection","keep-alive");
+      headers.put("Accept", "*/*");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Connection", "keep-alive");
       headers.put("cookie", cookie);
 
       Request request = Request.RequestBuilder.create()
@@ -132,8 +136,8 @@ public abstract class ZedeliveryCrawler extends Crawler {
       if (doc.selectFirst("#add-product") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String scriptId = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
-         JSONObject jsonId = new JSONObject(scriptId.substring(1, scriptId.length()-1));
-         String internalId = JSONUtils.getValueRecursive(jsonId,"query.id", String.class);
+         JSONObject jsonId = new JSONObject(scriptId.substring(1, scriptId.length() - 1));
+         String internalId = JSONUtils.getValueRecursive(jsonId, "query.id", String.class);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.css-aibq80-productTitle", false);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, "[name=description]", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.css-11x3awa-Breadcrumb li a");
