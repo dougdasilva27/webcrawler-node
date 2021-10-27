@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil
 
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.Request
+import br.com.lett.crawlernode.core.fetcher.models.Response
+import br.com.lett.crawlernode.core.models.Parser
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilSitemercadoCrawler
 import br.com.lett.crawlernode.util.CrawlerUtils
@@ -22,6 +24,7 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
 
    override fun getHomePage(): String {
       return HOME_PAGE
+      config.parser = Parser.JSON
    }
 
    override fun getLojaInfo(): Map<String, Int> {
@@ -39,7 +42,7 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
       return API_URL
    }
 
-   override fun crawlProductInformatioFromApi(productUrl: String): JSONObject? {
+   override fun crawlProductInformatioFromApi(productUrl: String): Response? {
       val lojaUrl = URI.create(session.originalURL).path.split("/").first(String::isNotEmpty)
       val loadUrl = "${API_URL}v1/b2c/page/store/$lojaUrl"
       val url = "${API_URL}b2c/product/${productUrl.split("/").last().split("\\?").first()}?store_id=${lojaInfo["IdLoja"]}"
@@ -58,7 +61,7 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
       headers["sm-token"] = jsonObject.toString()
       headers["sm-mmc"] = responseHeaders["sm-mmc"]
       val requestApi = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build()
-      return CrawlerUtils.stringToJson(dataFetcher[session, requestApi].body)
+      return dataFetcher[session, requestApi]
    }
 
 }

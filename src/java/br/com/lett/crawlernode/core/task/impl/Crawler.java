@@ -25,6 +25,7 @@ import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.dto.ProductDTO;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import br.com.lett.crawlernode.integration.redis.config.RedisDb;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
@@ -363,7 +364,7 @@ public abstract class Crawler extends Task {
       session.setOriginalURL(url);
 
       try {
-         Response response;
+         Response response = null;
          Object obj;
 
          Parser parser = this.config.getParser();
@@ -376,6 +377,10 @@ public abstract class Crawler extends Task {
          }
 
          session.setProductPageResponse(obj);
+
+         if(response != null && Integer.toString(response.getLastStatusCode()).charAt(0) != '2' && Integer.toString(response.getLastStatusCode()).charAt(0) != '3'){
+            throw new ResponseCodeException(response.getLastStatusCode());
+         }
 
          if (obj instanceof Document) {
             products = extractInformation((Document) obj);
