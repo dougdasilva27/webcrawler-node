@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.core.session.crawler;
 
 import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.Session;
 
@@ -20,6 +21,8 @@ public class InsightsCrawlerSession extends Session {
     * Number of readings to prevent a void status
     */
    private int voidAttemptsCounter;
+
+   private SkuStatus productStatus;
 
 
    public InsightsCrawlerSession(Request request, String queueName, Market market) {
@@ -61,6 +64,14 @@ public class InsightsCrawlerSession extends Session {
 
    public void setVoidAttempts(int voidAttempts) {
       this.voidAttemptsCounter = voidAttempts;
+   }
+
+   public SkuStatus getProductStatus() {
+      return productStatus;
+   }
+
+   public void setProductStatus(SkuStatus productStatus) {
+      this.productStatus = productStatus;
    }
 
 }

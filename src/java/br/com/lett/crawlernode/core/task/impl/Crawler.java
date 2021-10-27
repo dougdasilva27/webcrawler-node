@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.core.task.impl;
 
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
+import br.com.lett.crawlernode.aws.kinesis.Message;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
@@ -70,6 +71,7 @@ public abstract class Crawler extends Task {
    protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
    private SkuStatus skuStatus = SkuStatus.VOID;
+   private String crawledInternalId;
 
    protected static final Pattern FILTERS = Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g" + "|png|ico|tiff?|mid|mp2|mp3|mp4"
       + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
@@ -98,6 +100,14 @@ public abstract class Crawler extends Task {
       this.cookies = new ArrayList<>();
 
       createDefaultConfig();
+   }
+
+   public SkuStatus getSkuStatus() {
+      return skuStatus;
+   }
+
+   public String getCrawledInternalId(){
+      return crawledInternalId;
    }
 
    /**
@@ -276,6 +286,7 @@ public abstract class Crawler extends Task {
       // get crawled product by it's internalId
       Logging.printLogDebug(logger, session, "Selecting product with internalId " + session.getInternalId());
       Product crawledProduct = filter(products, session.getInternalId());
+      crawledInternalId = crawledProduct.getInternalId();
 
       // if the product is void run the active void analysis
       Product activeVoidResultProduct = crawledProduct;
@@ -573,6 +584,8 @@ public abstract class Crawler extends Task {
          Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
       }
    }
+
+
 
    protected final <T> T cache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
       String component = getClass().getSimpleName() + ":" + key;

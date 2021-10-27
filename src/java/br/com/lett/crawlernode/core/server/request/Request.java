@@ -15,6 +15,7 @@ public class Request {
    private Long supplierId;
    private String className;
    private JSONObject options;
+   private String sessionId;
 
    private String internalId;
    private Long processedId;
@@ -96,9 +97,17 @@ public class Request {
       this.supplierId = supplierId;
    }
 
+   public String getSessionId() {
+      return sessionId;
+   }
+
+   public void setSessionId(String sessionId) {
+      this.sessionId = sessionId;
+   }
+
    @Override
    public String toString() {
-      return "Request[messageId=" + messageId + ", messageBody=" + parameter + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
+      return "Request[sessionId= " + sessionId + ", messageId=" + messageId + ", messageBody=" + parameter + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
             + ", internalId=" + internalId + ", processedId=" + processedId + ", marketId=" + market + ", queueName=" + queueName
             + ", supplierId=" + supplierId + "]";
    }
@@ -118,4 +127,6 @@ public class Request {
    public void setOptions(JSONObject options) {
       this.options = options;
    }
+
+
 }

@@ -1,28 +1,29 @@
 package br.com.lett.crawlernode.aws.kinesis;
 
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.base.Task;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.kinesis.producer.Attempt;
-import com.amazonaws.services.kinesis.producer.KinesisProducer;
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
-import com.amazonaws.services.kinesis.producer.UserRecordFailedException;
-import com.amazonaws.services.kinesis.producer.UserRecordResult;
+import com.amazonaws.services.kinesis.producer.*;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class KPLProducer {
 
@@ -80,6 +81,42 @@ public class KPLProducer {
 
       Futures.addCallback(f, myCallback, callbackThreadPool);
    }
+
+   public static void sendMessageCatalogToKinesis(Task task, Session session) {
+
+      long productStartTime = System.currentTimeMillis();
+
+      SkuStatus skuStatus = ((Crawler) task).getSkuStatus();
+      String internalId = ((Crawler) task).getCrawledInternalId();
+      Message message = Message.build(skuStatus, session.getSessionId(), internalId, session.getMarket().getId(), session.getSupplierId());
+
+      getInstance().put(message, session);
+
+      JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
+         .put("aws_type", "kinesis")
+         .put("kinesis_flow_type", "product");
+
+      Logging.logInfo(LOGGER, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
+
+   }
+
+   /**
+    * Asynchronously put an event to the kinesis internal queue
+    *
+    * @param m       message to send
+    * @param session session
+    */
+   public void put(Message m, Session session) {
+      ByteBuffer data = ByteBuffer.wrap((m.serializeToKinesis() + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
+
+      FutureCallback<UserRecordResult> myCallback = getCallback(session);
+
+      ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(GlobalConfigurations.executionParameters.getKinesisStreamCatalog(),
+         m.getTimestamp(), randomExplicitHashKey(), data);
+
+      Futures.addCallback(f, myCallback, callbackThreadPool);
+   }
+
 
    private static FutureCallback<UserRecordResult> getCallback(Session session) {
       return new FutureCallback<UserRecordResult>() {

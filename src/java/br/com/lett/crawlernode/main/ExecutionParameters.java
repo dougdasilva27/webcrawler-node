@@ -33,6 +33,8 @@ public class ExecutionParameters {
    private Boolean useFetcher;
    private String kinesisStream;
    private boolean sendToKinesis;
+   private String kinesisStreamCatalog;
+   private boolean sendToKinesisCatalog;
 
    private String logsBucketName;
    private String imagesBucketName;
@@ -56,7 +58,9 @@ public class ExecutionParameters {
       environment = getEnvEnvironment();
       tmpImageFolder = getEnvTmpImagesFolder();
       kinesisStream = getEnvKinesisStream();
+      kinesisStreamCatalog = getEnvKinesisStreamCatalog();
       sendToKinesis = getEnvSendToKinesis();
+      sendToKinesisCatalog = getEnvSendToKinesisCatalog();
       logsBucketName = getEnvLogsBucketName();
       imagesBucketName = getEnvImagesBucketName();
       imagesBucketNameNew = getEnvImagesBucketNameNew();
@@ -148,6 +152,10 @@ public class ExecutionParameters {
       return Boolean.TRUE.toString().equals(System.getenv(EnvironmentVariables.SEND_TO_KINESIS));
    }
 
+   private boolean getEnvSendToKinesisCatalog() {
+      return Boolean.TRUE.toString().equals(System.getenv(EnvironmentVariables.SEND_TO_KINESIS_CATALOG));
+   }
+
    private String getEnvReplicatorUrl() {
       return System.getenv(EnvironmentVariables.REPLICATOR_URL);
    }
@@ -175,6 +183,11 @@ public class ExecutionParameters {
 
    private String getEnvKinesisStream() {
       return System.getenv(EnvironmentVariables.KINESIS_STREAM) ;
+   }
+
+
+   private String getEnvKinesisStreamCatalog() {
+      return System.getenv(EnvironmentVariables.KINESIS_STREAM_CATALOG) ;
    }
 
    private boolean getEnvUseFetcher() {
@@ -364,5 +377,13 @@ public class ExecutionParameters {
 
    public Integer getRedisPort() {
       return redisPort;
+   }
+
+   public String getKinesisStreamCatalog() {
+      return kinesisStreamCatalog;
+   }
+
+   public boolean isSendToKinesisCatalog() {
+      return sendToKinesisCatalog;
    }
 }
