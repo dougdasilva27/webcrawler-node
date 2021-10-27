@@ -57,7 +57,7 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
            Product product = ProductBuilder.create()
               .setUrl(session.getOriginalURL())
               .setInternalId(internalPid)
-              .setInternalPid(null)
+              .setInternalPid(internalPid)
               .setName(name)
               .setPrimaryImage(primaryImage)
               .setDescription(description)
