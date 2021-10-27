@@ -379,7 +379,20 @@ public abstract class Crawler extends Task {
          session.setProductPageResponse(obj);
 
          if(response != null && Integer.toString(response.getLastStatusCode()).charAt(0) != '2' && Integer.toString(response.getLastStatusCode()).charAt(0) != '3'){
-            throw new ResponseCodeException(response.getLastStatusCode());
+            switch (response.getLastStatusCode()){
+               case 403:
+                  throw new ResponseCodeException("Blocked request", response.getLastStatusCode());
+               case 404:
+                  throw new ResponseCodeException("Requested page not found", response.getLastStatusCode());
+               case 400:
+                  throw new ResponseCodeException("Bad request", response.getLastStatusCode());
+               case 500:
+                  throw new ResponseCodeException("Server error", response.getLastStatusCode());
+               case 601:
+                  throw new ResponseCodeException("Fetcher error response", response.getLastStatusCode());
+               default:
+                  throw new ResponseCodeException(response.getLastStatusCode());
+            }
          }
 
          if (obj instanceof Document) {
