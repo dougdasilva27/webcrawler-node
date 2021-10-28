@@ -133,7 +133,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
          boolean available = crawlAvailability(apiJson);
          CategoryCollection categories = crawlCategories(apiJson);
          String primaryImage = crawlPrimaryImage(internalId);
-        // String secondaryImages = crawlSecondaryImages(internalId);
+         String secondaryImages = crawlSecondaryImages(internalId);
          String description = crawlDescription(apiJson);
          Integer stock = null;
          String ean = internalId;
@@ -141,12 +141,23 @@ public class MexicoWalmartsuperCrawler extends Crawler {
          eans.add(ean);
 
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-               .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-            //.setSecondaryImages(secondaryImages)
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
-               .setStock(stock).setMarketplace(new Marketplace()).setEans(eans).build();
+            .setStock(stock)
+            .setMarketplace(new Marketplace())
+            .setEans(eans)
+            .build();
 
          products.add(product);
 
