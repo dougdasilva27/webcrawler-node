@@ -15,9 +15,11 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.jooq.util.derby.sys.Sys;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
@@ -43,33 +45,40 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-        if (doc.selectFirst(".product-detail") != null) {
-           Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-           String internalPid = getProductPid();
-           String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".long-description"));
-           CategoryCollection categories = getCategories(doc, "[name=keywords]", "content");
-           String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:title\"]", "content");
-           String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".zoom > img", Arrays.asList("src"), "https", "");
-           boolean available = doc.selectFirst("[title=\"Adicionar ao carrinho\"]") != null;
-           Offers offers = available ? scrapOffers(doc) : new Offers();
+      if (doc.selectFirst(".product-detail") != null) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         String internalPid = getProductPid();
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".long-description"));
+         CategoryCollection categories = getCategories(doc, "[name=keywords]", "content");
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".zoom > img", Arrays.asList("src"), "https", "");
+         String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:title\"]", "content");
+         boolean available = doc.selectFirst("[title=\"Adicionar ao carrinho\"]") != null;
+         Offers offers = available ? scrapOffers(doc) : new Offers();
+         Elements colors = doc.select(".variation-group .options label");
 
-           // Creating the productInfo
-           Product product = ProductBuilder.create()
-              .setUrl(session.getOriginalURL())
-              .setInternalId(internalPid)
-              .setInternalPid(internalPid)
-              .setName(name)
-              .setPrimaryImage(primaryImage)
-              .setDescription(description)
-              .setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1))
-              .setCategory3(categories.getCategory(2))
-              .setOffers(offers)
-              .build();
+         for (Element e : colors) {
+            String colorName = CrawlerUtils.scrapStringSimpleInfo(e, "span b", false);
 
-           products.add(product);
+            colorName = getName(name, colorName);
+
+            // Creating the productInfo
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalPid)
+               .setInternalPid(internalPid)
+               .setName(colorName)
+               .setPrimaryImage(primaryImage)
+               .setDescription(description)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setOffers(offers)
+               .build();
+
+            products.add(product);
+         }
       } else {
-        Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
       return products;
@@ -91,26 +100,6 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
 
       return offers;
 
-   }
-
-   private String getColor(JSONObject dataJson, Integer identifier) {
-      JSONArray variations = dataJson.optJSONArray("gradeX");
-      String color = null;
-
-      if (variations != null) {
-         for (Object variation : variations) {
-            if (variation instanceof JSONObject && ((JSONObject) variation).has("idGradeX")) {
-               JSONObject gradeVariation = ((JSONObject) variation);
-               Integer codeGrade = gradeVariation.optInt("idGradeX");
-               if (codeGrade.equals(identifier)) {
-                  color = gradeVariation.optString("descricao");
-                  break;
-
-               }
-            }
-         }
-      }
-      return color;
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
@@ -172,5 +161,17 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
          categories.add(category.trim());
       }
       return categories;
+   }
+
+   private String getName(String name, String color) {
+      StringBuilder stringBuilder = new StringBuilder();
+
+      if (name != null && !name.isEmpty()) {
+         stringBuilder.append(name);
+         if (color != null && !color.isEmpty()) {
+            stringBuilder.append(" - ").append(color);
+         }
+      }
+      return stringBuilder.toString();
    }
 }
