@@ -26,6 +26,7 @@ import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.dto.ProductDTO;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import br.com.lett.crawlernode.integration.redis.config.RedisDb;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
@@ -374,7 +375,7 @@ public abstract class Crawler extends Task {
       session.setOriginalURL(url);
 
       try {
-         Response response;
+         Response response = null;
          Object obj;
 
          Parser parser = this.config.getParser();
@@ -387,6 +388,10 @@ public abstract class Crawler extends Task {
          }
 
          session.setProductPageResponse(obj);
+
+         if(response != null){
+            validateResponse(response);
+         }
 
          if (obj instanceof Document) {
             products = extractInformation((Document) obj);
@@ -411,6 +416,25 @@ public abstract class Crawler extends Task {
       }
 
       return processedProducts;
+   }
+
+   private void validateResponse(Response response) throws ResponseCodeException{
+      if(Integer.toString(response.getLastStatusCode()).charAt(0) != '2' && Integer.toString(response.getLastStatusCode()).charAt(0) != '3'){
+         switch (response.getLastStatusCode()){
+            case 403:
+               throw new ResponseCodeException("Blocked request", response.getLastStatusCode());
+            case 404:
+               throw new ResponseCodeException("Requested page not found", response.getLastStatusCode());
+            case 400:
+               throw new ResponseCodeException("Bad request", response.getLastStatusCode());
+            case 500:
+               throw new ResponseCodeException("Server error", response.getLastStatusCode());
+            case 601:
+               throw new ResponseCodeException("Fetcher error response", response.getLastStatusCode());
+            default:
+               throw new ResponseCodeException(response.getLastStatusCode());
+         }
+      }
    }
 
    /**

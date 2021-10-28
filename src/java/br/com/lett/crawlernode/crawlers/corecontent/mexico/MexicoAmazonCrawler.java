@@ -57,6 +57,7 @@ public class MexicoAmazonCrawler extends Crawler {
 
    public MexicoAmazonCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.HTML);
    }
 
    @Override
