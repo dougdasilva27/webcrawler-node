@@ -77,7 +77,7 @@ public class Message implements Serializable {
    public static Message build(SkuStatus skuStatus, String sessionId, String internalId, Integer marketId, Long supplierId) {
       Message message = new Message();
 
-      message.setTimestamp(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")).toString());
+      message.setTimestamp(LocalDateTime.now().toString());
       message.setStatus("DONE");
       message.setProductStatus(skuStatus.toString());
       message.setSessionId(sessionId);
