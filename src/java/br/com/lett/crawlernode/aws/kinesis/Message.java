@@ -89,12 +89,12 @@ public class Message implements Serializable {
 
    public String serializeToKinesis() {
       Map<String, Object> linkedMap = new LinkedHashMap<>();
-      linkedMap.put("sessionId", getSessionId());
+      linkedMap.put("session_id", getSessionId());
       linkedMap.put("status", getStatus());
       linkedMap.put("supplier_id", getSupplierId());
       linkedMap.put("market_id", getMarketId());
       linkedMap.put("internal_id", getInternalId());
-      linkedMap.put("productStatus", getProductStatus());
+      linkedMap.put("product_status", getProductStatus());
       linkedMap.put("timestamp", getTimestamp());
 
       return new org.bson.Document(linkedMap).toJson();
