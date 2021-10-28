@@ -1,9 +1,11 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
+
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,6 +27,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
+import org.jsoup.Jsoup;
 
 /**
  *
@@ -44,7 +47,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 
    public MexicoWalmartsuperCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
@@ -71,29 +74,45 @@ public class MexicoWalmartsuperCrawler extends Crawler {
             "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId=0000009999&upc="
                   + finalParameter + "&skuId=" + finalParameter;
 
-      Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
-      Response response = this.dataFetcher.get(session, request);
+      Request requestJsoup = Request.RequestBuilder.create()
+         .setUrl(apiUrl)
+         .setCookies(cookies)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .build();
 
-      int statusCode = 0, attempts = 0;
-      List<RequestsStatistics> requestsStatistics = response.getRequests();
-      if (!requestsStatistics.isEmpty()) {
-         statusCode = requestsStatistics.get(requestsStatistics.size() - 1).getStatusCode();
-      }
 
-      boolean retry = Integer.toString(statusCode).charAt(0) != '2'
-            && Integer.toString(statusCode).charAt(0) != '3'
-            && statusCode != 404;
+      Request requestFetcher = Request.RequestBuilder.create()
+         .setUrl(apiUrl)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .build();
 
-      if (retry) {
-         do {
-            if (attempts == 0) {
-               response = new ApacheDataFetcher().get(session, request);
-            } else if (attempts == 1) {
-               response = new JavanetDataFetcher().get(session, request);
-            }
+      Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestJsoup;
 
-            attempts++;
-         } while (attempts < 2 && (response.getBody() == null || response.getBody().isEmpty()));
+      Response response = dataFetcher.get(session, request);
+
+      int statusCode = response.getLastStatusCode();
+
+      if ((Integer.toString(statusCode).charAt(0) != '2' &&
+         Integer.toString(statusCode).charAt(0) != '3'
+         && statusCode != 404)) {
+
+         if (dataFetcher instanceof FetcherDataFetcher) {
+            response = new JsoupDataFetcher().get(session, requestJsoup);
+         } else {
+            response = new FetcherDataFetcher().get(session, requestFetcher);
+         }
       }
 
       return CrawlerUtils.stringToJson(response.getBody());
@@ -122,10 +141,23 @@ public class MexicoWalmartsuperCrawler extends Crawler {
          eans.add(ean);
 
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-               .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setStock(stock).setMarketplace(new Marketplace()).setEans(eans).build();
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setMarketplace(new Marketplace())
+            .setEans(eans)
+            .build();
 
          products.add(product);
 
@@ -194,6 +226,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
     * @param document
     * @return
     */
+
    private String crawlSecondaryImages(String id) {
       String secondaryImages = null;
       JSONArray secondaryImagesArray = new JSONArray();
