@@ -17,6 +17,11 @@ public class ResponseCodeException extends Exception {
     this.code = code;
   }
 
+   public ResponseCodeException(String msg, int code) {
+      super(msg + " - " + code);
+      this.code = code;
+   }
+
   public int getCode() {
     return code;
   }

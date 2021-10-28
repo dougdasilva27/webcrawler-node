@@ -12,13 +12,13 @@ import models.Offers
 import models.pricing.Installment
 import models.pricing.Installments
 import models.pricing.Pricing
+import org.json.JSONObject
 import org.jsoup.nodes.Document
-import java.util.*
 
-class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
+class BrasilWinecrawler(session: Session?) : Crawler(session) {
 
    companion object {
-      private const val SELLER_FULL_NAME = "Ab Araujo"
+      private const val SELLER_FULL_NAME = "Wine"
    }
 
    protected var cards: Set<Card> = Sets.newHashSet(Card.VISA, Card.MASTERCARD,
@@ -33,22 +33,21 @@ class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
          Logging.printLogDebug(logger, session,
             "Product page identified: " + session.originalURL)
 
-         val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail .product-name", false)
+         val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".PageHeader-title", false)
 
-         val categories = CrawlerUtils.crawlCategories(doc, ".product-detail .breadcrumb .breadcrumb-item:not(:first-child):not(:last-child) a")
+         val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a",false)
 
-         val internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-reference", true)
+         val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[sku-code]", "sku-code")
 
-         val images = scrapImages(doc)
-         val primaryImage = if (images.isNotEmpty()) images.removeAt(0) else ""
+         val primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".js-product-img", "src")
 
-         val description = CrawlerUtils.scrapSimpleDescription(doc, listOf(".product-tabs .description"))
+         val description = CrawlerUtils.scrapSimpleDescription(doc, listOf(".ReadMore-text",".TechnicalDetails"))
 
-         val isAvailable = doc.selectFirst(".produto-preco .PrecoPrincipal span") != null
+         val jsonOffer = CrawlerUtils.stringToJson(doc.selectFirst("price-box[campaigns]")?.attr(":product"))
 
-         val offers = if (isAvailable) scrapOffers(doc) else Offers()
+         val isAvailable = jsonOffer.optBoolean("available",false)
 
-         val ean = scrapEan(doc);
+         val offers = if(isAvailable) scrapOffers(jsonOffer) else Offers()
 
          val product = ProductBuilder()
             .setUrl(session.originalURL)
@@ -57,10 +56,8 @@ class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(images)
             .setDescription(description)
             .setOffers(offers)
-            .setEans(Collections.singletonList(ean))
             .build()
 
          products.add(product)
@@ -71,38 +68,15 @@ class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
    }
 
    private fun isProductPage(doc: Document): Boolean {
-      return doc.selectFirst(".product-detail") != null
+      return doc.selectFirst(".ProductPage") != null
    }
 
-   private fun scrapImages(doc: Document): MutableList<String> {
-      val imgList: MutableList<String> = ArrayList()
-
-      val elements = doc.select("div.image-show div.zoom img")
-      for (el in elements) {
-         imgList.add(el?.attr("data-src").toString())
-      }
-      return imgList
-   }
-
-   private fun scrapEan(doc: Document): String {
-      var ean = ""
-      val elements = doc.select("div#ficha tbody tr")
-
-      for (el in elements) {
-         if (el.toString().contains("código de barras")) {
-            ean = el.select("td")?.last()?.html().toString()
-            break
-         }
-      }
-      return ean
-   }
-
-   private fun scrapOffers(doc: Document): Offers {
+   private fun scrapOffers(jsonOffer: JSONObject): Offers {
       val offers = Offers()
 
       offers.add(
          Offer.OfferBuilder.create()
-            .setPricing(scrapPricing(doc))
+            .setPricing(scrapPricing(jsonOffer))
             .setSales(listOf())
             .setIsMainRetailer(true)
             .setIsBuybox(false)
@@ -115,9 +89,9 @@ class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
       return offers
    }
 
-   private fun scrapPricing(doc: Document): Pricing {
+   private fun scrapPricing(jsonOffer: JSONObject): Pricing {
 
-      val price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".produto-preco .PrecoPrincipal span", null, false, ',', session)
+      val price : Double = jsonOffer.optDouble("salePrice")
 
       val bankSlip = price.toBankSlip()
 
@@ -130,18 +104,6 @@ class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
             .build()
       )
 
-      val iNumber = CrawlerUtils.scrapIntegerFromHtml(doc, ".produto-preco .txt-corparcelas .preco-parc2 ", false, 1)
-
-      val iPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".produto-preco .txt-cadaparcelas .preco-parc2", null, false, ',', session)
-
-      if (iNumber > 1) {
-         installments.add(
-            Installment.InstallmentBuilder()
-               .setInstallmentNumber(iNumber)
-               .setInstallmentPrice(iPrice)
-               .build()
-         )
-      }
 
       val creditCards = listOf(Card.VISA, Card.MASTERCARD, Card.HIPER, Card.AMEX, Card.AURA, Card.ELO, Card.DINERS).toCreditCards(installments)
 
