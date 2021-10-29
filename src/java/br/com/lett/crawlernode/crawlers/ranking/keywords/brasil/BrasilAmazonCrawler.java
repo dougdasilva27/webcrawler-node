@@ -23,7 +23,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
 
    public BrasilAmazonCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.APACHE;
+      super.fetchMode = FetchMode.JSOUP;
    }
 
    private final AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
@@ -61,7 +61,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
                String internalId = internalPid;
                String productUrl = crawlProductUrl(e);
                String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "img.s-image", "src");
-               String name = CrawlerUtils.scrapStringSimpleInfo(e, "span.a-size-base-plus.a-color-base.a-text-normal", true);
+               String name = CrawlerUtils.scrapStringSimpleInfo(e, ".a-color-base.a-text-normal", true);
                Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "span.a-price-whole", null, true, ',', session, 0);
                boolean isAvailable = price != 0;
 
@@ -75,8 +75,6 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
                   .build();
 
                saveDataProduct(objProducts);
-
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             }
             if (this.arrayProducts.size() == productsLimit) {
                break;
