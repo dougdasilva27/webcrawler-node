@@ -19,7 +19,8 @@ public class ArgentinaPigmentoCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
-      String url = "https://www.perfumeriaspigmento.com.ar/" + this.keywordEncoded + "?_q=" + this.keywordEncoded + "&map=ft&page=" + this.currentPage;
+      String keyword = this.keywordEncoded.replace("+", "%20");
+      String url = "https://www.perfumeriaspigmento.com.ar/" + keyword + "?_q=" + keyword + "&map=ft&page=" + this.currentPage;
       currentDoc = fetchDocument(url);
 
       if (this.totalProducts == 0) {
