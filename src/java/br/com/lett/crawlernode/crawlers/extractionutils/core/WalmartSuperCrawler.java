@@ -1,19 +1,10 @@
-package br.com.lett.crawlernode.crawlers.corecontent.mexico;
+package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.*;
-
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -27,28 +18,22 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
-import org.jsoup.Jsoup;
+import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-/**
- *
- * 1) Only one sku per page.
- *
- * Price crawling notes: 1) In time crawler was made, there no product unnavailable. 2) There is no
- * bank slip (boleto bancario) payment option. 3) There is no installments for card payment. So we
- * only have 1x payment, and to this value we use the cash price crawled from the sku page. (nao
- * existe divisao no cartao de credito).
- *
- * @author Gabriel Dornelas
- *
- */
-public class MexicoWalmartsuperCrawler extends Crawler {
+import java.util.*;
+
+public class WalmartSuperCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://super.walmart.com.mx";
 
-   public MexicoWalmartsuperCrawler(Session session) {
+   public WalmartSuperCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.JSOUP);
    }
+
+   String store_id  = session.getOptions().optString("store_id");
 
    @Override
    public boolean shouldVisit() {
@@ -71,8 +56,8 @@ public class MexicoWalmartsuperCrawler extends Crawler {
       }
 
       String apiUrl =
-            "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId=0000009999&upc="
-                  + finalParameter + "&skuId=" + finalParameter;
+         "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId="+store_id+"&upc="
+            + finalParameter + "&skuId=" + finalParameter;
 
       Request requestJsoup = Request.RequestBuilder.create()
          .setUrl(apiUrl)
@@ -220,20 +205,13 @@ public class MexicoWalmartsuperCrawler extends Crawler {
       return "https://res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/gr/images/product-images/img_large/" + id + "L.jpg";
    }
 
-   /**
-    * Não achei imagens secundarias
-    *
-    * @param document
-    * @return
-    */
-
    private String crawlSecondaryImages(String id) {
       String secondaryImages = null;
       JSONArray secondaryImagesArray = new JSONArray();
 
       for (int i = 1; i < 4; i++) {
          String img = "https://res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/gr/images/product-images/img_large/" + id + "L" + i + ".jpg";
-         Request request = RequestBuilder.create().setUrl(img).setCookies(cookies).build();
+         Request request = Request.RequestBuilder.create().setUrl(img).setCookies(cookies).build();
          Response response = this.dataFetcher.get(session, request);
          RequestsStatistics resp = CommonMethods.getLast(response.getRequests());
 
@@ -333,17 +311,6 @@ public class MexicoWalmartsuperCrawler extends Crawler {
       }
    }
 
-   /**
-    * There is no bankSlip price.
-    *
-    * There is no card payment options, other than cash price. So for installments, we will have only
-    * one installment for each card brand, and it will be equals to the price crawled on the sku main
-    * page.
-    *
-    * @param doc
-    * @param price
-    * @return
-    */
    private Prices crawlPrices(Float price) {
       Prices prices = new Prices();
       prices.setBankTicketPrice(price);
@@ -356,5 +323,5 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 
       return prices;
    }
-
 }
+
