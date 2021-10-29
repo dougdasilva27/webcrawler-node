@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.curitiba;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -8,7 +7,6 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
@@ -17,12 +15,14 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.jooq.util.derby.sys.Sys;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class CuritibaSchummancuritibaCrawler extends Crawler {
 
@@ -34,84 +34,48 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
       super(session);
    }
 
-   @Override
-   protected JSONObject fetch() {
-      JSONObject jsonObject = new JSONObject();
-      String id = getProductPid();
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Authorization", "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6bnVsbCwiYWRtaW4iOnRydWUsImp0aSI6IjU4N2NjMjJjNGYyNjhlMWU5Yjc0YmZlY2NmYTBjN2IyNGZjYTg5MzA3ZDQzYzdjZmVkYTQwYTU4NTZkMWZlNTgiLCJpYXQiOjE2MDE1ODE0NjIsImV4cCI6MTY1MTE3NTA2MiwiZW1haWwiOiJldmVydG9uQHByZWNvZGUuY29tLmJyIiwiZW1wcmVzYSI6bnVsbCwic2NoZW1hIjoiRXN0dWRpb25ldHNob3AiLCJpZFNjaGVtYSI6NTQsImlkU2VsbGVyIjoiNjIiLCJpZFVzZXIiOjF9.v+7JeiaPQVabn+/CeE0RUGQCYaAtCNqo+omeem8Vo2s=");
-      String API = "https://www.allfront.com.br/api/product/" + id;
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(API)
-         .setHeaders(headers)
-         .build();
-      String content = this.dataFetcher
-         .get(session, request)
-         .getBody();
-
-
-      JSONArray jsonArray = CrawlerUtils.stringToJsonArray(content);
-      if (jsonArray != null && !jsonArray.isEmpty()) {
-         jsonObject = (JSONObject) jsonArray.get(0);
-
-      }
-
-      return jsonObject;
-
-   }
-
-
    private String getProductPid() {
-      String url = null;
-      Pattern pattern = Pattern.compile("\\/(.[0-9]*)\\/");
-      Matcher matcher = pattern.matcher(session.getOriginalURL());
-      if (matcher.find()) {
-         url = matcher.group(1);
-      }
-      return url;
+      String[] urlWords = session.getOriginalURL().split("-");
+
+      return urlWords[urlWords.length - 1].replaceAll("[^0-9]", "");
    }
 
    @Override
-   public List<Product> extractInformation(JSONObject json) throws Exception {
-      super.extractInformation(json);
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (json != null && !json.isEmpty()) {
+      if (doc.selectFirst(".product-detail") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalPid = getProductPid();
-         String description = json.optString("descricao_geral");
-         CategoryCollection categoryCollection = getCategories(json);
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".long-description"));
+         CategoryCollection categories = getCategories(doc, "[name=keywords]", "content");
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".zoom > img", Arrays.asList("src"), "https", "");
+         String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:title\"]", "content");
+         boolean available = doc.selectFirst("[title=\"Adicionar ao carrinho\"]") != null;
+         Offers offers = available ? scrapOffers(doc) : new Offers();
+         Elements colors = doc.select(".variation-group .options label");
 
-         JSONArray variations = JSONUtils.getValueRecursive(json, "sellers.0.gradeSeller", JSONArray.class);
-         for (Object variation : variations) {
-            if (variation instanceof JSONObject) {
-               JSONObject productInfo = (JSONObject) variation;
-               String internalId = productInfo.optString("sku");
-               Integer identifierImage = productInfo.optInt("idGradeX");
+         for (Element e : colors) {
+            String colorName = CrawlerUtils.scrapStringSimpleInfo(e, "span b", false);
 
-               String name = getName(json, identifierImage);
-               List<String> images = getImage(json, identifierImage);
-               String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-               int stock = productInfo.optInt("disponivel");
-               boolean available = stock > 0;
-               Offers offers = available ? scrapOffers(productInfo) : new Offers();
+            colorName = getName(name, colorName);
 
-               // Creating the productInfo
-               Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(images)
-                  .setDescription(description)
-                  .setCategories(categoryCollection)
-                  .setOffers(offers)
-                  .build();
+            // Creating the productInfo
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalPid)
+               .setInternalPid(internalPid)
+               .setName(colorName)
+               .setPrimaryImage(primaryImage)
+               .setDescription(description)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setOffers(offers)
+               .build();
 
-               products.add(product);
-            }
+            products.add(product);
          }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -120,10 +84,10 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
       return products;
    }
 
-   private Offers scrapOffers(JSONObject product) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(product);
-      List<String> sales = scrapSales(product);
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -138,102 +102,14 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
 
    }
 
-   private List<String> scrapSales(JSONObject product) {
-      List<String> sales = new ArrayList<>();
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      String salesOnJson = product.optString("boletoPercentual");
-      sales.add(salesOnJson);
-      return sales;
-   }
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".list-price > span", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".instant-price", null, true, ',', session);
+      Double bankSlipValue = spotlightPrice;
 
-   private CategoryCollection getCategories(JSONObject jsonObject) {
-      CategoryCollection categoryCollection = new CategoryCollection();
-      String firstCategorie = jsonObject.optString("categoria");
-      String subCategorie = jsonObject.optString("subcategoria");
-      String terCategorie = jsonObject.optString("tercategoria");
+      CreditCards creditCards = scrapCreditCards(doc);
 
-      if (firstCategorie != null && !firstCategorie.isEmpty()) {
-         categoryCollection.add(firstCategorie);
-      }
-      if (subCategorie != null && !subCategorie.isEmpty()) {
-         categoryCollection.add(subCategorie);
-      }
-      if (terCategorie != null && !terCategorie.isEmpty()) {
-         categoryCollection.add(terCategorie);
-      }
-
-      return categoryCollection;
-   }
-
-
-   private String getName(JSONObject dataJson, Integer identifier) {
-      StringBuilder stringBuilder = new StringBuilder();
-      String color = getColor(dataJson, identifier);
-      String name = dataJson.optString("nome");
-
-      if (name != null && !name.isEmpty()) {
-         stringBuilder.append(name);
-         if (color != null && !color.isEmpty()) {
-            stringBuilder.append(" - ").append(color);
-         }
-      }
-
-
-      return stringBuilder.toString();
-
-   }
-
-   private String getColor(JSONObject dataJson, Integer identifier) {
-      JSONArray variations = dataJson.optJSONArray("gradeX");
-      String color = null;
-
-      if (variations != null) {
-         for (Object variation : variations) {
-            if (variation instanceof JSONObject && ((JSONObject) variation).has("idGradeX")) {
-               JSONObject gradeVariation = ((JSONObject) variation);
-               Integer codeGrade = gradeVariation.optInt("idGradeX");
-               if (codeGrade.equals(identifier)) {
-                  color = gradeVariation.optString("descricao");
-                  break;
-
-               }
-            }
-         }
-      }
-      return color;
-   }
-
-   private List<String> getImage(JSONObject dataJson, Integer identifier) {
-      List<String> imageList = new ArrayList<>();
-      String image;
-      JSONArray variationsImages = dataJson.optJSONArray("images");
-
-      if (variationsImages != null) {
-         for (Object variation : variationsImages) {
-            if (variation instanceof JSONObject && ((JSONObject) variation).has("idGradeX")) {
-               JSONObject gradeVariation = ((JSONObject) variation);
-               Integer codeGrade = gradeVariation.optInt("idGradeX");
-               if (codeGrade.equals(identifier)) {
-                  image = gradeVariation.optString("images");
-                  if (image != null && !image.isEmpty()) {
-                     imageList.add(image);
-                  }
-               }
-            }
-
-         }
-      }
-      return imageList;
-
-   }
-
-
-   private Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
-
-      Double priceFrom = JSONUtils.getValueRecursive(product, "0.listPrices.real", Double.class);
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(product, "preco", true);
-      Double bankSlipValue = JSONUtils.getDoubleValueFromJSON(product, "boletoValor", true);
-      CreditCards creditCards = scrapCreditCards(product);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(bankSlipValue)
          .build();
@@ -246,30 +122,21 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditCards(JSONObject product) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Document doc) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      JSONArray installmentsArray = product.optJSONArray("parcelamento");
       Installments installments = new Installments();
-      if (installmentsArray != null) {
-         for (Object obj : installmentsArray) {
-            if (obj instanceof JSONObject) {
-               JSONObject installmentsJson = (JSONObject) obj;
-               String numberInstallmentStr = installmentsJson.optString("parcela");
-               Integer numberInstallment = numberInstallmentStr != null ? Integer.valueOf(numberInstallmentStr.replace("x", "")) : null;
-               String valueStr = installmentsJson.optString("valor_total");
-               String valueInstallmentStr = installmentsJson.optString("valor");
-               Double valueInstallment = MathUtils.parseDoubleWithComma(valueInstallmentStr);
-               Double value = valueStr != null ? MathUtils.parseDoubleWithComma(valueStr) : null;
-               installments.add(Installment.InstallmentBuilder.create()
-                  .setInstallmentNumber(numberInstallment)
-                  .setFinalPrice(value)
-                  .setInstallmentPrice(valueInstallment)
-                  .build());
-
-            }
-         }
-      }
+      String numberInstallmentStr = CrawlerUtils.scrapStringSimpleInfo(doc, ".parcels", false);
+      Integer numberInstallment = numberInstallmentStr != null ? Integer.valueOf(numberInstallmentStr.replace("x", "")) : null;
+      String valueStr =  CrawlerUtils.scrapStringSimpleInfo(doc, ".sale-price > span", false);
+      String valueInstallmentStr =  CrawlerUtils.scrapStringSimpleInfo(doc, ".parcel-value", false);
+      Double valueInstallment = MathUtils.parseDoubleWithComma(valueInstallmentStr);
+      Double value = valueStr != null ? MathUtils.parseDoubleWithComma(valueStr) : null;
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(numberInstallment)
+         .setFinalPrice(value)
+         .setInstallmentPrice(valueInstallment)
+         .build());
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
@@ -281,4 +148,30 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
       return creditCards;
    }
 
+   public static CategoryCollection getCategories(Document doc, String selector, String attr) {
+      CategoryCollection categories = new CategoryCollection();
+
+      Elements elementCategories = doc.select(selector);
+
+      String selectorAttribute = elementCategories.attr(attr);
+
+      ArrayList<String> categoryList = new ArrayList<>(Arrays.asList(selectorAttribute.split(",")));
+
+      for (String category: categoryList) {
+         categories.add(category.trim());
+      }
+      return categories;
+   }
+
+   private String getName(String name, String color) {
+      StringBuilder stringBuilder = new StringBuilder();
+
+      if (name != null && !name.isEmpty()) {
+         stringBuilder.append(name);
+         if (color != null && !color.isEmpty()) {
+            stringBuilder.append(" - ").append(color);
+         }
+      }
+      return stringBuilder.toString();
+   }
 }
