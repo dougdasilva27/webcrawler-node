@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.util.Logging;
+import models.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,7 +79,14 @@ public class CrawlerTaskEndpoint extends HttpServlet {
       if (task instanceof Crawler && task.getSession() instanceof InsightsCrawlerSession) {
 
          if (executionParameters.isSendToKinesisCatalog()) {
+            try{
                KPLProducer.sendMessageCatalogToKinesis(task, session);
+               Logging.printLogInfo(logger, "Sucess to send to kinesis sessionId: " + session.getSessionId());
+
+            } catch (Exception e){
+               Logging.printLogError(logger, "Failed to send to kinesis sessionId: " + session.getSessionId());
+            }
+
          }
       }
 
