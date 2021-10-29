@@ -421,8 +421,7 @@ public abstract class Crawler extends Task {
       if(parser == Parser.HTML && !response.startsWith("<")){
          throw new RequestException("Unexpected body: response is not html");
       }
-
-      if(parser == Parser.JSON && !response.startsWith("{")){
+      if(parser == Parser.JSON && (!response.startsWith("{") || !response.startsWith("["))){
          throw new RequestException("Unexpected body: response is not json");
       }
    }
