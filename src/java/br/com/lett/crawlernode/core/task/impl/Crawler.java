@@ -26,6 +26,7 @@ import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.dto.ProductDTO;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.exceptions.RequestException;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import br.com.lett.crawlernode.integration.redis.config.RedisDb;
@@ -382,16 +383,14 @@ public abstract class Crawler extends Task {
 
          if (parser != Parser.NONE) {
             response = fetchResponse();
+            validateResponse(response);
+            validateBody(response.getBody(), parser);
             obj = parser.parse(response.getBody());
          } else {
             obj = fetch();
          }
 
          session.setProductPageResponse(obj);
-
-         if(response != null){
-            validateResponse(response);
-         }
 
          if (obj instanceof Document) {
             products = extractInformation((Document) obj);
@@ -416,6 +415,15 @@ public abstract class Crawler extends Task {
       }
 
       return processedProducts;
+   }
+
+   private void validateBody(String response, Parser parser) throws RequestException{
+      if(parser == Parser.HTML && !response.startsWith("<")){
+         throw new RequestException("Unexpected body: response is not html");
+      }
+      if(parser == Parser.JSON && (!response.startsWith("{") || !response.startsWith("["))){
+         throw new RequestException("Unexpected body: response is not json");
+      }
    }
 
    private void validateResponse(Response response) throws ResponseCodeException{
