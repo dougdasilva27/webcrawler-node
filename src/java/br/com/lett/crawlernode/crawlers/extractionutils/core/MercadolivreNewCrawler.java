@@ -33,6 +33,8 @@ import org.slf4j.Logger;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Date: 08/10/2018
@@ -70,45 +72,48 @@ public class MercadolivreNewCrawler {
       boolean mustAddProduct = availableToBuy && checkIfMustScrapProduct(offers);
 
       if (mustAddProduct || mustAddProductUnavailable) {
-         JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
 
-         String internalPid = jsonInfo.optString("productID");
-         String internalId;
-         Element variationElement = doc.selectFirst("input[name='variation']");
-         if (variationElement != null && !doc.select(".ui-pdp-variations .ui-pdp-variations__picker:not(.ui-pdp-variations__picker-single) a").isEmpty() || !doc.select(".andes-dropdown__popover ul li").isEmpty()) {
-            internalId = internalPid + '_' + variationElement.attr("value");
-         } else {
-            internalId = jsonInfo.optString("sku");
+         JSONObject jsonInfo = selectJsonFromHtml(doc);
+         JSONObject initialState = jsonInfo != null ? jsonInfo.optJSONObject("initialState") : null;
+         JSONObject schema = initialState != null ? JSONUtils.getValueRecursive(initialState, "schema.0", JSONObject.class) : null;
+         if (schema != null) {
+            String internalPid = schema.optString("productID");
+            String internalId;
+            Element variationElement = doc.selectFirst("input[name='variation']");
+            if (variationElement != null && !doc.select(".ui-pdp-variations .ui-pdp-variations__picker:not(.ui-pdp-variations__picker-single) a").isEmpty() || !doc.select(".andes-dropdown__popover ul li").isEmpty()) {
+               internalId = internalPid + '_' + variationElement.attr("value");
+            } else {
+               internalId = schema.optString("sku");
+            }
+
+            String name = scrapName(doc);
+            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
+               "http2.mlstatic.com");
+            List<String> secondaryImages = crawlImages(primaryImage, doc);
+            String description =
+               CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
+
+            RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+            ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
+            ratingReviews = Objects.isNull(ratingReviews) ? ratingReviewsCollection.getRatingReviews(internalId) : ratingReviews;
+
+            product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage != null ? primaryImage.replace(".webp", ".jpg") : null)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setRatingReviews(ratingReviews)
+               .setOffers(offers)
+               .build();
          }
-
-         String name = scrapName(doc);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
-            "http2.mlstatic.com");
-         List<String> secondaryImages = crawlImages(primaryImage, doc);
-         String description =
-            CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
-
-         RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-         ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
-         ratingReviews = Objects.isNull(ratingReviews) ? ratingReviewsCollection.getRatingReviews(internalId) : ratingReviews;
-
-         product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage != null ? primaryImage.replace(".webp", ".jpg") : null)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setRatingReviews(ratingReviews)
-            .setOffers(offers)
-            .build();
       }
-
       return product;
    }
 
@@ -485,5 +490,55 @@ public class MercadolivreNewCrawler {
    public Installments scrapInstallmentsV2(Element doc) throws MalformedPricingException {
 
       return scrapInstallments(doc, ".ui-pdp-container__row--payment-summary .ui-pdp-media__title");
+   }
+
+   public JSONObject selectJsonFromHtml(Document doc) {
+
+      if (doc == null)
+         throw new IllegalArgumentException("Argument doc cannot be null");
+      String token = "window.__PRELOADED_STATE__";
+      JSONObject object = null;
+      Elements scripts = doc.select("script");
+
+      for (Element e : scripts) {
+         String script = e.html();
+
+         if (script.contains(token)) {
+
+            String stringToConvertInJson = getObjectSecondOption(script);
+            if (!stringToConvertInJson.isEmpty()) {
+               object = CrawlerUtils.stringToJson(stringToConvertInJson);
+            }
+            if (object == null || object.isEmpty()) {
+               stringToConvertInJson = getObject(script);
+               object = CrawlerUtils.stringToJson(stringToConvertInJson);
+
+            }
+
+            break;
+         }
+      }
+
+      return object;
+   }
+
+   private String getObjectSecondOption(String script) {
+      String json = null;
+      Pattern pattern = Pattern.compile("\\{\"translations(.*)+false}");
+      Matcher matcher = pattern.matcher(script);
+      if (matcher.find()) {
+         json = matcher.group(0);
+      }
+      return json;
+   }
+
+   private String getObject(String script) {
+      String json = null;
+      Pattern pattern = Pattern.compile("\\{\"translations(.*)?shopModel\":\\{}}");
+      Matcher matcher = pattern.matcher(script);
+      if (matcher.find()) {
+         json = matcher.group(0);
+      }
+      return json;
    }
 }
