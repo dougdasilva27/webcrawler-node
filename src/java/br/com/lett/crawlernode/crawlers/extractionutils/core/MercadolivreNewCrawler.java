@@ -425,7 +425,6 @@ public class MercadolivreNewCrawler {
       BankSlip bankTicket = BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
-      //price-tag-fraction
 
       return PricingBuilder.create()
          .setPriceFrom(priceFrom)
