@@ -34,20 +34,19 @@ import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.Installment.InstallmentBuilder;
 import org.jsoup.nodes.Element;
 
-public abstract class ZedeliveryCrawler extends Crawler {
+public class ZedeliveryCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.ze.delivery";
    private static final String API_URL = "https://api.ze.delivery/public-api";
-   private static final String SELLER_NAME = "zedelivery";
+   private static String SELLER_NAME = "";
    private String visitorId;
-
-   protected abstract ZedeliveryInfo getZedeliveryInfo();
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public ZedeliveryCrawler(Session session) {
       super(session);
+      SELLER_NAME = session.getMarket().getName();
    }
 
    @Override
@@ -63,22 +62,21 @@ public abstract class ZedeliveryCrawler extends Crawler {
    private JSONObject validateUUID() {
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
-      ZedeliveryInfo zeDeliveryInfo = getZedeliveryInfo();
 
       String initPayload = "{\n" +
          "  \"operationName\": \"setDeliveryOption\",\n" +
          "  \"variables\": {\n" +
          "    \"deliveryOption\": {\n" +
          "      \"address\": {\n" +
-         "        \"latitude\": " + zeDeliveryInfo.getLatitude() + ",\n" +
-         "        \"longitude\": " + zeDeliveryInfo.getLongitude() + ",\n" +
-         "        \"zipcode\": \"" + zeDeliveryInfo.getZipcode() + "\",\n" +
-         "        \"street\": \"" + zeDeliveryInfo.getStreet() + "\",\n" +
-         "        \"neighborhood\": \"" + zeDeliveryInfo.getNeighborhood() + "\",\n" +
-         "        \"city\": \"" + zeDeliveryInfo.getCity() + "\",\n" +
-         "        \"province\": \"" + zeDeliveryInfo.getProvince() + "\",\n" +
+         "        \"latitude\": " + session.getOptions().optString("latitude") + ",\n" +
+         "        \"longitude\": " + session.getOptions().optString("longitude") + ",\n" +
+         "        \"zipcode\": \"" + session.getOptions().optString("zipCode") + "\",\n" +
+         "        \"street\": \"" + session.getOptions().optString("street") + "\",\n" +
+         "        \"neighborhood\": \"" + session.getOptions().optString("neighborhood") + "\",\n" +
+         "        \"city\": \"" + session.getOptions().optString("city") + "\",\n" +
+         "        \"province\": \"" + session.getOptions().optString("province") + "\",\n" +
          "        \"country\": \"BR\",\n" +
-         "        \"number\": \"" + zeDeliveryInfo.getNumber() + "\",\n" +
+         "        \"number\": \"" + session.getOptions().optString("number") + "\",\n" +
          "        \"referencePoint\": \"\"\n" +
          "      },\n" +
          "      \"deliveryMethod\": \"DELIVERY\",\n" +
@@ -210,164 +208,5 @@ public abstract class ZedeliveryCrawler extends Crawler {
       }
 
       return creditCards;
-   }
-
-   public static class ZedeliveryInfo {
-      private String longitude;
-      private String latitude;
-      private String street;
-      private String neighborhood;
-      private String city;
-      private String province;
-
-      public void setReferencePoint(String referencePoint) {
-         this.referencePoint = referencePoint;
-      }
-
-      public void setNumber(String number) {
-         this.number = number;
-      }
-
-      public void setZipcode(String zipcode) {
-         this.zipcode = zipcode;
-      }
-
-      private String referencePoint = "";
-      private String number = "100";
-      private String zipcode;
-
-      public String getLongitude() {
-         return longitude;
-      }
-
-      public String getLatitude() {
-         return latitude;
-      }
-
-      public String getStreet() {
-         return street;
-      }
-
-      public String getNeighborhood() {
-         return neighborhood;
-      }
-
-      public String getCity() {
-         return city;
-      }
-
-      public String getProvince() {
-         return province;
-      }
-
-      public String getZipcode() {
-         return zipcode;
-      }
-
-      public String getReferencePoint() {
-         return referencePoint;
-      }
-
-      public String getNumber() {
-         return number;
-      }
-
-      public void setLongitude(String longitude) {
-         this.longitude = longitude;
-      }
-
-      public void setLatitude(String latitude) {
-         this.latitude = latitude;
-      }
-
-      public void setStreet(String street) {
-         this.street = street;
-      }
-
-      public void setNeighborhood(String neighborhood) {
-         this.neighborhood = neighborhood;
-      }
-
-      public void setCity(String city) {
-         this.city = city;
-      }
-
-      public void setProvince(String province) {
-         this.province = province;
-      }
-   }
-
-   public static class ZedeliveryInfoBuilder {
-      private String longitude = null;
-      private String latitude = null;
-      private String street = null;
-      private String neighborhood = null;
-      private String city = null;
-      private String province = null;
-      private String referencePoint = "";
-      private String number = "100";
-      private String zipcode = null;
-
-      public static ZedeliveryInfoBuilder create() {
-         return new ZedeliveryInfoBuilder();
-      }
-
-      public ZedeliveryInfoBuilder setLongitude(String longitude) {
-         this.longitude = longitude;
-         return this;
-      }
-
-      public ZedeliveryInfoBuilder setLatitude(String latitude) {
-         this.latitude = latitude;
-         return this;
-      }
-
-      public ZedeliveryInfoBuilder setStreet(String street) {
-         this.street = street;
-         return this;
-      }
-
-      public ZedeliveryInfoBuilder setNeighborhood(String neighborhood) {
-         this.neighborhood = neighborhood;
-         return this;
-      }
-
-      public ZedeliveryInfoBuilder setCity(String city) {
-         this.city = city;
-         return this;
-      }
-
-      public ZedeliveryInfoBuilder setProvince(String province) {
-         this.province = province;
-         return this;
-      }
-
-      public ZedeliveryInfoBuilder setReferencePoint(String referencePoint) {
-         this.referencePoint = referencePoint;
-         return this;
-      }
-
-      public ZedeliveryInfoBuilder setNumber(String number) {
-         this.number = number;
-         return this;
-      }
-
-      public ZedeliveryInfoBuilder setZipCode(String zipcode) {
-         this.zipcode = zipcode;
-         return this;
-      }
-
-      public ZedeliveryInfo build() {
-         ZedeliveryInfo ze = new ZedeliveryInfo();
-
-         ze.setCity(this.city);
-         ze.setLatitude(this.latitude);
-         ze.setLongitude(this.longitude);
-         ze.setNeighborhood(this.neighborhood);
-         ze.setProvince(this.province);
-         ze.setStreet(this.street);
-
-         return ze;
-      }
    }
 }

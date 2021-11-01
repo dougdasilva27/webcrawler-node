@@ -2,19 +2,16 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
-
-import br.com.lett.crawlernode.crawlers.extractionutils.core.ZedeliveryCrawler;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.ZedeliveryCrawler.ZedeliveryInfo;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public abstract class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
+public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
 
    private static final String API_URL = "https://api.ze.delivery/public-api";
 
@@ -24,41 +21,46 @@ public abstract class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
       super(session);
    }
 
-   protected abstract ZedeliveryInfo getZedeliveryInfo();
-
-   private void validateUUID() {
-      visitorId = UUID.randomUUID().toString();
-
+   private JSONObject validateUUID() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("x-visitorid", visitorId);
-      headers.put("content-type:", "application/json");
+      headers.put("content-type", "application/json");
 
-      ZedeliveryInfo zeDeliveryInfo = getZedeliveryInfo();
+      String initPayload = "{\n" +
+         "  \"operationName\": \"setDeliveryOption\",\n" +
+         "  \"variables\": {\n" +
+         "    \"deliveryOption\": {\n" +
+         "      \"address\": {\n" +
+         "        \"latitude\": " + session.getOptions().optString("latitude")  + ",\n" +
+         "        \"longitude\": " + session.getOptions().optString("longitude")  + ",\n" +
+         "        \"zipcode\": \"" + session.getOptions().optString("zipCode") + "\",\n" +
+         "        \"street\": \"" + session.getOptions().optString("street") + "\",\n" +
+         "        \"neighborhood\": \"" + session.getOptions().optString("neighborhood") + "\",\n" +
+         "        \"city\": \"" + session.getOptions().optString("city") + "\",\n" +
+         "        \"province\": \"" + session.getOptions().optString("province") + "\",\n" +
+         "        \"country\": \"BR\",\n" +
+         "        \"number\": \"" + session.getOptions().optString("number") + "\",\n" +
+         "        \"referencePoint\": \"\"\n" +
+         "      },\n" +
+         "      \"deliveryMethod\": \"DELIVERY\",\n" +
+         "      \"schedule\": \"NOW\"\n" +
+         "    },\n" +
+         "    \"forceOverrideProducts\": false\n" +
+         "  },\n" +
+         "  \"query\": \"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption: $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n          addressLine2\\n          referencePoint\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n            referencePoint\\n          }\\n        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"\n" +
+         "}";
 
-      String initPayload = "{\"operationName\":\"setDeliveryOption\",\"variables\":{\"deliveryOption\":" +
-         "{\"address\":{\"latitude\":"+ zeDeliveryInfo.getLatitude() +",\"longitude\":"+ zeDeliveryInfo.getLongitude() +"," +
-         "\"zipcode\":\""+ zeDeliveryInfo.getZipcode() +"\",\"street\":\""+ zeDeliveryInfo.getStreet() +"\"," +
-         "\"neighborhood\":\""+ zeDeliveryInfo.getNeighborhood() +"\",\"city\":\""+ zeDeliveryInfo.getCity() +"\"," +
-         "\"province\":\""+ zeDeliveryInfo.getProvince() +"\",\"country\":\"BR\",\"number\":\"45\",\"referencePoint\":\"\"}," +
-         "\"deliveryMethod\":\"DELIVERY\",\"schedule\":\"NOW\"},\"forceOverrideProducts\":false}," +
-         "\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) " +
-         "{\\n  manageCheckout(deliveryOption: $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    " +
-         "messages {\\n      category\\n      target\\n      key\\n      args\\n      message\\n    }\\n    checkout {\\n " +
-         "     id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n          zipcode\\n" +
-         "          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n " +
-         "         addressLine2\\n          referencePoint\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n " +
-         "       pickupPoc {\\n          id\\n          tradingName\\n          address {\\n            latitude\\n            longitude\\n " +
-         "           zipcode\\n            country\\n            province\\n            city\\n            neighborhood\\n            street\\n " +
-         "           number\\n            addressLine2\\n            referencePoint\\n          }\\n        }\\n      }\\n      paymentMethod {\\n " +
-         "       id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
-
+      Integer contentLength = initPayload.length();
+      headers.put("Content-Length", contentLength.toString());
+      
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
          .setPayload(initPayload)
-         .setCookies(cookies)
          .setHeaders(headers)
          .mustSendContentEncoding(false)
          .build();
-      this.dataFetcher.post(session, request);
+
+      Response response = new JsoupDataFetcher().post(session, request);
+      visitorId = response.getHeaders().get("x-visitorid");
+      return CrawlerUtils.stringToJson(response.getBody());
    }
 
    protected JSONObject fetch() {
@@ -66,11 +68,13 @@ public abstract class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
 
       Map<String, String> headers = new HashMap<>();
       headers.put("x-visitorid", visitorId);
-      headers.put("content-type:", "application/json");
+      headers.put("Content-Type", "application/json");
+      headers.put("Accept-Encoding","gzip, deflate, br");
+      headers.put("Connection","keep-alive");
 
       String payload =
          "{\"variables\":{\"searchTerm\":\"" + this.keywordEncoded
-            + "\",\"limit\":\"20\"},\"query\":\"query search($searchTerm: String!, $limit: Int) {  search(searchTerm: $searchTerm) {    items(limit: $limit) "
+            + "\",\"limit\":"+20+"},\"query\":\"query search($searchTerm: String!, $limit: Int) {  search(searchTerm: $searchTerm) {    items(limit: $limit) "
             + "{      id      type      displayName      images      applicableDiscount {        presentedDiscountValue        discountType        finalValue      }"
             + "      category {        id        displayName      }      brand {        id        displayName      }      price {        min        max      }    }"
             + "  }}\",\"operationName\":\"search\"}";
@@ -79,9 +83,10 @@ public abstract class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
          .setPayload(payload)
          .setCookies(cookies)
          .setHeaders(headers)
-         .mustSendContentEncoding(false)
+         .setSendUserAgent(false)
          .build();
-      Response response = this.dataFetcher.post(session, request);
+
+      Response response = new JsoupDataFetcher().post(session, request);
       return CrawlerUtils.stringToJson(response.getBody());
    }
 
