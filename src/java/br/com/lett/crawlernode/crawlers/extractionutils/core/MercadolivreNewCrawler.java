@@ -33,6 +33,8 @@ import org.slf4j.Logger;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Date: 08/10/2018
@@ -70,15 +72,21 @@ public class MercadolivreNewCrawler {
       boolean mustAddProduct = availableToBuy && checkIfMustScrapProduct(offers);
 
       if (mustAddProduct || mustAddProductUnavailable) {
-         JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
+         JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ = ", ";\n" +
+            "        }},", true, true);
+         if (jsonInfo.isEmpty()) {
+            jsonInfo = selectJsonFromHtml(doc);
+         }
+         JSONObject initialState = jsonInfo.optJSONObject("initialState");
 
-         String internalPid = jsonInfo.optString("productID");
+         JSONObject schema = JSONUtils.getValueRecursive(initialState, "schema.0", JSONObject.class);
+         String internalPid = schema.optString("productID");
          String internalId;
          Element variationElement = doc.selectFirst("input[name='variation']");
          if (variationElement != null && !doc.select(".ui-pdp-variations .ui-pdp-variations__picker:not(.ui-pdp-variations__picker-single) a").isEmpty() || !doc.select(".andes-dropdown__popover ul li").isEmpty()) {
             internalId = internalPid + '_' + variationElement.attr("value");
          } else {
-            internalId = jsonInfo.optString("sku");
+            internalId = schema.optString("sku");
          }
 
          String name = scrapName(doc);
@@ -420,6 +428,7 @@ public class MercadolivreNewCrawler {
       BankSlip bankTicket = BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
+      //price-tag-fraction
 
       return PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -485,5 +494,54 @@ public class MercadolivreNewCrawler {
    public Installments scrapInstallmentsV2(Element doc) throws MalformedPricingException {
 
       return scrapInstallments(doc, ".ui-pdp-container__row--payment-summary .ui-pdp-media__title");
+   }
+
+   public JSONObject selectJsonFromHtml(Document doc) {
+
+      if (doc == null)
+         throw new IllegalArgumentException("Argument doc cannot be null");
+      String token = "window.__PRELOADED_STATE__";
+      JSONObject object = new JSONObject();
+      Elements scripts = doc.select("script");
+
+      for (Element e : scripts) {
+         String script = e.html();
+
+         if (script.contains(token)) {
+
+            String stringToConvertInJson = getObject(script);
+            if (!stringToConvertInJson.isEmpty()){
+               object = CrawlerUtils.stringToJson(stringToConvertInJson);
+            }
+            if (object.isEmpty()){
+               stringToConvertInJson = getObjectSecondOption(script);
+               object = CrawlerUtils.stringToJson(stringToConvertInJson);
+
+            }
+
+            break;
+         }
+      }
+
+      return object;
+   }
+   private String getObject(String script) {
+      String json = null;
+      Pattern pattern = Pattern.compile("\\{\"translations(.*)+false}");
+      Matcher matcher = pattern.matcher(script);
+      if (matcher.find()) {
+         json = matcher.group(0);
+      }
+      return json;
+   }
+
+   private String getObjectSecondOption(String script) {
+      String json = null;
+      Pattern pattern = Pattern.compile("\\{\"translations(.*)?shopModel\":\\{}}");
+      Matcher matcher = pattern.matcher(script);
+      if (matcher.find()) {
+         json = matcher.group(0);
+      }
+      return json;
    }
 }
