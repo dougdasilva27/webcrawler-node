@@ -1,13 +1,15 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
+import br.com.lett.crawlernode.util.*;
 import models.AdvancedRatingReview;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -17,20 +19,14 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
  * Date: 20/08/2018
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class BrasilEnutriCrawler extends Crawler {
 
@@ -64,8 +60,8 @@ public class BrasilEnutriCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = crawlInternalId(doc);
          String internalPid = crawlInternalPid(doc);
+         String internalId = internalPid;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".prod__name h1", false);
          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".prod__shop:last-child .price span", null, false, ',', session);
          Prices prices = crawlPrices(price, doc);
@@ -75,13 +71,43 @@ public class BrasilEnutriCrawler extends Crawler {
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image-thumbs li:not(:first-child) a img", Arrays.asList("src"), "https://", "www.enutri.com.br", primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".tabs__content .std"));
          RatingsReviews ratingReviews = crawlRating(internalId, doc);
-         // Creating the product
-         Product product = ProductBuilder
+
+         JSONArray variationJson = scrapVariationsJson(doc);
+
+         if (!variationJson.isEmpty()) {
+            for (Object o : variationJson) {
+               JSONObject variation = (JSONObject) o;
+               String variationName = name + " - " + variation.optString("label");
+               String internalIdVariation = internalId + "-" + variation.optString("id");
+
+               Product product = ProductBuilder
+                  .create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalIdVariation)
+                  .setInternalPid(internalPid)
+                  .setName(variationName)
+                  .setPrice(price)
+                  .setPrices(prices)
+                  .setAvailable(available)
+                  .setCategory1(categories.getCategory(0))
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setMarketplace(new Marketplace())
+                  .setRatingReviews(ratingReviews)
+                  .build();
+
+               products.add(product);
+            }
+         } else {
+            Product product = ProductBuilder
                .create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
-               .setName(name)
+               .setName(name.toString())
                .setPrice(price)
                .setPrices(prices)
                .setAvailable(available)
@@ -95,21 +121,47 @@ public class BrasilEnutriCrawler extends Crawler {
                .setRatingReviews(ratingReviews)
                .build();
 
-         products.add(product);
-
+            products.add(product);
+         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
       return products;
-
    }
 
    private boolean isProductPage(Document doc) {
       return !doc.select(".product-view").isEmpty();
    }
 
-   private String crawlInternalId(Document doc) {
+
+   private JSONArray scrapVariationsJson(Document document) {
+      JSONArray jsonArray = new JSONArray();
+
+      Elements scripts = document.select("script[type=text/javascript]");
+      for (Element script : scripts) {
+         if (script.toString().contains("var spConfig = new Product.Config")) {
+            String regex = "Product\\.Config\\((.*?)\\);";
+            Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+            Matcher matcher = pattern.matcher(script.toString());
+
+            while (matcher.find()) {
+               JSONObject json = JSONUtils.stringToJson(matcher.group(1));
+               JSONObject attributes = json.optJSONObject("attributes");
+
+               for (String key : attributes.keySet()) {
+                  JSONObject variationType = attributes.optJSONObject(key);
+                  jsonArray = variationType.optJSONArray("options");
+               }
+            }
+            break;
+         }
+      }
+
+      return jsonArray;
+   }
+
+   private String crawlInternalPid(Document doc) {
       String internalId = null;
 
       Element internalIdElement = doc.select("input[name=product]").first();
@@ -118,17 +170,6 @@ public class BrasilEnutriCrawler extends Crawler {
       }
 
       return internalId;
-   }
-
-   private String crawlInternalPid(Document document) {
-      String internalPid = null;
-      Element codElement = document.select("#display_product_name span").first();
-
-      if (codElement != null) {
-         internalPid = CommonMethods.getLast(codElement.ownText().replace("(", "").replace(")", "").split("\\.")).trim();
-      }
-
-      return internalPid;
    }
 
    private CategoryCollection crawlCategories(Document document) {
@@ -151,7 +192,6 @@ public class BrasilEnutriCrawler extends Crawler {
    }
 
    /**
-    * 
     * @param doc
     * @param price
     * @return
@@ -221,36 +261,36 @@ public class BrasilEnutriCrawler extends Crawler {
       return CrawlerUtils.scrapIntegerFromHtml(document, ".rating-links", false, 0);
    }
 
-   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc){
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
 
       AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
 
       Elements starsReviews = doc.select("ul.reviews__list li .x-out-of-5 span.x");
 
-      if(starsReviews != null){
+      if (starsReviews != null) {
 
-         for(Element e: starsReviews){
+         for (Element e : starsReviews) {
 
-            switch (e.text()){
+            switch (e.text()) {
                case "1":
                   int stars1 = advancedRatingReview.getTotalStar1();
-                  advancedRatingReview.setTotalStar1(stars1+1);
+                  advancedRatingReview.setTotalStar1(stars1 + 1);
 
                case "2":
                   int stars2 = advancedRatingReview.getTotalStar1();
-                  advancedRatingReview.setTotalStar2(stars2+1);
+                  advancedRatingReview.setTotalStar2(stars2 + 1);
                   break;
                case "3":
                   int stars3 = advancedRatingReview.getTotalStar1();
-                  advancedRatingReview.setTotalStar3(stars3+1);
+                  advancedRatingReview.setTotalStar3(stars3 + 1);
                   break;
                case "4":
                   int stars4 = advancedRatingReview.getTotalStar1();
-                  advancedRatingReview.setTotalStar4(stars4+1);
+                  advancedRatingReview.setTotalStar4(stars4 + 1);
                   break;
                case "5":
                   int stars5 = advancedRatingReview.getTotalStar1();
-                  advancedRatingReview.setTotalStar5(stars5+1);
+                  advancedRatingReview.setTotalStar5(stars5 + 1);
                   break;
                default:
             }
