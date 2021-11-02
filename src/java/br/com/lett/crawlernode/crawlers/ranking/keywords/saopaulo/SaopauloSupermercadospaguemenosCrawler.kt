@@ -21,7 +21,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : CrawlerRanking
    }
 
    override fun processBeforeFetch() {
-      if (zipCode == "") {
+      if (zipCode != "") {
          val cookie = BasicClientCookie("zipcode", zipCode)
          cookie.domain = "www.superpaguemenos.com.br"
          cookie.path = "/"
