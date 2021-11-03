@@ -346,7 +346,7 @@ public class BrasilSitemercadoCrawler extends Crawler {
          .setCookies(cookies)
          .setHeaders(headers)
          .setPayload(loadPayload)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.LUMINATI_RESIDENTIAL_BR, ProxyCollection.INFATICA_RESIDENTIAL_BR))
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.LUMINATI_RESIDENTIAL_BR))
          .build();
 
 
@@ -362,7 +362,7 @@ public class BrasilSitemercadoCrawler extends Crawler {
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.LUMINATI_RESIDENTIAL_BR, ProxyCollection.INFATICA_RESIDENTIAL_BR))
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.LUMINATI_RESIDENTIAL_BR))
          .build();
 
       return this.dataFetcher.get(session, requestApi);
