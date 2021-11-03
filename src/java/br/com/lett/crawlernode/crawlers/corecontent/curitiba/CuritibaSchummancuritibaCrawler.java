@@ -60,6 +60,10 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
             String colorName = CrawlerUtils.scrapStringSimpleInfo(e, "span b", false);
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "input", "value");
 
+            if(internalId.equals("")){
+               internalId = internalPid;
+            }
+
             colorName = getName(name, colorName);
 
             // Creating the productInfo
