@@ -268,6 +268,9 @@ public class BrasilAmazonCrawler extends Crawler {
          if (spotlightPrice == null) {
             spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=price]", null, false, ',', session);
          }
+         if (spotlightPrice == null) {
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price > span", null, false, ',', session);
+         }
       }
 
       CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
