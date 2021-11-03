@@ -91,6 +91,7 @@ public class DataFetcherRedirectStrategy implements RedirectStrategy {
             return isRedirectable(method) && locationHeader != null;
          case HttpStatus.SC_MOVED_PERMANENTLY:
          case HttpStatus.SC_TEMPORARY_REDIRECT:
+         case 308:
             return isRedirectable(method);
          case HttpStatus.SC_SEE_OTHER:
             return true;

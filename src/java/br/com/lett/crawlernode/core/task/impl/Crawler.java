@@ -419,10 +419,12 @@ public abstract class Crawler extends Task {
 
    private void validateBody(String response, Parser parser) throws RequestException{
       if(parser == Parser.HTML && !response.startsWith("<")){
-         throw new RequestException("Unexpected body: response is not html");
+         throw new RequestException("Unexpected body: response is not HTML");
       }
-      if(parser == Parser.JSON && (!response.startsWith("{") || !response.startsWith("["))){
-         throw new RequestException("Unexpected body: response is not json");
+      else if(parser == Parser.JSON && !response.startsWith("{")){
+         throw new RequestException("Unexpected body: response is not Json");
+      } else if( parser == Parser.JSONARRAY && !response.startsWith("[")){
+         throw new RequestException("Unexpected body: response is not Json Array");
       }
    }
 
@@ -438,7 +440,7 @@ public abstract class Crawler extends Task {
             case 500:
                throw new ResponseCodeException("Server error", response.getLastStatusCode());
             case 601:
-               throw new ResponseCodeException("Fetcher error response", response.getLastStatusCode());
+               throw new ResponseCodeException("Fetcher error timeout", response.getLastStatusCode());
             default:
                throw new ResponseCodeException(response.getLastStatusCode());
          }
