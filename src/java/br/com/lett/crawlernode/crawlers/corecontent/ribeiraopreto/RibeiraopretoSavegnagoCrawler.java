@@ -9,7 +9,6 @@ public class RibeiraopretoSavegnagoCrawler extends SavegnagoCrawler {
       super(session);
    }
 
-   @Override
    protected String getCityCode() {
       return "1";
    }

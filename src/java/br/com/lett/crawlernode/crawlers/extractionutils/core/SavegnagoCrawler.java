@@ -25,19 +25,18 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public abstract class SavegnagoCrawler extends Crawler {
+public class SavegnagoCrawler extends Crawler {
 
    private final String HOME_PAGE = "https://www.savegnago.com.br/";
    private final String SELLER_NAME = "Savegnago Supermercados";
-   private final String CITY_CODE = getCityCode();
+   private String CITY_CODE;
 
    //This token never changes. BUT, if necessary, we can get the token using the 'getAppToken' method
    protected String APP_TOKEN = "DWEYGZH2K4M5N7Q8R9TBUCVEXFYG2J3K4N6P7Q8SATBUDWEXFZH2J3M5N6";
 
-   protected abstract String getCityCode();
-
    public SavegnagoCrawler(Session session) {
       super(session);
+      CITY_CODE = session.getOptions().optString("cityCode");
    }
 
    protected String getHomePage() {

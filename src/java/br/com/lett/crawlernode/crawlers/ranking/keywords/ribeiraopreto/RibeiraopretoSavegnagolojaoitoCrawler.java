@@ -11,7 +11,6 @@ public class RibeiraopretoSavegnagolojaoitoCrawler extends SavegnagoRanking {
       super(session);
    }
 
-   @Override
    public String getStoreId() {
       return STORE_ID;
    }

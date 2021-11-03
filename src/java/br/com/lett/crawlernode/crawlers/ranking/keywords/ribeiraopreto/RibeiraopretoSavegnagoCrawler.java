@@ -11,7 +11,6 @@ public class RibeiraopretoSavegnagoCrawler extends SavegnagoRanking {
 
    public static final String STORE_ID = "14";
 
-   @Override
    public String getStoreId() {
       return STORE_ID;
    }
