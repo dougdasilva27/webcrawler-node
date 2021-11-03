@@ -107,6 +107,9 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
    protected Pricing scrapPricing(JSONObject comertial) throws MalformedPricingException {
       Double priceFrom = JSONUtils.getDoubleValueFromJSON(comertial, "ListPrice", true);
       Double spotlightPrice = getSpotlightPrice(comertial);
+      if (priceFrom.equals(spotlightPrice)){
+         priceFrom = null;
+      }
 
       CreditCards creditCards = scrapCreditCards(comertial, spotlightPrice);
       BankSlip bankSlip = scrapBankSlip(spotlightPrice);
