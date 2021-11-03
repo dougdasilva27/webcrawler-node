@@ -173,7 +173,7 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
                      } else {
                         value = installmentJson.optDouble("value") / 100d;
                      }
-                     Double totalValue = installmentJson.optDouble("TotalValuePlusInterestRate") / 100d;
+                     Double totalValue = installmentJson.optDouble("total") / 100d;
                      Double interest = installmentJson.optDouble("interestRate");
 
                      installments.add(setInstallment(installmentNumber, value, interest, totalValue, null));
