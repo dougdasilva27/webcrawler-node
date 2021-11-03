@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.CarrefourCrawler;
@@ -15,18 +14,14 @@ import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.yaml.snakeyaml.util.UriEncoder;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 
 /**
  * 02/02/2018
- * 
- * @author gabriel
  *
+ * @author gabriel
  */
 public class BrasilCarrefourCrawler extends CarrefourCrawler {
 
@@ -135,7 +130,7 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
 
             discount = scrapPaymentDiscount(teaser);
 
-   }
+         }
 
       }
       return discount;
@@ -168,7 +163,7 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
                      JSONObject installmentJson = (JSONObject) object;
                      Double value;
                      Integer installmentNumber = installmentJson.optInt("count");
-                     if (installmentNumber == 1){
+                     if (installmentNumber == 1) {
                         value = spotlightPrice;
                      } else {
                         value = installmentJson.optDouble("value") / 100d;
