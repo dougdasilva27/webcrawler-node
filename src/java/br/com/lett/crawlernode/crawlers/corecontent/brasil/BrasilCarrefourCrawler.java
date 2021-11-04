@@ -233,6 +233,7 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
          String paymentName = installment.optString("PaymentSystemName");
          if (paymentName.contains("Boleto")) {
             spotlightPrice = installment.optDouble("Value");
+            break;
          }
 
       }
