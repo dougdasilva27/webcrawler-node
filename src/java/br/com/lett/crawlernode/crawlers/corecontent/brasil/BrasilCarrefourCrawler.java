@@ -69,7 +69,8 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
                : new JSONObject();
             JSONObject commertialOffer = offerJson.optJSONObject("commertialOffer");
 
-            String sellerFullName = "Carrefour";
+            String seller = offerJson.optString("sellerName");
+            String sellerFullName = seller != null ? seller : "Carrefour";
             boolean isDefaultSeller = offerJson.optBoolean("sellerDefault", true);
 
             if (commertialOffer != null) {
