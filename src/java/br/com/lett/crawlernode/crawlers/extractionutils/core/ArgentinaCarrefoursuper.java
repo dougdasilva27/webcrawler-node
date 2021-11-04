@@ -51,20 +51,6 @@ public abstract class ArgentinaCarrefoursuper extends CarrefourCrawler {
       return null;
    }
 
-   protected JSONObject crawlProductApi(String internalPid, String parameters) {
-      JSONObject productApi = new JSONObject();
-
-      String url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid + (parameters == null ? "" : parameters);
-
-      String page = fetchPage(url);
-      JSONArray array = CrawlerUtils.stringToJsonArray(page);
-
-      if (!array.isEmpty()) {
-         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
-      }
-
-      return productApi;
-   }
 
    @Override
    protected Offers scrapOffer(Document doc, JSONObject jsonSku, String internalId, String internalPid) throws OfferException, MalformedPricingException {
