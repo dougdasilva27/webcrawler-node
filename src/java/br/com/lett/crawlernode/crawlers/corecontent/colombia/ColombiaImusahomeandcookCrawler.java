@@ -5,7 +5,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -38,8 +37,7 @@ public class ColombiaImusahomeandcookCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CommonMethods.getLast(session.getOriginalURL().split("-"));
-         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "h4", false);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".column meta[itemprop='sku']", "content");
          String name = scrapNameAndBrand(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imagen.hide-for-small-only img", Arrays.asList("src"), "http", "cdn.coordiutil.com");
          List<String> secondaryImage = CrawlerUtils.scrapSecondaryImages(doc, ".splide__slide.thumbnails img", Arrays.asList("src"), "https", "cdn.coordiutil.com", primaryImage);
@@ -51,7 +49,7 @@ public class ColombiaImusahomeandcookCrawler extends Crawler {
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalPid)
+            .setInternalPid(internalId)
             .setName(name)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImage)
@@ -71,10 +69,10 @@ public class ColombiaImusahomeandcookCrawler extends Crawler {
       return doc.selectFirst(".page_item") != null;
    }
 
-   private String scrapNameAndBrand (Document doc){
+   private String scrapNameAndBrand(Document doc) {
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.titulo-producto", true);
-      String brand = CrawlerUtils.scrapStringSimpleInfo(doc,".row.precios a #texto-marca", true);
-      if (brand != null){
+      String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".row.precios a #texto-marca", true);
+      if (brand != null) {
          return name + " - " + brand;
       }
       return name;
