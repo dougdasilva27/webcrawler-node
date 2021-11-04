@@ -76,7 +76,6 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
             if (commertialOffer != null) {
                int stock = commertialOffer.optInt("AvailableQuantity");
 
-
                if (stock > 0) {
 
                   boolean isBuyBox = sellers.length() > 1;
@@ -141,13 +140,11 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
 
    }
 
-
    protected BankSlip scrapBankSlip(Double spotlightPrice) throws MalformedPricingException {
       return BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
    }
-
 
    protected CreditCards scrapCreditCards(JSONObject comertial, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
@@ -166,7 +163,7 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
                   for (Object object : installmentsArray) {
                      JSONObject installmentJson = (JSONObject) object;
                      Double value;
-                     Integer installmentNumber = installmentJson.optInt("count");
+                     int installmentNumber = installmentJson.optInt("count");
                      if (installmentNumber == 1) {
                         value = spotlightPrice;
                      } else {
@@ -189,7 +186,7 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
                   boolean isShopCard = false;
                   if (cardBrand == null) {
                      for (String sellerName : mainSellersNames) {
-                        if ((storeCard != null && paymentName.equalsIgnoreCase(storeCard)) ||
+                        if ((paymentName.equalsIgnoreCase(storeCard)) ||
                            paymentName.toLowerCase().contains(sellerName.toLowerCase())) {
                            isShopCard = true;
                            cardBrand = paymentName;
