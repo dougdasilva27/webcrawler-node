@@ -17,18 +17,15 @@ import java.util.regex.Pattern;
 
 public class SavegnagoRanking extends CrawlerRankingKeywords {
 
-   private final String storeId = getStoreId();
+   private String storeId;
 
    //This token never changes. BUT, if necessary, we can get the token using the 'getAppToken' method
    protected String APP_TOKEN = "DWEYGZH2K4M5N7Q8R9TBUCVEXFYG2J3K4N6P7Q8SATBUDWEXFZH2J3M5N6";
 
-   public String getStoreId() {
-      return storeId;
-   }
-
    public SavegnagoRanking(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
+      storeId = session.getOptions().optString("cityCode");
    }
 
    //If the app token changes, we can use this method to get it
