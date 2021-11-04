@@ -168,10 +168,19 @@ public class MercadolivreNewCrawler {
 
    private boolean checkIfMustScrapProductUnavailable(Document doc) {
       boolean mustAddProductUnavailable = this.allow3PSellers;
+      String seller = scrapSeller(doc);
       if (!allow3PSellers) {
-         mustAddProductUnavailable = scrapSeller(doc) != null && scrapSeller(doc).equalsIgnoreCase(mainSellerNameLower);
+         if (!mainSellerNameLower.isEmpty()) {
+            mustAddProductUnavailable = seller != null && seller.equalsIgnoreCase(mainSellerNameLower);
+         } else {
+            for (String sellerName : sellersVariations) {
+               if (sellerName.equalsIgnoreCase(seller)) {
+                  mustAddProductUnavailable = true;
+                  break;
+               }
+            }
+         }
       }
-
       return mustAddProductUnavailable;
    }
 
@@ -504,17 +513,16 @@ public class MercadolivreNewCrawler {
          String script = e.html();
 
          if (script.contains(token)) {
-
-            String stringToConvertInJson = getObjectSecondOption(script);
-            if (!stringToConvertInJson.isEmpty()) {
-               object = CrawlerUtils.stringToJson(stringToConvertInJson);
-            }
-            if (object == null || object.isEmpty()) {
+            String stringToConvertInJson;
+            if (script.contains("shopModel")) {
                stringToConvertInJson = getObject(script);
-               object = CrawlerUtils.stringToJson(stringToConvertInJson);
-
+               if (!stringToConvertInJson.isEmpty()) {
+                  object = CrawlerUtils.stringToJson(stringToConvertInJson);
+               }
+            } else {
+                  stringToConvertInJson = getObjectSecondOption(script);
+                  object = CrawlerUtils.stringToJson(stringToConvertInJson);
             }
-
             break;
          }
       }
