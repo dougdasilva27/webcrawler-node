@@ -34,10 +34,10 @@ import java.util.List;
 public class SaopauloTendadriveCrawler extends Crawler {
 
    private static final String HOME_PAGE = "http://www.tendaatacado.com.br/";
-   private final String SELLER_NAME = getSellerName();
+   private final String storeId = getStoreId();
 
-   protected String getSellerName() {
-      return "Tenda Atacado Guarapiranga";
+   public String getStoreId() {
+      return session.getOptions().optString("storeId");
    }
 
    public SaopauloTendadriveCrawler(Session session) {
@@ -57,9 +57,7 @@ public class SaopauloTendadriveCrawler extends Crawler {
       JSONObject jsonObject = JSONUtils.stringToJson(doc.selectFirst("#__NEXT_DATA__").data());
       JSONObject skuJson = (JSONObject) jsonObject.optQuery("/props/pageProps/product");
 
-
       if (skuJson != null && !skuJson.isEmpty()) {
-
 
          String description = scrapDescription(skuJson);
 
@@ -68,9 +66,8 @@ public class SaopauloTendadriveCrawler extends Crawler {
          String name = skuJson.optString("name");
          List<String> images = scrapImages(skuJson);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-         String secondaryImages = !images.isEmpty() ? new JSONArray(images).toString() : null;
          Offers offers = scrapOffers(skuJson);
-         Integer stock = skuJson.optInt("totalStock");
+         Integer stock = getStockFromStoreSpecific(skuJson);
          RatingsReviews ratingsReviews = scrapRating(internalId, doc);
 
          Product product =
@@ -81,7 +78,7 @@ public class SaopauloTendadriveCrawler extends Crawler {
                .setInternalPid(internalPid)
                .setName(name)
                .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
+               .setSecondaryImages(images)
                .setDescription(description)
                .setStock(stock)
                .setRatingReviews(ratingsReviews)
@@ -140,10 +137,9 @@ public class SaopauloTendadriveCrawler extends Crawler {
          .setInstallments(installments)
          .build());
 
-//tenda-atacado-sao-paulo---av-guarapiranga
       offers.add(
          OfferBuilder.create()
-            .setSellerFullName(SELLER_NAME)
+            .setSellerFullName("Tenda")
             .setIsBuybox(false)
             .setPricing(
                Pricing.PricingBuilder.create()
@@ -173,5 +169,22 @@ public class SaopauloTendadriveCrawler extends Crawler {
    private RatingsReviews scrapRating(String internalId, Document doc) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "80984", logger);
       return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
+   }
+
+   private Integer getStockFromStoreSpecific(JSONObject skuJson){
+      int stock = 0;
+      JSONArray inventory = skuJson.optJSONArray("inventory");
+      for (Object o : inventory){
+         if (o instanceof JSONObject){
+            JSONObject idsStore = (JSONObject) o;
+            String branchId = idsStore.optString("branchId");
+            if (branchId.equals(storeId)){
+               stock = idsStore.optInt("totalAvailable");
+               break;
+            }
+         }
+      }
+
+      return stock;
    }
 }
