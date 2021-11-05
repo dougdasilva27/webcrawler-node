@@ -81,6 +81,7 @@ class PortoalegreAsunCrawler constructor(session: Session?) : Crawler(session) {
 
          val availableToBuy: Boolean = true
          val offers = if (availableToBuy) scrapOffer(document, internalId) else Offers()
+         val ean = listOf(internalId)
 
          // Creating the product
          val product = ProductBuilder.create()
@@ -91,6 +92,7 @@ class PortoalegreAsunCrawler constructor(session: Session?) : Crawler(session) {
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
+            .setEans(ean)
             .setOffers(offers)
             .build()
          products.add(product)
