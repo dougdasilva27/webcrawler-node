@@ -94,6 +94,7 @@ public class CrawlerWebdriver {
          Wait<WebDriver> wait = new WebDriverWait(driver, timeOutInSeconds);
          wait.until((ExpectedCondition<Boolean>) wd ->
             ((JavascriptExecutor) wd).executeScript("return document.readyState").equals("complete"));
+         Logging.printLogDebug(logger,"Page load complete");
       } catch (Exception e) {
          Logging.printLogInfo(logger, "Timeout no carregamento da página após " + timeOutInSeconds + " segundos");
       }
