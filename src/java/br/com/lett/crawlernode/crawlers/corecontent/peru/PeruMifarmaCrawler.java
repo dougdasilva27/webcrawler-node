@@ -39,7 +39,7 @@ public class PeruMifarmaCrawler extends Crawler {
 
       String internalId = CommonMethods.getLast(session.getOriginalURL().split("/"));
 
-      String url = "https://td2fvf3nfk.execute-api.us-east-1.amazonaws.com/MFPRD/product/" + internalId;
+      String url = "https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/MFPRD/product/" + internalId;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
