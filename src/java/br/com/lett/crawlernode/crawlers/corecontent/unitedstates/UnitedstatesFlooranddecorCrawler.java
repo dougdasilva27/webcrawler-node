@@ -34,7 +34,7 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
       this.config.setParser(Parser.HTML);
-      this.config.setFetcher(FetchMode.JSOUP);
+      this.config.setFetcher(FetchMode.FETCHER);
    }
 
    protected String getStoreId() {
