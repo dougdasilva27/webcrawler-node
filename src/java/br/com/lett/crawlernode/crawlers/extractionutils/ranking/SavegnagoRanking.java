@@ -2,8 +2,11 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -65,7 +68,7 @@ public class SavegnagoRanking extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 30;
       this.log("Página " + this.currentPage);
 
@@ -82,12 +85,26 @@ public class SavegnagoRanking extends CrawlerRankingKeywords {
          for (Object obj : products) {
             if (obj instanceof JSONObject) {
                JSONObject product = (JSONObject) obj;
+
                String internalPid = product.optString("id");
                String name = product.optString("name");
                String productUrl = buildUrl(name, internalPid);
-               saveDataProduct(null, internalPid, productUrl);
+               Integer price = (int) Math.round((product.optDouble("price") * 100));
+               String imgUrl = JSONUtils.getValueRecursive(product, "images.url", String.class);
+               boolean isAvailable = product.optString("status").equals("AVAILABLE") ? true : false;
 
-               log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(null)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setImageUrl(imgUrl)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .build();
+
+               saveDataProduct(productRanking);
+               
                if (arrayProducts.size() == productsLimit) {
                   break;
                }
