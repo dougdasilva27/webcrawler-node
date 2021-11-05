@@ -58,7 +58,9 @@ public class ColombiaLarebajaCrawler extends Crawler {
             String internalId = internalPid;
 
             if (hasMultipleOffers) {
-               internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sku, "input.increment", "id").replace("cantidad-", "");
+               String[]  completeInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sku, "input.increment", "id").replace("cantidad-", "").split("-");
+               internalId = String.join("-",Arrays.copyOf(completeInternalId, completeInternalId.length-1));
+
                String variationName = CrawlerUtils.scrapStringSimpleInfo(sku, "div.sep-dashed label span", true);
 
                if (variationName != null) {
