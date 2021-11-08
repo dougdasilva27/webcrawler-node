@@ -2,13 +2,16 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Element;
 
 public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
 
@@ -17,7 +20,7 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 24;
 
       this.log("Página " + this.currentPage);
@@ -29,7 +32,7 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
       this.log("Link onde são feitos os crawlers: " + url);
 
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      String response = this.dataFetcher.get(session,request).getBody();
+      String response = this.dataFetcher.get(session, request).getBody();
 
       JSONObject gridInfo = CrawlerUtils.stringToJson(response);
       JSONArray products = JSONUtils.getValueRecursive(gridInfo, "results.products", JSONArray.class);
@@ -45,10 +48,25 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
                JSONObject productInfo = (JSONObject) o;
                String internalId = productInfo.optString("sku");
                String productUrl = productInfo.optString("urlKey");
+               String name = productInfo.optString("name");
+               String imageUrl = productInfo.optString("image");
+               int price = CommonMethods.doublePriceToIntegerPrice(productInfo.optDouble("valueTo"), 0);
+               boolean isAvailable = price != 0;
 
-               saveDataProduct(internalId, null, productUrl);
+               //New way to send products to save data product
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setInternalPid(null)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setImageUrl(imageUrl)
+                  .build();
 
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+               saveDataProduct(productRanking);
+
+
                if (this.arrayProducts.size() == productsLimit) {
                   break;
                }
