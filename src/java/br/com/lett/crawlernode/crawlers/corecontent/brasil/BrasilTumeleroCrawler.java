@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXScraper;
@@ -23,6 +25,15 @@ public class BrasilTumeleroCrawler extends VTEXScraper {
 
    public BrasilTumeleroCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.HTML);
+   }
+
+   @Override
+   protected Response fetchResponse() {
+      if (!session.getOriginalURL().contains("https://")){
+         session.setOriginalURL(session.getOriginalURL().replace("www","https://www"));
+      }
+      return super.fetchResponse();
    }
 
    @Override
@@ -40,7 +51,8 @@ public class BrasilTumeleroCrawler extends VTEXScraper {
       String internalPid = "";
       String[] urlArray = session.getOriginalURL().split("=");
 
-      if(urlArray.length > 0){
+
+      if (urlArray.length > 0){
          internalPid = CommonMethods.getLast(urlArray);
       }
 
