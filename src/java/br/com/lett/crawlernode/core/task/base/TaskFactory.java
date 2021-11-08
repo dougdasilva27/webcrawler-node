@@ -2,11 +2,13 @@ package br.com.lett.crawlernode.core.task.base;
 
 
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.TestType;
 import br.com.lett.crawlernode.core.session.crawler.*;
 import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -38,7 +40,7 @@ public class TaskFactory {
       } else if (session instanceof RankingKeywordsSession || session instanceof RankingDiscoverKeywordsSession || session instanceof EqiRankingDiscoverKeywordsSession
          || session instanceof TestRankingKeywordsSession) {
          return createCrawlerTask(session, className);
-      } else if (session instanceof TestCrawlerSession && br.com.lett.crawlernode.test.Test.testType.equals(br.com.lett.crawlernode.test.Test.INSIGHTS_TEST)) {
+      } else if (session instanceof TestCrawlerSession) {
          return createCrawlerTask(session, className);
       } else {
          return null;

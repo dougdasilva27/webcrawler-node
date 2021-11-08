@@ -7,16 +7,11 @@ import io.github.cdimascio.dotenv.Dotenv;
 import java.util.List;
 
 public class Test {
-   public static final String INSIGHTS_TEST = "insights";
-   public static final String RATING_TEST = "rating";
-   public static final String IMAGES_TEST = "images";
-   public static final String KEYWORDS_TEST = "keywords";
-
 
    public static String pathWrite = System.getenv(EnvironmentVariables.HTML_PATH);
    public static String testType = null;
 
-   public static void main(String[] args) {
+   public static void main(String[] args) throws InterruptedException {
       TestUtils.initialize();
 
       Dotenv dotenv = Dotenv.configure()
