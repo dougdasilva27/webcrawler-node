@@ -1,20 +1,20 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class MercadolivreCrawler extends CrawlerRankingKeywords {
 
@@ -44,7 +44,7 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
    protected Integer meliPageSize = 64;
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = meliPageSize;
       this.log("Página " + this.currentPage);
 
@@ -72,10 +72,24 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
                }
             }
 
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-search-item__title", true);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".slick-slide.slick-active img", "data-src");
+            int price = CommonMethods.doublePriceToIntegerPrice(CrawlerUtils.scrapDoublePriceFromHtml(e, ".ui-search-price__second-line .price-tag-amount", null, false, ',', session), 0);
+            boolean isAvailable = price > 0;
 
-            saveDataProduct(null, internalPid, productUrl);
+            //New way to send products to save data product
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(null)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit)
                break;
 
@@ -88,14 +102,25 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   private int getPrice(Element e) {
+      int price = 0;
+      Double a = CrawlerUtils.scrapDoublePriceFromHtml(e, ".ui-search-price__second-line .price-tag-amount", null, false, ',', session);
+
+      if (a == null) {
+         a = CrawlerUtils.scrapDoublePriceFromHtml(e, ".ui-search-price__second-line .price-tag-amount", null, false, ',', session);
+
+      }
+      return CommonMethods.doublePriceToIntegerPrice(a, 0);
+   }
+
    private Document fetch(String url) {
       // This user agent is used because some of ours user agents doesn't work on this market
 
       Request request = RequestBuilder.create()
-            .setCookies(cookies)
-            .setUrl(url)
-            .setFollowRedirects(true)
-            .build();
+         .setCookies(cookies)
+         .setUrl(url)
+         .setFollowRedirects(true)
+         .build();
 
       Response response = dataFetcher.get(session, request);
 
