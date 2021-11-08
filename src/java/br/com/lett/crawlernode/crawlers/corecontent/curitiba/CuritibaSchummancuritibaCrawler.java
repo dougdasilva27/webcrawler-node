@@ -58,9 +58,11 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
 
          for (Element e : colors) {
             String colorName = CrawlerUtils.scrapStringSimpleInfo(e, "span b", false);
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "input", "value");
+            String value = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"input","value");
+            String selectorId = ".sku-option[id*=\""+value+"\"] .sku";
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,selectorId,"value");
 
-            if(internalId.equals("")){
+            if(internalId == null || internalId.equals("")){
                internalId = internalPid;
             }
 
