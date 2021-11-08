@@ -56,7 +56,7 @@ public class CarrefourCrawler extends VTEXNewScraper {
     *
     * @return location token string
     */
-   protected String getLocationToken(){
+   protected String getLocationToken() {
       return session.getOptions().optString("vtex_segment");
    }
 
@@ -139,7 +139,7 @@ public class CarrefourCrawler extends VTEXNewScraper {
       String internalPid = super.scrapPidFromApi(doc);
       if (internalPid == null) {
          JSONObject json = crawlProductApi(internalPid, null);
-         internalPid = json.optString("id");
+         internalPid = json != null ? json.optString("id") : null;
       }
       return internalPid;
    }
@@ -148,7 +148,6 @@ public class CarrefourCrawler extends VTEXNewScraper {
    @Override
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
 
-
       JSONObject productApi = new JSONObject();
 
       if (productObject != null && !productObject.isEmpty()) {
@@ -156,7 +155,6 @@ public class CarrefourCrawler extends VTEXNewScraper {
       } else {
          if (session.getOriginalURL().contains("carrefour.com.ar")) {
             session.setOriginalURL(session.getOriginalURL().replace("supermercado", "www"));
-
 
             String path = session.getOriginalURL().replace(homePage, "").toLowerCase();
 
@@ -176,6 +174,7 @@ public class CarrefourCrawler extends VTEXNewScraper {
 
             String hash = "b082ca6ae008539025025f4d5d400982b7ca216375467a82bad61395d389a5f2";
             String productSlug = regex("//.*[/](.*)/p", session.getOriginalURL());
+
 
             String extensions = "{\"persistedQuery\":{\"sha256Hash\":\"" + hash + "\"}}";
             String variables = "{\"slug\":\"" + productSlug + "\"}";
