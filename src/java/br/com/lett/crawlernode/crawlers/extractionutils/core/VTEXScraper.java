@@ -115,7 +115,7 @@ public abstract class VTEXScraper extends Crawler {
          .build();
    }
 
-   public String scrapInternalPid(Document doc, JSONObject jsonObject, String pidFromApi){
+   public String scrapInternalPid(Document doc, JSONObject jsonObject, String pidFromApi) {
       return pidFromApi;
    }
 
@@ -159,7 +159,7 @@ public abstract class VTEXScraper extends Crawler {
 
       List<String> specs = new ArrayList<>();
 
-      if (productJson.has("allSpecifications")) {
+      if (productJson != null && productJson.has("allSpecifications")) {
          JSONArray keys = productJson.getJSONArray("allSpecifications");
          for (Object o : keys) {
             if (!o.toString().equalsIgnoreCase("Informações para Instalação") && !o.toString().equalsIgnoreCase("Portfólio")) {
