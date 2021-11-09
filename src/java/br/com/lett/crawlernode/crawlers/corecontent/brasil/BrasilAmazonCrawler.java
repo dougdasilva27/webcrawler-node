@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -60,7 +61,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
    public BrasilAmazonCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
       super.config.setParser(Parser.HTML);
    }
 
@@ -69,15 +70,15 @@ public class BrasilAmazonCrawler extends Crawler {
       this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, new FetcherDataFetcher());
    }
 
-   @Override
-   protected Document fetch() {
+
+   private String requestMethod (String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "gzip, deflate, br");
       headers.put("authority", "www.amazon.com.br");
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.104 Safari/537.36");
 
       Request requestApache = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
+         .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
          .setProxyservice(
@@ -91,8 +92,8 @@ public class BrasilAmazonCrawler extends Crawler {
          .build();
 
 
-      Request requestFetcher = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
+      Request requestJSOUP = Request.RequestBuilder.create()
+         .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
          .setProxyservice(
@@ -108,7 +109,7 @@ public class BrasilAmazonCrawler extends Crawler {
             .setForbiddenCssSelector("#captchacharacters").build())
          .build();
 
-      Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestApache;
+      Request request = dataFetcher instanceof JsoupDataFetcher ? requestJSOUP : requestApache;
 
       Response response = dataFetcher.get(session, request);
 
@@ -118,16 +119,20 @@ public class BrasilAmazonCrawler extends Crawler {
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
 
-         if (dataFetcher instanceof FetcherDataFetcher) {
+         if (dataFetcher instanceof ApacheDataFetcher) {
             response = new ApacheDataFetcher().get(session, requestApache);
          } else {
-            response = new FetcherDataFetcher().get(session, requestFetcher);
+            response = new JsoupDataFetcher().get(session, requestJSOUP);
          }
       }
 
+      return response.getBody();
+   }
 
-      String content = response.getBody();
-
+   @Override
+   protected Document fetch() {
+      String url = session.getOriginalURL();
+      String content = requestMethod(url);
       return Jsoup.parse(content);
 
    }
@@ -360,26 +365,29 @@ public class BrasilAmazonCrawler extends Crawler {
                String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
 
                String sellerId = scrapSellerIdByUrl(sellerUrl);
+
                boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
 
                if (sellerId == null) {
                   sellerId = CommonMethods.toSlug(SELLER_NAME);
                }
 
-               offers.add(OfferBuilder.create()
-                  .setInternalSellerId(sellerId)
-                  .setSellerFullName(name)
-                  .setSellersPagePosition(pos)
-                  .setIsBuybox(false)
-                  .setIsMainRetailer(isMainRetailer)
-                  .setPricing(pricing)
-                  .build());
+               if (!offers.contains(sellerId)){
 
-               pos++;
+                  offers.add(OfferBuilder.create()
+                     .setInternalSellerId(sellerId)
+                     .setSellerFullName(name)
+                     .setSellersPagePosition(pos)
+                     .setIsBuybox(false)
+                     .setIsMainRetailer(isMainRetailer)
+                     .setPricing(pricing)
+                     .build());
+
+                  pos++;
+               }
             }
          }
       }
-
       return offers;
    }
 
@@ -552,28 +560,14 @@ public class BrasilAmazonCrawler extends Crawler {
 
    private Document fetchDocumentsOffersRequest(String internalId) {
       Document doc;
-
       String urlMarketPlace = "https://www.amazon.com.br/gp/aod/ajax/ref=dp_aod_NEW_mbc?asin=" + internalId + "&m=&qid=&smid=&sourcecustomerorglistid=&sourcecustomerorglistitemid=&sr=&pc=dp";
-
-      Map<String, String> headers = new HashMap<>();
-
-      headers.put("authority", "www.amazon.com.br");
-      headers.put("upgrade-insecure-requests", "1");
-      headers.put("service-worker-navigation-preload", "true");
-      headers.put("rtt", "50");
-      headers.put("cache-control", "max-age=0");
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36");
-      headers.put("downlink", "10");
-      headers.put("ect", "4g");
-      headers.put("x-requested-with", "XMLHttpRequest");
 
       int maxAttempt = 3;
       int attempt = 1;
 
       do {
-         String response = amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, new FetcherDataFetcher());
-         doc = Jsoup.parse(response);
+         String content = requestMethod(urlMarketPlace);
+         doc = Jsoup.parse(content);
          attempt++;
       } while (doc.selectFirst("#aod-offer") == null && attempt <= maxAttempt);
 
@@ -588,7 +582,7 @@ public class BrasilAmazonCrawler extends Crawler {
    private List<Document> fetchDocumentsOffers(Document doc, String internalId) {
       List<Document> docs = new ArrayList<>();
 
-      Element marketplaceUrl = doc.selectFirst(".a-section.olp-link-widget");
+      Element marketplaceUrl = doc.selectFirst(".a-section.olp-link-widget a[href]");
 
       if (marketplaceUrl == null) {
          Elements buyBox = doc.select("#moreBuyingChoices_feature_div .a-box.a-text-center h5 span");
