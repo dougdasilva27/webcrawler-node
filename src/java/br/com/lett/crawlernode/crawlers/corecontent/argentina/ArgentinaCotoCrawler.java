@@ -188,18 +188,27 @@ public class ArgentinaCotoCrawler extends Crawler {
 
    private String crawlDescription(Document document) {
       StringBuilder description = new StringBuilder();
-      Element descriptionElement = document.select(".product_detail_comentario").first();
 
-      if (descriptionElement != null) {
-         description.append(descriptionElement.html());
+      String haveDescription = CrawlerUtils.scrapStringSimpleInfo(document, ".product_detail_comentario #txtComentario", true);
+
+      if (haveDescription != null && !haveDescription.equals("----")) {
+            description.append(haveDescription);
       }
 
-      Element caracElement = document.select("#content-tabs").first();
+      String haveCarac = CrawlerUtils.scrapStringSimpleInfo(document, ".mute .tbldatatextie span", true);
+      if (haveCarac != null && !haveCarac.contains("No se encontraron")) {
+         Elements caracElements = document.select(".tblData .mute td");
+         if (caracElements != null) {
 
-      if (caracElement != null) {
-         description.append(caracElement.html());
+            for (Element e : caracElements) {
+               String caracElement = CrawlerUtils.scrapStringSimpleInfo(e, "span", true);
+
+               if (caracElement != null) {
+                  description.append(caracElement).append(" ");
+               }
+            }
+         }
       }
-
       return description.toString();
    }
 
