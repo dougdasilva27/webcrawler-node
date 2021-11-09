@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.guatemala;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
 import models.RatingsReviews;
@@ -13,6 +15,16 @@ public class GuatemalaPaizCrawler extends VTEXNewScraper {
 
    public GuatemalaPaizCrawler(Session session) {
       super(session);
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+
+      Response response = dataFetcher.get(session, Request.RequestBuilder.create()
+            .setUrl("https://www.paiz.com.gt/")
+         .build());
+
+      this.cookies = response.getCookies();
    }
 
    @Override
