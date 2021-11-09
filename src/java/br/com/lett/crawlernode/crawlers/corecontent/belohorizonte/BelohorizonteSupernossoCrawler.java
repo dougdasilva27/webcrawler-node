@@ -49,18 +49,22 @@ public class BelohorizonteSupernossoCrawler extends VTEXOldScraper {
       if (description == null || description.isEmpty()) {
          StringBuilder descriptionBuilder = new StringBuilder();
          JSONArray array = productJson.optJSONArray("allSpecifications");
-         for (Object o : array) {
-            String key = (String) o;
-            descriptionBuilder.append(key);
-            JSONArray values = productJson.getJSONArray(key);
-            for (Object o1 : values) {
-               String value = (String) o1;
-               descriptionBuilder.append(" ");
-               descriptionBuilder.append(value);
-               descriptionBuilder.append(" ");
+         if (array != null) {
+            for (Object o : array) {
+               String key = (String) o;
+               descriptionBuilder.append(key);
+               JSONArray values = productJson.getJSONArray(key);
+               if (values != null) {
+                  for (Object o1 : values) {
+                     String value = (String) o1;
+                     descriptionBuilder.append(" ");
+                     descriptionBuilder.append(value);
+                     descriptionBuilder.append(" ");
+                  }
+               }
             }
+            description = descriptionBuilder.toString();
          }
-         description = descriptionBuilder.toString();
       }
       return description;
    }
