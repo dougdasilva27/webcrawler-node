@@ -56,8 +56,8 @@ public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
             //New way to send products to save data product
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(null)
-               .setInternalPid(productId)
+               .setInternalId(productId)
+               .setInternalPid(null)
                .setName(name)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
