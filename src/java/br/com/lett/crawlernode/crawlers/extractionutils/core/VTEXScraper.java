@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.*;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -65,13 +66,20 @@ public abstract class VTEXScraper extends Crawler {
          if (productJson != null) {
             JSONArray items = JSONUtils.getJSONArrayValue(productJson, "items");
 
-            for (int i = 0; i < items.length(); i++) {
-               JSONObject jsonSku = items.optJSONObject(i);
-               if (jsonSku == null) {
-                  jsonSku = new JSONObject();
+            if(items.length()>0) {
+               for (int i = 0; i < items.length(); i++) {
+                  JSONObject jsonSku = items.optJSONObject(i);
+                  if (jsonSku == null) {
+                     jsonSku = new JSONObject();
+                  }
+                  Product product = extractProduct(doc, internalPid, categories, description, jsonSku, productJson);
+                  products.add(product);
                }
-               Product product = extractProduct(doc, internalPid, categories, description, jsonSku, productJson);
-               products.add(product);
+            }else {
+               Product product = extractProductHtml(doc,internalPid);
+               if (product != null){
+                  products.add(product);
+               }
             }
          }
       } else {
@@ -79,6 +87,10 @@ public abstract class VTEXScraper extends Crawler {
       }
 
       return products;
+   }
+
+   protected Product extractProductHtml(Document doc, String internalPid) throws MalformedProductException, OfferException, MalformedPricingException {
+      return null;
    }
 
    protected void processBeforeScrapVariations(Document doc, JSONObject productJson, String internalPid) throws UnsupportedEncodingException {
