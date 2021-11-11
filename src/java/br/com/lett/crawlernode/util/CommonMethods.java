@@ -559,6 +559,19 @@ public class CommonMethods {
       return doublePriceToIntegerPrice(price, defaultValue);
    }
 
+   //convert camelcase to normal text
+   public static String camelcaseToText(String str) {
+      StringBuilder sb = new StringBuilder();
+      for(int i = 0; i < str.length(); i++){
+         char c = str.charAt(i);
+         if(c >= 'A' && c <= 'Z'){
+            sb.append(" ");
+         }
+         sb.append(c);
+      }
+      return sb.toString();
+   }
+
 
 
 
