@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.unitedstates;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -22,8 +22,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class UnitedstatesFlooranddecorCrawler extends Crawler {
 
@@ -34,7 +32,7 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
       this.config.setParser(Parser.HTML);
-      this.config.setFetcher(FetchMode.FETCHER);
+
    }
 
    protected String getStoreId() {
@@ -54,34 +52,34 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (doc.selectFirst("div#product-content") != null) {
+      if (!doc.select(".b-pdp_details").isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type='application/ld+json']", "", null, false, true);
+         String internalPid = json.optString("sku");
 
-         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script#productData", "", ";", false, true);
-         String internalPid = scrapInternalPid(doc);
-         String name = json.optString("name");
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ol.breadcrumb li a", true);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("div.product-tabs"));
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".l-plp-breadcrumbs .b-breadcrumbs-item", true);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".b-pdp_specifications-content"));
 
-         Elements variations = doc.select("div.product-variations li.attribute ul li");
-
+         Elements variations = doc.select(".b-pdp_details .b-pdp_details-variation a");
          if (variations.isEmpty()) {
-            variations = doc.select("div#product-content");
+            variations = doc.select(".b-pdp_details");
          }
 
-         Element nextVariation = null;
-         for (int i = 0; i < variations.size(); i++) {
-            String internalId = json.optString("sku");
-            String productUrl = JSONUtils.getValueRecursive(json, "offers.url", String.class);
+         for (Element variation : variations) {
+            if (variations.size() != 1) {
+               String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, null, "href");
+               json = fetchNextVariationJson(productUrl);
+            }
+            String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".b-pdp_details-element_value", true);
+            String name = json.optString("name");
             List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(json.optJSONArray("image"), null, null, "https", "i8.amplience.net", session);
             String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-
             boolean available = JSONUtils.getValueRecursive(json, "offers.availability", String.class).contains("InStock");
             Offers offers = available ? scrapOffers(json) : new Offers();
 
             // Creating the product
             Product product = ProductBuilder.create()
-               .setUrl(productUrl)
+               .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
@@ -95,11 +93,6 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
                .build();
             products.add(product);
 
-            if(i + 1 < variations.size()){
-               nextVariation = variations.get(i + 1);
-               String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(nextVariation, "a", "href");
-               json = fetchNextVariationJson(url);
-            }
          }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page:   " + this.session.getOriginalURL());
@@ -111,34 +104,13 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
    protected JSONObject fetchNextVariationJson(String productUrl) {
       Request request = Request.RequestBuilder.create()
          .setUrl(productUrl)
-         .setCookies(cookies)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
-         ))
          .build();
 
       Response response = this.dataFetcher.get(session, request);
       Document doc = Jsoup.parse(response.getBody());
-      return CrawlerUtils.selectJsonFromHtml(doc, "script#productData", "", ";", false, true);
+      return CrawlerUtils.selectJsonFromHtml(doc, "script[type='application/ld+json']", "", null, false, true);
    }
 
-   protected String scrapInternalPid(Document doc){
-      String internalPid = "";
-      Element script = doc.selectFirst("div.primary-content script");
-
-      if(script != null){
-         Pattern pattern = Pattern.compile("id: '(.*?)'", Pattern.MULTILINE);
-         Matcher matcher = pattern.matcher(script.toString());
-
-         while (matcher.find()) {
-            internalPid = matcher.group(1);
-         }
-      }
-
-      return internalPid;
-   }
 
    protected Offers scrapOffers(JSONObject json) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
