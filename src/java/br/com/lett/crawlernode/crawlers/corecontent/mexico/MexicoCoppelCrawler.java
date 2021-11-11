@@ -144,6 +144,9 @@ public class MexicoCoppelCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".unique_price", null, true, ',', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[id^=\"offerPrice\"]", null, true, ',', session);
+      }
 
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old_price", null, true, ',', session);
 
