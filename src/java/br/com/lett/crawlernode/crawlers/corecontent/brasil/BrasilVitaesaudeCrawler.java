@@ -12,10 +12,6 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
@@ -27,11 +23,15 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
 /**
  * Date: 09/08/2017
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class BrasilVitaesaudeCrawler extends Crawler {
 
@@ -56,7 +56,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalPid = crawlInternalPid(doc);
-         String name = crawlName(doc);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".BlockContent h1", true);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
          String secondaryImages = crawlSecondaryImages(doc);
@@ -65,8 +65,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
          Marketplace marketplace = crawlMarketplace();
 
 
-
-         boolean unnavailableForAll = doc.select("[itemprop=\"availability\"]").isEmpty();
+         boolean unnavailableForAll = !doc.select(".CurrentlySoldOut").isEmpty();
 
          Elements variationsRadio = doc.select(".ProductOptionList li label");
          Elements variationsBox = doc.select(".ProductOptionList option");
@@ -84,7 +83,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
                   JSONObject variationInfo = crawlVariationsInfo(internalPid, variationId);
 
                   primaryImage =
-                        variationInfo.has("image") && !variationInfo.getString("image").trim().isEmpty() ? variationInfo.getString("image") : primaryImage;
+                     variationInfo.has("image") && !variationInfo.getString("image").trim().isEmpty() ? variationInfo.getString("image") : primaryImage;
                   String internalId = internalPid + "-" + variationId;
                   String variationName = name + " " + e.ownText().trim();
                   boolean available = !unnavailableForAll && crawlAvailability(variationInfo);
@@ -94,24 +93,24 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 
                   // Creating the product
                   Product product = ProductBuilder
-                        .create()
-                        .setUrl(session.getOriginalURL())
-                        .setInternalId(internalId)
-                        .setInternalPid(internalPid)
-                        .setName(variationName)
-                        .setPrice(price)
-                        .setPrices(prices)
-                        .setAvailable(available)
-                        .setCategory1(categories.getCategory(0))
-                        .setCategory2(categories.getCategory(1))
-                        .setCategory3(categories.getCategory(2))
-                        .setPrimaryImage(primaryImage)
-                        .setSecondaryImages(secondaryImages)
-                        .setDescription(description)
-                        .setStock(stock)
-                        .setMarketplace(marketplace)
-                        .setRatingReviews(ratingReviews)
-                        .build();
+                     .create()
+                     .setUrl(session.getOriginalURL())
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(variationName)
+                     .setPrice(price)
+                     .setPrices(prices)
+                     .setAvailable(available)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setStock(stock)
+                     .setMarketplace(marketplace)
+                     .setRatingReviews(ratingReviews)
+                     .build();
 
                   products.add(product);
                }
@@ -132,24 +131,24 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 
             // Creating the product
             Product product = ProductBuilder
-                  .create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(available)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setStock(stock)
-                  .setMarketplace(marketplace)
-                  .setRatingReviews(ratingReviews)
-                  .build();
+               .create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPrice(price)
+               .setPrices(prices)
+               .setAvailable(available)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setStock(stock)
+               .setMarketplace(marketplace)
+               .setRatingReviews(ratingReviews)
+               .build();
 
             products.add(product);
          }
@@ -179,7 +178,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 
    private String crawlName(Document document) {
       String name = null;
-      Element nameElement = document.select("h1.ProdName").first();
+      Element nameElement = document.select(".BlockContent h1").first();
 
       if (nameElement != null) {
          name = nameElement.ownText().trim();
@@ -315,7 +314,6 @@ public class BrasilVitaesaudeCrawler extends Crawler {
    }
 
    /**
-    * 
     * @param doc
     * @param price
     * @return
@@ -357,7 +355,6 @@ public class BrasilVitaesaudeCrawler extends Crawler {
    }
 
    /**
-    * 
     * @param doc
     * @param price
     * @return
@@ -415,76 +412,45 @@ public class BrasilVitaesaudeCrawler extends Crawler {
       ratingReviews.setDate(session.getDate());
 
       Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
-      Double avgRating = getTotalAvgRating(doc, totalNumOfEvaluations);
-      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
+      if (totalNumOfEvaluations > 0) {
+         AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
+         Double avgRating = getTotalAvgRating(advancedRatingReview, totalNumOfEvaluations);
 
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating);
-      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+         ratingReviews.setTotalRating(totalNumOfEvaluations);
+         ratingReviews.setAverageOverallRating(avgRating);
+         ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+         ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+      }
 
       return ratingReviews;
 
    }
 
-   private Double getTotalAvgRating(Document doc, Integer totalRatings) {
-      Double avgRating = 0d;
+   private Double getTotalAvgRating(AdvancedRatingReview advancedRatingReview, Integer totalRatings) {
+      int stars1 = advancedRatingReview.getTotalStar1();
+      int stars2 = advancedRatingReview.getTotalStar2() * 2;
+      int stars3 = advancedRatingReview.getTotalStar3() * 3;
+      int stars4 = advancedRatingReview.getTotalStar4() * 4;
+      int stars5 = advancedRatingReview.getTotalStar5() * 5;
 
-      if (totalRatings != null && totalRatings > 0) {
-         Elements ratings = doc.select(".boxAvaliacao");
+      return (stars1 + stars2 + stars3 + stars4 + stars5) / (double) totalRatings;
 
-         Integer values = 0;
-         Integer count = 0;
-
-         for (Element e : ratings) {
-            Element stars = e.selectFirst("> i");
-            Element value = e.selectFirst("> span");
-
-            if (stars != null && value != null) {
-               Integer star = MathUtils.parseInt(CommonMethods.getLast(stars.attr("class").split("-")));
-               Integer countStars = MathUtils.parseInt(value.ownText().replaceAll("[^0-9]", "").trim());
-
-               if (star != null && countStars != null) {
-
-                  count += countStars;
-                  values += star * countStars;
-
-               }
-            }
-         }
-
-         if (count > 0) {
-            avgRating = MathUtils.normalizeTwoDecimalPlaces(((double) values) / count);
-         }
-      }
-
-      return avgRating;
    }
 
 
    private Integer getTotalNumOfRatings(Document doc) {
-      Integer ratingNumber = 0;
-      Element reviews = doc.selectFirst(".ProductRating");
-
-      if (reviews != null) {
-         String text = reviews.ownText().replaceAll("[^0-9]", "").trim();
-
-         if (!text.isEmpty()) {
-            ratingNumber = Integer.parseInt(text);
-         }
-      }
-
-      return ratingNumber;
+      Elements reviews = doc.select(".ratingDetails .ReviewRating");
+      return reviews.size();
    }
 
    private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
-      Integer star1 = 0;
-      Integer star2 = 0;
-      Integer star3 = 0;
-      Integer star4 = 0;
-      Integer star5 = 0;
+      int star1 = 0;
+      int star2 = 0;
+      int star3 = 0;
+      int star4 = 0;
+      int star5 = 0;
 
-      Elements reviews = doc.select(".ProductMain");
+      Elements reviews = doc.select(".ratingDetails .ReviewRating");
 
       for (Element review : reviews) {
 
@@ -492,39 +458,41 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 
          if (elementStarNumber != null) {
 
-            String stringStarNumber = elementStarNumber.attr("class").split("-")[4];
-            String sN = stringStarNumber.replaceAll("[^0-9]", "").trim();
-            Integer numberOfStars = !sN.isEmpty() ? Integer.parseInt(sN) : 0;
+            String stringStarNumber = CommonMethods.getLast(elementStarNumber.attr("class").split("rating"));
+            // String sN = stringStarNumber.replaceAll("[^0-9]", "").trim();
+            int numberOfStars = stringStarNumber != null ? Integer.parseInt(stringStarNumber) : 0;
 
-            switch (numberOfStars) {
-               case 5:
-                  star5 += 1;
-                  break;
-               case 4:
-                  star4 += 1;
-                  break;
-               case 3:
-                  star3 += 1;
-                  break;
-               case 2:
-                  star2 += 1;
-                  break;
-               case 1:
-                  star1 += 1;
-                  break;
-               default:
-                  break;
+            if (numberOfStars != 0) {
+               switch (numberOfStars) {
+                  case 5:
+                     star5 += 1;
+                     break;
+                  case 4:
+                     star4 += 1;
+                     break;
+                  case 3:
+                     star3 += 1;
+                     break;
+                  case 2:
+                     star2 += 1;
+                     break;
+                  case 1:
+                     star1 += 1;
+                     break;
+                  default:
+                     break;
+               }
             }
          }
       }
 
       return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
    }
 
 }
