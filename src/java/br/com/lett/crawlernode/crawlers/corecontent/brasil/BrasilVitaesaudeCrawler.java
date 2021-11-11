@@ -176,17 +176,6 @@ public class BrasilVitaesaudeCrawler extends Crawler {
       return internalPid;
    }
 
-   private String crawlName(Document document) {
-      String name = null;
-      Element nameElement = document.select(".BlockContent h1").first();
-
-      if (nameElement != null) {
-         name = nameElement.ownText().trim();
-      }
-
-      return name;
-   }
-
    private Float crawlPrice(Document document) {
       Float price = null;
 
