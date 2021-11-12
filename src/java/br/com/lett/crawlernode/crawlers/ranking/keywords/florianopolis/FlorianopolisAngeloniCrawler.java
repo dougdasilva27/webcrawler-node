@@ -35,10 +35,10 @@ public class FlorianopolisAngeloniCrawler extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"a", "href");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href");
             String internalId = crawlInternalId(productUrl);
-            String name = CrawlerUtils.scrapStringSimpleInfo(e,"a > .box-produto__desc-prod", false);
-            Integer price = CrawlerUtils.scrapIntegerFromHtml(e, ".box-produto__preco", false,0);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "a > .box-produto__desc-prod", false);
+            Integer price = CrawlerUtils.scrapIntegerFromHtml(e, ".box-produto__preco", false, 0);
             boolean isAvailable = price != 0;
 
             RankingProduct productRanking = RankingProductBuilder.create()
