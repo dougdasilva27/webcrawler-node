@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -45,14 +46,14 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
             .setUrl(url)
             .setProxyservice(Arrays.asList(
                ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
             ))
             .setHeaders(headers)
             .build();
 
-         Response response = new JsoupDataFetcher().get(session, request);
+         Response response = new ApacheDataFetcher().get(session, request);
          doc = Jsoup.parse(response.getBody());
          attempts++;
 
