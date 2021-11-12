@@ -17,6 +17,24 @@ public class PeruWongCrawler extends VTEXOldScraper {
    }
 
    @Override
+   protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
+      String brand = productJson.optString("brand");
+      String name = "";
+
+      if (jsonSku.has("nameComplete")) {
+         name = jsonSku.get("nameComplete").toString();
+      } else if (jsonSku.has("name")) {
+         name = jsonSku.get("name").toString();
+      } else {
+         return null;
+      }
+
+      if (brand != null && !brand.equals(".")){
+         return name + " - " + brand;
+      }
+      return name;
+   }
+   @Override
    protected String getHomePage() {
       return "https://www.wong.pe/";
    }
