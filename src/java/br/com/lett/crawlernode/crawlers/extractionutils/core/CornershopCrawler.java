@@ -70,7 +70,7 @@ public class CornershopCrawler extends Crawler {
             Request request = RequestBuilder.create().setUrl(urlApi).setCookies(cookies).build();
 
             // fetcher is the best option because another services have problem with accents
-            JSONArray array = CrawlerUtils.stringToJsonArray(new JsoupDataFetcher().get(session, request).getBody());
+            JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
             if (array.length() > 0) {
                return array.getJSONObject(0);
