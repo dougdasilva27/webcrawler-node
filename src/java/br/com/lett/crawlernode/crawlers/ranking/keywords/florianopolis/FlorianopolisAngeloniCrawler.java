@@ -38,7 +38,7 @@ public class FlorianopolisAngeloniCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"a", "href");
             String internalId = crawlInternalId(productUrl);
             String name = CrawlerUtils.scrapStringSimpleInfo(e,"a > .box-produto__desc-prod", false);
-            Integer price = crawlPrice(e);
+            Integer price = CrawlerUtils.scrapIntegerFromHtml(e, ".box-produto__preco", false,0);
             boolean isAvailable = price != 0;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -83,17 +83,5 @@ public class FlorianopolisAngeloniCrawler extends CrawlerRankingKeywords {
       return CommonMethods.getLast(url.split("-"));
    }
 
-   private Integer crawlPrice(Element e) {
-      Elements prices = e.select(".box-produto__preco span");
-      String finalPrice = "";
 
-      for (Element price : prices) {
-         String pricePortion = CrawlerUtils.scrapStringSimpleInfo(price, "span", false);
-
-         finalPrice = finalPrice.concat(pricePortion);
-      }
-      finalPrice = finalPrice.replaceAll("[.,R$]","");
-
-      return Integer.parseInt(finalPrice);
-   }
 }
