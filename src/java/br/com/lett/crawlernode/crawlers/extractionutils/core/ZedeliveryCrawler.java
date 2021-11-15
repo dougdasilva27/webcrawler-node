@@ -6,7 +6,7 @@ import java.util.*;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.*;
 import models.pricing.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jooq.util.derby.sys.Sys;
@@ -17,9 +17,6 @@ import org.jsoup.nodes.Document;
 import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -47,6 +44,7 @@ public class ZedeliveryCrawler extends Crawler {
    public ZedeliveryCrawler(Session session) {
       super(session);
       SELLER_NAME = session.getMarket().getName();
+      config.setParser(Parser.HTML);
    }
 
    @Override
@@ -99,31 +97,28 @@ public class ZedeliveryCrawler extends Crawler {
    }
 
    @Override
-   protected Document fetch() {
+   protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
       JSONObject apiJson = validateUUID();
-      JSONObject userAddress = JSONUtils.getValueRecursive(apiJson, "data.manageCheckout.checkout.deliveryOption.address", JSONObject.class);
-      JSONObject deliveryOptions = JSONUtils.getValueRecursive(apiJson, "data.manageCheckout.checkout.deliveryOption", JSONObject.class);
-      String cookie = "visitorId=%22" + visitorId +
-         "%22; userAddress=" + URLEncoder.encode(userAddress.toString(), StandardCharsets.UTF_8) +
-         "; deliveryOptions=" + URLEncoder.encode(deliveryOptions.toString(), StandardCharsets.UTF_8) + ";";
+      if(!apiJson.isEmpty()) {
+         JSONObject userAddress = JSONUtils.getValueRecursive(apiJson, "data.manageCheckout.checkout.deliveryOption.address", JSONObject.class);
+         JSONObject deliveryOptions = JSONUtils.getValueRecursive(apiJson, "data.manageCheckout.checkout.deliveryOption", JSONObject.class);
+         String cookie = "visitorId=%22" + visitorId +
+            "%22; userAddress=" + URLEncoder.encode(userAddress.toString(), StandardCharsets.UTF_8) +
+            "; deliveryOptions=" + URLEncoder.encode(deliveryOptions.toString(), StandardCharsets.UTF_8) + ";";
 
-      headers.put("Accept", "*/*");
-      headers.put("Accept-Encoding", "gzip, deflate, br");
-      headers.put("Connection", "keep-alive");
-      headers.put("cookie", cookie);
-
+         headers.put("Accept", "*/*");
+         headers.put("Accept-Encoding", "gzip, deflate, br");
+         headers.put("Connection", "keep-alive");
+         headers.put("cookie", cookie);
+      }
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
          .setHeaders(headers)
          .setSendUserAgent(false)
          .build();
 
-      Response a = this.dataFetcher.get(session, request);
-
-      String content = a.getBody();
-
-      return Jsoup.parse(content);
+      return this.dataFetcher.get(session, request);
    }
 
    @Override
