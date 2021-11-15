@@ -88,6 +88,8 @@ public class ZedeliveryCrawler extends Crawler {
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
          .setPayload(initPayload)
          .setHeaders(headers)
+         //coloquei o proxy para afetar todos os ze deliveries 
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY_HAPROXY,ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
 
