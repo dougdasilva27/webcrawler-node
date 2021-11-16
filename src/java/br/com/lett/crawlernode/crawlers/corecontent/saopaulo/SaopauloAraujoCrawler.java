@@ -4,12 +4,15 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
 import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.List;
 
@@ -33,8 +36,15 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
          description = productJson.optString("description");
       }
 
-      return description;
+      description = decodeHtml(description);
+
+       return description;
    }
+
+   private String decodeHtml(String html) {
+      return  StringEscapeUtils.unescapeHtml4(html);
+   }
+
 
    @Override
    protected String getHomePage() {
