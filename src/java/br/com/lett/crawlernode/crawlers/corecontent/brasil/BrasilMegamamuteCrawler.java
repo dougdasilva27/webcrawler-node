@@ -16,10 +16,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,7 +42,8 @@ public class BrasilMegamamuteCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, " small.sku", true).replaceAll("[^0-9]", "");
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, " div[data-widget-pid]", "data-widget-pid");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.name", true);
-         List<String> images = srapImages(doc);
+         List<String> images = scrapImages(doc);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".wd-product-medias-displayer img", Collections.singletonList("src"), "https", "");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".wd-descriptions-text"));
          Offers offers = scrapOffers(doc);
 
@@ -53,7 +51,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
-            .setPrimaryImage(images.remove(0))
+            .setPrimaryImage(primaryImage)
             .setSecondaryImages(images)
             .setDescription(description)
             .setOffers(offers)
@@ -136,10 +134,10 @@ public class BrasilMegamamuteCrawler extends Crawler {
    }
 
 
-   private List<String> srapImages(Document doc) {
+   private List<String> scrapImages(Document doc) {
       List<String> images = new ArrayList<>();
 
-      Elements imagesElements = doc.select(".wd-product-media-selector ul li");
+      Elements imagesElements = doc.select(".wd-product-media-selector ul li:not(:first-child)");
       for (Element element : imagesElements) {
          String image = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "img", "src");
 
@@ -148,7 +146,6 @@ public class BrasilMegamamuteCrawler extends Crawler {
          if (matcher.find()) {
             images.add(new StringBuilder(image).replace(matcher.start(1), matcher.end(2), "m" + matcher.group(2)).toString());
          }
-
 
       }
 
