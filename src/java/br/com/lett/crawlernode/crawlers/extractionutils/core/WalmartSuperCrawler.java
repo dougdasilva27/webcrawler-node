@@ -118,7 +118,7 @@ public class WalmartSuperCrawler extends Crawler {
          boolean available = crawlAvailability(apiJson);
          CategoryCollection categories = crawlCategories(apiJson);
          String primaryImage = crawlPrimaryImage(internalId);
-         String secondaryImages = crawlSecondaryImages(internalId);
+         List<String> secondaryImages = crawlSecondaryImages(internalId);
          String description = crawlDescription(apiJson);
          Integer stock = null;
          String ean = internalId;
@@ -205,30 +205,12 @@ public class WalmartSuperCrawler extends Crawler {
       return "https://res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/gr/images/product-images/img_large/" + id + "L.jpg";
    }
 
-   private String crawlSecondaryImages(String id) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+   private List<String> crawlSecondaryImages(String id) {
+      List<String> secondaryImages = new ArrayList<>();
 
       for (int i = 1; i < 4; i++) {
          String img = "https://res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/gr/images/product-images/img_large/" + id + "L" + i + ".jpg";
-         Request request = Request.RequestBuilder.create().setUrl(img).setCookies(cookies).build();
-         Response response = this.dataFetcher.get(session, request);
-         RequestsStatistics resp = CommonMethods.getLast(response.getRequests());
-
-         Map<String, String> headers = response.getHeaders();
-         if (headers.containsKey(HttpHeaders.CONTENT_TYPE.toLowerCase())) {
-            // We get this header because sometimes the image url will return a html
-            String content = headers.get(HttpHeaders.CONTENT_TYPE.toLowerCase());
-
-            if (resp != null && resp.getStatusCode() > 0 && resp.getStatusCode() < 400 && (content.contains("image") || content.contains("img"))) {
-               secondaryImagesArray.put(img);
-            }
-         }
-      }
-
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
+         secondaryImages.add(img);
       }
 
       return secondaryImages;
