@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -29,8 +30,9 @@ public class ColombiaAlkostoCrawler extends Crawler {
 
    public ColombiaAlkostoCrawler(Session session) {
       super(session);
-
+      super.config.setFetcher(FetchMode.JSOUP);
    }
+
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -42,7 +44,7 @@ public class ColombiaAlkostoCrawler extends Crawler {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name__sku-code span.code", true);
 
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-name__name", true);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name__name", true);
          List<String> images = scrapImages(doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
 
@@ -50,7 +52,7 @@ public class ColombiaAlkostoCrawler extends Crawler {
          String description = crawlDescription(doc);
 
          //The availability is defined by location. Without setting the location we cannot find the availability.
-         boolean available = doc.selectFirst("span.product-price-pickup")!=null;
+         boolean available = doc.selectFirst("span.product-price-pickup") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
          RatingsReviews ratingReviews = scrapRating(doc, internalId);
          List<String> eans = new ArrayList<>();
