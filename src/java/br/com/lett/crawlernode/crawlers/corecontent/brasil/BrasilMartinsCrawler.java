@@ -67,7 +67,7 @@ public class BrasilMartinsCrawler extends Crawler {
          return super.fetch();
       }
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
 
          Logging.printLogInfo(logger, session, "awaiting product page without login");
 
@@ -119,7 +119,7 @@ public class BrasilMartinsCrawler extends Crawler {
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 70);
+      WebDriverWait wait = new WebDriverWait(driver, 90);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
