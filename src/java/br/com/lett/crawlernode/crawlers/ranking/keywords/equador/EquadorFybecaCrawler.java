@@ -6,12 +6,8 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.MathUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class EquadorFybecaCrawler extends CrawlerRankingKeywords {
 
@@ -22,21 +18,20 @@ public class EquadorFybecaCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
-      String url = "https://www.fybeca.com/FybecaWeb/pages/search-results.jsf?s=" + this.arrayProducts.size() + "&pp=25&q=" + this.keywordEncoded + "&cat=-1&b=-1&ot=0";
+      String url = "https://www.fybeca.com/busqueda?q=" + this.keywordEncoded + "&search-button=&lang=es_EC&start=" + this.arrayProducts.size() + "&sz=18&maxsize=18";
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select("ul.products-list > li[data-id]");
+      Elements products = this.currentDoc.select(".products-grid .col-12.col-lg-4");
 
       if (products != null) {
          for (Element product : products) {
-            String internalPid = product.attr("data-id");
-            String productUrl = "https://www.fybeca.com" + CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "a.name", "href");
-            String name = product.attr("data-name");
-            String imageUrl = "https://www.fybeca.com" + CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "img.productImage", "src");
-            imageUrl = imageUrl.replace("../..", "");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product.product-wrapper", "data-pid");
+            String productUrl = "https://www.fybeca.com" + CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".pdp-link .link", "href");
+            String name = CrawlerUtils.scrapStringSimpleInfo(product, ".pdp-link .link", true);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".tile-image.m-auto", "src");
 
-            String priceElement = product.attr("data-price");
-            int price = formatPrice(priceElement);
+            int price = CrawlerUtils.scrapIntegerFromHtml(product, ".value.pr-2", true, 0);
+            price = price == 0 ? price : CrawlerUtils.scrapIntegerFromHtml(product, ".value.pr-2", true, 0);
             boolean isAvailable = price != 0;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -49,7 +44,7 @@ public class EquadorFybecaCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+
             if (this.arrayProducts.size() == productsLimit)
                break;
          }
@@ -61,26 +56,9 @@ public class EquadorFybecaCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private int formatPrice(String priceElement) {
-      int result = 0;
-      String priceStr = "";
-      String regex = ":([0-9]*?\\.[0-9]*?),";
-
-      Pattern pattern = Pattern.compile(regex);
-      Matcher matcher = pattern.matcher(priceElement);
-      if (matcher.find()) {
-         priceStr = matcher.group(1);
-      }
-
-      if (priceStr != null && !priceStr.equals("")) {
-         result = MathUtils.parseInt(priceStr);
-      }
-
-      return result;
-   }
 
    @Override
-   protected boolean hasNextPage(){
+   protected boolean hasNextPage() {
       return true;
    }
 }
