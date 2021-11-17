@@ -1,6 +1,11 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -15,11 +20,13 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -29,6 +36,18 @@ public class ColombiaAlkostoCrawler extends Crawler {
 
    public ColombiaAlkostoCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setParser(Parser.HTML);
+   }
+
+
+   @Override
+   protected Response fetchResponse() {
+
+      Request request = Request.RequestBuilder.create().setProxyservice(Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY))
+         .setUrl(session.getOriginalURL()).build();
+     return dataFetcher.get(session, request);
+
 
    }
 
@@ -42,7 +61,7 @@ public class ColombiaAlkostoCrawler extends Crawler {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name__sku-code span.code", true);
 
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-name__name", true);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name__name", true);
          List<String> images = scrapImages(doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
 
