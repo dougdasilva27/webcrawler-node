@@ -1,8 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.belohorizonte;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONArray;
@@ -20,7 +23,7 @@ public class BelohorizonteSupernossoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 24;
 
       this.log("Página " + this.currentPage);
@@ -35,12 +38,20 @@ public class BelohorizonteSupernossoCrawler extends CrawlerRankingKeywords {
 
          for (Object obj : products) {
             JSONObject product = (JSONObject) obj;
-            String internalPid = product.optString("id");
-            String productUrl = product.optString("url");
 
-            saveDataProduct(null, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(product.optString("url"))
+               .setInternalPid(product.optString("id"))
+               .setName(product.optString("name"))
+               .setPriceInCents(scrapPrice(product))
+               .setAvailability(product.optString("status").equals("AVAILABLE"))
+               .setImageUrl((String) product.optQuery("/images/default"))
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+
+
+            saveDataProduct(productRanking);
+
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
@@ -52,6 +63,15 @@ public class BelohorizonteSupernossoCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private Integer scrapPrice(JSONObject product) {
+      double price = product.optDouble("price");
+      Integer priceInCents = null;
+      if (price != 0.0) {
+         priceInCents = Integer.parseInt(Double.toString(price).replace(".", ""));
+      }
+      return priceInCents;
    }
 
    private void setTotalProducts(JSONObject json) {

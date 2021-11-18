@@ -2,9 +2,12 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -54,7 +57,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
 
 
    @Override
-   public void extractProductsFromCurrentPage() {
+   public void extractProductsFromCurrentPage() throws MalformedProductException {
 
       this.pageSize = 40;
       this.log("Página " + this.currentPage);
@@ -67,21 +70,24 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       if (search.has("products") && search.getJSONArray("products").length() > 0) {
          JSONArray products = search.getJSONArray("products");
 
-//         // se o total de busca não foi setado ainda, chama a função para
-//         if (this.totalProducts == 0) {
-//            setTotalProducts(search);
-//         }
 
          for (int i = 0; i < products.length(); i++) {
             JSONObject product = products.getJSONObject(i);
-
             String internalPid = crawlInternalPid(product);
-            String internalId = newUnification ? internalPid : crawlInternalId(product);
-            String productUrl = crawlProductUrl(product);
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(crawlProductUrl(product))
+               .setInternalPid(internalPid)
+               .setInternalId(newUnification ? internalPid : crawlInternalId(product))
+               .setName(product.optString("name"))
+               .setPriceInCents(scrapPrice(product))
+               .setAvailability(product.optBoolean("in_stock"))
+               .setImageUrl(crawlProductImage(product))
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+
+            saveDataProduct(productRanking);
+
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
@@ -93,6 +99,20 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String crawlProductImage(JSONObject product) {
+      return CrawlerUtils.completeUrl(product.optString("image"), "https", "images.rappi.com.br/products");
+   }
+
+
+   private Integer scrapPrice(JSONObject product) {
+      double price = product.optDouble("price");
+      Integer priceInCents = null;
+      if (price != 0.0) {
+         priceInCents = Integer.parseInt(Double.toString(price).replace(".", ""));
+      }
+      return priceInCents;
    }
 
    protected void setTotalProducts(JSONObject search) {
