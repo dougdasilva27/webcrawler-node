@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.equador;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -9,20 +8,18 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class EquadorFybecaCrawler extends Crawler {
 
@@ -39,15 +36,17 @@ public class EquadorFybecaCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (doc.selectFirst("form#product-detail") != null) {
+      if (doc.selectFirst(".product-detail-breadcrumb") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         JSONObject jsonObject = CrawlerUtils.selectJsonFromHtml(doc, "script[type='application/ld+json']", null, null, false, false);
 
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=id]", "value");
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("div#product-info"));
-         String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "meta[property=og:title]", "content");
-         List<String> images = scrapImages(doc);
+         String internalPid = jsonObject.optString("sku");
+         String description = jsonObject.optString("description");
+         String name = jsonObject.optString("name");
+         List<String> images = JSONUtils.jsonArrayToStringList(jsonObject.optJSONArray("image"));
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-         boolean available = doc.selectFirst("button[data-method=addToCart]") != null;
+         String availability = jsonObject.optString("availability");
+         boolean available = availability != null && availability.contains("InStock");
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
@@ -64,30 +63,11 @@ public class EquadorFybecaCrawler extends Crawler {
 
          products.add(product);
 
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page:   " + this.session.getOriginalURL());
       }
 
       return products;
-   }
-
-   private List<String> scrapImages(Document doc) {
-      List<String> imgList = new ArrayList<>();
-
-      Elements imgsEl = doc.select("div.carousel.carousel-navigation li[data-id] img.productImage");
-
-      for (Element img : imgsEl) {
-         String imgUrl = img.attr("src");
-
-         if (imgUrl != null) {
-            imgUrl = imgUrl.replace("thumbnail/", "")
-               .replace("../..", "");
-            imgList.add("https://www.fybeca.com" + imgUrl);
-         }
-      }
-
-      return imgList;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -111,28 +91,27 @@ public class EquadorFybecaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      String priceElement = doc.selectFirst("div#price2") != null ? doc.selectFirst("div#price2").attr("data-bind") : "";
 
-      Double spotlightPrice = formatPrice(priceElement);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".value.pr-2", null, true, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-original span", null, true, '.', session);
 
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .build();
    }
 
-   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
-      }
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
@@ -142,44 +121,8 @@ public class EquadorFybecaCrawler extends Crawler {
             .build());
       }
 
-      creditCards.add(scrapShopCard(doc));
-
       return creditCards;
    }
 
-   private CreditCard scrapShopCard(Document doc) throws MalformedPricingException {
-      CreditCard creditCard;
-      Installments installments = new Installments();
 
-      String priceElement = doc.selectFirst("div#price2") != null ? doc.selectFirst("div#price2").attr("data-bind") : "";
-      Double shopCardPrice = formatPrice(priceElement);
-
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(shopCardPrice)
-            .build());
-      }
-
-      creditCard = CreditCard.CreditCardBuilder.create()
-         .setBrand(Card.SHOP_CARD.toString())
-         .setInstallments(installments)
-         .setIsShopCard(true)
-         .build();
-
-      return creditCard;
-   }
-
-   private Double formatPrice(String priceElement){
-      String priceStr = "";
-      String regex = "\\(([0-9]*?\\.[0-9]*?)\\)";
-
-      Pattern pattern = Pattern.compile(regex);
-      Matcher matcher = pattern.matcher(priceElement);
-      if (matcher.find()) {
-         priceStr = matcher.group(1);
-      }
-
-      return MathUtils.parseDoubleWithDot(priceStr);
-   }
 }
