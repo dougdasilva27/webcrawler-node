@@ -79,7 +79,6 @@ public class SaoluizMateusonlineCrawler extends CrawlerRankingKeywords {
          .setUrl(url)
          .build();
 
-      takeAScreenshot(url, cookies);
 
       return Jsoup.parse(dataFetcher.get(session, request).getBody());
    }

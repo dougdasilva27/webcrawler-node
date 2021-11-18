@@ -49,7 +49,6 @@ public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
         printUrl = this.categoryUrl;
       }
 
-      takeAScreenshot(printUrl);
     }
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");

@@ -92,7 +92,6 @@ public class RiodejaneiroLafruteriaCrawler extends CrawlerRankingKeywords {
       Document doc = Jsoup.parse(response.getBody());
 
       // Screenshot
-      takeAScreenshot(url, cookies);
 
       return doc;
 

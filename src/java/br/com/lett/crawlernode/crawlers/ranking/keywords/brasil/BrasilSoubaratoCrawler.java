@@ -27,7 +27,6 @@ public class BrasilSoubaratoCrawler extends CrawlerRankingKeywords {
 
 		if(((RankingSession)session).mustTakeAScreenshot() && this.currentPage <= 2) {
 			String printUrl = "http://www.soubarato.com.br/busca/?content="+ this.keywordEncoded +"&limit=28&source=nanook&offset=" + this.arrayProducts.size();
-			takeAScreenshot(printUrl);
 		}
 		
 		JSONObject jsonPage = fetchJSONObject(url);

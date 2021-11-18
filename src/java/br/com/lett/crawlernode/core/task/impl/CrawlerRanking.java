@@ -57,13 +57,13 @@ public abstract class CrawlerRanking extends Task {
    protected FetchMode fetchMode;
    protected DataFetcher dataFetcher;
 
-   private Logger logger;
+   private final Logger logger;
 
    protected List<RankingProduct> arrayProducts = new ArrayList<>();
 
-   private Map<String, String> mapUrlMessageId = new HashMap<>();
+   private final Map<String, String> mapUrlMessageId = new HashMap<>();
 
-   private List<String> messages = new ArrayList<>();
+   private final List<String> messages = new ArrayList<>();
 
    protected int productsLimit;
    protected int pageLimit;
@@ -81,11 +81,11 @@ public abstract class CrawlerRanking extends Task {
 
    protected int marketId;
    protected String location;
-   private String rankType;
+   private final String rankType;
 
    private Integer doubleCheck;
 
-   private Map<Integer, String> screenshotsAddress = new HashMap<>();
+   private final Map<Integer, String> screenshotsAddress = new HashMap<>();
 
    // variável que identifica se há resultados na página
    protected boolean result;
@@ -122,11 +122,6 @@ public abstract class CrawlerRanking extends Task {
       extractProducts();
 
       this.log("Foram " + this.arrayProducts.size() + " lidos");
-   }
-
-   @Override
-   protected void onStart() {
-      super.onStart();
    }
 
    @Override
@@ -191,8 +186,7 @@ public abstract class CrawlerRanking extends Task {
             extractProductsFromCurrentPage();
 
             // mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
-            if (session instanceof RankingSession || session instanceof RankingDiscoverSession || session instanceof EqiRankingDiscoverKeywordsSession
-               && executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) && (session instanceof TestRankingKeywordsSession)) {
+            if (session instanceof RankingSession || session instanceof RankingDiscoverSession) {
 
                sendMessagesToQueue();
             }
@@ -221,9 +215,6 @@ public abstract class CrawlerRanking extends Task {
          // função para popular os dados no banco
          if (session instanceof RankingSession) {
             persistRankingData();
-            // persistDiscoverData();
-         } else if (session instanceof RankingDiscoverSession) {
-            // persistDiscoverData();
          }
       } catch (Exception e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
@@ -234,7 +225,7 @@ public abstract class CrawlerRanking extends Task {
 
    private void setDataFetcher() {
       if (this.fetchMode == FetchMode.STATIC) {
-         dataFetcher = executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
+         dataFetcher = Boolean.TRUE.equals(executionParameters.getUseFetcher()) ? new FetcherDataFetcher() : new ApacheDataFetcher();
       } else if (this.fetchMode == FetchMode.APACHE) {
          dataFetcher = new ApacheDataFetcher();
       } else if (this.fetchMode == FetchMode.JAVANET) {
@@ -259,7 +250,6 @@ public abstract class CrawlerRanking extends Task {
     * produtos pegos até aquela página, caso na próxima página o número de produtos se manter, é
     * identificado que não há próxima página devido algum erro naquele market.
     *
-    * @return
     */
    protected boolean checkIfHasNextPage() {
       if (this.position < productsLimit && hasNextPage() && this.result) {
@@ -286,7 +276,7 @@ public abstract class CrawlerRanking extends Task {
     * função que retorna se há ou não uma próxima página default: total de produtos maior que os
     * produtos pegos até agora
     *
-    * @return
+    *
     */
    protected boolean hasNextPage() {
       return this.totalProducts > this.arrayProducts.size();
@@ -304,9 +294,9 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Salva os dados do produto e chama a função que salva a url para mandar pra fila
     *
-    * @param internalId
-    * @param pid
-    * @param url
+    * @param internalId id unico do produto
+    * @param pid       id do produto
+    * @param url       url do produto
     * @deprecated Novos campos devem ser capturados pelo ranking. Utilizar a função {@link #saveDataProduct(RankingProduct)}
     */
    protected void saveDataProduct(String internalId, String pid, String url) {
@@ -317,9 +307,9 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Salva os dados do produto e chama a função que salva a url para mandar pra fila
     *
-    * @param internalId
-    * @param pid
-    * @param url
+    * @param internalId id unico do produto
+    * @param pid       id do produto
+    * @param url       url do produto
     * @deprecated Novos campos devem ser capturados pelo ranking. Utilizar a função {@link #saveDataProduct(RankingProduct)}
     */
    protected void saveDataProduct(String internalId, String pid, String url, int position) {
@@ -409,7 +399,7 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Salva os dados do produto e chama a função que salva a url para mandar pra fila
     *
-    * @param product
+    * @param product produto
     */
    protected void saveDataProduct(RankingProduct product) {
       this.position++;
@@ -422,26 +412,8 @@ public abstract class CrawlerRanking extends Task {
       metadataJson.put("position", product.getPosition());
       metadataJson.put("url", product.getUrl());
 
-      Logging.logInfo(logger, session, metadataJson, "Keyword= " + this.location + "," + product.toString());
+      Logging.logInfo(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
-      if (!screenshotsAddress.isEmpty()) {
-         switch (this.currentPage) {
-            case 1:
-               if (screenshotsAddress.containsKey(1)) {
-                  product.setScreenshot(screenshotsAddress.get(1));
-               }
-               break;
-
-            case 2:
-               if (screenshotsAddress.containsKey(2)) {
-                  product.setScreenshot(screenshotsAddress.get(2));
-               }
-               break;
-
-            default:
-               break;
-         }
-      }
 
       if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
          List<Processed> processeds = new ArrayList<>();
@@ -466,7 +438,7 @@ public abstract class CrawlerRanking extends Task {
                   ", pid= " + product.getInternalId() +
                   ", url= " + p.getUrl());
 
-               if (p.isVoid() && product.getUrl() != null && !p.getUrl().equals(product.getUrl())) {
+               if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && !p.getUrl().equals(product.getUrl())) {
                   saveProductUrlToQueue(product.getUrl());
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + product.getUrl());
                }
@@ -492,7 +464,7 @@ public abstract class CrawlerRanking extends Task {
 
 
    /**
-    * @param url
+    * @param url url do produto
     */
    protected void saveProductUrlToQueue(String url) {
       this.messages.add(url);
@@ -577,15 +549,17 @@ public abstract class CrawlerRanking extends Task {
       this.messages.clear();
    }
 
-
-   /**
-    * @param entries
+    /**
+    * Send messages to SQS
+    *
+    * @param entries entries
+    * @param isWebDrive is true if use web drive
     */
    private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive) {
       String queueName;
 
 
-      if (executionParameters.getEnvironment().equals(executionParameters.ENVIRONMENT_DEVELOPMENT)) {
+      if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
          queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
       } else {
          if (session instanceof EqiRankingDiscoverKeywordsSession) {
@@ -621,19 +595,15 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Fetch Document
     *
-    * @param url
-    * @return
     */
    protected Document fetchDocument(String url) {
       return fetchDocument(url, cookies);
    }
 
    /**
-    * Fetch Document eith cookies
+    * Fetch Document with cookies
     *
-    * @param url
-    * @param cookies
-    * @return
+    *
     */
    protected Document fetchDocument(String url, List<Cookie> cookies) {
       this.currentDoc = new Document(url);
@@ -645,19 +615,11 @@ public abstract class CrawlerRanking extends Task {
       Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
       Response response = dataFetcher.get(session, request);
 
-      Document doc = Jsoup.parse(response.getBody());
-
-      // Screenshot
-      takeAScreenshot(url, cookies);
-
-      return doc;
+      return Jsoup.parse(response.getBody());
    }
 
    /**
     * Fetch Map of Cookies
-    *
-    * @param url
-    * @return
     */
    protected List<Cookie> fetchCookies(String url) {
       return fetchCookies(url, cookies);
@@ -666,9 +628,6 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Fetch Map of Cookies
     *
-    * @param url
-    * @param cookies
-    * @return
     */
    protected List<Cookie> fetchCookies(String url, List<Cookie> cookies) {
       this.currentDoc = new Document(url);
@@ -683,8 +642,6 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Fetch jsonObject(deprecated) Use fetchJSONObject(String url, List<Cookie> cookies)
     *
-    * @param url
-    * @return
     */
    protected JSONObject fetchJSONObject(String url) {
       if (this.currentPage == 1) {
@@ -697,9 +654,6 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Fetch String with Get Request
     *
-    * @param url
-    * @param cookies
-    * @return
     */
    protected String fetchGETString(String url, List<Cookie> cookies) {
       Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
@@ -711,8 +665,6 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Fetch jsonObject
     *
-    * @param url
-    * @return
     */
    protected JSONObject fetchJSONObject(String url, List<Cookie> cookies) {
       this.currentDoc = new Document(url);
@@ -727,41 +679,9 @@ public abstract class CrawlerRanking extends Task {
       return CrawlerUtils.stringToJson(response.getBody());
    }
 
-   /**
-    * Fetch google Json
-    *
-    * @param url
-    * @return
-    */
-   protected JsonObject fetchJsonObjectGoogle(String url) {
-      this.currentDoc = new Document(url);
-
-      if (this.currentPage == 1) {
-         this.session.setOriginalURL(url);
-      }
-
-      Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
-      Response response = dataFetcher.get(session, request);
-
-      JsonObject jobj;
-      try {
-         jobj = new Gson().fromJson(response.getBody(), JsonObject.class);
-      } catch (JsonSyntaxException e) {
-         jobj = new JsonObject();
-         this.logError(CommonMethods.getStackTraceString(e));
-      }
-
-      return jobj;
-   }
 
    /**
     * Fetch String with Post Request
-    *
-    * @param url
-    * @param payload
-    * @param headers
-    * @param cookies
-    * @return
     */
    protected String fetchStringPOST(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
       if (this.currentPage == 1) {
@@ -777,11 +697,6 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Fetch String with Post Request in FETCHER
     *
-    * @param url
-    * @param payload
-    * @param headers
-    * @param cookies
-    * @return
     */
    protected String fetchPostFetcher(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
       Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).setPayload(payload).setHeaders(headers).build();
@@ -793,11 +708,6 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Fetch String with Post Request in FETCHER
     *
-    * @param url
-    * @param payload
-    * @param headers
-    * @param cookies
-    * @return
     */
    protected String fetchGetFetcher(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
       Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).setPayload(payload).setHeaders(headers).build();
@@ -807,39 +717,7 @@ public abstract class CrawlerRanking extends Task {
    }
 
    /**
-    * Fetch Cookies with Post Request
-    *
-    * @param url
-    * @param payload
-    * @param headers
-    * @param cookies
-    * @return
-    */
-   protected List<Cookie> fetchCookiesPOST(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
-      Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).setPayload(payload).setHeaders(headers).build();
-      Response response = dataFetcher.post(session, request);
-
-      return response.getCookies();
-   }
-
-   /**
     * Inicia o webdriver
-    *
-    * @param url
-    */
-   protected CrawlerWebdriver startWebDriver(String url) {
-      if (this.currentPage == 1) {
-         this.session.setOriginalURL(url);
-      }
-
-      return DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY, session);
-   }
-
-   /**
-    * Inicia o webdriver
-    *
-    * @param url
-    * @param proxy
     */
    protected CrawlerWebdriver startWebDriver(String url, String proxy) {
       if (this.currentPage == 1) {
@@ -852,19 +730,12 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Conecta url com webdriver
     *
-    * @param url
-    * @return
     */
-   protected Document fetchDocumentWithWebDriver(String url) {
-      return fetchDocumentWithWebDriver(url, null);
-   }
+
 
    /**
     * Conecta url com webdriver
     *
-    * @param url
-    * @param timeout
-    * @return
     */
    protected Document fetchDocumentWithWebDriver(String url, Integer timeout, String proxy) {
       if (this.currentPage == 1) {
@@ -895,42 +766,10 @@ public abstract class CrawlerRanking extends Task {
       return DynamicDataFetcher.fetchPage(this.webdriver, url, this.session);
    }
 
-   protected Document fetchDocumentWithWebDriver(String url, Integer timeout) {
-      return fetchDocumentWithWebDriver(url, timeout, ProxyCollection.BUY_HAPROXY);
+   protected Document fetchDocumentWithWebDriver(String url) {
+      return fetchDocumentWithWebDriver(url, null, ProxyCollection.BUY_HAPROXY);
    }
 
-   protected void takeAScreenshot(String url) {
-      takeAScreenshot(url, this.currentPage, null);
-   }
-
-   protected void takeAScreenshot(String url, List<Cookie> cookies) {
-      takeAScreenshot(url, this.currentPage, cookies);
-   }
-
-   /**
-    * Take a screenshot for audit only the first 2 pages
-    *
-    * @param url
-    */
-   protected void takeAScreenshot(String url, int page, List<Cookie> cookies) {
-      // if (session instanceof RankingSession && page <= 2 && ((RankingSession)
-      // session).mustTakeAScreenshot()) {
-      // String printUrl = URLBox.takeAScreenShot(url, session, page, cookies);
-      //
-      // switch (this.currentPage) {
-      // case 1:
-      // this.screenshotsAddress.put(1, printUrl);
-      // break;
-      //
-      // case 2:
-      // this.screenshotsAddress.put(2, printUrl);
-      // break;
-      //
-      // default:
-      // break;
-      // }
-      // }
-   }
 
    public void log(String message) {
       Logging.printLogDebug(logger, session, message);

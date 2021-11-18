@@ -21,7 +21,7 @@
         <s3.version>1.11.1030</s3.version>
         <sqs.version>1.11.1030</sqs.version>
         <kinesis.version>0.14.6</kinesis.version>
-        <db.version>8.0.0</db.version>
+        <db.version>8.0.1</db.version>
         <jsoup.version>1.13.1</jsoup.version>
         <models.version>2.7.19</models.version>
         <logback.version>1.2.3</logback.version>
@@ -176,6 +176,14 @@
             <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-jpeg</artifactId>
             <version>${imageio.version}</version>
+        </dependency>
+
+        <!-- Elastic -->
+
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+            <version>7.9.2</version>
         </dependency>
 
         <!-- HTML parser -->

@@ -22,6 +22,7 @@ public class DatabaseManager {
    public MongoDB connectionFetcher;
    public DSLContext jooqPostgres = DSL.using(SQLDialect.POSTGRES);
 
+
    public DatabaseManager(DBCredentials credentials) {
       setMongoFrozen(credentials);
       setMongoFetcher(credentials);

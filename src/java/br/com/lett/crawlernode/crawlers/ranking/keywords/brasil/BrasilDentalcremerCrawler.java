@@ -27,7 +27,6 @@ public class BrasilDentalcremerCrawler extends CrawlerRankingKeywords{
 
 		if (((RankingSession) session).mustTakeAScreenshot() && this.currentPage <= 2) {
 			String printUrl = "http://busca.dentalcremer.com.br/?q=" + this.keywordEncoded + "&page=" + this.currentPage;
-			takeAScreenshot(printUrl);
 		}
 
 		JSONObject json = fetchJSONObject(url);
