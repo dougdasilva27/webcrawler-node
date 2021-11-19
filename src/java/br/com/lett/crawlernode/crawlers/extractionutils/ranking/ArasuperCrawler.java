@@ -47,12 +47,12 @@ public class ArasuperCrawler extends CrawlerRankingKeywords {
       for (Element product : products) {
          String productUrl = CrawlerUtils.completeUrl(product.select("a").attr("href"), "https", "www.arasuper.com.br");
          String internalId = scrapInternalId(productUrl);
-         Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".item-produto__price-por",null,false,',',session,null);
+         Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".item-produto__price-por", null, false, ',', session, null);
 
          RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(productUrl)
             .setInternalId(internalId)
-            .setName(CrawlerUtils.scrapStringSimpleInfo(product, ".item-produto__name",true))
+            .setName(CrawlerUtils.scrapStringSimpleInfo(product, ".item-produto__name", true))
             .setPriceInCents(price)
             .setAvailability(price != null)
             .setImageUrl(CrawlerUtils.scrapSimplePrimaryImage(product, ".item-produto__image", Arrays.asList("src"), "https", "www.arasuper.com.br"))

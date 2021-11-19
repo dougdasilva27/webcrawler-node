@@ -81,16 +81,16 @@ public class ArasuperCrawler extends Crawler {
    private Offers scraperOffers(JSONObject jsonObject, Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       if (jsonObject.has("offers")) {
-      Pricing pricing = scrapPricing(jsonObject, doc);
+         Pricing pricing = scrapPricing(jsonObject, doc);
 
-      offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_FULL_NAME)
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .build());
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .build());
       }
 
       return offers;
@@ -98,8 +98,8 @@ public class ArasuperCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject jsonObject, Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".item-produto__price-por",null,true,',',session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".item-produto__price-de",null,true,',',session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".item-produto__price-por", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".item-produto__price-de", null, true, ',', session);
 
       if (spotlightPrice == null) {
          spotlightPrice = priceFrom;
