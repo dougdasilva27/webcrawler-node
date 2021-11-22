@@ -153,7 +153,7 @@ public abstract class VTEXOldScraper extends VTEXScraper {
     * @param session
     * @return
     */
-   public static JSONObject crawlSkuJsonVTEX(Document document, Session session) {
+   public JSONObject crawlSkuJsonVTEX(Document document, Session session) {
       Elements scriptTags = document.getElementsByTag("script");
       String scriptVariableName = "var skuJson_0 = ";
       JSONObject skuJson = new JSONObject();

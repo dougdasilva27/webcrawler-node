@@ -5,12 +5,19 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class BrasilEpocacosmeticosCrawler extends VTEXOldScraper {
 
@@ -43,5 +50,37 @@ public class BrasilEpocacosmeticosCrawler extends VTEXOldScraper {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "393", logger);
       return trustVox.extractRatingAndReviewsForVtex(doc, dataFetcher).getRatingReviews(internalId);
    }
+
+
+   @Override
+   public  JSONObject crawlSkuJsonVTEX(Document document, Session session) {
+      Elements scriptTags = document.getElementsByTag("script");
+      String scriptVariableName = "vtex.events.addData(";
+      JSONObject skuJson = new JSONObject();
+      String skuJsonString = null;
+
+      for (Element tag : scriptTags) {
+         for (DataNode node : tag.dataNodes()) {
+            if (tag.html().trim().startsWith(scriptVariableName)) {
+               skuJsonString = node.getWholeData().split(Pattern.quote(scriptVariableName))[1]
+                  + node.getWholeData().split(Pattern.quote(scriptVariableName))[1].split(Pattern.quote("};"))[0];
+               break;
+            }
+         }
+      }
+
+      if (skuJsonString != null) {
+         try {
+            skuJson = new JSONObject(skuJsonString);
+
+         } catch (JSONException e) {
+            Logging.printLogWarn(logger, session, "Error creating JSONObject from var skuJson_0");
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+         }
+      }
+
+      return skuJson;
+   }
+
 
 }
