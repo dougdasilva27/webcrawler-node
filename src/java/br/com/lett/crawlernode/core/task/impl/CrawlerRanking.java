@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.task.impl;
 
+import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
@@ -29,9 +30,6 @@ import br.com.lett.crawlernode.util.ScraperInformation;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import enums.QueueName;
 import enums.ScrapersTypes;
 import models.Processed;
@@ -85,7 +83,6 @@ public abstract class CrawlerRanking extends Task {
 
    private Integer doubleCheck;
 
-   private final Map<Integer, String> screenshotsAddress = new HashMap<>();
 
    // variável que identifica se há resultados na página
    protected boolean result;
@@ -94,7 +91,7 @@ public abstract class CrawlerRanking extends Task {
       return arrayProducts;
    }
 
-   public CrawlerRanking(Session session, String rankType, Logger logger) {
+   protected CrawlerRanking(Session session, String rankType, Logger logger) {
       this.session = session;
 
       this.logger = logger;
@@ -127,10 +124,6 @@ public abstract class CrawlerRanking extends Task {
    @Override
    protected void onFinish() {
       super.onFinish();
-      // if (session instanceof RankingSession) {
-      // // Identify anomalies
-      // anomalyDetector(this.location, this.session.getMarket(), this.rankType);
-      // }
 
       if (!(session instanceof TestRankingKeywordsSession)) {
          S3Service.uploadCrawlerSessionContentToAmazon(session);
@@ -249,7 +242,6 @@ public abstract class CrawlerRanking extends Task {
     * resultado para aquela location (this.result) 4 - A variável doubleCheck armazena todos os
     * produtos pegos até aquela página, caso na próxima página o número de produtos se manter, é
     * identificado que não há próxima página devido algum erro naquele market.
-    *
     */
    protected boolean checkIfHasNextPage() {
       if (this.position < productsLimit && hasNextPage() && this.result) {
@@ -275,8 +267,6 @@ public abstract class CrawlerRanking extends Task {
    /**
     * função que retorna se há ou não uma próxima página default: total de produtos maior que os
     * produtos pegos até agora
-    *
-    *
     */
    protected boolean hasNextPage() {
       return this.totalProducts > this.arrayProducts.size();
@@ -295,10 +285,11 @@ public abstract class CrawlerRanking extends Task {
     * Salva os dados do produto e chama a função que salva a url para mandar pra fila
     *
     * @param internalId id unico do produto
-    * @param pid       id do produto
-    * @param url       url do produto
+    * @param pid        id do produto
+    * @param url        url do produto
     * @deprecated Novos campos devem ser capturados pelo ranking. Utilizar a função {@link #saveDataProduct(RankingProduct)}
     */
+   @Deprecated
    protected void saveDataProduct(String internalId, String pid, String url) {
       this.position++;
       saveDataProduct(internalId, pid, url, position);
@@ -308,100 +299,47 @@ public abstract class CrawlerRanking extends Task {
     * Salva os dados do produto e chama a função que salva a url para mandar pra fila
     *
     * @param internalId id unico do produto
-    * @param pid       id do produto
-    * @param url       url do produto
+    * @param pid        id do produto
+    * @param url        url do produto
     * @deprecated Novos campos devem ser capturados pelo ranking. Utilizar a função {@link #saveDataProduct(RankingProduct)}
     */
+   @Deprecated
    protected void saveDataProduct(String internalId, String pid, String url, int position) {
       RankingProduct rankingProducts = new RankingProduct();
 
+      rankingProducts.setInternalId(internalId);
       rankingProducts.setInteranlPid(pid);
       rankingProducts.setUrl(url);
       rankingProducts.setPosition(position);
 
-      JSONObject metadataJson = new JSONObject();
-      metadataJson.put("keyword", this.location);
-      metadataJson.put("position", position);
-      metadataJson.put("url", url);
-
-      Logging.logInfo(logger, session, metadataJson, "Keyword= " + this.location + ","+ " PageNumber= " + currentPage +
-         ", position= " + position +
-         ", internalPid= " + pid +
-         ", internalId= " + internalId +
-         ", url= " + url);
-
-      if (!screenshotsAddress.isEmpty()) {
-         switch (this.currentPage) {
-            case 1:
-               if (screenshotsAddress.containsKey(1)) {
-                  rankingProducts.setScreenshot(screenshotsAddress.get(1));
-               }
-               break;
-
-            case 2:
-               if (screenshotsAddress.containsKey(2)) {
-                  rankingProducts.setScreenshot(screenshotsAddress.get(2));
-               }
-               break;
-
-            default:
-               break;
-         }
-      }
-
-      if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
-         List<Processed> processeds = new ArrayList<>();
-         List<Long> processedIds = new ArrayList<>();
-
-         if (internalId != null) {
-            processeds = Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId, session);
-         } else if (pid != null) {
-            processeds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId, session);
-         } else if (url != null) {
-            Logging.printLogWarn(logger, session, "Searching for processed with url and market.");
-            processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId, session);
-         }
-
-         if (!processeds.isEmpty()) {
-            for (Processed p : processeds) {
-               processedIds.add(p.getId());
-
-               Logging.logInfo(logger, session, metadataJson, "Product already found - Keyword= " + this.location +
-                  ", processed= " + p.getId() +
-                  ", internal id= " + internalId +
-                  ", pid= " + pid +
-                  ", url= " + p.getUrl());
-
-               if (p.isVoid() && url != null && !p.getUrl().equals(url)) {
-                  saveProductUrlToQueue(url);
-                  Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + url);
-               }
-            }
-
-         } else if (url != null && processedIds.isEmpty()) {
-            Logging.logInfo(logger, session, metadataJson, "New product found - Keyword= " + this.location + "," +
-               ", internal id= " + internalId +
-               ", pid= " + pid +
-               ", url= " + url);
-            saveProductUrlToQueue(url);
-         }
-
-         rankingProducts.setProcessedIds(processedIds);
-      }
-
-      if (url != null && session instanceof EqiRankingDiscoverKeywordsSession) {
-         saveProductUrlToQueue(url);
-      }
-
-      this.arrayProducts.add(rankingProducts);
+      saveDataProduct(rankingProducts, false);
    }
+
+
+   private List<Processed> fetchProcessed(String internalId, String pid, String url) {
+      List<Processed> processeds = new ArrayList<>();
+
+      if (internalId != null) {
+         processeds = Persistence.fetchProcessedsWithInternalId(internalId.trim(), this.marketId, session);
+      } else if (pid != null) {
+         processeds = Persistence.fetchProcessedsWithInternalPid(pid, this.marketId, session);
+      } else if (url != null) {
+         processeds = Persistence.fetchProcessedsWithUrl(url, this.marketId, session);
+      }
+      return processeds;
+   }
+
+   protected void saveDataProduct(RankingProduct product) {
+      saveDataProduct(product, true);
+   }
+
 
    /**
     * Salva os dados do produto e chama a função que salva a url para mandar pra fila
     *
     * @param product produto
     */
-   protected void saveDataProduct(RankingProduct product) {
+   protected void saveDataProduct(RankingProduct product, boolean isUpdate) {
       this.position++;
       product.setPosition(this.position);
       product.setPageNumber(this.currentPage);
@@ -416,16 +354,11 @@ public abstract class CrawlerRanking extends Task {
 
 
       if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
-         List<Processed> processeds = new ArrayList<>();
+         List<Processed> processeds = fetchProcessed(product.getInteranlPid(), product.getInteranlPid(), product.getUrl());
          List<Long> processedIds = new ArrayList<>();
 
-         if (product.getInternalId() != null) {
-            processeds = Persistence.fetchProcessedIdsWithInternalId(product.getInternalId().trim(), this.marketId, session);
-         } else if (product.getInteranlPid() != null) {
-            processeds = Persistence.fetchProcessedIdsWithInternalPid(product.getInteranlPid(), this.marketId, session);
-         } else if (product.getUrl() != null) {
-            Logging.printLogWarn(logger, session, "Searching for processed with url and market.");
-            processedIds = Persistence.fetchProcessedIdsWithUrl(product.getUrl(), this.marketId, session);
+         if (!isUpdate){
+            completeRankingProduct(product, processeds);
          }
 
          if (!processeds.isEmpty()) {
@@ -444,7 +377,7 @@ public abstract class CrawlerRanking extends Task {
                }
             }
 
-         } else if (product.getUrl() != null && processedIds.isEmpty()) {
+         } else if (product.getUrl() != null && processeds.isEmpty()) {
             Logging.logInfo(logger, session, metadataJson, "New product found - Keyword= " + this.location + "," +
                ", internal id= " + product.getInternalId() +
                ", pid= " + product.getInternalId() +
@@ -462,10 +395,18 @@ public abstract class CrawlerRanking extends Task {
       this.arrayProducts.add(product);
    }
 
+   private void completeRankingProduct(RankingProduct product, List<Processed> processeds) {
+      if (!processeds.isEmpty()) {
+         Processed processed = processeds.get(0);
+         product.setName(processed.getOriginalName());
+         product.setPriceInCents(processed.getPrice()!=null?Integer.parseInt(String.valueOf(processed.getPrice())): null);
+         product.setIsAvailable(processed.getAvailable());
+         product.setImageUrl(processed.getPic());
+      }
+   }
 
-   /**
-    * @param url url do produto
-    */
+
+
    protected void saveProductUrlToQueue(String url) {
       this.messages.add(url);
    }
@@ -499,6 +440,9 @@ public abstract class CrawlerRanking extends Task {
 
          // insere dados no postgres
          Persistence.insertProductsRanking(ranking, session);
+
+         // persiste os dados no elasticsearch
+         KPLProducer.getInstance().put(ranking, session);
 
       } else {
          this.log("Nothing to persist, because there are no crawled products.");
@@ -549,10 +493,10 @@ public abstract class CrawlerRanking extends Task {
       this.messages.clear();
    }
 
-    /**
+   /**
     * Send messages to SQS
     *
-    * @param entries entries
+    * @param entries    entries
     * @param isWebDrive is true if use web drive
     */
    private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive) {
@@ -594,7 +538,6 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch Document
-    *
     */
    protected Document fetchDocument(String url) {
       return fetchDocument(url, cookies);
@@ -602,8 +545,6 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch Document with cookies
-    *
-    *
     */
    protected Document fetchDocument(String url, List<Cookie> cookies) {
       this.currentDoc = new Document(url);
@@ -627,7 +568,6 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch Map of Cookies
-    *
     */
    protected List<Cookie> fetchCookies(String url, List<Cookie> cookies) {
       this.currentDoc = new Document(url);
@@ -641,7 +581,6 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch jsonObject(deprecated) Use fetchJSONObject(String url, List<Cookie> cookies)
-    *
     */
    protected JSONObject fetchJSONObject(String url) {
       if (this.currentPage == 1) {
@@ -653,7 +592,6 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch String with Get Request
-    *
     */
    protected String fetchGETString(String url, List<Cookie> cookies) {
       Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
@@ -664,7 +602,6 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch jsonObject
-    *
     */
    protected JSONObject fetchJSONObject(String url, List<Cookie> cookies) {
       this.currentDoc = new Document(url);
@@ -696,7 +633,6 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch String with Post Request in FETCHER
-    *
     */
    protected String fetchPostFetcher(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
       Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).setPayload(payload).setHeaders(headers).build();
@@ -707,7 +643,6 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch String with Post Request in FETCHER
-    *
     */
    protected String fetchGetFetcher(String url, String payload, Map<String, String> headers, List<Cookie> cookies) {
       Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).setPayload(payload).setHeaders(headers).build();
@@ -735,7 +670,6 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Conecta url com webdriver
-    *
     */
    protected Document fetchDocumentWithWebDriver(String url, Integer timeout, String proxy) {
       if (this.currentPage == 1) {

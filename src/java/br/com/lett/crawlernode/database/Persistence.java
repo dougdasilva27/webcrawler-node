@@ -384,9 +384,6 @@ public class Persistence {
     * <li>prices = new Prices() which is an empty prices model</li>
     * </ul>
     *
-    * @param processed
-    * @param voidValue A boolean indicating whether the processed product void must be set to true or
-    *                  false
     * @param session
     */
    public static void setProcessedVoidTrue(Session session) {
@@ -602,7 +599,7 @@ public class Persistence {
 
 
    // busca dados no postgres
-   public static List<Processed> fetchProcessedIdsWithInternalId(String id, int market, Session session) {
+   public static List<Processed> fetchProcessedsWithInternalId(String id, int market, Session session) {
       List<Processed> processeds = new ArrayList<>();
 
       dbmodels.tables.Processed processed = Tables.PROCESSED;
@@ -663,7 +660,7 @@ public class Persistence {
       return processeds;
    }
 
-   public static List<Processed> fetchProcessedIdsWithInternalPid(String pid, int market, Session session) {
+   public static List<Processed> fetchProcessedsWithInternalPid(String pid, int market, Session session) {
       List<Processed> processeds = new ArrayList<>();
 
       dbmodels.tables.Processed processed = Tables.PROCESSED;
@@ -723,8 +720,8 @@ public class Persistence {
    }
 
 
-   public static List<Long> fetchProcessedIdsWithUrl(String url, int market, Session session) {
-      List<Long> processedIds = new ArrayList<>();
+   public static List<Processed> fetchProcessedsWithUrl(String url, int market, Session session) {
+      List<Processed> processedIds = new ArrayList<>();
       dbmodels.tables.Processed processed = Tables.PROCESSED;
 
       List<Field<?>> fields = new ArrayList<>();
@@ -749,14 +746,16 @@ public class Persistence {
          Result<Record> records = Exporter.collectQuery(SqlOperation.SELECT, () -> GlobalConfigurations.dbManager.jooqPostgres.fetch(finalRs));
 
          for (Record record : records) {
+            Processed p = new Processed();
             Long masterId = record.get(processed.MASTER_ID);
 
 
             if (masterId != null) {
-               processedIds.add(record.get(processed.MASTER_ID));
+               p.setId(record.get(processed.MASTER_ID));
             } else {
-               processedIds.add(record.get(processed.ID));
+               p.setId(record.get(processed.ID));
             }
+            processedIds.add(p);
          }
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)

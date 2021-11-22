@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.aws.kinesis;
 
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.base.Task;
@@ -117,9 +118,22 @@ public class KPLProducer {
       Futures.addCallback(f, myCallback, callbackThreadPool);
    }
 
+   public void put(Ranking ranking, Session session) {
+      RankingModel rankingModel = new RankingModel(ranking);
+
+      ByteBuffer data = ByteBuffer.wrap((rankingModel.serializeToKinesis() + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
+
+      FutureCallback<UserRecordResult> myCallback = getCallback(session);
+
+      ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(GlobalConfigurations.executionParameters.getKinesisStreamRanking(),
+         rankingModel.getTimestamp().toString(), randomExplicitHashKey(), data);
+
+      Futures.addCallback(f, myCallback, callbackThreadPool);
+   }
+
 
    private static FutureCallback<UserRecordResult> getCallback(Session session) {
-      return new FutureCallback<UserRecordResult>() {
+      return new FutureCallback<>() {
 
          @Override
          public void onFailure(Throwable t) {

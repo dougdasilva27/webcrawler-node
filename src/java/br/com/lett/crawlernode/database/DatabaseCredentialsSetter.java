@@ -24,7 +24,6 @@ public class DatabaseCredentialsSetter {
     databases.add(DBCredentials.MONGO_FROZEN);
     databases.add(DBCredentials.MONGO_FETCHER);
     databases.add(DBCredentials.POSTGRES);
-//    databases.add(DBCredentials.ELASTIC);
 
     try {
       DBCredentials credentials = st.setDatabaseCredentials(databases);
