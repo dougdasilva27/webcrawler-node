@@ -33,42 +33,11 @@ public class BrasilFeiranovaCrawler extends Crawler {
       super.config.setParser(Parser.JSONARRAY);
    }
 
-   private Response validateToken() {
-      String initPayload = "{\n" +
-         "    \"Token\": null,\n" +
-         "    \"CdCliente\": null,\n" +
-         "    \"CdEmpresa\": 113,\n" +
-         "    \"Nome\": null,\n" +
-         "    \"Senha\": \"7C4A8D09CA3762AF61E59520943DC26494F8941B\",\n" +
-         "    \"Email\": \"ttatianeisabelfigueiredo@atiara.com.br\",\n" +
-         "    \"Cpf\": null,\n" +
-         "    \"inCNPJ\": false,\n" +
-         "    \"LiberaDescontos\": false,\n" +
-         "    \"LiberaPrDesconto\": null,\n" +
-         "    \"LiberaValidadeDias\": null\n" +
-         "}";
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("content-type", "application/json");
-      headers.put("authorization", "Bearer");
-
-      Request request = Request.RequestBuilder.create().setUrl("https://ecom.solidcon.com.br/api/crm/login/")
-         .setPayload(initPayload)
-         .setHeaders(headers)
-         .mustSendContentEncoding(false)
-         .build();
-
-      Response response = this.dataFetcher.post(session, request);
-
-      return response;
-   }
-
    @Override
    protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
-      JSONObject tokenJson = JSONUtils.stringToJson(validateToken().getBody());
       headers.put("content-type", "application/json");
-      headers.put("authorization", "Bearer " + tokenJson.getString("token"));
+      headers.put("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoic29saWRjb24iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJzb2xpZGNvbkBzb2xpZGNvbi5jb20uYnIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjM3NTNiYWEzLTVhZGYtNDY0Ni1hNTY5LTIxMmQxMzlhNjdmYyIsImV4cCI6MTYzOTQ5NDAwMCwiaXNzIjoiRG9yc2FsV2ViQVBJIiwiYXVkIjoic29saWRjb24uY29tLmJyIn0.4W4BWzMDXY49nssBpHn5Itdo4z9I6EDWRm9kk-x6n4o");
 
       String initPayload = "{\"Promocao\":false,\"Comprado\":false,\"Produto\":\"5000267023601\",\"Favorito\":false}";
 
