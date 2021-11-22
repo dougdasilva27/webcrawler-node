@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
@@ -23,6 +24,7 @@ import java.util.*;
 public class PedidosyaCrawler extends Crawler {
    public PedidosyaCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.FETCHER);
    }
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.HIPERCARD.toString(), Card.ELO.toString());
