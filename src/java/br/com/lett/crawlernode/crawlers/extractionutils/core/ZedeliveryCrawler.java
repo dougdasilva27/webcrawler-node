@@ -138,6 +138,7 @@ public class ZedeliveryCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.css-11x3awa-Breadcrumb li a");
          boolean available = doc.selectFirst("#add-product") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
+         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
 
          Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
             .setInternalId(internalId)
@@ -145,7 +146,7 @@ public class ZedeliveryCrawler extends Crawler {
             .setName(name)
             .setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1))
-            .setPrimaryImage(null)
+            .setPrimaryImage(primaryImage)
             .setDescription(description)
             .setOffers(offers)
             .build();
