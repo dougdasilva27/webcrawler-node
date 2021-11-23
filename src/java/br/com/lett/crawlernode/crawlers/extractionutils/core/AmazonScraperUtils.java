@@ -50,7 +50,7 @@ public class AmazonScraperUtils {
       headers.put("service-worker-navigation-preload", "true");
       headers.put("rrt", "200");
       headers.put("cache-control", "max-age=0");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
 
       RequestBuilder request = RequestBuilder.create()
          .setUrl(url)
@@ -62,9 +62,12 @@ public class AmazonScraperUtils {
          request = request
             .setProxyservice(
                Arrays.asList(
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
+                  ProxyCollection.BUY,
+                  ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_PT_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY,
                   ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                   ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
             .mustSendContentEncoding(false)
