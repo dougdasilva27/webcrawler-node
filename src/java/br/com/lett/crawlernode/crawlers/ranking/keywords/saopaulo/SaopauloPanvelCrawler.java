@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -16,6 +17,7 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 import java.time.LocalDate;
+import java.util.Collections;
 
 public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
@@ -36,6 +38,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(url)
          .mustSendContentEncoding(false)
          .setSendUserAgent(false)
+         .setProxyservice(Collections.singletonList(ProxyCollection.BUY))
          .build();
       Response response = dataFetcher.get(session, request);
 
@@ -52,7 +55,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
          //New way to send products to save data product
          RankingProduct productRanking = RankingProductBuilder.create()
-            .setUrl(urlProduct)
+            .setUrl(urlProduct.replace("'", "&apos;"))
             .setInternalId(internalId)
             .setName(name)
             .setImageUrl(image)
