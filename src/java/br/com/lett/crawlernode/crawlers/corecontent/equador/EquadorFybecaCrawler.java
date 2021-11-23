@@ -45,7 +45,7 @@ public class EquadorFybecaCrawler extends Crawler {
          String name = jsonObject.optString("name");
          List<String> images = JSONUtils.jsonArrayToStringList(jsonObject.optJSONArray("image"));
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-         String availability = jsonObject.optString("availability");
+         String availability = JSONUtils.getValueRecursive(jsonObject,"offers.availability", String.class);
          boolean available = availability != null && availability.contains("InStock");
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
