@@ -1,11 +1,11 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
-import br.com.lett.crawlernode.core.models.RequestMethod
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.*
@@ -28,9 +28,15 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
    }
 
    override fun fetch(): Any? {
-      val request = Request.RequestBuilder.create().setCookies(cookies).setUrl(session.originalURL).build()
+      val request = Request.RequestBuilder
+         .create()
+         .setCookies(cookies)
+         .setUrl(session.originalURL)
+         .setProxyservice(listOf(ProxyCollection.BUY))
+         .build()
 
       val response = dataFetcher[session, request]
+
       return Jsoup.parse(response.body)
    }
 
@@ -53,7 +59,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          val rating = scrapRating(doc)
 
          val product = ProductBuilder.create()
-            .setUrl(session.originalURL)
+            .setUrl(session.originalURL.replace("'", "&apos;"))
             .setInternalId(internalId)
             .setName(name)
             .setOffers(offers)
