@@ -17,7 +17,9 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.jooq.tools.json.JSONParser;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -44,28 +46,34 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
+
       if (isProductPage(doc)) {
+         String objectScript = CrawlerUtils.scrapScriptFromHtml(doc, "[type=\"application/ld+json\"]");
+         JSONArray jsonObject = new JSONArray(objectScript);
+         System.out.println("jsonObject" + jsonObject);
+         JSONObject productJson = (JSONObject) jsonObject.get(0);
+         String internalId = productJson.getString("sku");
+         String name = productJson.getString("sku");
+         String description = productJson.getString("description");
+//         String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:title\"]", "content");
+//         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li", true);
+//         JSONArray primaryImage = product.getJSONArray("image");
+         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
+//         Collections.singletonList(
+//         "content"),
+//         "https",
+//         "");
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "data[data-product-id]", "value");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info__title", false);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "ul.media-gallery__list li img",
-            Collections.singletonList(
-               "src"),
-            "https",
-            "images.madeiramadeira.com.br");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".media-gallery__thumbs-box.helper--is-hidden-mobile .media-gallery__thumbs li img",
-            Collections.singletonList("src"), "https", "images.madeiramadeira.com.br",
-            primaryImage);
+         //         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".media-gallery__thumbs-box.helper--is-hidden-mobile .media-gallery__thumbs li img",
+         //            Collections.singletonList("src"), "https", "images.madeiramadeira.com.br",
+         //            primaryImage);
 
-         RatingsReviews ratingsReviews = scrapRating(internalId, doc);
-         String description = CrawlerUtils.scrapSimpleDescription(doc,
-            Collections.singletonList(".product-tabs.tab .tab__content"));
+         //         RatingsReviews ratingsReviews = scrapRating(internalId, doc);
+//         String description = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=description]", "content");
 
-         String availableEl = doc.selectFirst("#product-buy-button") != null ? doc.selectFirst("#product-buy-button").toString() : "";
-         Offers offers = availableEl.contains("Comprar")? scrapOffers(doc) : new Offers();
+         Boolean available = true;//productJson.getString("availability").equals("https://schema.org/InStock") ? true : false;//doc.selectFirst("#product-buy-button") != null ? doc.selectFirst("#product-buy-button").toString() : "";
+         Offers offers =  new Offers();;//availableEl.contains("Comprar") ? scrapOffers(doc) : new Offers();
 
-         //identificamos uma mudança de internalId no mm e pedimos que reunifiquem essa loja
          // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -73,13 +81,13 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
             .setInternalPid(internalId)
             .setName(name)
             .setOffers(offers)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
+//            .setCategory1(categories.getCategory(0))
+//            .setCategory2(categories.getCategory(1))
+//            .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
+//            .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            .setRatingReviews(ratingsReviews)
+//            .setRatingReviews(ratingsReviews)
             .build();
 
          products.add(product);
@@ -133,7 +141,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
          String text = e.html();
 
-         if(text.contains("buybox")){
+//         if(text.contains("buybox")){
 
             int delimiterLength = "JSON.parse('".length();
             int jsonFirstIndex = text.indexOf("JSON.parse('");
@@ -142,7 +150,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
             String offersText = text.substring(jsonFirstIndex + delimiterLength, jsonLastIndex);
 
             offersJson = JSONUtils.stringToJsonArray(offersText);
-         }
+//         }
       }
 
       return offersJson;
@@ -213,9 +221,8 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.select(".section product__header").isEmpty();
+      return !doc.select("body.black-friday-theme").isEmpty();
    }
-
 
    private RatingsReviews scrapRating(String internalId, Document doc) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "85050", logger);
