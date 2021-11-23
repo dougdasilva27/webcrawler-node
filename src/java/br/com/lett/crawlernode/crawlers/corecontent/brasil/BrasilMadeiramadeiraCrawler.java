@@ -50,31 +50,24 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       if (isProductPage(doc)) {
          String objectScript = CrawlerUtils.scrapScriptFromHtml(doc, "[type=\"application/ld+json\"]");
          JSONArray jsonObject = new JSONArray(objectScript);
-         System.out.println("jsonObject" + jsonObject);
          JSONObject productJson = (JSONObject) jsonObject.get(0);
+
+         String aaa = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
+         JSONArray jsonObject2 = new JSONArray(aaa);
+         JSONObject productJson2 = (JSONObject) jsonObject2.get(0);
+
          String internalId = productJson.getString("sku");
-         String name = productJson.getString("sku");
+         String name = productJson.getString("name") + " - " + productJson.getString("color");
          String description = productJson.getString("description");
-//         String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:title\"]", "content");
+         List<String> images = JSONUtils.jsonArrayToStringList(productJson.optJSONArray("image"));
+         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+         List<String> secondaryImages = !images.isEmpty() ? images : null;
+         Boolean available = scrapAvailability(productJson);
+         Offers offers = available ? scrapOffers(productJson2) : new Offers();
+
+//         RatingsReviews ratingsReviews = scrapRating(internalId, doc);
 //         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li", true);
-//         JSONArray primaryImage = product.getJSONArray("image");
-         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
-//         Collections.singletonList(
-//         "content"),
-//         "https",
-//         "");
 
-         //         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".media-gallery__thumbs-box.helper--is-hidden-mobile .media-gallery__thumbs li img",
-         //            Collections.singletonList("src"), "https", "images.madeiramadeira.com.br",
-         //            primaryImage);
-
-         //         RatingsReviews ratingsReviews = scrapRating(internalId, doc);
-//         String description = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=description]", "content");
-
-         Boolean available = true;//productJson.getString("availability").equals("https://schema.org/InStock") ? true : false;//doc.selectFirst("#product-buy-button") != null ? doc.selectFirst("#product-buy-button").toString() : "";
-         Offers offers =  new Offers();;//availableEl.contains("Comprar") ? scrapOffers(doc) : new Offers();
-
-         // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
@@ -85,7 +78,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 //            .setCategory2(categories.getCategory(1))
 //            .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
-//            .setSecondaryImages(secondaryImages)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
 //            .setRatingReviews(ratingsReviews)
             .build();
@@ -100,67 +93,42 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
    }
 
-   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+   private Offers scrapOffers(JSONObject product) throws MalformedPricingException, OfferException {
 
       Offers offers = new Offers();
 
-      JSONArray offersJson = findAndParseJson(doc);
+      JSONArray offersJson = JSONUtils.getJSONArrayValue(product, "offers");
 
-      for(Object e: offersJson){
+      for (Object e: offersJson){
 
          JSONObject offer = (JSONObject) e;
 
-         if(offer.optInt("stock") > 1){
-            Pricing pricing = scrapPricing(offer);
-            List<String> sales = new ArrayList<>();
-            JSONObject seller = offer.optJSONObject("seller");
-            String sellerName = seller.optString("name");
+         Pricing pricing = scrapPricing(offer);
+         List<String> sales = new ArrayList<>();
+         JSONObject seller = offer.optJSONObject("seller");
+         String sellerName = seller.optString("name");
 
-            offers.add(Offer.OfferBuilder.create()
-               .setUseSlugNameAsInternalSellerId(false)
-               .setInternalSellerId(seller.optString("id"))
-               .setSellerFullName(sellerName)
-               .setMainPagePosition(1)
-               .setIsBuybox(true)
-               .setIsMainRetailer(sellerName != null && sellerName.equalsIgnoreCase(MAIN_SELLER))
-               .setSales(sales)
-               .setPricing(pricing)
-               .build());
-         }
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setInternalSellerId(null)
+            .setSellerFullName(sellerName)
+            .setMainPagePosition(1)
+            .setIsBuybox(true)
+            .setIsMainRetailer(sellerName != null && sellerName.equalsIgnoreCase(MAIN_SELLER))
+            .setSales(sales)
+            .setPricing(pricing)
+            .build());
+
       }
 
       return offers;
    }
 
-   private JSONArray findAndParseJson(Document doc){
-
-      JSONArray offersJson = new JSONArray();
-      Elements scriptTags = doc.select("script");
-
-      for(Element e: scriptTags){
-
-         String text = e.html();
-
-//         if(text.contains("buybox")){
-
-            int delimiterLength = "JSON.parse('".length();
-            int jsonFirstIndex = text.indexOf("JSON.parse('");
-            int jsonLastIndex = text.indexOf("');");
-
-            String offersText = text.substring(jsonFirstIndex + delimiterLength, jsonLastIndex);
-
-            offersJson = JSONUtils.stringToJsonArray(offersText);
-//         }
-      }
-
-      return offersJson;
-   }
-
    private Pricing scrapPricing(JSONObject offer) throws MalformedPricingException {
 
       JSONObject price = offer.optJSONObject("price");
+      Double priceFrom = null;
 
-      Double priceFrom = price.optDouble("fake");
       Double spotlightPrice = price.optDouble("inCash");
       BankSlip bankSlipPrice = BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build();
 
@@ -229,5 +197,13 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
    }
 
+   private Boolean scrapAvailability(JSONObject product) {
+      String available = JSONUtils.getValueRecursive(product, "offers.0.availability", String.class);
+
+      if (available.equals("https://schema.org/InStock")) {
+         return true;
+      }
+      return false;
+   }
 
 }
