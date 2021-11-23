@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
@@ -23,6 +24,7 @@ import java.util.*;
 public class PedidosyaCrawler extends Crawler {
    public PedidosyaCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.FETCHER);
    }
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.HIPERCARD.toString(), Card.ELO.toString());
@@ -41,9 +43,9 @@ public class PedidosyaCrawler extends Crawler {
       String url = "https://www.pedidosya.com.ar/mobile/v1/products/" + internalId + "?restaurantId="+storeId+"&businessType=GROCERIES";
 
       Map<String,String> headers = new HashMap<>();
-     headers.put("cookie", "_fbp=fb.2.1635281248370.496271014; _pxhd=6U5JYRKMSk6RzsQWMwANFlWmB1/kTV5DET3V6-AVNsCGjQiXiLmupcVbJfyNf2/R7k0iwDpKalZz68ibNJNDsg==:RCvqJeZHjASLONsiYhtUc1qYsQD9apAa-6RjaN/XPRt-4pj5RqcKvVfNEHm9AyxY-xnzUdFODUi4Mw-XE0tD1noVcoQNiwVpnfptUxZHTwI5q2bhWsK2W/EfSgPpdBcs; pxcts=f543cf30-369d-11ec-88df-8389a1d74c91; _pxvid=ef399119-369d-11ec-a6e1-49646e467a67; _hjid=05198fcf-eadc-4017-9886-d554d56eade8; _gcl_au=1.1.924052929.1635281260; _ga=GA1.3.293164481.1635281260; _gid=GA1.3.1074224560.1635281260; __Secure-peya.sid=s%3Afae4d9e4-7bd2-43f3-ad4f-c5c6b3282281.MioIplqrvnNAEu94JYbWreMN0ZcF6oZgR%2FIApTN8%2FX4; __Secure-peyas.sid=s%3A2d9ba471-0c9e-463d-977d-0060169c2aa5.Fbq6NPL9gxNQIpYiUviKQcdMwl3xcPBOVO2xbQy3uCY; __cf_bm=i6N6CXna3aXcYx0fpiJRXK_hZ9M06ZgSwlysEw9RTNE-1635361545-0-AY9LhaJXZm6LctAV2pLAX6fr88kVdd8CCU3Wt7jdNIc2xH0B/OFoAhxPPAI5Gk0GyGoY2zHQYhtDAkP1VxROiLA=; _hjIncludedInSessionSample=0; _hjAbsoluteSessionInProgress=1; AMP_TOKEN=%24NOT_FOUND; _px3=13cfe4458c93f119941e21ca559e3894dd2a0d6b621560a9979278d5cfc54161:k7FsqkIIWpvuBTLkbe+J6dHVQdHWhG21P3PYbLW4zTGKV4QgzhBMsXo3Gk55sbS9fpgc1QqA/XTW5KyeEKDXBw==:1000:wzIU4jhXy9177R4oB3RptpzUyZ8ODKser89dfyGKkbKMWQrQRd8pk1Af6dg6cfexs/PzErJ14W1BFLBkO8Udg4pew9how7tBWam5k3rK4MqGXiIB4QdyM+SZLZ0E5f8wUyPuV/wY+LMI1hFrtVAncQE38ch+FwUeQHNUpm9beVidkJrTP1XEq45DHU/eX8g1BTPM5ABDBR5IODmd9Y1zwg==; _gat_WD2_Tracker_PeYa_Prod=1; _tq_id.TV-81819090-1.20dc=6c224119bc0470f7.1635281248.0.1635362468..");
+     headers.put("cookie", "_gcl_au=1.1.1011751451.1637583178; _pxvid=866bbcf0-4b8d-11ec-b905-6f634349694f; _fbp=fb.2.1637583178210.170594016; _ga=GA1.3.774476031.1637583179; _gid=GA1.3.996295816.1637583179; _hjSessionUser_350054=eyJpZCI6Ijk2N2M2ODcyLWZmYmMtNWIxNC1iZjI3LTk0MTUxMWYzNWE5NiIsImNyZWF0ZWQiOjE2Mzc1ODMxNzc5MTMsImV4aXN0aW5nIjp0cnVlfQ==; _pxhd=Q/jSWxeJcG5bPGZvno91ZeOE5/qmvOZdERbzu/S84kSWQdGREa4OFYjsWsJ8uoHO/N-NUt0KPDxd7WAjfdg70A==:3zyyELqg4n3ARRY3ndaPBNJzsyOKtFv5QRopUngk6zaJFpbAkewzAg6A0jqnMrJhW1S-vgJUz/OoTDvPoaOcXHvmxqsyqryWTQCAIdP9H5pjhecPw-FXdJtIxtXqRXvFADSjdUWMV-KxcrU4T010DQ==; pxcts=90549120-4b9e-11ec-8817-4f0b938e9d55; dhhPerseusGuestId=1637601706139.173991779938371460.9g0bmi95tsp; dhhPerseusSessionId=1637601706139.254603884442502900.dw4yjheabkf; __Secure-peya.sid=s%3A1c3f5a7a-c34a-452b-af94-02edc619e933.1V6q0xhX1BZXR1c1sWIuHp5vfBchYf01rNWdWdMERQo; __Secure-peyas.sid=s%3A8a1c5ae7-ed41-414c-9156-109449554894.ZWPiSl%2BxEPjKHDeWC5HM1WkPNcom0bHJxC0m0zbfg28; __cf_bm=QGM0Zv6vfaMsbiaBBUJ45zQKG4ZSpoKEz2z_rvV3kgc-1637601706-0-AcrjjGTA1yOngwVBYwckLzROhaU9tTASoOPLTSdnnZiz7rCLfGJ5oYqf9qSLt2Fd7+fM0zIrb60zar34E9IhWO8=; _hjSession_350054=eyJpZCI6ImExMWYxYTZhLTFmOTctNGEzZi05ZmI1LTg0ODA1YjRiYTAwMCIsImNyZWF0ZWQiOjE2Mzc2MDE3MDc3NTZ9; _hjIncludedInPageviewSample=1; _hjAbsoluteSessionInProgress=0; _hjIncludedInSessionSample=0; AMP_TOKEN=%24NOT_FOUND; _gat_WD2_Tracker_PeYa_Prod=1; _tq_id.TV-81819090-1.20dc=875790c825561a67.1637583179.0.1637601764..; _px3=8c20f2798a26a95f32931157b56de8ff377c9b9e94ef1411f02bd8373db0efa8:PXqjpGw7T/Cu2XDDN5HJ0kpwMTkaUmTHCQDuC+DwH+bcjB4wJvvehQzvEyH0fxx4t5q0B0qAUWE6M7mXGUddLQ==:1000:I0cMlPx96TnpSPg7jeBcf2doRvPrsjDATssKQyj1n6hL8Bczxjdj54NJXroQjNQghhYEJYjuHz/0nQYW7MdpuVtwGcGgm2lG86fT2injnOuLA3sJbsS37JQ8NO7yNtPfHihaOX3IzV227aW7rFdrupY38A8zwaCRcPus4es5KzF8lpoNUYfiJ6DMgHMGm7wQn1X96AxZp2frFO++40cnkA==; dhhPerseusHitId=1637601765900.372113030709838800.eruqgjb5v");
 
-      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build();
+     Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build();
       String resp = this.dataFetcher.get(session,request).getBody();
       return CrawlerUtils.stringToJson(resp);
 
