@@ -101,16 +101,17 @@ public class BrasilFeiranovaCrawler extends CrawlerRankingKeywords {
    }
 
    private Integer scrapPrice(JSONObject product) {
-      Double priceDouble = JSONUtils.getDoubleValueFromJSON(product, "preco", true);
-      Double priceFraction = JSONUtils.getDoubleValueFromJSON(product,"fracionamento", true);
+      Double priceKg = JSONUtils.getDoubleValueFromJSON(product, "preco", true);
 
-      if (priceFraction != null) {
-         priceDouble = priceDouble * priceFraction;
+      if (product.getBoolean("inFracionado") == true) {
+         Double priceFraction = JSONUtils.getDoubleValueFromJSON(product,"fracionamento", true);
+
+         priceKg = priceKg * priceFraction;
       }
 
-      Integer priceKg = (int) Math.round((priceDouble * 100));
+      Integer price = (int) Math.round((priceKg * 100));
 
-      return priceKg;
+      return price;
    }
 
    @Override

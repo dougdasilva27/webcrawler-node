@@ -39,7 +39,9 @@ public class BrasilFeiranovaCrawler extends Crawler {
       headers.put("content-type", "application/json");
       headers.put("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoic29saWRjb24iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJzb2xpZGNvbkBzb2xpZGNvbi5jb20uYnIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjM3NTNiYWEzLTVhZGYtNDY0Ni1hNTY5LTIxMmQxMzlhNjdmYyIsImV4cCI6MTYzOTQ5NDAwMCwiaXNzIjoiRG9yc2FsV2ViQVBJIiwiYXVkIjoic29saWRjb24uY29tLmJyIn0.4W4BWzMDXY49nssBpHn5Itdo4z9I6EDWRm9kk-x6n4o");
 
-      String initPayload = "{\"Promocao\":false,\"Comprado\":false,\"Produto\":\"5000267023601\",\"Favorito\":false}";
+      String id = getIdFromUrl();
+
+      String initPayload = "{\"Promocao\":false,\"Comprado\":false,\"Produto\": \"" + id + "\",\"Favorito\":false}";
 
       Request request = Request.RequestBuilder.create().setUrl("https://ecom.solidcon.com.br/api/v2/shop/produto/empresa/113/filial/329/GetProdutos")
          .setPayload(initPayload)
@@ -90,6 +92,18 @@ public class BrasilFeiranovaCrawler extends Crawler {
       return products;
    }
 
+   private Double scrapPrice(JSONObject product) {
+      Double priceKg = JSONUtils.getDoubleValueFromJSON(product, "preco", true);
+
+      if (product.getBoolean("inFracionado") == true) {
+         Double priceFraction = JSONUtils.getDoubleValueFromJSON(product,"fracionamento", true);
+
+         priceKg = priceKg * priceFraction;
+      }
+
+      return priceKg;
+   }
+
    private Offers scrapOffers(JSONObject json) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(json);
@@ -111,8 +125,8 @@ public class BrasilFeiranovaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(json, "preco", true);//TODO: verificar preço
-      Double priceFrom = spotlightPrice;
+      Double spotlightPrice = scrapPrice(json);
+      Double priceFrom = null;
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
@@ -146,5 +160,11 @@ public class BrasilFeiranovaCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   private String getIdFromUrl() {
+      String [] urlParts = session.getOriginalURL().split("/");
+
+      return urlParts[4];
    }
 }
