@@ -67,7 +67,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 
          boolean unnavailableForAll = !doc.select(".CurrentlySoldOut").isEmpty();
 
-         Elements variationsRadio = doc.select(".ProductOptionList li label");
+         Elements variationsRadio = doc.select(".ProductOptionList li");
          Elements variationsBox = doc.select(".ProductOptionList option");
 
          boolean isRadio = !variationsRadio.isEmpty();
@@ -76,9 +76,10 @@ public class BrasilVitaesaudeCrawler extends Crawler {
          if (!variations.isEmpty()) {
             for (Element e : variations) {
                // Id variation
-               String variationId = isRadio ? e.select("input").val() : e.val().trim();
+               String variationId = isRadio ? CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "rel") : e.val().trim();
 
-               if (!variationId.isEmpty()) {
+               variationId = variationId != null && !variationId.isEmpty() ? variationId.replaceAll("[^0-9]", "") : null;
+               if (variationId != null && !variationId.isEmpty()) {
                   // Variation info
                   JSONObject variationInfo = crawlVariationsInfo(internalPid, variationId);
 
