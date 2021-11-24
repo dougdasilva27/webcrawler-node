@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 public class RankingSession extends Session {
 
    private String location;
+   private Long locationId;
    private Boolean takeAScreenshot;
 
    public RankingSession(Request request, String queueName, Market market) {
@@ -35,4 +36,11 @@ public class RankingSession extends Session {
       this.takeAScreenshot = takeAScreenshot;
    }
 
+   public Long getLocationId() {
+      return locationId;
+   }
+
+   public void setLocationId(Long locationId) {
+      this.locationId = locationId;
+   }
 }

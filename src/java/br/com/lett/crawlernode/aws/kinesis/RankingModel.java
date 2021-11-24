@@ -10,7 +10,7 @@ import java.util.List;
 
 public class RankingModel {
    private Timestamp timestamp;
-   private Integer keyWordId;
+   private Long keyWordId;
    private Integer marketId;
    private Integer pageSize;
    private Integer productFound;
@@ -63,7 +63,7 @@ public class RankingModel {
       return timestamp;
    }
 
-   public Integer getKeyWordId() {
+   public Long getKeyWordId() {
       return keyWordId;
    }
 

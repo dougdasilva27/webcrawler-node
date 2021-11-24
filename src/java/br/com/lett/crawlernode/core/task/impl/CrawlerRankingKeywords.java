@@ -27,6 +27,7 @@ public abstract class CrawlerRankingKeywords extends CrawlerRanking {
 
     if (session instanceof RankingKeywordsSession) {
       this.location = ((RankingKeywordsSession) session).getLocation();
+      this.locationId = ((RankingKeywordsSession) session).getLocationId();
     } else if (session instanceof TestRankingKeywordsSession) {
       this.location = ((TestRankingKeywordsSession) session).getLocation();
     } else if (session instanceof RankingDiscoverKeywordsSession) {

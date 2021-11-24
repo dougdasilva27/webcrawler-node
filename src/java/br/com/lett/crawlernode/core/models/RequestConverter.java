@@ -26,16 +26,17 @@ public class RequestConverter {
    private static final String BODY_INTERNAL_ID = "internalId";
    private static final String BODY_SUPPLIER_ID = "supplierId";
    private static final String BODY_MARKET = "market";
-   private static final String BODY_PROCESSED_ID = "processedId" ;
+   private static final String BODY_PROCESSED_ID = "processedId";
    private static final String BODY_PARAMETERS = "parameters";
-   private static final String BODY_SEED_TASK_ID ="taskId" ;
+   private static final String BODY_SEED_TASK_ID = "taskId";
    private static final String BODY_RANKING_SCREENSHOT = "screenshot";
+   private static final String BODY_KEYWORD_ID = "keyword_id";
    private static final String MARKET_ID = "marketId";
    private static final String MARKET_NAME = "name";
    private static final String MARKET_FULL_NAME = "fullName";
    private static final String MARKET_CODE = "code";
-   private static final String MARKET_REGEX= "regex";
-   private static final String MARKET_USE_BROWSER= "use_browser";
+   private static final String MARKET_REGEX = "regex";
+   private static final String MARKET_USE_BROWSER = "use_browser";
    private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
    private static final String SESSION_ID = "sessionId";
 
@@ -56,7 +57,10 @@ public class RequestConverter {
 
       if (ScrapersTypes.IMAGES_DOWNLOAD.toString().equals(scraperType)) {
          request = new ImageCrawlerRequest();
-      } else if (ScrapersTypes.RANKING_BY_KEYWORDS.toString().equals(scraperType) || ScrapersTypes.DISCOVERER_BY_KEYWORDS.toString().equals(scraperType)
+      } else if (ScrapersTypes.RANKING_BY_KEYWORDS.toString().equals(scraperType)) {
+         request = new CrawlerRankingKeywordsRequest();
+         ((CrawlerRankingKeywordsRequest) request).setLocationId(body.optLong(BODY_KEYWORD_ID));
+      } else if (ScrapersTypes.DISCOVERER_BY_KEYWORDS.toString().equals(scraperType)
          || ScrapersTypes.EQI_DISCOVERER.toString().equals(scraperType)) {
          request = new CrawlerRankingKeywordsRequest();
       } else if (ScrapersTypes.SEED.toString().equals(scraperType)) {
@@ -72,7 +76,7 @@ public class RequestConverter {
       request.setSessionId(body.optString(SESSION_ID));
 
       String options = body.optString(BODY_OPTIONS);
-      if(options!=null && !options.isEmpty()) {
+      if (options != null && !options.isEmpty()) {
          request.setOptions(JSONUtils.stringToJson(options));
       }
 
@@ -81,7 +85,7 @@ public class RequestConverter {
       String supplierIdString = body.optString(BODY_SUPPLIER_ID);
 
       if (supplierIdString != null && !supplierIdString.isEmpty()) {
-            request.setSupplierId(Long.parseLong(supplierIdString.trim()));
+         request.setSupplierId(Long.parseLong(supplierIdString.trim()));
       }
 
 
@@ -102,7 +106,6 @@ public class RequestConverter {
       request.setScraperType(scraperType);
 
 
-
       if (request instanceof CrawlerSeedRequest) {
          ((CrawlerSeedRequest) request).setTaskId(body.optString(BODY_SEED_TASK_ID));
       }
@@ -110,7 +113,7 @@ public class RequestConverter {
       if (request instanceof CrawlerRankingKeywordsRequest) {
          ((CrawlerRankingKeywordsRequest) request).setLocation(parameters);
 
-         ((CrawlerRankingKeywordsRequest) request).setTakeAScreenshot(body.optBoolean(BODY_RANKING_SCREENSHOT,false));
+         ((CrawlerRankingKeywordsRequest) request).setTakeAScreenshot(body.optBoolean(BODY_RANKING_SCREENSHOT, false));
 
       }
 
@@ -118,7 +121,7 @@ public class RequestConverter {
    }
 
    private static Market createMarket(JSONObject marketObj) {
-      return new Market(marketObj.optInt(MARKET_ID), marketObj.optString(MARKET_NAME), marketObj.optString(MARKET_FULL_NAME), marketObj.optString(MARKET_CODE),marketObj.optString(MARKET_REGEX),marketObj.optBoolean(MARKET_USE_BROWSER));
+      return new Market(marketObj.optInt(MARKET_ID), marketObj.optString(MARKET_NAME), marketObj.optString(MARKET_FULL_NAME), marketObj.optString(MARKET_CODE), marketObj.optString(MARKET_REGEX), marketObj.optBoolean(MARKET_USE_BROWSER));
    }
 
    private static String getRequestBody(HttpServletRequest req) {

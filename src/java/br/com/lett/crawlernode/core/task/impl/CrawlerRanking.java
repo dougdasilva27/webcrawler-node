@@ -79,6 +79,7 @@ public abstract class CrawlerRanking extends Task {
 
    protected int marketId;
    protected String location;
+   protected Long locationId;
    private final String rankType;
 
    private Integer doubleCheck;
@@ -429,6 +430,7 @@ public abstract class CrawlerRanking extends Task {
          ranking.setRankType(this.rankType);
          ranking.setLocation(this.location);
          ranking.setProducts(this.arrayProducts);
+         ranking.setLocationId(this.locationId);
 
          RankingStatistics statistics = new RankingStatistics();
 

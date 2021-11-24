@@ -9,7 +9,7 @@ public class Ranking {
    protected int marketId;
    protected List<RankingProduct> products = new ArrayList<>();
    protected String location;
-   protected Integer locationId;
+   protected Long locationId;
    protected String rankType;
    protected Timestamp date;
    protected String lmt;
@@ -33,11 +33,11 @@ public class Ranking {
    }
 
 
-   public void setLocationId(Integer locationId) {
+   public void setLocationId(Long locationId) {
       this.locationId = locationId;
    }
 
-   public Integer getLocationId() {
+   public Long getLocationId() {
       return locationId;
    }
 
