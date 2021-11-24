@@ -178,14 +178,6 @@
             <version>${imageio.version}</version>
         </dependency>
 
-        <!-- Elastic -->
-
-        <dependency>
-            <groupId>org.elasticsearch.client</groupId>
-            <artifactId>elasticsearch-rest-high-level-client</artifactId>
-            <version>7.9.2</version>
-        </dependency>
-
         <!-- HTML parser -->
         <dependency>
             <groupId>org.jsoup</groupId>
