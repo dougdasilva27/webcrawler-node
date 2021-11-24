@@ -80,7 +80,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
             .setInternalId(internalPid.toString())
             .setInternalPid(internalPid.toString())
             .setName(name)
-            .setOffers(offers) //recursão das ofertas
+            .setOffers(offers) //One offer for each installment
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
@@ -108,25 +108,29 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       JSONObject offersJson = JSONUtils.getValueRecursive(product, "buyBox.0", JSONObject.class);
       String sellerName = JSONUtils.getValueRecursive(offersJson, "seller.name", String.class);
       Integer sellerId = JSONUtils.getValueRecursive(offersJson, "seller.id", Integer.class);
-      Pricing pricing = scrapPricing(offersJson);
-      List<String> sales = new ArrayList<>();
+      JSONArray installmentsInfo = offersJson.optJSONArray("installmentToDisplay");
 
-      offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(false)
-         .setSellerFullName(MAIN_SELLER)
-         .setInternalSellerId(sellerId.toString())
-         .setSellerFullName(sellerName)
-         .setMainPagePosition(1)
-         .setIsBuybox(true)
-         .setIsMainRetailer(sellerName != null && sellerName.equalsIgnoreCase(MAIN_SELLER))
-         .setSales(sales)
-         .setPricing(pricing)
-         .build());
+      for (Object installment : installmentsInfo) {
+         Pricing pricing = scrapPricing(offersJson, installment);
+         List<String> sales = new ArrayList<>();
+
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(false)
+            .setSellerFullName(MAIN_SELLER)
+            .setInternalSellerId(sellerId.toString())
+            .setSellerFullName(sellerName)
+            .setMainPagePosition(1)
+            .setIsBuybox(true)
+            .setIsMainRetailer(sellerName != null && sellerName.equalsIgnoreCase(MAIN_SELLER))
+            .setSales(sales)
+            .setPricing(pricing)
+            .build());
+      }
 
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject offer) throws MalformedPricingException {
+   private Pricing scrapPricing(JSONObject offer, Object installment) throws MalformedPricingException {
 
       JSONObject priceJson = offer.optJSONObject("price");
       Double priceFrom = priceJson.optDouble("fake");
@@ -134,9 +138,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       Double spotlightPrice = priceJson.optDouble("inCash");
       BankSlip bankSlipPrice = BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build();
 
-      JSONArray installmentsInfo = offer.optJSONArray("installmentToDisplay");
-
-      JSONObject maxInstallments = (JSONObject) installmentsInfo.get(installmentsInfo.length() - 1);
+      JSONObject maxInstallments = (JSONObject) installment;
 
       CreditCards creditCards = scrapCreditCards(maxInstallments, spotlightPrice);
 
