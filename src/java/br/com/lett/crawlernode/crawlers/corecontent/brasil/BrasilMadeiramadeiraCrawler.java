@@ -50,11 +50,9 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         String aaa = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
-         JSONArray jsonObject2 = new JSONArray(aaa);
-         JSONObject productJson2 = JSONUtils.getValueRecursive(jsonObject2, "0.props.pageProps", JSONObject.class);
-
-         JSONObject productInfo = productJson2.getJSONObject("product");
+         String scriptFromHtml = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
+         JSONArray jsonObject = new JSONArray(scriptFromHtml);
+         JSONObject productInfo = JSONUtils.getValueRecursive(jsonObject, "0.props.pageProps.product", JSONObject.class);
 
          Integer internalPid = productInfo.getInt("id");
          String name = productInfo.getString("name") + " " + productInfo.getString("color");
