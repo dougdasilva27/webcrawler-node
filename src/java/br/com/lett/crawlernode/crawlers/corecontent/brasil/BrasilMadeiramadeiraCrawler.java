@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -13,6 +14,7 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
@@ -48,39 +50,45 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         String objectScript = CrawlerUtils.scrapScriptFromHtml(doc, "[type=\"application/ld+json\"]");
-         JSONArray jsonObject = new JSONArray(objectScript);
-         JSONObject productJson = (JSONObject) jsonObject.get(0);
-
          String aaa = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
          JSONArray jsonObject2 = new JSONArray(aaa);
-         JSONObject productJson2 = (JSONObject) jsonObject2.get(0);
+         JSONObject productJson2 = JSONUtils.getValueRecursive(jsonObject2, "0.props.pageProps", JSONObject.class);
 
-         String internalId = productJson.getString("sku");
-         String name = productJson.getString("name") + " - " + productJson.getString("color");
-         String description = productJson.getString("description");
-         List<String> images = JSONUtils.jsonArrayToStringList(productJson.optJSONArray("image"));
+         JSONObject productInfo = productJson2.getJSONObject("product");
+
+         Integer internalPid = productInfo.getInt("id");
+         String name = productInfo.getString("name") + " " + productInfo.getString("color");
+         String description = productInfo.getString("description");
+         Integer ean = productInfo.getInt("ean");
+         List<String> eans = new ArrayList<>();
+         eans.add(ean.toString());
+         Boolean available = scrapAvailability(productInfo);
+         Offers offers = available ? scrapOffers(productInfo) : new Offers();
+
+         CategoryCollection categories = crawlCategories(productInfo);
+         String categories1 = categories.size() > 0 ? categories.getCategory(0) : null;
+         String categories2 = categories.size() > 1 ? categories.getCategory(1) : null;
+         String categories3 = categories.size() > 2 ? categories.getCategory(2) : null;
+
+         List<String> images = crawlImages(productInfo);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
          List<String> secondaryImages = !images.isEmpty() ? images : null;
-         Boolean available = scrapAvailability(productJson);
-         Offers offers = available ? scrapOffers(productJson2) : new Offers();
-
-//         RatingsReviews ratingsReviews = scrapRating(internalId, doc);
-//         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li", true);
+         RatingsReviews ratingsReviews = scrapRating(productInfo);
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalId)
+            .setInternalId(internalPid.toString())
+            .setInternalPid(internalPid.toString())
             .setName(name)
-            .setOffers(offers)
-//            .setCategory1(categories.getCategory(0))
-//            .setCategory2(categories.getCategory(1))
-//            .setCategory3(categories.getCategory(2))
+            .setOffers(offers) //recursão das ofertas
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-//            .setRatingReviews(ratingsReviews)
+            .setEans(eans)
+            .setCategory1(categories1)
+            .setCategory2(categories2)
+            .setCategory3(categories3)
+            .setRatingReviews(ratingsReviews)
             .build();
 
          products.add(product);
@@ -97,44 +105,40 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
       Offers offers = new Offers();
 
-      JSONArray offersJson = JSONUtils.getJSONArrayValue(product, "offers");
+      JSONObject offersJson = JSONUtils.getValueRecursive(product, "buyBox.0", JSONObject.class);
+      String sellerName = JSONUtils.getValueRecursive(offersJson, "seller.name", String.class);
+      Integer sellerId = JSONUtils.getValueRecursive(offersJson, "seller.id", Integer.class);
+      Pricing pricing = scrapPricing(offersJson);
+      List<String> sales = new ArrayList<>();
 
-      for (Object e: offersJson){
-
-         JSONObject offer = (JSONObject) e;
-
-         Pricing pricing = scrapPricing(offer);
-         List<String> sales = new ArrayList<>();
-         JSONObject seller = offer.optJSONObject("seller");
-         String sellerName = seller.optString("name");
-
-         offers.add(Offer.OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setInternalSellerId(null)
-            .setSellerFullName(sellerName)
-            .setMainPagePosition(1)
-            .setIsBuybox(true)
-            .setIsMainRetailer(sellerName != null && sellerName.equalsIgnoreCase(MAIN_SELLER))
-            .setSales(sales)
-            .setPricing(pricing)
-            .build());
-
-      }
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(false)
+         .setSellerFullName(MAIN_SELLER)
+         .setInternalSellerId(sellerId.toString())
+         .setSellerFullName(sellerName)
+         .setMainPagePosition(1)
+         .setIsBuybox(true)
+         .setIsMainRetailer(sellerName != null && sellerName.equalsIgnoreCase(MAIN_SELLER))
+         .setSales(sales)
+         .setPricing(pricing)
+         .build());
 
       return offers;
    }
 
    private Pricing scrapPricing(JSONObject offer) throws MalformedPricingException {
 
-      JSONObject price = offer.optJSONObject("price");
-      Double priceFrom = null;
+      JSONObject priceJson = offer.optJSONObject("price");
+      Double priceFrom = priceJson.optDouble("fake");
 
-      Double spotlightPrice = price.optDouble("inCash");
+      Double spotlightPrice = priceJson.optDouble("inCash");
       BankSlip bankSlipPrice = BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build();
 
-      JSONObject installmentsInfo = offer.optJSONObject("installmentToDisplay");
+      JSONArray installmentsInfo = offer.optJSONArray("installmentToDisplay");
 
-      CreditCards creditCards = scrapCreditCards(installmentsInfo, spotlightPrice);
+      JSONObject maxInstallments = (JSONObject) installmentsInfo.get(installmentsInfo.length() - 1);
+
+      CreditCards creditCards = scrapCreditCards(maxInstallments, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -145,10 +149,11 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditCards(JSONObject priceInfo, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(JSONObject installmentsInfo, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments installments = scrapInstallments(priceInfo , spotlightPrice);
+      Installments installments = scrapInstallments(installmentsInfo);
+
       if (installments.getInstallments().isEmpty()) {
          installments.add(Installment.InstallmentBuilder.create()
             .setInstallmentNumber(1)
@@ -168,22 +173,19 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       return creditCards;
    }
 
-   private Installments scrapInstallments(JSONObject installmentsInfo, Double spotlightPrice) throws MalformedPricingException {
+   private Installments scrapInstallments(JSONObject installmentsInfo) throws MalformedPricingException {
       Installments installments = new Installments();
 
-      Double value;
-      int installmentsNumbers;
-
-      if(installmentsInfo != null){
-         value = installmentsInfo.optDouble("value");
-         installmentsNumbers = installmentsInfo.optInt("number");
+      if (installmentsInfo != null){
+         Double value = installmentsInfo.optDouble("value");
+         Integer installmentsNumbers = installmentsInfo.optInt("number");
+         Double finalPrice = installmentsInfo.optDouble("total");
 
          installments.add(Installment.InstallmentBuilder.create()
             .setInstallmentNumber(installmentsNumbers)
             .setInstallmentPrice(value)
-            .setFinalPrice(spotlightPrice)
+            .setFinalPrice(finalPrice)
             .build());
-
       }
       return installments;
    }
@@ -192,18 +194,50 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       return !doc.select("body.black-friday-theme").isEmpty();
    }
 
-   private RatingsReviews scrapRating(String internalId, Document doc) {
-      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "85050", logger);
-      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
+   private RatingsReviews scrapRating(JSONObject product) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+
+      Integer totalNumOfEvaluations = JSONUtils.getValueRecursive(product, "rating.rate.count", Integer.class);
+      Double avgRating = JSONUtils.getValueRecursive(product, "rating.rate.average", Double.class);
+
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setDate(session.getDate());
+
+      return ratingReviews;
    }
 
    private Boolean scrapAvailability(JSONObject product) {
-      String available = JSONUtils.getValueRecursive(product, "offers.0.availability", String.class);
+      Integer stock = JSONUtils.getValueRecursive(product, "buyBox.0.stock", Integer.class);
 
-      if (available.equals("https://schema.org/InStock")) {
+      if (stock > 0) {
          return true;
       }
       return false;
    }
 
+   public static CategoryCollection crawlCategories(JSONObject product) {
+      CategoryCollection categories = new CategoryCollection();
+      JSONArray jsonCategories = product.getJSONArray("breadcrumb");
+
+      for (int i = 0; i < jsonCategories.length(); i++) {
+         JSONObject categorieName = (JSONObject) jsonCategories.get(i);
+         categories.add(categorieName.getString("name").trim());
+      }
+
+      return categories;
+   }
+
+   public static List<String> crawlImages(JSONObject product) {
+      List<String> images = new ArrayList<>();
+      JSONArray jsonCategories = product.getJSONArray("images");
+
+      for (int i = 0; i < jsonCategories.length(); i++) {
+         JSONObject imagesUrl = (JSONObject) jsonCategories.get(i);
+         images.add(imagesUrl.getString("lst").trim());
+      }
+
+      return images;
+   }
 }
