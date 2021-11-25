@@ -61,6 +61,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
    public BrasilAmazonCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.JSOUP);
       super.config.setParser(Parser.HTML);
    }
 
