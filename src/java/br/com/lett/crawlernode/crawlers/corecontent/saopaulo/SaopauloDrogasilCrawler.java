@@ -32,6 +32,7 @@ import models.pricing.CreditCards;
 import models.pricing.Installment;
 import models.pricing.Installments;
 import models.pricing.Pricing;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
@@ -64,6 +65,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
          JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, " ", false, false);
          JSONObject data = JSONUtils.getValueRecursive(json, "props.pageProps.pageData.productData.productBySku", JSONObject.class);
+
          if (data != null) {
 
             String internalId = JSONUtils.getStringValue(data, "sku");
@@ -75,10 +77,8 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
             List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(JSONUtils.getJSONArrayValue(data, "media_gallery_entries"),
                "file", validationImages, "https", "img.drogasil.com.br/catalog/product", session);
-            // Site hasn't category
 
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".small-img", Arrays.asList("src"), "https", "img.drogasil.com.br");
-
 
             if (primaryImage != null) {
                primaryImage = primaryImage.split("\\?")[0]; // we need to remove parameters because this site resize img on html
@@ -86,8 +86,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
                primaryImage = images.get(0);
             }
 
-            String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(SMALL_DESCRIPTION_SELECTOR, "#ancorDescription"));
-            Integer stock = null;
+            String description = scrapDescription(data);
             List<String> ean = new ArrayList<>();
             ean.add(CrawlerUtils.scrapStringSimpleInfo(doc, "tr:nth-child(2) > td", false));
             Boolean available = JSONUtils.getValueRecursive(data,
@@ -96,7 +95,6 @@ public class SaopauloDrogasilCrawler extends Crawler {
             RatingsReviews ratingsReviews = crawlRating(internalId);
             Offers offers = available != null && available ? scrapOffers(data) : new Offers();
 
-            // Creating the product
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
@@ -105,7 +103,6 @@ public class SaopauloDrogasilCrawler extends Crawler {
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(images)
                .setDescription(description)
-               .setStock(stock)
                .setEans(ean)
                .setRatingReviews(ratingsReviews)
                .setOffers(offers)
@@ -121,7 +118,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("#ancorDescription div > h2:nth-child(1)") != null;
+      return doc.selectFirst(".product-attributes") != null;
    }
 
    private String scrapName(JSONObject data, Document doc) {
@@ -206,6 +203,20 @@ public class SaopauloDrogasilCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   private String scrapDescription(JSONObject json) {
+      JSONArray descriptionArray = json.optJSONArray("custom_attributes");
+
+      if (descriptionArray != null) {
+         for (Object attribute : descriptionArray) {
+            if (JSONUtils.getValueRecursive(attribute, "attribute_code", String.class).equals("description")) {
+               return JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
+            }
+         }
+      }
+
+      return null;
    }
 
    private String alternativeRatingFetch(String internalId) {
