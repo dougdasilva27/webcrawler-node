@@ -64,16 +64,14 @@ public class BrasilAmazonCrawler extends Crawler {
       super.config.setParser(Parser.HTML);
    }
 
-//   @Override
-//   public void handleCookiesBeforeFetch() {
-//      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE + "/", cookies, new ApacheDataFetcher());
-//   }
-
+   @Override
+   public void handleCookiesBeforeFetch() {
+      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, new FetcherDataFetcher());
+   }
 
    private String requestMethod (String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "gzip, deflate, br");
-      headers.put("cookie", "session-id=135-7262367-6898032");
       headers.put("authority", "www.amazon.com.br");
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.104 Safari/537.36");
 
