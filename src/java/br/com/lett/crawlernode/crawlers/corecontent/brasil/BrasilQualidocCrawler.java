@@ -19,8 +19,6 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -70,9 +68,9 @@ public class BrasilQualidocCrawler extends Crawler {
          List<String> images = scrapImages(jsonProduct);
          String primaryImage = !images.isEmpty() ? images.remove(0) : "";
          String description = scrapDescription(jsonProduct);
+         boolean availableToBuy = scrapAvailability(internalPid);
 
-         JSONObject jsonOffers = fetchOffers();
-         boolean availableToBuy = jsonOffers.optString("availability").contains("InStock");
+         JSONObject jsonOffers = JSONUtils.getValueRecursive(jsonProduct, "listPrices", JSONObject.class);
          Offers offers = availableToBuy ? scrapOffer(jsonProduct, jsonOffers) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -129,30 +127,17 @@ public class BrasilQualidocCrawler extends Crawler {
       return description.toString();
    }
 
-   protected JSONObject fetchOffers() {
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setCookies(cookies)
-         .build();
-
-      Response response = this.dataFetcher.get(session, request);
-      Document doc = Jsoup.parse(response.getBody());
-      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script#CC-schema-org-server", null, null, false, false);
-
-      //The first json object in the array corresponds to the main offer
-      return json.optJSONArray("offers").getJSONObject(0);
-   }
-
    private Offers scrapOffer(JSONObject json, JSONObject jsonOffers) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       List<String> sales = new ArrayList<>();
 
-      Pricing pricing = scrapPricing(jsonOffers);
+      Pricing pricing = scrapPricing(json, jsonOffers);
 
-      if(!json.optString("x_valorDeCashback").equals("")) {
+      if (!json.optString("x_valorDeCashback").equals("")) {
          sales.add(json.optString("x_valorDeCashback") + " on cashback");
       }
-      if(pricing.getPriceFrom() != null) {
+
+      if (pricing.getPriceFrom() != null) {
          sales.add(CrawlerUtils.calculateSales(pricing));
       }
 
@@ -170,11 +155,12 @@ public class BrasilQualidocCrawler extends Crawler {
 
    }
 
-   private Pricing scrapPricing(JSONObject jsonOffers) throws MalformedPricingException {
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonOffers, "salePrice", false);
-      Double priceFrom = JSONUtils.getDoubleValueFromJSON(jsonOffers, "price", false);
+   private Pricing scrapPricing(JSONObject json, JSONObject jsonOffers) throws MalformedPricingException {
+      Double priceFrom =  JSONUtils.getDoubleValueFromJSON(jsonOffers, "precoAssociado", false);
 
-      if(spotlightPrice == null){
+      Double spotlightPrice = json.optDouble("salePrice", 0);
+
+      if (spotlightPrice == 0) {
          spotlightPrice = priceFrom;
          priceFrom = null;
       }
@@ -209,4 +195,26 @@ public class BrasilQualidocCrawler extends Crawler {
       return creditCards;
    }
 
+   protected Boolean scrapAvailability(String internalPid) {
+      Object stockJson = fetchJsonAvailability(internalPid);
+      String stockStatus = JSONUtils.getValueRecursive(stockJson, "items.0.stockStatus", String.class);
+
+      return stockStatus.equals("OUT_OF_STOCK") ? false : true;
+   }
+
+   protected Object fetchJsonAvailability(String id) {
+      Map<String, String> headers = new HashMap<>();
+
+      String url = "https://www.qualidoc.com.br/ccstoreui/v1/stockStatus?products=" + id;
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .build();
+
+      Response response = this.dataFetcher.get(session, request);
+
+      return JSONUtils.stringToJson(response.getBody());
+   }
 }
