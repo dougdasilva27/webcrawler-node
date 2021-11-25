@@ -2,8 +2,11 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -33,7 +36,7 @@ public class BrasilQualidocCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   public void extractProductsFromCurrentPage() {
+   public void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 12;
 
       this.log("Página " + this.currentPage);
@@ -42,6 +45,7 @@ public class BrasilQualidocCrawler extends CrawlerRankingKeywords {
       String url = "https://www.qualidoc.com.br/ccstoreui/v1/search?Nrpp=12&visitorId=1015BD0eA19213YWlCVNEDdqiZaY4AgiFltmRqZe1bSxgMkDBE3&visitId=e258768%3A17b3f82c1fb%3A-6c6e-4094297612&totalResults=true&" +
          "No=" + this.arrayProducts.size() +
          "&searchType=simple&Nr=AND(product.active%3A1)&Ntt=" + this.keywordEncoded;
+
       JSONObject search = fetchJSONObject(url);
 
       JSONArray products = JSONUtils.getValueRecursive(search, "resultsList.records", JSONArray.class);
@@ -55,10 +59,23 @@ public class BrasilQualidocCrawler extends CrawlerRankingKeywords {
             JSONObject product = products.optJSONObject(i);
             String productUrl = "https://www.qualidoc.com.br" + JSONUtils.getValueRecursive(product, "records,0,attributes,product.route,0", ",", String.class, null);
             String internalPid = JSONUtils.getValueRecursive(product, "records,0,attributes,product.repositoryId,0", ",", String.class, null);
+            String name =  JSONUtils.getValueRecursive(product, "records,0,attributes,product.x_descrioWeb,0", ",", String.class, null);
+            String imgUrl = "https://www.qualidoc.com.br" + JSONUtils.getValueRecursive(product, "records,0,attributes,product.primaryFullImageURL,0", ",", String.class, null);
+            String priceString = JSONUtils.getValueRecursive(product, "records,0,attributes,sku.activePrice,0", ",", String.class, null);
+            Integer price = (int) Math.round((Double.parseDouble(priceString) * 100));
+            boolean isAvailable = price != 0;
 
-            saveDataProduct(null, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(null)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
