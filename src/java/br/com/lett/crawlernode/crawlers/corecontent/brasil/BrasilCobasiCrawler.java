@@ -59,6 +59,9 @@ public class BrasilCobasiCrawler extends Crawler {
          CategoryCollection categoryCollection = scrapeCategory(productsObj);
          List<String> images = scrapeImages(productsObj);
 
+         String primaryImage = images.isEmpty() ? null : images.remove(0);
+         List<String> secondaryImages = images.isEmpty() ? null : images;
+
          for (Object o : variants) {
 
             JSONObject variant = (JSONObject) o;
@@ -71,8 +74,8 @@ public class BrasilCobasiCrawler extends Crawler {
                .setInternalPid(productsObj.optString("id"))
                .setName(CommonMethods.camelcaseToText(productsObj.optString("name")) + variant.optString("name"))
                .setCategories(categoryCollection)
-               .setPrimaryImage(images.remove(0))
-               .setSecondaryImages(images)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
                .setDescription(productsObj.optString("description"))
                .setOffers(offers)
                .setEans(Collections.singletonList(variant.optString("ean")))
