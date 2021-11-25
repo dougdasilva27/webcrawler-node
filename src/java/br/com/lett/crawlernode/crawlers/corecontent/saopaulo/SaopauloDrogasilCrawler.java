@@ -206,7 +206,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
    }
 
    private String scrapDescription(JSONObject json) {
-      JSONArray teste = json.getJSONArray("custom_attributes");
+      JSONArray teste = json.optJSONArray("custom_attributes");
 
       for (Object attribute : teste) {
          if (JSONUtils.getValueRecursive(attribute,"attribute_code", String.class).equals("description")) {
