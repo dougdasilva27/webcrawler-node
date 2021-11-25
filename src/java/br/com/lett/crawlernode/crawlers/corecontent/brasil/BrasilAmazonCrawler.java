@@ -70,6 +70,7 @@ public class BrasilAmazonCrawler extends Crawler {
       this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, new FetcherDataFetcher());
    }
 
+
    private String requestMethod (String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "gzip, deflate, br");
