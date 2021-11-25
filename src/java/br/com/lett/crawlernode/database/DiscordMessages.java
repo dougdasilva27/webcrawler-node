@@ -13,7 +13,7 @@ import br.com.lett.crawlernode.util.Logging;
  */
 public class DiscordMessages {
 
-   private static final WebhookClient DISCORD_CLIENT = WebhookClient.withUrl("https://discord.com/api/webhooks/780417668830330922/U7ns_RyD1qhwpeysi46hNhbdLQP9fdB7aEftAkBZdrHxR4JIxsQoKfbO3tBI4LxU53RL");
+   private static final WebhookClient DISCORD_CLIENT = WebhookClient.withUrl("https://discord.com/api/webhooks/913473681945133116/DP5i3656CaeZpkevRtu193lTgjuFzfny1EwwltfXRJaK5OS374upqfWGK1sGzbgtE4Rq");
 
    private DiscordMessages() {
    }
