@@ -206,11 +206,13 @@ public class SaopauloDrogasilCrawler extends Crawler {
    }
 
    private String scrapDescription(JSONObject json) {
-      JSONArray teste = json.optJSONArray("custom_attributes");
+      JSONArray descriptionArray = json.optJSONArray("custom_attributes");
 
-      for (Object attribute : teste) {
-         if (JSONUtils.getValueRecursive(attribute,"attribute_code", String.class).equals("description")) {
-            return JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
+      if (descriptionArray != null) {
+         for (Object attribute : descriptionArray) {
+            if (JSONUtils.getValueRecursive(attribute, "attribute_code", String.class).equals("description")) {
+               return JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
+            }
          }
       }
 
