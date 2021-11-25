@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -12,6 +13,7 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -27,6 +29,8 @@ import javax.xml.bind.SchemaOutputResolver;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
 
@@ -36,10 +40,13 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url) {
-      Document doc = new Document(url);
+      Document doc;
       int attempts = 0;
       Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
+      headers.put("authority", "www.magazineluiza.com.br");
+      headers.put("accept-encoding", "gzip, deflate, br");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
 
       do {
          Request request = Request.RequestBuilder.create()
@@ -47,13 +54,22 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
             .setProxyservice(Arrays.asList(
                ProxyCollection.BUY_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
-               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
             ))
             .setHeaders(headers)
-            .build();
+            .setSendUserAgent(false)
+            .setFetcheroptions(
+               FetcherOptions.FetcherOptionsBuilder.create()
+                  .setForbiddenCssSelector("#recaptcha_response")
+                  .build()
+            ).build();
 
-         Response response = new ApacheDataFetcher().get(session, request);
+         Response response = new JsoupDataFetcher().get(session, request);
          doc = Jsoup.parse(response.getBody());
          attempts++;
 
@@ -64,7 +80,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
             break;
          }
       }
-      while(isBlockedPage(doc));
+      while (isBlockedPage(doc));
 
       return doc;
    }
@@ -82,25 +98,20 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
-      JSONObject json = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "script#__NEXT_DATA__", null, null, false, false);
+      Elements elements = this.currentDoc.select(".kEElhN li");
 
-      JSONArray products = JSONUtils.getValueRecursive(json, "props.pageProps.data.search.products", JSONArray.class);
-
-      if (products != null) {
+      if (!elements.isEmpty()) {
          if (this.totalProducts == 0) {
-            this.totalProducts = JSONUtils.getValueRecursive(json, "props.pageProps.data.search.pagination.records", Integer.class);
-            this.log("Total da busca: " + this.totalProducts);
+            setTotalProducts();
          }
+         for (Element e : elements) {
 
-         for (Object e : products) {
-            JSONObject product = (JSONObject) e;
-            String internalId = product.optString("variationId");
-            String imageUrl = product.optString("image");
-            JSONObject prices = product.optJSONObject("price");
-            int price = prices.optInt("bestPrice");
-            String name = product.optString("title");
+            String urlProduct = CrawlerUtils.scrapUrl(e, ".sc-kdneuM a", "href", "https", "www.magazineluiza.com.br");
+            String internalId = getProductId(urlProduct);
+            String imageUrl = CrawlerUtils.scrapUrl(e, ".sc-hiEfMO img", "src", "https", "a-static.mlcdn.com.br");
+            int price = CommonMethods.doublePriceToIntegerPrice(CrawlerUtils.scrapDoublePriceFromHtml(e, ".sc-hKwDye", null, true, ',', session), 0);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "h2", true);
             boolean isAvailable = price != 0;
-            String urlProduct = "https://www.magazineluiza.com.br/" + product.optString("url");
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(urlProduct)
@@ -114,7 +125,6 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productRanking);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -124,11 +134,22 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
          this.log("Keyword sem resultado!");
       }
 
-      if (!hasNextPage() && this.arrayProducts.size() > this.totalProducts) {
-         this.totalProducts = this.arrayProducts.size();
-      }
-
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
+   @Override
+   protected void setTotalProducts() {
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".sc-dyEwOs.dLynjr", true, 0);
+      this.log("Total: " + this.totalProducts);
+   }
+
+   private String getProductId(String url) {
+      String id = null;
+      Pattern pattern = Pattern.compile("p\\/([a-z-0-9]+)\\/");
+      Matcher matcher = pattern.matcher(url);
+      if (matcher.find()) {
+         id = matcher.group(1);
+      }
+      return id;
    }
 }
