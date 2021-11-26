@@ -413,7 +413,7 @@ public class GPACrawler extends Crawler {
       if (data.has("productPromotions")) {
          JSONArray promotions = data.optJSONArray("productPromotions");
          for (Object e : promotions) {
-            if (e instanceof JSONObject && ((JSONObject) e).optInt("ruleId") == 57169) {
+            if (e instanceof JSONObject) {
                spotlightPrice = ((JSONObject) e).optDouble("unitPrice");
                priceFrom = data.optDouble("currentPrice");
             }
