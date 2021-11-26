@@ -17,9 +17,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BelohorizonteSupernossoCrawler extends CrawlerRankingKeywords {
+   private static String storeId;
 
    public BelohorizonteSupernossoCrawler(Session session) {
       super(session);
+      this.storeId = session.getOptions().optString("storeId");
    }
 
    @Override
@@ -80,7 +82,7 @@ public class BelohorizonteSupernossoCrawler extends CrawlerRankingKeywords {
    }
 
    private JSONObject fetchApi() {
-      String url = "https://api.linximpulse.com/engage/search/v3/search?apiKey=supernossoemcasa&page=" + this.currentPage + "&resultsPerPage=24&terms=" + this.keywordEncoded + "&salesChannel=1";
+      String url = "https://api.linximpulse.com/engage/search/v3/search?apiKey=supernossoemcasa&page=" + this.currentPage + "&resultsPerPage=24&terms=" + this.keywordEncoded + "&salesChannel=" + this.storeId;
       this.log("Link onde são feitos os crawlers: " + url);
 
       Map<String, String> headers = new HashMap<>();
