@@ -8,7 +8,6 @@ public class ExtraImpl extends GPACrawler {
 
    public ExtraImpl(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
       this.store = "ex";
       this.homePageHttps = "https://www.clubeextra.com.br/";
    }
