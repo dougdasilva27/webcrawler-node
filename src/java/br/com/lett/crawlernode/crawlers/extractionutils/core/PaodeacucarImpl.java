@@ -8,7 +8,6 @@ public class PaodeacucarImpl extends GPACrawler {
 
    public PaodeacucarImpl(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
       this.store = "pa";
       this.homePageHttps = "https://www.paodeacucar.com/";
    }
