@@ -111,8 +111,10 @@ abstract class CNOVACrawlerRanking(session: Session?) : CrawlerRankingKeywords(s
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
+
             )
          ).build()
 
