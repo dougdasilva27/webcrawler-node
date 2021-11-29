@@ -351,6 +351,9 @@ public class MercadolivreNewCrawler {
 
    private void scrapSellersPage(Offers offers, Document doc, boolean hasMainOffer) throws OfferException, MalformedPricingException {
       String sellersPageUrl = CrawlerUtils.scrapUrl(doc, ".ui-pdp-other-sellers__link", "href", "https", "www.mercadolivre.com.br");
+      if (sellersPageUrl == null) {
+         sellersPageUrl = CrawlerUtils.scrapUrl(doc, ".ui-pdp-products__list a", "href", "https", "www.mercadolivre.com.br");
+      }
       if (sellersPageUrl != null) {
          String nextUrl = sellersPageUrl;
 
@@ -430,6 +433,7 @@ public class MercadolivreNewCrawler {
    private Pricing scrapPricing(Element doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "del.price-tag", null, false, ',', session);
       Double spotlightPrice = findSpotlightPrice(doc);
+
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       BankSlip bankTicket = BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
@@ -520,8 +524,8 @@ public class MercadolivreNewCrawler {
                   object = CrawlerUtils.stringToJson(stringToConvertInJson);
                }
             } else {
-                  stringToConvertInJson = getObjectSecondOption(script);
-                  object = CrawlerUtils.stringToJson(stringToConvertInJson);
+               stringToConvertInJson = getObjectSecondOption(script);
+               object = CrawlerUtils.stringToJson(stringToConvertInJson);
             }
             break;
          }
