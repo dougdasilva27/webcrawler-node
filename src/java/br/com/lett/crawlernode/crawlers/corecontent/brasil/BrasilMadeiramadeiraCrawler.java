@@ -54,10 +54,10 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
          JSONArray jsonObject = new JSONArray(scriptFromHtml);
          JSONObject productInfo = JSONUtils.getValueRecursive(jsonObject, "0.props.pageProps.product", JSONObject.class);
 
-         Integer internalPid = productInfo.getInt("id");
-         String name = productInfo.getString("name") + " " + productInfo.getString("color");
-         String description = productInfo.getString("description");
-         Integer ean = productInfo.getInt("ean");
+         Integer internalPid = productInfo.optInt("id");
+         String name = productInfo.optString("name") + " " + productInfo.getString("color");
+         String description = productInfo.optString("description");
+         Integer ean = productInfo.optInt("ean");
          List<String> eans = new ArrayList<>();
          eans.add(ean.toString());
          Boolean available = scrapAvailability(productInfo);
@@ -78,7 +78,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
             .setInternalId(internalPid.toString())
             .setInternalPid(internalPid.toString())
             .setName(name)
-            .setOffers(offers) //One offer for each installment
+            .setOffers(offers)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
@@ -129,9 +129,8 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject offer, Object installment) throws MalformedPricingException {
-
       JSONObject priceJson = offer.optJSONObject("price");
-      Double priceFrom = priceJson.optDouble("fake");
+      Double priceFrom = priceJson.optDouble("productMPrice");
 
       Double spotlightPrice = priceJson.optDouble("inCash");
       BankSlip bankSlipPrice = BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build();
