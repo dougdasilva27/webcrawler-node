@@ -400,12 +400,19 @@ public abstract class CrawlerRanking extends Task {
       if (!processeds.isEmpty()) {
          Processed processed = processeds.get(0);
          product.setName(processed.getOriginalName());
-         product.setPriceInCents(processed.getPrice()!=null?Integer.parseInt(String.valueOf(processed.getPrice())): null);
+         product.setPriceInCents(processed.getPrice()!=null? getPriceInCents(processed) : null);
          product.setIsAvailable(processed.getAvailable());
          product.setImageUrl(processed.getPic());
       }
    }
 
+   private Integer getPriceInCents(Processed processed) {
+      Float price = processed.getPrice();
+      if (price != null) {
+         return (int) (price * 100);
+      }
+      return null;
+   }
 
 
    protected void saveProductUrlToQueue(String url) {

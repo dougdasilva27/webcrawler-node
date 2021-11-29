@@ -610,6 +610,10 @@ public class Persistence {
       fields.add(processed.STATUS);
       fields.add(processed.URL);
       fields.add(processed.LRT);
+      fields.add(processed.ORIGINAL_NAME);
+      fields.add(processed.PRICE);
+      fields.add(processed.AVAILABLE);
+      fields.add(processed.PIC);
 
       List<Condition> conditions = new ArrayList<>();
       conditions.add(processed.MARKET.equal(market));
@@ -635,6 +639,10 @@ public class Persistence {
             p.setVoid(record.get(processed.STATUS).equalsIgnoreCase("void"));
             p.setUrl(record.get(processed.URL));
             p.setLrt(record.get(processed.LRT));
+            p.setOriginalName(record.get(processed.ORIGINAL_NAME));
+            p.setPrice(record.get(processed.PRICE).floatValue());
+            p.setAvailable(record.get(processed.AVAILABLE));
+            p.setPic(record.get(processed.PIC));
 
             if (masterId != null) {
                p.setId(masterId);
@@ -670,6 +678,10 @@ public class Persistence {
       fields.add(processed.MASTER_ID);
       fields.add(processed.STATUS);
       fields.add(processed.URL);
+      fields.add(processed.ORIGINAL_NAME);
+      fields.add(processed.PRICE);
+      fields.add(processed.AVAILABLE);
+      fields.add(processed.PIC);
 
       List<Condition> conditions = new ArrayList<>();
       conditions.add(processed.MARKET.equal(market));
@@ -694,6 +706,11 @@ public class Persistence {
             Long masterId = record.get(processed.MASTER_ID);
             p.setVoid(record.get(processed.STATUS).equalsIgnoreCase("void"));
             p.setUrl(record.get(processed.URL));
+            p.setOriginalName(record.get(processed.ORIGINAL_NAME));
+            p.setPrice(record.get(processed.PRICE).floatValue());
+            p.setAvailable(record.get(processed.AVAILABLE));
+            p.setPic(record.get(processed.PIC));
+
 
             if (masterId != null) {
                p.setId(masterId);
@@ -727,6 +744,13 @@ public class Persistence {
       List<Field<?>> fields = new ArrayList<>();
       fields.add(processed.ID);
       fields.add(processed.MASTER_ID);
+      fields.add(processed.STATUS);
+      fields.add(processed.URL);
+      fields.add(processed.ORIGINAL_NAME);
+      fields.add(processed.PRICE);
+      fields.add(processed.AVAILABLE);
+      fields.add(processed.PIC);
+
 
       List<Condition> conditions = new ArrayList<>();
       conditions.add(processed.MARKET.equal(market));
@@ -748,6 +772,12 @@ public class Persistence {
          for (Record record : records) {
             Processed p = new Processed();
             Long masterId = record.get(processed.MASTER_ID);
+            p.setVoid(record.get(processed.STATUS).equalsIgnoreCase("void"));
+            p.setUrl(record.get(processed.URL));
+            p.setOriginalName(record.get(processed.ORIGINAL_NAME));
+            p.setPrice(record.get(processed.PRICE).floatValue());
+            p.setAvailable(record.get(processed.AVAILABLE));
+            p.setPic(record.get(processed.PIC));
 
 
             if (masterId != null) {
