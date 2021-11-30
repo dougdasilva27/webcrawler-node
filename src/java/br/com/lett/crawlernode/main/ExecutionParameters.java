@@ -35,19 +35,22 @@ public class ExecutionParameters {
    private boolean sendToKinesis;
    private String kinesisStreamCatalog;
    private boolean sendToKinesisCatalog;
+   private String kinesisStreamRanking;
+
+   private boolean sendToKinesisRanking;
 
    private String logsBucketName;
+
    private String imagesBucketName;
    private String imagesBucketNameNew;
-
    private String s3BatchRemoteLocation;
+
    private String s3BatchHost;
    private String s3BatchUser;
    private String s3BatchPass;
-
    private String redisHost;
-   private Integer redisPort;
 
+   private Integer redisPort;
    public ExecutionParameters() {
       debug = null;
    }
@@ -59,8 +62,10 @@ public class ExecutionParameters {
       tmpImageFolder = getEnvTmpImagesFolder();
       kinesisStream = getEnvKinesisStream();
       kinesisStreamCatalog = getEnvKinesisStreamCatalog();
+      kinesisStreamRanking = getEnvKinesisStreamRanking();
       sendToKinesis = getEnvSendToKinesis();
       sendToKinesisCatalog = getEnvSendToKinesisCatalog();
+      sendToKinesisRanking = getEnvSendToKinesisRanking();
       logsBucketName = getEnvLogsBucketName();
       imagesBucketName = getEnvImagesBucketName();
       imagesBucketNameNew = getEnvImagesBucketNameNew();
@@ -156,6 +161,10 @@ public class ExecutionParameters {
       return Boolean.TRUE.toString().equals(System.getenv(EnvironmentVariables.SEND_TO_KINESIS_CATALOG));
    }
 
+   private boolean getEnvSendToKinesisRanking() {
+      return Boolean.TRUE.toString().equals(System.getenv(EnvironmentVariables.SEND_TO_KINESIS_RANKING));
+   }
+
    private String getEnvReplicatorUrl() {
       return System.getenv(EnvironmentVariables.REPLICATOR_URL);
    }
@@ -182,12 +191,16 @@ public class ExecutionParameters {
    }
 
    private String getEnvKinesisStream() {
-      return System.getenv(EnvironmentVariables.KINESIS_STREAM) ;
+      return System.getenv(EnvironmentVariables.KINESIS_STREAM);
    }
 
 
    private String getEnvKinesisStreamCatalog() {
-      return System.getenv(EnvironmentVariables.KINESIS_STREAM_CATALOG) ;
+      return System.getenv(EnvironmentVariables.KINESIS_STREAM_CATALOG);
+   }
+
+   private String getEnvKinesisStreamRanking() {
+      return System.getenv(EnvironmentVariables.KINESIS_STREAM_RANKING);
    }
 
    private boolean getEnvUseFetcher() {
@@ -385,5 +398,13 @@ public class ExecutionParameters {
 
    public boolean isSendToKinesisCatalog() {
       return sendToKinesisCatalog;
+   }
+
+   public String getKinesisStreamRanking() {
+      return kinesisStreamRanking;
+   }
+
+   public boolean isSendToKinesisRanking() {
+      return sendToKinesisRanking;
    }
 }

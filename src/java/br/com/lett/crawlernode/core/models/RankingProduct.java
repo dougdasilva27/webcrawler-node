@@ -4,7 +4,9 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gson.JsonObject;
 import org.bson.Document;
+import org.json.JSONObject;
 
 public class RankingProduct {
 
@@ -158,6 +160,23 @@ public class RankingProduct {
 
    public void setTimestamp(Timestamp timestamp) {
       this.timestamp = timestamp;
+   }
+
+
+   //generate a json object from the object
+   public JSONObject toJson(){
+      JSONObject json = new JSONObject();
+      json.put("position", this.position);
+      json.put("name", this.name);
+      json.put("url", this.url);
+      json.put("price_in_cents", this.priceInCents);
+      json.put("is_available", this.isAvailable);
+      json.put("image_url", this.imageUrl);
+      json.put("internal_id", this.internalId);
+      json.put("internal_pid", this.internalPid);
+      json.put("is_sponsored", this.isSponsored);
+      json.put("page_number", this.pageNumber);
+      return json;
    }
 
    @Override

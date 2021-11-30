@@ -20,7 +20,6 @@ public class BrasilFnacCrawler extends CrawlerRankingKeywords {
     String url = "https://www.fnac.com.br/#!Popup_opzSearch=termos--"
         + this.location.trim().replace(" ", "--e--");
 
-    takeAScreenshot(url);
 
     String apiUrl = "http://search.oppuz.com/opz/api/search?page=" + this.currentPage + "&limit="
         + this.productsLimit + "&sort=score.desc&sortingOrMoreItemsEvent=true&store=fnac"

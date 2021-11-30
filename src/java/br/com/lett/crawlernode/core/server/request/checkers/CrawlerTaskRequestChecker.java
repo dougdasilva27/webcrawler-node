@@ -35,7 +35,7 @@ public class CrawlerTaskRequestChecker {
          }
       }
 
-      if (ScrapersTypes.RANKING_BY_KEYWORDS.toString().equals(scraperType) && ((CrawlerRankingKeywordsRequest) request).getLocation() == null) {
+      if (ScrapersTypes.RANKING_BY_KEYWORDS.toString().equals(scraperType) && ((CrawlerRankingKeywordsRequest) request).getLocation() == null && ((CrawlerRankingKeywordsRequest) request).getLocationId() == null) {
          Logging.printLogError(logger, "Request is missing keyword");
          return false;
       }
