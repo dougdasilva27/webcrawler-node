@@ -2,13 +2,14 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
@@ -48,10 +49,9 @@ public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords
          for (int index = 0; index < products.size(); index++) {
             Element product = products.get(index);
 
-            String internalId = null;
             String internalPid = crawlInternalPid(productsIdList.get(index));
             String urlProduct = CrawlerUtils.scrapUrl(product, ".prd-list-item-desc > a", "href", "https", BASE_URL);
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".prd-list-item-price-sell", null, true, ',', session,null);
+            Integer price = CommonMethods.doublePriceToIntegerPrice(CrawlerUtils.scrapDoublePriceFromHtml(product, ".prd-list-item-price-sell", null, true, ',', session), 0);
 
             RankingProduct rankingProduct = RankingProductBuilder.create()
                .setName(CrawlerUtils.scrapStringSimpleInfo(product, ".prd-list-item-name", true))
@@ -65,7 +65,6 @@ public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords
 
             saveDataProduct(rankingProduct);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
             if (this.arrayProducts.size() == productsLimit) break;
          }
       } else {
