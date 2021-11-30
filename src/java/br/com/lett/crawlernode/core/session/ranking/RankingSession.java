@@ -16,6 +16,7 @@ public class RankingSession extends Session {
 
       if (request instanceof CrawlerRankingKeywordsRequest) {
          this.location = ((CrawlerRankingKeywordsRequest) request).getLocation();
+         this.locationId= ((CrawlerRankingKeywordsRequest) request).getLocationId();
          this.takeAScreenshot = ((CrawlerRankingKeywordsRequest) request).getTakeAScreenshot();
       }
    }
