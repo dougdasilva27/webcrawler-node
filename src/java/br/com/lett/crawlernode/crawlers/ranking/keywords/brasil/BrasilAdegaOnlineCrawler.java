@@ -7,20 +7,18 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
-import javax.print.Doc;
 import java.util.*;
 
 public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
-
-   private static final String API_URL = "https://api.ze.delivery/public-api";
+   JSONArray products;
 
    public BrasilAdegaOnlineCrawler(Session session) {
       super(session);
@@ -57,7 +55,7 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
       if (doc.selectFirst("#bold-subscriptions-platform-script") != null) {
          JSONArray scriptJson = scrapJsonFromScript(doc);
 
-         JSONArray products = sortPositions(scriptJson);
+         products = sortPositions(scriptJson);
 
          for (Object o: products) {
             JSONObject product = (JSONObject) o;
@@ -115,11 +113,25 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
    }
 
    private JSONArray sortPositions(JSONArray disorderedProducts) {
+      JSONArray sortedProducts = new JSONArray();
+      Integer position = 1;
+
+      for (Object product : disorderedProducts) {
+         Integer productPosition = JSONUtils.getValueRecursive(product, "media.0.position", Integer.class);
+
+         if (productPosition != null && productPosition == position) {
+            sortedProducts.put(product);
+            position++;
+         }
+      }
       return disorderedProducts;
    }
 
    @Override
    protected boolean hasNextPage() {
-      return true;
+      if (this.products != null && this.totalProducts < this.products.length()) {
+         return true;
+      }
+      return false;
    }
 }
