@@ -1,12 +1,13 @@
-# Webcrawler Node 
+# Webcrawler Node
 
-Webcrawler node is a Java Project containing all the crawlers from Lett.
+Webcrawler node is a java project that contains core-type and ranking-type crawler codes from all the markets we monitor.
 
 ## Index
+
 - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
         - [Install Java](#install-java)
-        - [Install Eclipse](#install-eclipse)
+        - [Install IDE](#install-ide)
         - [VPN connection](#vpn-connection)
         - [Configuration files](#configuration-files)
         - [Clone project](#clone-project)
@@ -19,35 +20,37 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
+What programs and languages you need to install and how to install them
 
 #### Install Java
-1 - Open a terminal (Ctrl-Alt-T) and switch it to root permissions by entering:
+
+- Open a terminal (Ctrl-Alt-T) and switch it to root permissions by entering:
 
 ```bash
 $ sudo su
 ```
 
-2 - Make sure Eclipse Indigo is NOT installed in your Ubuntu. You may need to remove both "eclipse" and "eclipse-platform" packages to get rid of it. If it still gets into way when trying to install Luna using this easy way, you may need to look at the "hard way" below.
+- Make sure Eclipse Indigo is NOT installed in your Ubuntu. You may need to remove both "eclipse" and "eclipse-platform" packages to get rid of it. If it still gets into way when trying to install
+  Luna using this easy way, you may need to look at the "hard way" below.
 
 ```bash
 # apt-get remove eclipse eclipse-platform
 ```
 
-3 - Install a Java 11 JDK:
+- Install a Java 11 JDK:
 
-```bash
-# apt-get update
-# apt-get install openjdk-11-jdk
+```
+  # apt-get update
+  # apt-get install openjdk-11-jdk
 ```
 
-4 - Install Maven:
+- Install Maven:
 
 ```bash
 # apt-get install maven
 ```
 
-5 - Get rid of the root access as you won't need it anymore:
+- Get rid of the root access as you won't need it anymore:
 
 ```bash
 # exit
@@ -55,42 +58,37 @@ $ sudo su
 
 ---
 
-#### Run in Docker
-Write your enviroment variables in a `.env` file, then run:
-```shell
-./local_run.sh
-```
-
-#### VPN connection
-
-Before running the application, you need to connect to our VPN. If you do not know how to do it, talk with the Team Leader.
-
----
 #### Configuration files
 
-You need to create a file named settings.xml. This file is for download maven dependencies.
-To create this file, you will need AWS credentials (search in your vault manager for _aws programmatic_ or ask for your leader).
+You need to create a file named settings.xml. This file is for download maven dependencies. To create this file, you will need AWS credentials (search in your vault manager for _aws programmatic_ or
+ask for your leader).
 
 After that you need to add that file to your home's .m2 folder.
 
-`$HOME/.m2/settings.xml` example:
+- linux: `$HOME/.m2/settings.xml`
+- windows: `%USERPROFILE%\.m2\settings.xml`
+
+example:
 
 ```xml
 <?xml version="1.0"?>
 
-<settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/SETTINGS/1.0.0">
+<settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns="http://maven.apache.org/SETTINGS/1.0.0">
     <servers>
         <server>
             <id>lett-maven</id>
-            <username>{{INSERT YOUR USERNAME HERE}}</username>
-            <password>{{INSERT YOUR PASSWORD HERE}}</password>
+            <username>INSERT YOUR USERNAME HERE</username>
+            <password>INSERT YOUR PASSWORD HERE</password>
         </server>
     </servers>
 </settings>
 ```
+
 > NOTE: You need read permissions on AWS IAM to read lett-maven's bucket to download maven dependencies
 
 ---
+
 #### Clone project
 
 ```bash
@@ -98,97 +96,137 @@ After that you need to add that file to your home's .m2 folder.
 ```
 
 ---
+
 #### Configure maven
 
 In your eclipse, set your project for a maven project, after that the dependencies will be downloaded.
 
 Or you can run it in terminal:
+
 ```bash
-# nvm clean install -U
+#
+# 3nvm clean install -U
 ```
+
 > NOTE: This command will clean and force install maven dependencies.
 
 
 ---
-## Launch Configurations
 
-You can ask your team leader for this configurations, after that you need to change the credentials
-of the environment variables to your credentials, like postgres, mongo and aws.
+## Install IDE
+
+###  Install IntelliJ (_recommended_)
+
+- Download the latest version of
+
+  ![img.png](public/img.png)
+
+
+- Extract files
+
+```bash
+$ tar -xvf jetbrains-toolbox-*.tar.gz
+```
+
+- Go to the extracted folder and run the following command:
+
+```bash
+$ ./jetbrains-toolbox-*/jetbrains-toolbox
+```
+
+- Install the IntelliJ Idea
+
+---
+
+### VPN connection
+
+Before running the application, you need to connect to our VPN.
+
+Check on 1Password if you have already been granted VPN access and then follow this installation and configuration [tutorial](https://www.notion.so/lettdigital/VPN-fb27854c42d447cbb52a411a8098012c).
+
+---
+
+## Running the tests
 
 But you can test localy configuring a application debug in your IDE.
 
 Here below you see how to config in Intellij IDEA, but is very similar in others IDEs:
 
-![image](https://user-images.githubusercontent.com/12951402/96016770-869ad080-0e1f-11eb-9e61-efddcf04fb41.png)
 
 1 - First create a application debugger, in can find under `run/debug`
 
 2 - Set the main class: `br.com.lett.crawlernode.test.Test`
 
-3 - Define program arguments:
-```bash
--city {{MARKET CITY}} -market {{MARKET NAME}} -testType [keyword|insights]
-```
-> NOTE: The test type can be 'keywords' for ranking crawler or 'insights' for crawler core
+3 - Set the environment variables:
 
-> NOTE 2: If you set insights, you need change product URL in the [Test class](https://github.com/lettdigital/webcrawler-node/blob/master/src/java/br/com/lett/crawlernode/test/Test.java#L105) to correct scrap the page
 
-4 - Fill the {{USERNAME}} and {{PASSWORD}} from the example below and paste to the Environment variables on IDE.
+
+Fill the {{USERNAME}} and {{PASSWORD}} from the example below and paste to the Environment variables on IDE.
 
 Example:
-```txt
-CRAWLER_CORE_THREADS=1;
-DEBUG=ON;
-ENVIRONMENT=production;
-FETCHER_URL=https://api-fetcher.lett.global/;
-HIKARI_CP_CONNECTION_TIMEOUT=60000;
-HIKARI_CP_IDLE_TIMEOUT=20000;
-HIKARI_CP_MAX_POOL_SIZE=3;
-HIKARI_CP_MIN_IDLE=2;
-HIKARI_CP_VALIDATION_TIMEOUT=5000;
-KINESIS_STREAM=sku-core-crawler-kinesis-stream;
-LETT_MONGO_FETCHER_DATABASE=fetcher;
-LETT_MONGO_FETCHER_HOST=mongodb0.lett.global,mongodb1.lett.global,mongodb2.lett.global;
-LETT_MONGO_FETCHER_PASSWORD={{PASSWORD}};
-LETT_MONGO_FETCHER_PORT=27017;
-LETT_MONGO_FETCHER_USERNAME={{USERNAME}};
-LETT_MONGO_FROZEN_DATABASE=frozen;
-LETT_MONGO_FROZEN_HOST=mongodb0.lett.global,mongodb1.lett.global,mongodb2.lett.global;
-LETT_MONGO_FROZEN_PASSWORD={{PASSWORD}};
-LETT_MONGO_FROZEN_PORT=27017;
-LETT_MONGO_FROZEN_USERNAME={{USERNAME}};
-LETT_MONGO_INSIGHTS_DATABASE=insights;
-LETT_MONGO_INSIGHTS_HOST=mongodb0.lett.global,mongodb1.lett.global,mongodb2.lett.global;
-LETT_MONGO_INSIGHTS_PASSWORD={{PASSWORD}};
-LETT_MONGO_INSIGHTS_PORT=27017;
-LETT_MONGO_INSIGHTS_USERNAME={{USERNAME}};
-LETT_MONGO_PANEL_DATABASE=panel;
-LETT_MONGO_PANEL_HOST=localhost;
-LETT_MONGO_PANEL_PASSWORD={{PASSWORD}}pass;
-LETT_MONGO_PANEL_PORT=27017;
-LETT_MONGO_PANEL_USERNAME={{USERNAME}};
-LETT_POSTGRES_DATABASE=products;
-LETT_POSTGRES_HOST=postgres-prod.lett.global;
-LETT_POSTGRES_PASSWORD={{PASSWORD}};
-LETT_POSTGRES_PORT=5432;
-LETT_POSTGRES_USERNAME={{USERNAME}};
-LOGS_BUCKET_NAME=lett-webscraper-htmls-dev;
-TMP_IMG_FOLDER=$HOME/lett/images;
-HTML_PATH=$HOME/htmls-crawler/;
-USE_FETCHER=false;
-S3_BATCH_USER={{USERNAME}};
-S3_BATCH_HOST=s3-batch.lett.global;
-S3_BATCH_REMOTE_LOCATION=/s3_buckets/batch;
-SSH_KEYS_BUCKET=lett-ssh-keys;
-S3_BATCH_PASS={{PASSWORD}};
-ATTEMPTS_FOR_EACH_PROXY=2;
-CHROME_PATH=$HOME/chromeDrive/chromedriver
+
+```dotenv
+CRAWLER_THREADS=1
+ENVIRONMENT=production
+FETCHER_URL=https://fetcher-new.lett.global/
+HIKARI_CP_CONNECTION_TIMEOUT=60000
+HIKARI_CP_IDLE_TIMEOUT=20000
+HIKARI_CP_MAX_POOL_SIZE=3
+HIKARI_CP_MIN_IDLE=2
+HIKARI_CP_VALIDATION_TIMEOUT=5000
+KINESIS_STREAM=sku-core-crawler-kinesis-stream
+LETT_MONGO_FETCHER_DATABASE=fetcher
+LETT_MONGO_FETCHER_HOST=mongodb0.lett.global, mongodb1.lett.global, mongodb2.lett.global
+LETT_MONGO_FETCHER_PASSWORD={{PASSWORD}}
+LETT_MONGO_FETCHER_PORT=27017
+LETT_MONGO_FETCHER_USERNAME=crawler
+LETT_MONGO_FROZEN_DATABASE=frozen
+LETT_MONGO_FROZEN_HOST=mongodb0.lett.global, mongodb1.lett.global, mongodb2.lett.global
+LETT_MONGO_FROZEN_PASSWORD={{PASSWORD}}
+LETT_MONGO_FROZEN_PORT=27017
+LETT_MONGO_FROZEN_USERNAME={{USERNAME}}
+LETT_MONGO_INSIGHTS_DATABASE=insights
+LETT_MONGO_INSIGHTS_HOST=mongodb0.lett.global, mongodb1.lett.global, mongodb2.lett.global
+LETT_MONGO_INSIGHTS_PASSWORD={{PASSWORD}}
+LETT_MONGO_INSIGHTS_PORT=27017
+LETT_MONGO_INSIGHTS_USERNAME={{USERNAME}}
+LETT_MONGO_PANEL_DATABASE=panel
+LETT_MONGO_PANEL_HOST=localhost
+LETT_MONGO_PANEL_PASSWORD=pass
+LETT_MONGO_PANEL_PORT=27017
+LETT_MONGO_PANEL_USERNAME=manager
+LETT_POSTGRES_DATABASE=products
+LETT_POSTGRES_HOST=postgres-prod.lett.global
+LETT_POSTGRES_PASSWORD={{PASSWORD}}
+LETT_POSTGRES_PORT=5432
+LETT_POSTGRES_USERNAME={{USERNAME}}
+LOGS_BUCKET_NAME=lett-webscraper-htmls-dev
+USE_FETCHER=false
+S3_BATCH_USER=lett
+S3_BATCH_HOST=s3-batch.lett.global
+S3_BATCH_REMOTE_LOCATION=/s3_buckets/batch
+SSH_KEYS_BUCKET=lett-ssh-keys
+S3_BATCH_PASS=QRCLGxAv_DC7QYLyop*-7yi6sjFQ3wwFdPQyapgfdPu2rpmR_b
+ATTEMPTS_FOR_EACH_PROXY=2
+CHROME_PATH={{CHROME_DRIVE_PATH}}
+HTML_PATH={{HTML_SAVE_PATH}}
+DEBUG=true
 ```
 
-## Running the tests
 
-https://www.notion.so/lett/Crawler-1d6ce7a0dee94de686c8f2458a3f810f
+4 - Run command in terminal to create a aplication run configuration file:
 
+```bash
+$ cp src/java/br/com/lett/crawlernode/test/example.env src/java/br/com/lett/crawlernode/test/test.env
+```
+
+5 - Open the test.env file and define test arguments:
+
+![img.png](public/test_config.png)
+
+> NOTE: The test type can be 'CORE', 'KEYWORDS' for ranking crawler or 'DISCOVERY'. 
+
+> NOTE 2: If you set 'CORE', you need change product URL in the [Test class](https://github.com/lettdigital/webcrawler-node/blob/master/src/java/br/com/lett/crawlernode/test/Test.java#L105) to correct scrap the page
 
 ### And coding style tests
 
@@ -200,9 +238,13 @@ Use tag [deploy:Production] in your commit for deploy changes, but this only can
 
 ## Authors
 
-Fabricio Massula
-Samir Leão
-Gabriel Dornelas
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/gabrieldta"><img style="border-radius: 50%;" src="https://avatars.githubusercontent.com/u/32084671?v=4" width="100px;" alt=""/><br /><sub><b>Gabriel Dornelas</b></sub></a><br />💻</td>
+    <td align="center"><a href="https://github.com/BuSSoLoTTi"><img style="border-radius: 50%;" src="https://avatars.githubusercontent.com/u/48037434?v=4" width="100px;" alt=""/><br /><sub><b>BuSSoLoTTi</b></sub></a><br />💻</td>
+    <td align="center"><a href="https://github.com/tscientist"><img style="border-radius: 50%;" src="https://avatars.githubusercontent.com/u/13973947?v=4" width="100px;" alt=""/><br /><sub><b>Caroline Evangelista</b></sub></a><br />💻</td>
+  </tr>
+</table>
 
 ## Acknowledgments
 
