@@ -1,61 +1,97 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilMadeiramadeiraCrawler extends CrawlerRankingKeywords {
+   private static final String API_URL = "https://2zx4gyqyq3-dsn.algolia.net/1/indexes/*/queries?x-algolia-api-key=fb6a5bbf551a9aedb1760a4ddaf87ab4&x-algolia-application-id=2ZX4GYQYQ3";
+   private static Integer productsTotal;
 
-  public BrasilMadeiramadeiraCrawler(Session session) {
+   public BrasilMadeiramadeiraCrawler(Session session) {
     super(session);
   }
 
-   private JSONArray extractJSONFromHTML(){
-      JSONArray jsonProducts = new JSONArray();
+   protected JSONObject fetch() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Content-Type", "application/json");
+      headers.put("Accept-Encoding","gzip, deflate, br");
+      headers.put("Connection","keep-alive");
+      Integer page = this.currentPage - 1;
 
-      Elements scripts = this.currentDoc.select("head script");
-      for (Element e: scripts){
-         if(e.html() != null && e.html().contains("window.segment_data =")){
-            String json = e.html().split("window.segment_data =")[1];
-            JSONObject rawJson = CrawlerUtils.stringToJson(json.replace(";",""));
-            jsonProducts = rawJson.optJSONArray("products");
-         }
-      }
-      return jsonProducts;
+      String payload = "{\n" +
+         "    \"requests\": [\n" +
+         "        {\n" +
+         "            \"indexName\": \"vr-prod-poc-madeira-best-seller-desc\",\n" +
+         "            \"params\": \"\",\n" +
+         "            \"query\": \""+ this.keywordEncoded + "\",\n" +
+         "            \"page\": " + page + "\n" +
+         "        }\n" +
+         "    ]\n" +
+         "}";
+
+      Request request = Request.RequestBuilder.create().setUrl(API_URL)
+         .setPayload(payload)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setSendUserAgent(false)
+         .build();
+
+      Response response = new JsoupDataFetcher().post(session, request);
+      JSONObject jsonBody = CrawlerUtils.stringToJson(response.getBody());
+      this.productsTotal = JSONUtils.getValueRecursive(jsonBody, "results.0.nbSortedHits", Integer.class);
+
+      return jsonBody;
    }
 
   @Override
-  protected void extractProductsFromCurrentPage() {
+  protected void extractProductsFromCurrentPage() throws MalformedProductException {
     this.pageSize = 36;
 
     this.log("Página " + this.currentPage);
-    String url = "https://www.madeiramadeira.com.br/busca?page="+ this.currentPage + "&q=" + this.keywordEncoded;
 
-    this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url);
+     JSONObject jsonResponse = fetch();
+     JSONArray products = JSONUtils.getValueRecursive(jsonResponse, "results.0.hits", JSONArray.class);
 
-    JSONArray products = extractJSONFromHTML();
-
-    if (!products.isEmpty()) {
-
+    if (products != null && !products.isEmpty()) {
       if (this.totalProducts == 0) {
         setTotalProducts();
       }
 
       for (Object o : products) {
-         JSONObject product = (JSONObject) o;
+        JSONObject product = (JSONObject) o;
 
-        String internalPid = product.optString("product_id");
+        String internalPid = product.optString("id_produto");
+        String name = product.optString("nome");
         String productUrl = CrawlerUtils.completeUrl(product.optString("url"), "https:", "www.madeiramadeira.com.br");
+        JSONObject priceDouble = JSONUtils.getValueRecursive(product, "mini_buy_box.0", JSONObject.class);
+        Integer price = (int) Math.round((priceDouble.optDouble("preco_promocional") * 100));
+        boolean isAvailable = !product.optBoolean("out_of_stock");
+        JSONArray images = product.optJSONArray("imagens");
+        String imgUrl = (images.length() > 0) ? images.get(0).toString() : null;
 
-        saveDataProduct(null, internalPid, productUrl);
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setImageUrl(imgUrl)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: "
-            + internalPid + " - Url: " + productUrl);
+         saveDataProduct(productRanking);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
@@ -73,6 +109,9 @@ public class BrasilMadeiramadeiraCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return this.currentDoc.selectFirst("#pagination-progress-page") != null;
+      if (this.productsTotal != null && this.arrayProducts.size() < this.productsTotal) {
+         return true;
+      }
+      return false;
    }
 }
