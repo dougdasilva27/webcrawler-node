@@ -356,7 +356,6 @@ public class BrasilSitemercadoCrawler extends Crawler {
       jsonObject.put("IdLoja", lojaInfo.get("IdLoja"));
       jsonObject.put("IdRede", lojaInfo.get("IdRede"));
       headers.put("sm-token", jsonObject.toString());
-      headers.put("sm-mmc", responseHeaders.get("sm-mmc"));
       headers.put(HttpHeaders.ACCEPT_LANGUAGE, "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7");
       Request requestApi = RequestBuilder.create()
          .setUrl(url)
