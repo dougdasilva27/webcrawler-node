@@ -640,7 +640,7 @@ public class Persistence {
             p.setUrl(record.get(processed.URL));
             p.setLrt(record.get(processed.LRT));
             p.setOriginalName(record.get(processed.ORIGINAL_NAME));
-            p.setPrice(record.get(processed.PRICE).floatValue());
+            p.setPrice(record.get(processed.PRICE) != null ? record.get(processed.PRICE).floatValue() : null);
             p.setAvailable(record.get(processed.AVAILABLE));
             p.setPic(record.get(processed.PIC));
 
@@ -707,7 +707,7 @@ public class Persistence {
             p.setVoid(record.get(processed.STATUS).equalsIgnoreCase("void"));
             p.setUrl(record.get(processed.URL));
             p.setOriginalName(record.get(processed.ORIGINAL_NAME));
-            p.setPrice(record.get(processed.PRICE).floatValue());
+            p.setPrice(record.get(processed.PRICE) != null ? record.get(processed.PRICE).floatValue() : null);
             p.setAvailable(record.get(processed.AVAILABLE));
             p.setPic(record.get(processed.PIC));
 
@@ -775,10 +775,9 @@ public class Persistence {
             p.setVoid(record.get(processed.STATUS).equalsIgnoreCase("void"));
             p.setUrl(record.get(processed.URL));
             p.setOriginalName(record.get(processed.ORIGINAL_NAME));
-            p.setPrice(record.get(processed.PRICE).floatValue());
+            p.setPrice(record.get(processed.PRICE) != null ? record.get(processed.PRICE).floatValue() : null);
             p.setAvailable(record.get(processed.AVAILABLE));
             p.setPic(record.get(processed.PIC));
-
 
             if (masterId != null) {
                p.setId(record.get(processed.MASTER_ID));
