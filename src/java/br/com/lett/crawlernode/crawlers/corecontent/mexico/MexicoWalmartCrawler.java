@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
@@ -59,8 +60,8 @@ public class MexicoWalmartCrawler extends Crawler {
             JSONObject sku = (JSONObject) object;
 
             String name = crawlName(sku);
-            String primaryImage = crawlPrimaryImage(internalId);
-            String secondaryImages = crawlSecondaryImages(internalId);
+            String primaryImage = CrawlerUtils.completeUrl(JSONUtils.getValueRecursive(sku, "images.large", String.class), "https", "res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/mg/");
+            List<String> secondaryImages = crawlSecondaryImages(sku);
             String description = crawlDescription(sku);
             Integer stock = null;
             String ean = scrapEan(sku);
@@ -165,29 +166,22 @@ public class MexicoWalmartCrawler extends Crawler {
       return name;
    }
 
-   private String crawlPrimaryImage(String id) {
 
-      return "https://www.walmart.com.mx/images/product-images/img_large/" + id + "L.jpg";
-   }
+   private  List<String> crawlSecondaryImages(JSONObject sku) {
+      List<String> secondaryImages = new ArrayList<>();
+      JSONArray secondaryImagesArray = sku.optJSONArray("secondaryImages");
 
-   private String crawlSecondaryImages(String id) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+      for (Object o : secondaryImagesArray) {
+         if (o instanceof  JSONObject){
+            JSONObject imageJson = (JSONObject) o;
+            String img = imageJson.optString("large");
+            if (img != null){
+               secondaryImages.add(CrawlerUtils.completeUrl(imageJson.optString("large"), "https", "res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/mg/"));
+            }
 
-      for (int i = 1; i < 4; i++) {
-         String img = "https://super.walmart.com.mx/images/product-images/img_large/" + id + "L" + i + ".jpg";
-         Request request = RequestBuilder.create().setUrl(img).setCookies(cookies).build();
-         RequestsStatistics resp = CommonMethods.getLast(this.dataFetcher.get(session, request).getRequests());
-
-         if (resp != null && resp.getStatusCode() > 0 && resp.getStatusCode() < 400) {
-            secondaryImagesArray.put(img);
-         }
+        }
       }
 
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
 
       return secondaryImages;
    }
