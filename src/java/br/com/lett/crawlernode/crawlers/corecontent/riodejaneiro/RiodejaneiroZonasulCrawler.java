@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -27,7 +28,6 @@ public class RiodejaneiroZonasulCrawler extends VTEXNewScraper {
    public RiodejaneiroZonasulCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
-      //  super.config.setParser(Parser.HTML);
    }
 
    @Override
