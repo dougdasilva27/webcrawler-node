@@ -199,6 +199,10 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       Integer totalNumOfEvaluations = JSONUtils.getValueRecursive(product, "rating.rate.count", Integer.class);
       Double avgRating = JSONUtils.getValueRecursive(product, "rating.rate.average", Double.class);
 
+      if (avgRating == null) {
+         return ratingReviews;
+      }
+
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
