@@ -23,6 +23,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PricesmartCrawler extends Crawler {
 
@@ -35,19 +37,17 @@ public class PricesmartCrawler extends Crawler {
    }
 
 
-
-
    @Override
    protected Object fetch() {
 
       String club_id = session.getOptions().optString("club_id");
       String country = session.getOptions().optString("country");
 
-      Map<String,String> headers = new HashMap<>();
-      headers.put("Cookie", "userPreferences=country=" +country+ "&selectedClub=" + club_id + "&lang=es");
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Cookie", "userPreferences=country=" + country + "&selectedClub=" + club_id + "&lang=es");
 
       Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setHeaders(headers).build();
-      String response = this.dataFetcher.get(session,request).getBody();
+      String response = this.dataFetcher.get(session, request).getBody();
 
       return Jsoup.parse(response);
 
@@ -64,8 +64,8 @@ public class PricesmartCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "#itemNumber", false);
          String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-name-item", false);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,".pdp-main-image", Arrays.asList("src"), "http://","pim-img-psmt1.aeropost.com");
-         String secondaryImage = CrawlerUtils.scrapSimpleSecondaryImages(doc,".product-thumb img", Arrays.asList("src"), "http://","pim-img-psmt1.aeropost.com", primaryImage);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".pdp-main-image", Arrays.asList("src"), "http://", "pim-img-psmt1.aeropost.com");
+         String secondaryImage = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-thumb img", Arrays.asList("src"), "http://", "pim-img-psmt1.aeropost.com", primaryImage);
 
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#collapseOne .card-body", true);
          Integer stock = null;
@@ -75,7 +75,7 @@ public class PricesmartCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
+            .setUrl(updateUrl(this.session.getOriginalURL()))
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
@@ -93,6 +93,18 @@ public class PricesmartCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private String updateUrl(String url) {
+      String regex = "/site/(..)/es";
+      String updatedUrl = url;
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(url);
+
+      if (matcher.find()) {
+         updatedUrl = url.replace(matcher.group(1),session.getOptions().optString("country"));
+      }
+      return updatedUrl;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -125,7 +137,7 @@ public class PricesmartCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,"#product-price",null,false,'.',session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#product-price", null, false, '.', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
