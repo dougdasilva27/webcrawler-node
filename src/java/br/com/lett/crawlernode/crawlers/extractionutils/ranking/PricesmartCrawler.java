@@ -43,7 +43,7 @@ public class PricesmartCrawler extends CrawlerRankingKeywords {
       this.pageSize = 30;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.pricesmart.com/site/pa/es/busqueda?_sq="+this.keywordEncoded+ "&r75_r1_r1_r1:page="+this.currentPage+"&r75_r1_r1_r1:_sps=12";
+      String url = "https://www.pricesmart.com/site/"+ session.getOptions().optString("country") + "/es/busqueda?_sq="+this.keywordEncoded+ "&r75_r1_r1_r1:page="+this.currentPage+"&r75_r1_r1_r1:_sps=12";
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".search-product-box");
