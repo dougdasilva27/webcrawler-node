@@ -1,46 +1,49 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.RankingProduct;
-import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 import java.util.*;
 
 public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
-   JSONArray products;
+   Integer products;
 
    public BrasilAdegaOnlineCrawler(Session session) {
       super(session);
    }
 
-   protected Document fetch(String url) {
-      Map<String, String> headers = new HashMap<>();
+   protected Document fetch() {
+      Integer pageNumber = this.currentPage - 1;
 
-      headers.put("Accept","text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("Accept-Encoding","gzip");
-      headers.put("Connection","keep-alive");
+      String url = "https://www.adegaonline.com.br/search?q=" + this.keywordEncoded + "&type=product&page=" + pageNumber;
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setSendUserAgent(false)
-         .build();
+      webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
 
-      Response a = this.dataFetcher.get(session, request);
+      webdriver.waitLoad(20000);
 
-      String content = a.getBody();
-      return Jsoup.parse(content);
+      WebElement ageVerificationButton = webdriver.driver.findElement(By.cssSelector("#agp_row > div > div > div.agp__inputContainer > div > form:nth-child(1) > input"));
+      webdriver.clickOnElementViaJavascript(ageVerificationButton);
+      webdriver.waitLoad(20000);
+
+      webdriver.waitForElement(".ProductList--grid div.ProductItem", 30);
+      webdriver.waitPageLoad(20);
+
+      Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+      this.products = scrapTotalProducts(doc);
+
+      return doc;
    }
 
    @Override
@@ -48,35 +51,33 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.adegaonline.com.br/search?q=" + this.keywordEncoded + "&type=product&page=" + this.currentPage;
+      this.currentDoc = fetch();
 
-      Document doc = fetch(url);
+      if (this.currentDoc.selectFirst("div.ProductListWrapper") != null) {
+         Elements products = this.currentDoc.select(".ProductList--grid div.Grid__Cell");
 
-      if (doc.selectFirst("#bold-subscriptions-platform-script") != null) {
-         JSONArray scriptJson = scrapJsonFromScript(doc);
+         if (!products.isEmpty()) {
+            for (Element e : products) {
 
-         products = sortPositions(scriptJson);
+               String name = CrawlerUtils.scrapStringSimpleInfo(e, ".ProductItem__Title", false);
+               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.Grid__Cell", "data-id");
+               Double price = CrawlerUtils.scrapDoublePriceFromHtml(e, "span.ProductItem__Price", null, true, ',', session);
+               Integer priceInCents = (int) Math.round((price * 100));
+               Boolean available = (e.select("ProductItem__Label--sold-off").isEmpty()) ? true : false;//arrumar
+               String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "img.ProductItem__Image", Arrays.asList("srcset"), "https", "https://cdn.shopify.com/");
+               String productUrl = scrapUrl(e);
 
-         for (Object o: products) {
-            JSONObject product = (JSONObject) o;
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setName(name)
+                  .setImageUrl(imgUrl)
+                  .setPriceInCents(priceInCents)
+                  .setAvailability(available)
+                  .build();
 
-            String name = product.optString("title");
-            Long internalId = product.optLong("id");
-            Integer price = product.optInt("price");
-            Boolean available = product.optBoolean("available");
-            String imgUrl = scrapImg(product);
-            String productUrl = scrapUrl(product);
-
-            RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(productUrl)
-               .setInternalId(internalId.toString())
-               .setName(name)
-               .setImageUrl(imgUrl)
-               .setPriceInCents(price)
-               .setAvailability(available)
-               .build();
-
-            saveDataProduct(productRanking);
+               saveDataProduct(productRanking);
+            }
          }
          this.log("Keyword com resultado!");
       } else {
@@ -86,50 +87,28 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   private String scrapUrl(Element e) {
+      String urlFullPath = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a.ProductItem__ImageWrapper", "href");
+      String [] urlPath = (urlFullPath != null) ? urlFullPath.split("/") : null;
 
-   private String scrapUrl(JSONObject product) {
-      return "https://www.adegaonline.com.br/products/" + product.optString("handle");
-   }
-
-   private String scrapImg(JSONObject product) {
-      return "https:" + JSONUtils.getValueRecursive(product, "images.0", String.class);
-   }
-
-   private JSONArray scrapJsonFromScript(Document doc) {
-      Element script = doc.selectFirst("#bold-subscriptions-platform-script");
-      List <String> jsonWithoutScriptFront = List.of(script.toString().split("concat\\("));
-      List <String> jsonWithoutScriptBack = new ArrayList<>();
-      String json = null;
-
-      if (jsonWithoutScriptFront != null && jsonWithoutScriptFront.size() > 0) {
-         jsonWithoutScriptBack = List.of(jsonWithoutScriptFront.get(1).split("\\);"));
+      if (urlPath != null) {
+         return "https://www.adegaonline.com.br/products/" + urlPath[urlPath.length - 1];
       }
 
-      if (jsonWithoutScriptBack != null && !jsonWithoutScriptBack.isEmpty()) {
-         json = jsonWithoutScriptBack.get(0);
-      }
-
-      return new JSONArray(json);
+      return null;
    }
 
-   private JSONArray sortPositions(JSONArray disorderedProducts) {
-      JSONArray sortedProducts = new JSONArray();
-      Integer position = 1;
+   private Integer scrapTotalProducts(Element e) {
+      String totalProducts = CrawlerUtils.scrapStringSimpleInfo(e, ".boost-pfs-search-result-panel-item > button", false);
 
-      for (Object product : disorderedProducts) {
-         Integer productPosition = JSONUtils.getValueRecursive(product, "media.0.position", Integer.class);
+      totalProducts = totalProducts.replaceAll("[^0-9]", "");
 
-         if (productPosition != null && productPosition == position) {
-            sortedProducts.put(product);
-            position++;
-         }
-      }
-      return disorderedProducts;
+      return Integer.parseInt(totalProducts);
    }
 
    @Override
    protected boolean hasNextPage() {
-      if (this.products != null && this.totalProducts < this.products.length()) {
+      if (this.products != null && this.totalProducts < this.products) {
          return true;
       }
       return false;
