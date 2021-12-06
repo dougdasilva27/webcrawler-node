@@ -32,15 +32,17 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
       try {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
 
-         webdriver.waitLoad(20000);
+         webdriver.waitLoad(30000);
 
          WebElement ageVerificationButton = webdriver.driver.findElement(By.cssSelector("#agp_row > div > div > div.agp__inputContainer > div > form:nth-child(1) > input"));
          webdriver.clickOnElementViaJavascript(ageVerificationButton);
+         webdriver.waitLoad(20000);
 
          webdriver.waitForElement(".ProductList--grid div.ProductItem", 30);
          webdriver.waitPageLoad(20);
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         webdriver.terminate();
 
          this.products = scrapTotalProducts(doc);
       } catch (Exception e) {
@@ -58,7 +60,7 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
 
       this.currentDoc = fetch();
 
-      if (this.currentDoc.selectFirst("div.ProductListWrapper") != null) {
+      if (this.currentDoc != null && this.currentDoc.selectFirst("div.ProductListWrapper") != null) {
          Elements products = this.currentDoc.select(".ProductList--grid div.Grid__Cell");
 
          if (!products.isEmpty()) {
