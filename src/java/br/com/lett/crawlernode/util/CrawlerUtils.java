@@ -17,9 +17,8 @@ import com.google.gson.JsonParser;
 import exceptions.MalformedPricingException;
 import models.*;
 import models.prices.Prices;
-import models.pricing.BankSlip;
+import models.pricing.*;
 import models.pricing.BankSlip.BankSlipBuilder;
-import models.pricing.Pricing;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -2280,6 +2279,34 @@ public class CrawlerUtils {
 
       }
       return result;
+   }
+
+   /**
+    * get a list of installment for each Credit Card based only on spotlightPrice
+    * @param spotlightPrice Double
+    * @param cards Set<String> of all cards
+    * @return CreditCards
+    */
+
+   public static CreditCards scrapCreditCards(Double spotlightPrice, Set<String> cards) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
    }
 
 
