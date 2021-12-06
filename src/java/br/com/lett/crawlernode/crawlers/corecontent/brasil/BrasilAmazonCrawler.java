@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
@@ -35,6 +36,11 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -71,7 +77,7 @@ public class BrasilAmazonCrawler extends Crawler {
    }
 
 
-   private String requestMethod (String url) {
+   private String requestMethod(String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "gzip, deflate, br");
       headers.put("authority", "www.amazon.com.br");
@@ -356,37 +362,44 @@ public class BrasilAmazonCrawler extends Crawler {
 
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
-            Elements ofertas = offerPage.select("#aod-offer");
-            for (Element oferta : ofertas) {
+            String a = CrawlerUtils.scrapStringSimpleInfoByAttribute(offerPage, "#h a img", "alt");
+            if (true) {
+               offerPage = fetchDocumentWithWD();
+               //a != null && a.contains("Desculpe")
+            }
 
-               String name = scrapSellerName(oferta).trim();
+               Elements ofertas = offerPage.select("#aod-offer");
+               for (Element oferta : ofertas) {
 
-               Pricing pricing = scrapSellersPagePricing(oferta);
-               String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
+                  String name = scrapSellerName(oferta).trim();
 
-               String sellerId = scrapSellerIdByUrl(sellerUrl);
+                  Pricing pricing = scrapSellersPagePricing(oferta);
+                  String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
 
-               boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
+                  String sellerId = scrapSellerIdByUrl(sellerUrl);
 
-               if (sellerId == null) {
-                  sellerId = CommonMethods.toSlug(SELLER_NAME);
-               }
+                  boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
 
-               if (!offers.contains(sellerId)){
+                  if (sellerId == null) {
+                     sellerId = CommonMethods.toSlug(SELLER_NAME);
+                  }
 
-                  offers.add(OfferBuilder.create()
-                     .setInternalSellerId(sellerId)
-                     .setSellerFullName(name)
-                     .setSellersPagePosition(pos)
-                     .setIsBuybox(false)
-                     .setIsMainRetailer(isMainRetailer)
-                     .setPricing(pricing)
-                     .build());
+                  if (!offers.contains(sellerId)) {
 
-                  pos++;
+                     offers.add(OfferBuilder.create()
+                        .setInternalSellerId(sellerId)
+                        .setSellerFullName(name)
+                        .setSellersPagePosition(pos)
+                        .setIsBuybox(false)
+                        .setIsMainRetailer(isMainRetailer)
+                        .setPricing(pricing)
+                        .build());
+
+                     pos++;
+                  }
                }
             }
-         }
+
       }
       return offers;
    }
@@ -711,4 +724,40 @@ public class BrasilAmazonCrawler extends Crawler {
       return ean != null ? new ArrayList<>(Arrays.asList(ean.split(","))) : null;
 
    }
+
+
+   protected Document fetchDocumentWithWD() {
+      Document doc = null;
+
+      try {
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
+
+         Logging.printLogInfo(logger, session, "awaiting product page load");
+
+         webdriver.waitLoad(2000);
+
+         webdriver.waitForElement(".a-icon.a-icon-arrow.a-icon-small.arrow-icon", 2000);
+
+         WebElement buyButtom = webdriver.driver.findElement(By.cssSelector(".a-icon.a-icon-arrow.a-icon-small.arrow-icon"));
+         webdriver.clickOnElementViaJavascript(buyButtom);
+
+         webdriver.waitForElement("#aod-offer-list", 2000);
+
+         doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+         return doc;
+
+      } catch (Exception e) {
+         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
+
+      }
+
+      return doc;
+   }
+
+   public static void waitForElement(WebDriver driver, String cssSelector) {
+      WebDriverWait wait = new WebDriverWait(driver, 90);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+   }
+
 }
