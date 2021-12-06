@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -35,15 +36,17 @@ public class BrasilLojacolgateCrawler extends Crawler {
    @Override
    protected Object fetch() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", "JSESSIONID=F1648205CBA7A84ED93C6D4802CA07E8;");
+      //expiration Tue Dec 06 2022 14:41:08 GMT-0300 (Brasilia Standard Time)
+      headers.put("Cookie", "JSESSIONID=0BD0DC3D1C1F4B4A476741F94CE55E5A;");
 
       Request request = RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setHeaders(headers)
-            .setProxyservice(Arrays.asList(
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR,
-                  ProxyCollection.INFATICA_RESIDENTIAL_BR))
-            .build();
+         .setUrl(session.getOriginalURL())
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY
+         ))
+         .build();
 
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
@@ -72,15 +75,49 @@ public class BrasilLojacolgateCrawler extends Crawler {
             Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".js-variant-price", null, false, ',', session);
             Prices prices = scrapPrices(doc, price);
             Integer stock = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, "[id*=productMaxQty-]", "data-max", 0);
-            boolean available = doc.selectFirst("#outofstock.hidden") != null;
+            boolean available = checkIfIsAvailable(doc);
             List<String> eans = Arrays.asList(internalId);
 
             // Creating the product
             Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPrice(price)
+               .setPrices(prices)
+               .setAvailable(available)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setStock(stock)
+               .setEans(eans)
+               .setRatingReviews(ratingsReviews)
+               .build();
+
+            products.add(product);
+
+         } else {
+            for (Element sku : variations) {
+
+               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sku, null, "value");
+               String internalPid = null;
+               String variationName = sku.hasText() ? name + " - " + sku.text().split("-")[0].trim() : name;
+               Float price = CrawlerUtils.scrapFloatPriceFromHtml(sku, null, "data-formatted", false, ',', session);
+               Prices prices = scrapVariationPrices(sku, price);
+               Integer stock = CrawlerUtils.scrapIntegerFromHtmlAttr(sku, null, "data-maxqty", 0);
+               boolean available = checkIfIsAvailable(doc);
+               List<String> eans = Arrays.asList(internalId);
+
+               // Creating the product
+               Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
                   .setInternalId(internalId)
                   .setInternalPid(internalPid)
-                  .setName(name)
+                  .setName(variationName)
                   .setPrice(price)
                   .setPrices(prices)
                   .setAvailable(available)
@@ -95,40 +132,6 @@ public class BrasilLojacolgateCrawler extends Crawler {
                   .setRatingReviews(ratingsReviews)
                   .build();
 
-            products.add(product);
-
-         } else {
-            for (Element sku : variations) {
-
-               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sku, null, "value");
-               String internalPid = null;
-               String variationName = sku.hasText() ? name + " - " + sku.text().split("-")[0].trim() : name;
-               Float price = CrawlerUtils.scrapFloatPriceFromHtml(sku, null, "data-formatted", false, ',', session);
-               Prices prices = scrapVariationPrices(sku, price);
-               Integer stock = CrawlerUtils.scrapIntegerFromHtmlAttr(sku, null, "data-maxqty", 0);
-               boolean available = !sku.attr("data-stock").equalsIgnoreCase("outOfStock");
-               List<String> eans = Arrays.asList(internalId);
-
-               // Creating the product
-               Product product = ProductBuilder.create()
-                     .setUrl(session.getOriginalURL())
-                     .setInternalId(internalId)
-                     .setInternalPid(internalPid)
-                     .setName(variationName)
-                     .setPrice(price)
-                     .setPrices(prices)
-                     .setAvailable(available)
-                     .setCategory1(categories.getCategory(0))
-                     .setCategory2(categories.getCategory(1))
-                     .setCategory3(categories.getCategory(2))
-                     .setPrimaryImage(primaryImage)
-                     .setSecondaryImages(secondaryImages)
-                     .setDescription(description)
-                     .setStock(stock)
-                     .setEans(eans)
-                     .setRatingReviews(ratingsReviews)
-                     .build();
-
                products.add(product);
             }
          }
@@ -139,6 +142,9 @@ public class BrasilLojacolgateCrawler extends Crawler {
       return products;
    }
 
+   private boolean checkIfIsAvailable(Document doc) {
+      return doc.select("#outofstock").hasClass("hidden");
+   }
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".page-productDetails") != null;
    }
