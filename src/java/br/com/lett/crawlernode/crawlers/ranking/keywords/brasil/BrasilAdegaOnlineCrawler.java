@@ -6,7 +6,9 @@ import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -28,10 +30,22 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
       Document doc = null;
 
       try {
-         doc = scrapProductsWebdriver(url);
-      } catch (Error err) {
-         this.log("Erro ao tentar achar elemento no webdriver. Tentando novamente. " + err);
-         doc = scrapProductsWebdriver(url);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+
+         webdriver.waitLoad(20000);
+
+         WebElement ageVerificationButton = webdriver.driver.findElement(By.cssSelector("#agp_row > div > div > div.agp__inputContainer > div > form:nth-child(1) > input"));
+         webdriver.clickOnElementViaJavascript(ageVerificationButton);
+
+         webdriver.waitForElement(".ProductList--grid div.ProductItem", 30);
+         webdriver.waitPageLoad(20);
+
+         doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+         this.products = scrapTotalProducts(doc);
+      } catch (Exception e) {
+         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
+
       }
 
       return doc;
@@ -103,22 +117,5 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
          return true;
       }
       return false;
-   }
-
-   protected Document scrapProductsWebdriver(String url) {
-      webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
-
-      webdriver.waitLoad(20000);
-
-      WebElement ageVerificationButton = webdriver.driver.findElement(By.cssSelector("#agp_row > div > div > div.agp__inputContainer > div > form:nth-child(1) > input"));
-      webdriver.clickOnElementViaJavascript(ageVerificationButton);
-
-      webdriver.waitForElement(".ProductList--grid div.ProductItem", 30);
-      webdriver.waitPageLoad(20);
-
-      Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
-      this.products = scrapTotalProducts(doc);
-      return doc;
    }
 }
