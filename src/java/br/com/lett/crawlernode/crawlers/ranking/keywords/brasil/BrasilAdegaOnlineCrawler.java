@@ -24,24 +24,15 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
    }
 
    protected Document fetch() {
-      Integer pageNumber = this.currentPage - 1;
+      String url = "https://www.adegaonline.com.br/search?q=" + this.keywordEncoded + "&type=product&page=" + this.currentPage;
+      Document doc = null;
 
-      String url = "https://www.adegaonline.com.br/search?q=" + this.keywordEncoded + "&type=product&page=" + pageNumber;
-
-      webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
-
-      webdriver.waitLoad(20000);
-
-      WebElement ageVerificationButton = webdriver.driver.findElement(By.cssSelector("#agp_row > div > div > div.agp__inputContainer > div > form:nth-child(1) > input"));
-      webdriver.clickOnElementViaJavascript(ageVerificationButton);
-      webdriver.waitLoad(20000);
-
-      webdriver.waitForElement(".ProductList--grid div.ProductItem", 30);
-      webdriver.waitPageLoad(20);
-
-      Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
-      this.products = scrapTotalProducts(doc);
+      try {
+         doc = scrapProductsWebdriver(url);
+      } catch (Error err) {
+         this.log("Erro ao tentar achar elemento no webdriver. Tentando novamente. " + err);
+         doc = scrapProductsWebdriver(url);
+      }
 
       return doc;
    }
@@ -112,5 +103,22 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
          return true;
       }
       return false;
+   }
+
+   protected Document scrapProductsWebdriver(String url) {
+      webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+
+      webdriver.waitLoad(20000);
+
+      WebElement ageVerificationButton = webdriver.driver.findElement(By.cssSelector("#agp_row > div > div > div.agp__inputContainer > div > form:nth-child(1) > input"));
+      webdriver.clickOnElementViaJavascript(ageVerificationButton);
+
+      webdriver.waitForElement(".ProductList--grid div.ProductItem", 30);
+      webdriver.waitPageLoad(20);
+
+      Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+      this.products = scrapTotalProducts(doc);
+      return doc;
    }
 }
