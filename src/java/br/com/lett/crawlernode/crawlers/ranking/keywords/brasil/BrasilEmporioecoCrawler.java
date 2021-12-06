@@ -31,8 +31,7 @@ public class BrasilEmporioecoCrawler extends CrawlerRankingKeywords {
       if(!products.isEmpty()) {
          for(Element product : products) {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".woocommerce-loop-product__link", "href");
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".wrap-addto a", "data-product_sku");
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".wrap-addto a", "data-product_id");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".wrap-addto a", "data-product_id");
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".product_item--title > a", true);
             Integer price = CrawlerUtils.scrapIntegerFromHtml(product, ".woocommerce-Price-amount", false, 0);
             String image = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "img", "src");
@@ -41,7 +40,6 @@ public class BrasilEmporioecoCrawler extends CrawlerRankingKeywords {
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalPid(internalPid)
-               .setInternalId(internalId)
                .setName(productName)
                .setPriceInCents(price)
                .setImageUrl(image)
