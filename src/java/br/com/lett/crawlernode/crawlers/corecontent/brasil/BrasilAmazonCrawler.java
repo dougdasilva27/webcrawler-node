@@ -362,10 +362,9 @@ public class BrasilAmazonCrawler extends Crawler {
 
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
-            String a = CrawlerUtils.scrapStringSimpleInfoByAttribute(offerPage, "#h a img", "alt");
-            if (true) {
+            String block = CrawlerUtils.scrapStringSimpleInfoByAttribute(offerPage, "#h a img", "alt");
+            if (block != null && block.contains("Desculpe")) {
                offerPage = fetchDocumentWithWD();
-               //a != null && a.contains("Desculpe")
             }
 
                Elements ofertas = offerPage.select("#aod-offer");
