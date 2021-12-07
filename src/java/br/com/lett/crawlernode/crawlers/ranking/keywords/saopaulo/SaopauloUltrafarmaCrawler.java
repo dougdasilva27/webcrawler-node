@@ -38,7 +38,8 @@ public class SaopauloUltrafarmaCrawler extends CrawlerRankingKeywords {
         String name = CrawlerUtils.scrapStringSimpleInfo(e, "h3.product-name", false);
         String imgUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "img.lazy", "data-original");
         Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e,".product-price-sell", "data-preco", false, ',', session, 0);
-        Boolean isAvailable = price != null;
+        String soldOutMessage = CrawlerUtils.scrapStringSimpleInfo(e, ".product-price-unavailable", false);
+        Boolean isAvailable = soldOutMessage != null;
 
         RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(productUrl)
