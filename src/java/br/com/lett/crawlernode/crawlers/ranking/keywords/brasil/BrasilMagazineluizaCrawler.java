@@ -53,6 +53,8 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
             .setUrl(url)
             .setProxyservice(Arrays.asList(
                ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
@@ -98,7 +100,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
-      Elements elements = this.currentDoc.select(".kEElhN li");
+      Elements elements = this.currentDoc.select("div[data-testid='product-list'] li");
 
       if (!elements.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -106,10 +108,10 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
          }
          for (Element e : elements) {
 
-            String urlProduct = CrawlerUtils.scrapUrl(e, ".sc-kdneuM a", "href", "https", "www.magazineluiza.com.br");
+            String urlProduct = CrawlerUtils.scrapUrl(e, "> a", "href", "https", "www.magazineluiza.com.br");
             String internalId = getProductId(urlProduct);
-            String imageUrl = CrawlerUtils.scrapUrl(e, ".sc-hiEfMO img", "src", "https", "a-static.mlcdn.com.br");
-            int price = CommonMethods.doublePriceToIntegerPrice(CrawlerUtils.scrapDoublePriceFromHtml(e, ".sc-hKwDye", null, true, ',', session), 0);
+            String imageUrl = CrawlerUtils.scrapUrl(e, "img", "src", "https", "a-static.mlcdn.com.br");
+            int price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "p[data-testid='price-value']", null,true, ',',session, 0);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "h2", true);
             boolean isAvailable = price != 0;
 
@@ -139,7 +141,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".sc-dyEwOs.dLynjr", true, 0);
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "div[data-testid='mod-searchheader'] p", true, 0);
       this.log("Total: " + this.totalProducts);
    }
 
