@@ -40,7 +40,7 @@ public class ChileFerretekCrawler extends CrawlerRankingKeywords {
             String productUrl = "https://herramientas.cl" + CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".card-body > a", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(product, ".card-body h6", true);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".card-body img", Collections.singletonList("src"), "https", "herramientas.cl");
-            Integer price = CrawlerUtils.scrapIntegerFromHtml(product, ".oe_currency_value", true, 0);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".oe_currency_value", null, true, ',', session, 0);
             boolean isAvailable = checkIfIsAvailable(product);
 
             RankingProduct productRanking = RankingProductBuilder.create()
