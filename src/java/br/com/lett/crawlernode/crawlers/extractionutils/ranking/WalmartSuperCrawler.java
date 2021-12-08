@@ -1,9 +1,14 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -19,36 +24,46 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
    String store_id = session.getOptions().optString("store_id");
 
    @Override
-   public void extractProductsFromCurrentPage() {
-      // número de produtos por página do market
-      this.pageSize = 20;
+   public void extractProductsFromCurrentPage() throws MalformedProductException {
+      this.pageSize = 10;
 
       this.log("Página " + this.currentPage);
-      String url = "https://super.walmart.com.mx/api/wmx/search/?Ntt=" + this.keywordEncoded + "&Nrpp=20&No=" + this.arrayProducts.size()
-         + "&storeId=" + store_id;
+      String url = "https://super.walmart.com.mx/api/assembler/v2/page/search?Ntt=" + this.keywordEncoded + "&No=" + (this.currentPage - 1) +
+         "&Nrpp=10&storeId=" + store_id + "&profileId=NA";
+
       this.log("Link onde são feitos os crawlers: " + url);
 
       JSONObject search = fetchJSONApi(url);
+      JSONObject resultList = JSONUtils.getValueRecursive(search, "appendix.ResultsList", JSONObject.class);
+      JSONArray products = resultList.optJSONArray("content");
 
-      if (search.has("records") && search.getJSONArray("records").length() > 0) {
-         JSONArray products = search.getJSONArray("records");
+      if (products != null && !products.isEmpty()) {
 
-         if (this.totalProducts == 0) {
-            setTotalProducts(search);
-         }
+         for (Object o : products) {
+            if (o instanceof JSONObject) {
+               JSONObject product = (JSONObject) o;
+               if (this.totalProducts == 0) {
+                  setTotalProducts(resultList);
+               }
 
-         for (int i = 0; i < products.length(); i++) {
-            JSONObject product = products.getJSONObject(i);
+               String productUrl = CrawlerUtils.completeUrl(product.optString("productSeoUrl"), "https", "super.walmart.com.mx");
+               String internalId = product.optString("id");
+               String name = product.optString("skuDisplayName");
+               String imageUrl = CrawlerUtils.completeUrl(JSONUtils.getValueRecursive(product, "imageUrls.small", String.class), "https", "super.walmart.com.mx");
+               int price = CommonMethods.doublePriceToIntegerPrice(product.optDouble("skuPrice"), 0);
+               boolean isAvailable = price != 0;
 
-            if (product.has("attributes")) {
-               JSONObject attributes = product.getJSONObject("attributes");
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setImageUrl(imageUrl)
+                  .build();
 
-               String productUrl = crawlProductUrl(attributes);
-               String internalId = crawlInternalId(attributes);
+               saveDataProduct(productRanking);
 
-               saveDataProduct(internalId, null, productUrl);
-
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
             }
 
             if (this.arrayProducts.size() == productsLimit) {
@@ -65,42 +80,14 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
    }
 
    protected void setTotalProducts(JSONObject search) {
-      if (search.has("totalNumRecs")) {
-         this.totalProducts = search.getInt("totalNumRecs");
+      if (search.has("totalElements")) {
+         this.totalProducts = search.getInt("totalElements");
          this.log("Total da busca: " + this.totalProducts);
       }
    }
 
-   private String crawlInternalId(JSONObject product) {
-      String internalId = null;
-
-      if (product.has("record.id")) {
-         JSONArray ids = product.getJSONArray("record.id");
-
-         if (ids.length() > 0) {
-            internalId = ids.get(0).toString();
-         }
-      }
-
-      return internalId;
-   }
-
-   private String crawlProductUrl(JSONObject product) {
-      String productUrl = null;
-
-      if (product.has("product.seoURL")) {
-         JSONArray urls = product.getJSONArray("product.seoURL");
-
-         if (urls.length() > 0) {
-            productUrl = "https://super.walmart.com.mx" + urls.get(0).toString().replace("[", "").replace("]", "");
-         }
-      }
-
-      return productUrl;
-   }
 
    private JSONObject fetchJSONApi(String url) {
-      JSONObject api = new JSONObject();
 
       String referer = "https://super.walmart.com.mx/productos?Ntt=" + this.keywordEncoded;
 
@@ -116,29 +103,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
       headers.put("Cache-Control", "no-cache");
 
       Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
-      JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-      if (response.has("contents")) {
-         JSONArray contents = response.getJSONArray("contents");
-
-         if (contents.length() > 0) {
-            JSONObject content = contents.getJSONObject(0);
-
-            if (content.has("mainArea")) {
-               JSONArray mainArea = content.getJSONArray("mainArea");
-
-               for (Object o : mainArea) {
-                  JSONObject object = (JSONObject) o;
-
-                  if (object.has("records")) {
-                     api = object;
-                     break;
-                  }
-               }
-            }
-         }
-      }
-
-      return api;
    }
 }
