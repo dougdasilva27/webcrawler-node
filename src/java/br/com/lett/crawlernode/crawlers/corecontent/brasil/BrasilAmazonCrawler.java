@@ -204,6 +204,9 @@ public class BrasilAmazonCrawler extends Crawler {
 
          products.add(product);
 
+         Logging.printLogInfo(logger, session, "PRODUCT" + product);
+
+
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -365,6 +368,8 @@ public class BrasilAmazonCrawler extends Crawler {
             String block = CrawlerUtils.scrapStringSimpleInfoByAttribute(offerPage, "#h a img", "alt");
             if (block != null && block.contains("Desculpe")) {
                offerPage = fetchDocumentWithWD();
+               Logging.printLogInfo(logger, session, "WEB DRIVER");
+
             }
 
                Elements ofertas = offerPage.select("#aod-offer");
