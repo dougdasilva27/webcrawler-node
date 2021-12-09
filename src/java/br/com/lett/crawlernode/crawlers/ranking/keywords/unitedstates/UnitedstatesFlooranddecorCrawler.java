@@ -17,7 +17,7 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
 
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.APACHE;
 
    }
 
