@@ -1,48 +1,103 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
-/**
- * the order doesn’t change with the login, so I didn’t apply the webdrive to the crawler ranking
- */
+public class MrestoqueunidasulCrawler extends CrawlerRankingKeywords {
+   Integer products = 0;
 
-public abstract class MrestoqueunidasulCrawler extends CrawlerRankingKeywords {
    public MrestoqueunidasulCrawler(Session session) {
       super(session);
    }
 
+   protected Document fetch() {
+      Document doc = null;
+
+      try {
+         String login = session.getOptions().optString("login");
+         String password = session.getOptions().optString("password");
+
+         webdriver = DynamicDataFetcher
+            .fetchPageWebdriver("https://www.mrestoque.com.br/cliente/entrar", ProxyCollection.BUY_HAPROXY, session);
+         webdriver.waitLoad(5000);
+
+         WebElement email = this.webdriver.driver.findElement(By.cssSelector("#username"));
+         email.sendKeys(login);
+         webdriver.waitLoad(2000);
+
+         WebElement pass = this.webdriver.driver.findElement(By.cssSelector("#password"));
+         pass.sendKeys(password);
+         webdriver.waitLoad(2000);
+
+         WebElement loginButton = this.webdriver.driver.findElement(By.cssSelector("[data-cy=\"enter-login\"]"));
+         webdriver.clickOnElementViaJavascript(loginButton);
+         webdriver.waitLoad(5000);
+
+         String url = "https://www.mrestoque.com.br/busca?s=" + this.keywordEncoded + "&order=relevance&pagina=" + this.currentPage;
+
+         webdriver.loadUrl(url);
+         this.webdriver.waitLoad(5000);
+         doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         this.webdriver.waitLoad(5000);
+         this.products = scrapTotalProducts(doc);
+         webdriver.terminate();
+      } catch (Exception e) {
+         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+      }
+
+      return doc;
+   }
+
+
    @Override
-   public void extractProductsFromCurrentPage() {
+   public void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.mrestoque.com.br/busca?s=" + this.keywordEncoded + "&order=relevance&pagina=" + this.currentPage;
+      this.currentDoc = fetch();
 
-      this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = fetchDocument(url);
+      if (this.currentDoc != null && this.currentDoc.selectFirst("li.align-items--stretch") != null) {
+         Elements products = this.currentDoc.select(".products__list li");
 
-      Elements products = this.currentDoc.select(".products-list.row li");
+         if (!products.isEmpty()) {
 
-      if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts();
-         }
+            for (Element e : products) {
+               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-image i", "id");
+               String urlProduct = CrawlerUtils.scrapUrl(e, ".product-image a", "href", "https", "www.mrestoque.com.br");
+               String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-image a", "title");
+               Integer price = scrapPrice(e);
+               String imgUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-image a img", "src");
+               Boolean isAvailable = (price != null && price != 0);
 
-         for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-image a", "data-product");
-            String urlProduct = CrawlerUtils.scrapUrl(e, ".product-image a", "href", "https", "www.mrestoque.com.br");
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(urlProduct)
+                  .setInternalId(internalId)
+                  .setName(name)
+                  .setImageUrl(imgUrl)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .build();
 
-            saveDataProduct(internalId, null, urlProduct);
+               saveDataProduct(productRanking);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
             }
-
          }
       } else {
          this.log("Keyword sem resultado!");
@@ -52,11 +107,30 @@ public abstract class MrestoqueunidasulCrawler extends CrawlerRankingKeywords {
 
    }
 
-   @Override
-   protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".total-items-found strong", null, null, true, true, 0);
-      this.log("Total da busca: " + this.totalProducts);
+   private Integer scrapTotalProducts(Document doc) {
+      Integer totalProducts = CrawlerUtils.scrapIntegerFromHtml(doc, ".result-title em", false, 0);
+
+      return totalProducts;
    }
 
+   private Integer scrapPrice(Element e) {
+      String price = CrawlerUtils.scrapStringSimpleInfo(e, "span.new-price", false);
+      Integer priceInCents = 0;
 
+      if (price != null) {
+         price = price.replaceAll("[^0-9-,]", "");
+         Double priceDouble = Double.parseDouble(price.replace(",", "."));
+         priceInCents = (int) Math.round((priceDouble * 100));
+      }
+
+      return priceInCents;
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      if (this.products != null && this.totalProducts < this.products) {
+         return true;
+      }
+      return false;
+   }
 }

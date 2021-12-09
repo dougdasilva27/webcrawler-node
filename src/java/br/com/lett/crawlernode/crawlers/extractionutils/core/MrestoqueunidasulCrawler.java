@@ -11,7 +11,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
@@ -28,38 +27,27 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.*;
 
-public abstract class MrestoqueunidasulCrawler extends Crawler {
-
-
+public class MrestoqueunidasulCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Mr Estoque Unidasul";
-   protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString());
-
+   private static final List<String> cards = Arrays.asList(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AMEX.toString(), Card.HIPERCARD.toString(), Card.DINERS.toString(), Card.VISA.toString());
 
    public MrestoqueunidasulCrawler(Session session) {
       super(session);
       config.setFetcher(FetchMode.FETCHER);
    }
 
-   private final String password = getPassword();
-   private final String login = getLogin();
-
-   protected abstract String getPassword();
-
-   protected abstract String getLogin();
-
-
    @Override
    protected Object fetch() {
-      if (login == null || password == null) {
-         return super.fetch();
-      }
+      String login = session.getOptions().optString("login");
+      String password = session.getOptions().optString("password");
 
       Map<String, String> headers = new HashMap<>();
 
       headers.put("content-type", "application/x-www-form-urlencoded");
       headers.put("authority", "www.mrestoque.com.br");
 
-      String payload = "username=" + getLogin() + "&password=" + getPassword();
+      String payload = "username=" + login + "&password=" + password;
 
 
       Request requestLogin = Request.RequestBuilder.create()
@@ -101,8 +89,6 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
 
    }
 
-   //a.btn-login
-
    public static void waitForElement(WebDriver driver, String cssSelector) {
       WebDriverWait wait = new WebDriverWait(driver, 20);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
@@ -116,28 +102,24 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(
             logger, session, "Product page identified: " + session.getOriginalURL());
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[data-product]", "data-product");
-         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".infos .right .descricao", true);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".tt-product-name", true);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:nth-child(2)):not(:first-child) a");
 
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[data-product]", "data-product");
+         String internalPid = scrapPid(doc);
+         String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product__images__grid img", "alt");
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:nth-child(2)):not(:first-child) a");
          List<String> images = scrapImage(doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-
-         String description = scrapDescription(doc);
-         boolean available = !doc.select(".add-to-cart").isEmpty();
+         String description = CrawlerUtils.scrapSimpleDescription(doc,  Arrays.asList(".grid-descriptions"));
+         boolean available = !doc.select("a.js-buy-items").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
-         // Creating the product
          Product product =
             ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
+               .setCategories(categories)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(images)
                .setOffers(offers)
@@ -192,7 +174,6 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      //Site hasn't any sale
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -210,7 +191,6 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = scrapPrice(doc);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
-      //Site hasn't any product with old price
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
@@ -240,15 +220,19 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
    }
 
    private Double scrapPrice(Document doc) {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-detail-message", null, true, ',', session);
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price strong", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.price span.flex", null, true, ',', session);
 
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.price strong", null, true, ',', session);
       }
 
       return spotlightPrice;
    }
 
+   private String scrapPid(Document doc) {
+      String totalProducts = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-data .color--base-30", true);
 
+      return totalProducts.replaceAll("[^0-9]", "");
+   }
 }
 
