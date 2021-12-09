@@ -366,12 +366,6 @@ public abstract class CrawlerRanking extends Task {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
 
-               Logging.logInfo(logger, session, metadataJson, "Product already found - Keyword= " + this.location +
-                  ", processed= " + p.getId() +
-                  ", internal id= " + product.getInternalId() +
-                  ", pid= " + product.getInteranlPid() +
-                  ", url= " + p.getUrl());
-
                if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && !p.getUrl().equals(product.getUrl())) {
                   saveProductUrlToQueue(product.getUrl());
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + product.getUrl());
@@ -379,10 +373,7 @@ public abstract class CrawlerRanking extends Task {
             }
 
          } else if (product.getUrl() != null && processeds.isEmpty()) {
-            Logging.logInfo(logger, session, metadataJson, "New product found - Keyword= " + this.location +
-               ", internal id= " + product.getInternalId() +
-               ", pid= " + product.getInternalId() +
-               ", url= " + product.getUrl());
+
             saveProductUrlToQueue(product.getUrl());
          }
 
