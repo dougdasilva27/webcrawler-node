@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.unitedstates;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -16,6 +17,8 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
 
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.FETCHER;
+
    }
 
    protected String getStoreId() {
