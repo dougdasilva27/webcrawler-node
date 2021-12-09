@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -13,7 +16,7 @@ public class SaopauloUltrafarmaCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected void extractProductsFromCurrentPage() {
+  protected void extractProductsFromCurrentPage() throws MalformedProductException {
     this.pageSize = 30;
 
     this.log("Página " + this.currentPage);
@@ -32,10 +35,23 @@ public class SaopauloUltrafarmaCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
         String productUrl = CrawlerUtils.scrapUrl(e, "a.product-item-link", "href", "https", "www.ultrafarma.com.br");
         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-wrapper-container", "data-product-id");
+        String name = CrawlerUtils.scrapStringSimpleInfo(e, "h3.product-name", false);
+        String imgUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "img.lazy", "data-original");
+        Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e,".product-price-sell", "data-preco", false, ',', session, 0);
+        String soldOutMessage = CrawlerUtils.scrapStringSimpleInfo(e, ".product-price-unavailable", false);
+        Boolean isAvailable = soldOutMessage != null;
 
-        saveDataProduct(internalId, null, productUrl);
+        RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setName(name)
+            .setImageUrl(imgUrl)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+         saveDataProduct(productRanking);
+
         if (this.arrayProducts.size() == productsLimit)
           break;
       }
