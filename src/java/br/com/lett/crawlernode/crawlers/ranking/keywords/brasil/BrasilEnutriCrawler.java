@@ -84,7 +84,7 @@ public class BrasilEnutriCrawler extends CrawlerRankingKeywords {
 
    private String crawlInternalId(Element e) {
      String urlWithId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".botaoCatalog", "href");
-      return urlWithId.substring(urlWithId.lastIndexOf("IdProd=") + 7);
+      return CommonMethods.getLast(urlWithId.split("IdProd="));
    }
 
    @Override

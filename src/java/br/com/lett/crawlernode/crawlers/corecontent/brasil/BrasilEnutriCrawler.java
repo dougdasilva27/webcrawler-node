@@ -67,7 +67,7 @@ public class BrasilEnutriCrawler extends Crawler {
          String name = productJSON.optString("nameProduct");
          String primaryImage = productJSON.optString("urlImage");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".box-img .zoom > img", Collections.singletonList("data-src"), "https", "images.tcdn.com.br", primaryImage);
-         CategoryCollection categories = crawlCategories(doc);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb-item:not(:first-child):not(:nth-child(2)):not(:last-child)", false);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".description"));
          List<String> eans = Collections.singletonList(productJSON.optString("EAN"));
          boolean availableToBuy = checkIfIsAvailable(doc);
