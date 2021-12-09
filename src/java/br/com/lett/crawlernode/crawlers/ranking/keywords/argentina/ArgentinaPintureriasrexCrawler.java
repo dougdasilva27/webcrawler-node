@@ -24,8 +24,6 @@ public class ArgentinaPintureriasrexCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
 
-
-     // String url = HOME_PAGE + "/search?pageSize="+this.pageSize+"&text="+this.keywordEncoded+"&page="+this.currentPage;
       String url = HOME_PAGE+"catalogsearch/result/index/?p="+this.currentPage+"&product_list_limit="+pageSize+"&q="+this.keywordEncoded;
       Integer currentPageUrl = (this.currentPage - 1) * this.pageSize;
 
@@ -71,8 +69,6 @@ public class ArgentinaPintureriasrexCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts(){
-
-     // this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".toolbar-amount", false, 0);
       String totalProduct = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc,".toolbar-amount", false);
       String [] arrProduct = totalProduct.split(" ");
       this.totalProducts = Integer.parseInt(arrProduct[(arrProduct.length) - 2]);
