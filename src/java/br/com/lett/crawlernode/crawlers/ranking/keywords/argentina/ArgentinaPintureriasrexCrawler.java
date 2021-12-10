@@ -23,12 +23,9 @@ public class ArgentinaPintureriasrexCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-
-      String url = HOME_PAGE+"catalogsearch/result/index/?p="+this.currentPage+"&product_list_limit="+pageSize+"&q="+this.keywordEncoded;
+      String url = HOME_PAGE + "catalogsearch/result/index/?p=" + this.currentPage + "&product_list_limit=" + pageSize + "&q=" + this.keywordEncoded;
       Integer currentPageUrl = (this.currentPage - 1) * this.pageSize;
-
       this.currentDoc = fetchDocument(url);
-
       Elements products = this.currentDoc.select(".item.product.product-item");
       if (!products.isEmpty()) {
          if (totalProducts == 0) {
@@ -40,10 +37,7 @@ public class ArgentinaPintureriasrexCrawler extends CrawlerRankingKeywords {
             String name = CrawlerUtils.scrapStringSimpleInfo(e,".product-item-link", false);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image-photo", Arrays.asList("src"), "", "");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price-wrapper ", "data-price-amount", true, '.', session, 0);
-
             boolean isAvailable = price != 0;
-
-
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalId(internalId)
@@ -61,10 +55,9 @@ public class ArgentinaPintureriasrexCrawler extends CrawlerRankingKeywords {
          this.log("Keyword sem resultado!");
       }
    }
+
    private String scrapInternalId(Element e) {
       return CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".price-box.price-final_price", "data-product-id");
-
-
    }
 
    @Override

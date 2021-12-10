@@ -32,13 +32,10 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
    public List<Product> extractInformation(Document document) throws Exception {
       super.extractInformation(document);
       List<Product> products = new ArrayList<>();
-
-
       if(!isProductPage(document)) {
          Logging.printLogDebug(logger, session, "Not a product page" + session.getOriginalURL());
          return products;
       }
-
       // Get all product information
       String productName = CrawlerUtils.scrapStringSimpleInfo(document,".base", false);
       String productInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document,".price-box.price-final_price", "data-product-id");
@@ -48,27 +45,23 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
       List<String> productSecondaryImages = ImageCapture(document, productPrimaryImage);
 
       ProductBuilder builder = ProductBuilder.create().setUrl(session.getOriginalURL());
-      builder.setName(productName)
+      Product product = ProductBuilder.create()
+         .setUrl(session.getOriginalURL())
          .setInternalId(productInternalId)
          .setInternalPid(productInternalPid)
-         .setDescription(productDescription)
+         .setName(productName)
          .setPrimaryImage(productPrimaryImage)
-         .setSecondaryImages(productSecondaryImages);
-
-
-      builder.setOffers(scrapOffers(document));
-      products.add(builder.build());
-
-
+         .setSecondaryImages(productSecondaryImages)
+         .setDescription(productDescription)
+         .setOffers(scrapOffers(document, productInternalId))
+         .build();
+      products.add(product);
       return products;
-
    }
 
-
-   private Offers scrapOffers(Document document) throws MalformedPricingException, OfferException {
+   private Offers scrapOffers(Document document, String productInternalId) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-
-      Pricing pricing = scrapPricing(document);
+      Pricing pricing = scrapPricing(document, productInternalId);
       List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
       offers.add(new Offer.OfferBuilder()
          .setIsBuybox(false)
@@ -79,16 +72,13 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
          .setSales(sales)
          .build()
       );
-
       return offers;
    }
 
-   private Pricing scrapPricing(Document document) throws MalformedPricingException {
-      Integer id = CrawlerUtils.scrapIntegerFromHtmlAttr(document, ".price-box.price-final_price", "data-product-id", 0);
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(document,"#product-price-"+id, "data-price-amount", true, '.', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, "#old-price-"+id, "data-price-amount", true,  '.', session );
+   private Pricing scrapPricing(Document document, String id) throws MalformedPricingException {
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(document,"#product-price-" + id, "data-price-amount", true, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, "#old-price-" + id, "data-price-amount", true,  '.', session );
       CreditCards creditCards = CrawlerUtils.scrapCreditCards(price, cards);
-
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(price)
          .setPriceFrom(priceFrom)
@@ -103,19 +93,18 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
       List<String> productSecondaryImagesList = new ArrayList<>();
       do{
          String newUrlImage = productPrimaryImage.replaceAll(".jpg", "");
-         statusCode = ImageRequest(newUrlImage+"-0"+number+".jpg");
+         statusCode = ImageRequest(newUrlImage + "-0" + number + ".jpg");
          if(statusCode == 200){
-            productSecondaryImagesList.add(newUrlImage+"-0"+number+".jpg");
+            productSecondaryImagesList.add(newUrlImage + "-0" + number + ".jpg");
             count++;
             number++;
          }
       }while (statusCode == 200);
-
       return productSecondaryImagesList;
    }
+
    private int ImageRequest (String imageUrl) throws Exception{
       int statusCode = 200;
-
       try {
          URL url = new URL(imageUrl);
          HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -123,14 +112,11 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
          if (connection.getResponseCode() != statusCode){
             return 404;
          }
-
-
          return statusCode;
       } catch (Exception e) {
          return 404;
       }
    }
-
 
    private boolean isProductPage(Document document) {
       return document.selectFirst(".product.media") != null;
