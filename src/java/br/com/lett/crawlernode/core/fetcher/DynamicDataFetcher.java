@@ -46,59 +46,11 @@ public class DynamicDataFetcher {
     * @return a webdriver instance with the page already loaded
     */
    public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
-      Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
-      String requestHash = FetchUtilities.generateRequestHash(session);
-
-      CrawlerWebdriver webdriver = null;
-      try {
-         LettProxy proxy = randomProxy(proxyString != null ? proxyString : ProxyCollection.BUY_HAPROXY);
-
-         Proxy proxySel = new Proxy();
-         proxySel.setHttpProxy(proxy.getAddress() + ":" + proxy.getPort());
-         proxySel.setSslProxy(proxy.getAddress() + ":" + proxy.getPort());
-
-         String userAgent = FetchUtilities.randUserAgent();
-
-         ChromeOptions chromeOptions = new ChromeOptions();
-         chromeOptions.setProxy(proxySel);
-         chromeOptions.setHeadless(true);
-         chromeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
-
-         chromeOptions.setCapability("browserName", "chrome");
-         chromeOptions.addArguments("--user-agent=" + userAgent);
-         chromeOptions.addArguments("--window-size=1024,768", "--no-sandbox");
-         chromeOptions.addArguments("--disable-dev-shm-usage", "--disable-gpu");
-
-         sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
-
-         webdriver = new CrawlerWebdriver(chromeOptions, session);
-
-         webdriver.loadUrl(url);
-
-         // saving request content result on Amazon
-         S3Service.saveResponseContent(session, requestHash, webdriver.getCurrentPageSource());
-
-         return webdriver;
-      } catch (Exception e) {
-         Exporter.collectError(e, session);
-         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-
-         // close the webdriver
-         if (webdriver != null) {
-            Logging.printLogDebug(logger, session, "Terminating Chrome instance because it gave error...");
-            webdriver.terminate();
-         }
-         return null;
-      }
+      return fetchPageWebdriver(url, proxyString, session, null, null);
    }
 
 
-   /**
-    * Use the webdriver to fetch a page setting cookies.
-    *
-    * @return a webdriver instance with the page already loaded
-    */
-   public static CrawlerWebdriver fetchPageWebdriverSetCookie(String url, String proxyString, Session session, Set<Cookie> cookies, String homePage) {
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session, Set<Cookie> cookies, String homePage) {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
@@ -124,8 +76,11 @@ public class DynamicDataFetcher {
 
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
-         webdriver = new CrawlerWebdriver(chromeOptions, session, cookies, homePage);
-
+         if (cookies != null) {
+            webdriver = new CrawlerWebdriver(chromeOptions, session, cookies, homePage);
+         } else {
+            webdriver = new CrawlerWebdriver(chromeOptions, session);
+         }
          webdriver.loadUrl(url);
 
          // saving request content result on Amazon
