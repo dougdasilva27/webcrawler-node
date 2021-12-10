@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.util.MathUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.Proxy;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.util.List;
+import java.util.Set;
 
 public class DynamicDataFetcher {
 
@@ -89,6 +91,60 @@ public class DynamicDataFetcher {
          return null;
       }
    }
+
+
+   /**
+    * Use the webdriver to fetch a page.
+    *
+    * @return a webdriver instance with the page already loaded
+    */
+   public static CrawlerWebdriver fetchPageWebdriverSetCookie(String url, String proxyString, Session session, Set<Cookie> cookies, String homePage) {
+      Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
+      String requestHash = FetchUtilities.generateRequestHash(session);
+
+      CrawlerWebdriver webdriver = null;
+      try {
+         LettProxy proxy = randomProxy(proxyString != null ? proxyString : ProxyCollection.BUY_HAPROXY);
+
+         Proxy proxySel = new Proxy();
+         proxySel.setHttpProxy(proxy.getAddress() + ":" + proxy.getPort());
+         proxySel.setSslProxy(proxy.getAddress() + ":" + proxy.getPort());
+
+         String userAgent = FetchUtilities.randUserAgent();
+
+         ChromeOptions chromeOptions = new ChromeOptions();
+         chromeOptions.setProxy(proxySel);
+         chromeOptions.setHeadless(true);
+         chromeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
+
+         chromeOptions.setCapability("browserName", "chrome");
+         chromeOptions.addArguments("--user-agent=" + userAgent);
+         chromeOptions.addArguments("--window-size=1024,768", "--no-sandbox");
+         chromeOptions.addArguments("--disable-dev-shm-usage", "--disable-gpu");
+
+         sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
+
+         webdriver = new CrawlerWebdriver(chromeOptions, session, cookies, homePage);
+
+         webdriver.loadUrl(url);
+
+         // saving request content result on Amazon
+         S3Service.saveResponseContent(session, requestHash, webdriver.getCurrentPageSource());
+
+         return webdriver;
+      } catch (Exception e) {
+         Exporter.collectError(e, session);
+         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+
+         // close the webdriver
+         if (webdriver != null) {
+            Logging.printLogDebug(logger, session, "Terminating Chrome instance because it gave error...");
+            webdriver.terminate();
+         }
+         return null;
+      }
+   }
+
 
    private static void sendRequestInfoLogWebdriver(String url, String requestType, LettProxy proxy, String userAgent, Session session, String requestHash) {
 

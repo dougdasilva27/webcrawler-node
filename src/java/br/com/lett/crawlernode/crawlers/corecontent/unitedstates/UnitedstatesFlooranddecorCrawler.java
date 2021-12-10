@@ -1,12 +1,14 @@
 package br.com.lett.crawlernode.crawlers.corecontent.unitedstates;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.*;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.*;
@@ -16,12 +18,12 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.Cookie;
 
 import java.util.*;
 
@@ -33,7 +35,7 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
 
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
-      this.config.setParser(Parser.HTML);
+      super.config.setFetcher(FetchMode.JSOUP);
 
    }
 
@@ -42,36 +44,31 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
    }
 
    @Override
-   protected Response fetchResponse() {
-      Map<String, String> headers = new HashMap<>();
+   protected Object fetch() {
+      Document doc = null;
+      try {
+         webdriver = DynamicDataFetcher.fetchPageWebdriverSetCookie(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session, this.cookiesWD, "https://www.flooranddecor.com/");
+         webdriver.waitForElement(".b-pdp_details", 20000);
 
-      headers.put("sec-ch-ua", "\"Google Chrome\";v=\"93\", \" Not;A Brand\";v=\"99\", \"Chromium\";v=\"93\"");
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("authority", "www.flooranddecor.com");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
+         doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
-         .build();
+      } catch (Exception e) {
+         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
+      }
 
-      return this.dataFetcher.get(session, request);
+      return doc;
    }
+
 
    @Override
    public void handleCookiesBeforeFetch() {
-      BasicClientCookie cookie = new BasicClientCookie("StoreID", storeId);
-      cookie.setDomain("www.flooranddecor.com");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
+      Cookie cookie = new Cookie.Builder("StoreID", storeId)
+         .domain("www.flooranddecor.com")
+         .path("/")
+         .isHttpOnly(true)
+         .isSecure(false)
+         .build();
+      this.cookiesWD.add(cookie);
    }
 
    @Override

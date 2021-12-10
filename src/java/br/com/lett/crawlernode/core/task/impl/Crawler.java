@@ -34,6 +34,7 @@ import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.processor.Processor;
+import org.apache.http.cookie.Cookie;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -43,7 +44,7 @@ import models.Offer;
 import models.Offers;
 import models.Processed;
 import models.prices.Prices;
-import org.apache.http.cookie.Cookie;
+
 import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -55,7 +56,9 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -94,6 +97,8 @@ public abstract class Crawler extends Task {
     * Cookies that must be used to fetch the sku page this attribute is set by the handleCookiesBeforeFetch method.
     */
    protected List<Cookie> cookies;
+
+   protected Set<org.openqa.selenium.Cookie> cookiesWD = new HashSet<>();
 
    protected final CacheConfig cacheConfig = new CacheConfig();
 

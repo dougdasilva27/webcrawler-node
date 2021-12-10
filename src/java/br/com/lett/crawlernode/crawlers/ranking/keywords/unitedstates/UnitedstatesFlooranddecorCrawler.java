@@ -1,22 +1,28 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.unitedstates;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.Cookie;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
@@ -25,7 +31,7 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
 
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
-    //  super.fetchMode = FetchMode.JSOUP;
+      super.fetchMode = FetchMode.JSOUP;
    }
 
    protected String getStoreId() {
@@ -34,38 +40,34 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void processBeforeFetch() {
-      BasicClientCookie cookie = new BasicClientCookie("StoreID", storeId);
-      cookie.setDomain("www.flooranddecor.com");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
+      Cookie cookie = new Cookie.Builder("StoreID", storeId)
+         .domain("www.flooranddecor.com")
+         .path("/")
+         .isHttpOnly(true)
+         .isSecure(false)
+         .build();
+      this.cookiesWD.add(cookie);
    }
 
 
    @Override
    protected Document fetchDocument(String url) {
-      Map<String, String> headers = new HashMap<>();
+      Document doc = null;
+      try {
+         webdriver = DynamicDataFetcher.fetchPageWebdriverSetCookie(url, ProxyCollection.BUY_HAPROXY, session, this.cookiesWD, "https://www.flooranddecor.com/");
+         webdriver.waitForElement("div.l-plp-grid_item-wrapper", 20000);
 
-      headers.put("sec-ch-ua", "\"Google Chrome\";v=\"93\", \" Not;A Brand\";v=\"99\", \"Chromium\";v=\"93\"");
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("authority", "www.flooranddecor.com");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
+         doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setCookies(cookies)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
-         .build();
+         webdriver.terminate();
 
-      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+      } catch (Exception e) {
+         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
+      }
+
+      return doc;
    }
+
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
@@ -89,6 +91,9 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
       Elements results = this.currentDoc.select("div.l-plp-grid_item-wrapper");
 
       if (results != null && !results.isEmpty()) {
+         if (this.totalProducts == 0){
+            setTotalProducts();
+         }
          if (currentPage == 1) {
             String productCount = CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc, "li[aria-controls=search-tabs-products]", "data-count");
             this.totalProducts = Integer.parseInt(productCount);
@@ -125,8 +130,9 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+
    @Override
-   protected boolean hasNextPage(){
-      return true;
+   protected void setTotalProducts() {
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".b-sss_tabs-nav_numbers", true, 0);
    }
 }

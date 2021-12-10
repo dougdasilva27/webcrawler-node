@@ -43,16 +43,14 @@ import org.slf4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
 
 public abstract class CrawlerRanking extends Task {
 
    protected FetchMode fetchMode;
+
    protected DataFetcher dataFetcher;
 
    private final Logger logger;
@@ -64,9 +62,13 @@ public abstract class CrawlerRanking extends Task {
    private final List<String> messages = new ArrayList<>();
 
    protected int productsLimit;
+
    protected int pageLimit;
 
    protected List<Cookie> cookies = new ArrayList<>();
+
+   protected Set<org.openqa.selenium.Cookie> cookiesWD = new HashSet<>();
+
 
    protected CrawlerWebdriver webdriver;
 
