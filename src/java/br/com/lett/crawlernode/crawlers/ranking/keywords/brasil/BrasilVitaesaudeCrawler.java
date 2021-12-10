@@ -1,9 +1,27 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilVitaesaudeCrawler extends CrawlerRankingKeywords {
 
@@ -11,75 +29,65 @@ public class BrasilVitaesaudeCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 9;
+   @Override
+  protected void extractProductsFromCurrentPage() throws MalformedProductException {
+    this.pageSize = 27;
 
     this.log("Página " + this.currentPage);
 
-    // monta a url com a keyword e a página
     String url = "https://www.vitaesaude.com.br/search?search_query=" + this.keywordEncoded + "&page=" + this.currentPage + "&ajax=1";
     this.log("Link onde são feitos os crawlers: " + url);
 
-    // chama função de pegar o html
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".ProductList li");
+    Elements products = this.currentDoc.select(".ProductItem");
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
     if (!products.isEmpty()) {
       for (Element e : products) {
-        // InternalPid
         String internalPid = crawlInternalPid(e);
-
-        // InternalId
         String internalId = null;
+        String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".name a", "href");
+        String name = CrawlerUtils.scrapStringSimpleInfo(e, ".name", false);
+        String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".image img", Collections.singletonList("data-original"), "https", "vitaesaude.com.br" );
+        Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".ValorProduto", null, true, ',', session, 0);
+        boolean isAvailable = price != 0;
 
-        // Url do produto
-        String productUrl = crawlProductUrl(e);
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setImageUrl(imgUrl)
+            .setName(name)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
 
-        saveDataProduct(internalId, internalPid, productUrl);
-
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
-        }
+         saveDataProduct(productRanking);
+         if (this.arrayProducts.size() == productsLimit) {
+            break;
+         }
 
       }
     } else {
-      setTotalProducts();
-      this.result = false;
-      this.log("Keyword sem resultado!");
+       this.result = false;
+       this.log("Keyword sem resultados!");
     }
 
-    if (!hasNextPage()) {
-      setTotalProducts();
-    }
-
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+         + this.arrayProducts.size() + " produtos crawleados");
+   }
 
   @Override
   protected boolean hasNextPage() {
-    Element lastPageElement = this.currentDoc.select(".PagingList > li").last();
-
-    if (lastPageElement != null) {
-      String text = lastPageElement.text().replaceAll("[^0-9]", "");
-
-      return !text.isEmpty() && (this.currentPage < Integer.parseInt(text));
-    }
-
-    return false;
+    return !this.currentDoc.select(".ProductItem").isEmpty();
   }
 
   private String crawlInternalPid(Element e) {
     String internalPid = null;
-    Element idElement = e.select(".ProductActionAdd a").first();
+    String idElement = e.attr("id");
 
     if (idElement != null) {
-      String[] tokens = idElement.attr("href").split("=");
-      String id = tokens[tokens.length - 1].replaceAll("[^0-9]", "").trim();
+      String id = CommonMethods.getLast(idElement.split("ProductItem_"));
 
       if (!id.isEmpty()) {
         internalPid = id;
@@ -89,18 +97,4 @@ public class BrasilVitaesaudeCrawler extends CrawlerRankingKeywords {
     return internalPid;
   }
 
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-    Element url = e.select(".prod_nome > a").first();
-
-    if (url != null) {
-      productUrl = url.attr("href");
-
-      if (!productUrl.contains("vitaesaude")) {
-        productUrl = "https://www.vitaesaude.com.br/" + productUrl;
-      }
-    }
-
-    return productUrl;
-  }
 }
