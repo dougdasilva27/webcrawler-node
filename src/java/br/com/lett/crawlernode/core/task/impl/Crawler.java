@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.core.task.impl;
 
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
-import br.com.lett.crawlernode.aws.kinesis.Message;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
@@ -11,9 +10,9 @@ import br.com.lett.crawlernode.core.fetcher.methods.*;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RequestMethod;
-import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
@@ -55,11 +54,13 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import static br.com.lett.crawlernode.core.fetcher.models.Response.*;
+import static br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
 
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit and extract methods.
@@ -90,10 +91,13 @@ public abstract class Crawler extends Task {
    protected CrawlerWebdriver webdriver;
 
    private static final CrawlerCache cacheClient = new CrawlerCache(RedisDb.CRAWLER);
+
    /**
     * Cookies that must be used to fetch the sku page this attribute is set by the handleCookiesBeforeFetch method.
     */
    protected List<Cookie> cookies;
+
+   protected Set<org.openqa.selenium.Cookie> cookiesWD = new HashSet<>();
 
    protected final CacheConfig cacheConfig = new CacheConfig();
 
@@ -754,6 +758,7 @@ public abstract class Crawler extends Task {
             stringBuilder.append("\n[");
             stringBuilder.append(offer.getSlugSellerName());
             stringBuilder.append("]");
+
          }
       }
       return stringBuilder.toString();

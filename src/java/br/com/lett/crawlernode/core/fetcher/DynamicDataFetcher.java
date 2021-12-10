@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.util.MathUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.Proxy;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.util.List;
+import java.util.Set;
 
 public class DynamicDataFetcher {
 
@@ -44,6 +46,11 @@ public class DynamicDataFetcher {
     * @return a webdriver instance with the page already loaded
     */
    public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
+      return fetchPageWebdriver(url, proxyString, session, null, null);
+   }
+
+
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session, Set<Cookie> cookies, String homePage) {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
@@ -69,8 +76,11 @@ public class DynamicDataFetcher {
 
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
-         webdriver = new CrawlerWebdriver(chromeOptions, session);
-
+         if (cookies != null) {
+            webdriver = new CrawlerWebdriver(chromeOptions, session, cookies, homePage);
+         } else {
+            webdriver = new CrawlerWebdriver(chromeOptions, session);
+         }
          webdriver.loadUrl(url);
 
          // saving request content result on Amazon
@@ -89,6 +99,7 @@ public class DynamicDataFetcher {
          return null;
       }
    }
+
 
    private static void sendRequestInfoLogWebdriver(String url, String requestType, LettProxy proxy, String userAgent, Session session, String requestHash) {
 
