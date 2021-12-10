@@ -32,7 +32,7 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
    public CarrefourMercadoRanking(Session session) {
       super(session);
       dataFetcher = new JsoupDataFetcher();
-      this.pageSize = 12;
+      this.pageSize = 19;
    }
 
    private static final String OPERATION_NAME = "SearchQuery";
@@ -65,11 +65,28 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
    }
 
    protected String getRegionId() {
-      String[] chunks = getLocation().split("\\.");
+      String cep = getCep();
 
-      JSONObject locationJson = JSONUtils.stringToJson(new String(Base64.getDecoder().decode(chunks[0]), StandardCharsets.UTF_8));
+      if(cep == null) return null;
 
-      return locationJson.optString("regionId", null);
+      String regionApiUrl = "https://mercado.carrefour.com.br/api/checkout/pub/regions?country=BRA&postalCode="+ cep + "&sc=2";
+      Map<String, String> headers = new HashMap<>();
+      headers.put("authority", "mercado.carrefour.com.br");
+      headers.put("sec-ch-ua", "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"96\", \"Google Chrome\";v=\"96\"");
+      headers.put("sec-ch-ua-mobile", "?0");
+      headers.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36");
+      headers.put("sec-ch-ua-platform", "\"Windows\"");
+      headers.put("accept", "*/*");
+      headers.put("sas-fetch-site", "same-origin");
+      headers.put("sas-fetch-mode", "cors");
+      headers.put("sas-fetch-dest", "empty");
+      headers.put("referer", "https://mercado.carrefour.com.br/s/"+ this.keywordEncoded +"?map=term");
+
+      Request request = Request.RequestBuilder.create().setUrl(regionApiUrl).setHeaders(headers).build();
+      String response = dataFetcher.get(session, request).getBody();
+      JSONArray responseJSON = JSONUtils.stringToJsonArray(response);
+
+      return responseJSON.getJSONObject(0) != null ? responseJSON.getJSONObject(0).optString("id") : null;
    }
 
    protected String getCep() {
@@ -91,7 +108,7 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
       url.append("&extensions=").append(URLEncoder.encode(extensions.toString(), StandardCharsets.UTF_8));
 
       JSONObject variables = new JSONObject();
-      variables.put("fullText", URLEncoder.encode(this.location, StandardCharsets.UTF_8));
+      variables.put("fullText", URLEncoder.encode(this.location, StandardCharsets.UTF_8).replace("+", "%20"));
       variables.put("sort", "");
       variables.put("from", this.arrayProducts.size());
       variables.put("to", this.arrayProducts.size() + this.pageSize);
