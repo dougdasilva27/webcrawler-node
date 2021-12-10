@@ -94,7 +94,7 @@ public class DynamicDataFetcher {
 
 
    /**
-    * Use the webdriver to fetch a page.
+    * Use the webdriver to fetch a page setting cookies.
     *
     * @return a webdriver instance with the page already loaded
     */

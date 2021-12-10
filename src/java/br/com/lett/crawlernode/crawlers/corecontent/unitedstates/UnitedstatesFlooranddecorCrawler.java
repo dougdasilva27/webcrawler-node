@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.unitedstates;
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -25,7 +24,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.Cookie;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public class UnitedstatesFlooranddecorCrawler extends Crawler {
 
@@ -35,7 +37,6 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
 
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
 
    }
 

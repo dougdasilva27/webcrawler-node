@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.core.task.impl;
 
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
-import br.com.lett.crawlernode.aws.kinesis.Message;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
@@ -11,9 +10,9 @@ import br.com.lett.crawlernode.core.fetcher.methods.*;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RequestMethod;
-import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
@@ -34,7 +33,6 @@ import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.processor.Processor;
-import org.apache.http.cookie.Cookie;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -44,7 +42,7 @@ import models.Offer;
 import models.Offers;
 import models.Processed;
 import models.prices.Prices;
-
+import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -62,7 +60,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import static br.com.lett.crawlernode.core.fetcher.models.Response.*;
+import static br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
 
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit and extract methods.
@@ -93,6 +91,7 @@ public abstract class Crawler extends Task {
    protected CrawlerWebdriver webdriver;
 
    private static final CrawlerCache cacheClient = new CrawlerCache(RedisDb.CRAWLER);
+
    /**
     * Cookies that must be used to fetch the sku page this attribute is set by the handleCookiesBeforeFetch method.
     */
@@ -113,7 +112,7 @@ public abstract class Crawler extends Task {
       return skuStatus;
    }
 
-   public String getCrawledInternalId(){
+   public String getCrawledInternalId() {
       return crawledInternalId;
    }
 
@@ -260,7 +259,7 @@ public abstract class Crawler extends Task {
          printCrawledInformation(product);
       }
 
-      setSkuStatus(filter(products,session.getInternalId()));
+      setSkuStatus(filter(products, session.getInternalId()));
 
       // insights session
       // there is only one product that will be selected
@@ -422,20 +421,19 @@ public abstract class Crawler extends Task {
       return processedProducts;
    }
 
-   private void validateBody(String response, Parser parser) throws RequestException{
-      if(parser == Parser.HTML && !response.startsWith("<")){
+   private void validateBody(String response, Parser parser) throws RequestException {
+      if (parser == Parser.HTML && !response.startsWith("<")) {
          throw new RequestException("Unexpected body: response is not HTML");
-      }
-      else if(parser == Parser.JSON && !response.startsWith("{")){
+      } else if (parser == Parser.JSON && !response.startsWith("{")) {
          throw new RequestException("Unexpected body: response is not Json");
-      } else if( parser == Parser.JSONARRAY && !response.startsWith("[")){
+      } else if (parser == Parser.JSONARRAY && !response.startsWith("[")) {
          throw new RequestException("Unexpected body: response is not Json Array");
       }
    }
 
-   private void validateResponse(Response response) throws ResponseCodeException{
-      if(Integer.toString(response.getLastStatusCode()).charAt(0) != '2' && Integer.toString(response.getLastStatusCode()).charAt(0) != '3'){
-         switch (response.getLastStatusCode()){
+   private void validateResponse(Response response) throws ResponseCodeException {
+      if (Integer.toString(response.getLastStatusCode()).charAt(0) != '2' && Integer.toString(response.getLastStatusCode()).charAt(0) != '3') {
+         switch (response.getLastStatusCode()) {
             case 403:
                throw new ResponseCodeException("Blocked request", response.getLastStatusCode());
             case 404:
@@ -469,15 +467,14 @@ public abstract class Crawler extends Task {
 
    /**
     * Request the sku URL and parse to a DOM format. This method uses the preferred fetcher according to the crawler configuration. If the fetcher is static, then we use de StaticDataFetcher,
-    *Subclasses can override this method for crawl another apis and pages. In Princesadonorte the product page has nothing, but we need the url for crawl this market api.
+    * Subclasses can override this method for crawl another apis and pages. In Princesadonorte the product page has nothing, but we need the url for crawl this market api.
     * This method is no longer acceptable to fetch page.
     * <p> Use {@link Crawler#fetchResponse()} instead.
     *
     * @return computed time
-    *
     * @deprecated (this method does not allow control over the status of requests, forRemoval)
     */
-   @Deprecated(forRemoval=true)
+   @Deprecated(forRemoval = true)
    protected Object fetch() {
       String html = "";
       if (config.getFetcher() == FetchMode.WEBDRIVER) {
@@ -498,6 +495,7 @@ public abstract class Crawler extends Task {
    /**
     * fetch doc as in {@link Crawler#fetch()}, but returns response instead of the body.
     * <h3>Use <em>{@link CrawlerConfig#setParser(Parser)}</em> inside the construct method to set an especific parser</h3>
+    *
     * @return the response returned for the request
     */
    protected Response fetchResponse() {
@@ -625,7 +623,6 @@ public abstract class Crawler extends Task {
    }
 
 
-
    protected final <T> T cache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
       String component = getClass().getSimpleName() + ":" + key;
       return cacheClient.update(component, request, requestMethod, session, dataFetcher, false, ttl, function);
@@ -720,7 +717,7 @@ public abstract class Crawler extends Task {
 
             if (session instanceof TestCrawlerSession) {
                throw new MalformedProductException("THIS PRODUCT IS AVAILABLE BUT THIS MARKET REGEX DOES NOT MATCHES "
-                  + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS " + getFirstPartyRegex(product) );
+                  + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS " + getFirstPartyRegex(product));
             }
          }
 
@@ -754,11 +751,11 @@ public abstract class Crawler extends Task {
 
       StringBuilder stringBuilder = new StringBuilder();
       Offers offers = product.getOffers();
-      if (offers != null && !offers.isEmpty()){
+      if (offers != null && !offers.isEmpty()) {
          for (Offer offer : offers.getOffersList()) {
             stringBuilder.append("\n--");
-             stringBuilder.append(offer.getSlugSellerName());
-             stringBuilder.append("--");
+            stringBuilder.append(offer.getSlugSellerName());
+            stringBuilder.append("--");
          }
       }
       return stringBuilder.toString();
@@ -802,10 +799,10 @@ public abstract class Crawler extends Task {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
 
-      Logging.logInfo(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()).put("product_status",skuStatus.toString()), "END");
+      Logging.logInfo(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()).put("product_status", skuStatus.toString()), "END");
    }
 
-   private void setSkuStatus(Product product){
+   private void setSkuStatus(Product product) {
       if (product.isVoid()) {
          skuStatus = SkuStatus.VOID;
       } else if (product.getAvailable()) {
@@ -813,7 +810,7 @@ public abstract class Crawler extends Task {
       } else if (product.getMarketplace() != null && product.getMarketplace().size() > 0) {
          skuStatus = SkuStatus.MARKETPLACE_ONLY;
       } else {
-         skuStatus =SkuStatus.UNAVAILABLE;
+         skuStatus = SkuStatus.UNAVAILABLE;
       }
    }
 }

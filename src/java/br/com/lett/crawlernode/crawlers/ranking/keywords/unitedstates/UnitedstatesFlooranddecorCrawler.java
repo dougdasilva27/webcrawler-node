@@ -1,10 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.unitedstates;
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -13,17 +10,11 @@ import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.Cookie;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 
 public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
 
@@ -31,7 +22,6 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
 
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.JSOUP;
    }
 
    protected String getStoreId() {
@@ -74,9 +64,9 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
       String url = "";
 
 
-      if(arrayProducts.isEmpty()){
-         url = "https://www.flooranddecor.com/search?q=sink&search-button=&lang=default&shopThisStore="+ this.storeId;
-      }else{
+      if (arrayProducts.isEmpty()) {
+         url = "https://www.flooranddecor.com/search?q=sink&search-button=&lang=default&shopThisStore=" + this.storeId;
+      } else {
          url = "https://www.flooranddecor.com/on/demandware.store/Sites-floor-decor-Site/default/SearchRedesign-UpdateGrid?q="
             + this.keywordEncoded
             + "&start="
@@ -91,7 +81,7 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
       Elements results = this.currentDoc.select("div.l-plp-grid_item-wrapper");
 
       if (results != null && !results.isEmpty()) {
-         if (this.totalProducts == 0){
+         if (this.totalProducts == 0) {
             setTotalProducts();
          }
          if (currentPage == 1) {
