@@ -3,10 +3,7 @@ package br.com.lett.crawlernode.core.fetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.interactions.Actions;
@@ -18,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -45,6 +43,20 @@ public class CrawlerWebdriver {
       driver.manage().window().maximize();
       this.session = session;
    }
+
+   public CrawlerWebdriver(ChromeOptions caps, Session session, Set<Cookie> cookies, String domain) {
+      acquireLock();
+      driver = new ChromeDriver(caps);
+      driver.get(domain);
+      for (Cookie cookie : cookies){
+         driver.manage().addCookie(cookie);
+      }
+      driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+      driver.manage().window().maximize();
+      this.session = session;
+   }
+
+
 
    public void acquireLock() {
       try {
