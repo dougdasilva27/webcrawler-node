@@ -186,8 +186,8 @@ public class BrasilAnhangueraFerramentas extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precoPor.com-precoDe", null, true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precoDe", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoDe", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-boleto-preco", null, true, ',', session))
