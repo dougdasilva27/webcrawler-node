@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.unitedstates;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -31,13 +33,37 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
 
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
       this.config.setParser(Parser.HTML);
 
    }
 
    protected String getStoreId() {
       return session.getOptions().optString("StoreID");
+   }
+
+   @Override
+   protected Response fetchResponse() {
+      Map<String, String> headers = new HashMap<>();
+
+      headers.put("sec-ch-ua", "\"Google Chrome\";v=\"93\", \" Not;A Brand\";v=\"99\", \"Chromium\";v=\"93\"");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("authority", "www.flooranddecor.com");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .build();
+
+      return this.dataFetcher.get(session, request);
    }
 
    @Override

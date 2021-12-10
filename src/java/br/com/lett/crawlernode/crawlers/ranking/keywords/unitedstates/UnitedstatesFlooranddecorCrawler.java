@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.unitedstates;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -8,8 +10,14 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
 
@@ -17,8 +25,7 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
 
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
-
+    //  super.fetchMode = FetchMode.JSOUP;
    }
 
    protected String getStoreId() {
@@ -33,9 +40,37 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
       this.cookies.add(cookie);
    }
 
+
+   @Override
+   protected Document fetchDocument(String url) {
+      Map<String, String> headers = new HashMap<>();
+
+      headers.put("sec-ch-ua", "\"Google Chrome\";v=\"93\", \" Not;A Brand\";v=\"99\", \"Chromium\";v=\"93\"");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("authority", "www.flooranddecor.com");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setCookies(cookies)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .build();
+
+      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+   }
+
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       String url = "";
+
 
       if(arrayProducts.isEmpty()){
          url = "https://www.flooranddecor.com/search?q=sink&search-button=&lang=default&shopThisStore="+ this.storeId;
@@ -47,7 +82,9 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
             + this.storeId + "&ajax=true";
       }
 
-      this.currentDoc = fetchDocument(url, cookies);
+      this.log("Link onde são feitos os crawlers: " + url);
+
+      this.currentDoc = fetchDocument(url);
 
       Elements results = this.currentDoc.select("div.l-plp-grid_item-wrapper");
 
