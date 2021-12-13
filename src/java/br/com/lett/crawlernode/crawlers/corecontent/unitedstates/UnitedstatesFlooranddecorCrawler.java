@@ -17,6 +17,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -37,39 +38,19 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
 
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
-
    }
 
    protected String getStoreId() {
       return session.getOptions().optString("StoreID");
    }
 
-   @Override
-   protected Object fetch() {
-      Document doc = null;
-      try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session, this.cookiesWD, "https://www.flooranddecor.com/");
-         webdriver.waitForElement(".b-pdp_details", 20000);
-
-         doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
-      } catch (Exception e) {
-         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-      }
-
-      return doc;
-   }
-
 
    @Override
    public void handleCookiesBeforeFetch() {
-      Cookie cookie = new Cookie.Builder("StoreID", storeId)
-         .domain("www.flooranddecor.com")
-         .path("/")
-         .isHttpOnly(true)
-         .isSecure(false)
-         .build();
-      this.cookiesWD.add(cookie);
+      BasicClientCookie cookie = new BasicClientCookie("StoreID", storeId);
+      cookie.setDomain("www.flooranddecor.com");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
    }
 
    @Override
