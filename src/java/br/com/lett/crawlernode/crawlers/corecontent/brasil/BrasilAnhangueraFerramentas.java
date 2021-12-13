@@ -110,8 +110,8 @@ public class BrasilAnhangueraFerramentas extends Crawler {
       String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#hdnProdutoId", "value");
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".produto-detalhe-content h1", true);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".order-last .fbits-breadcrumb li", true);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".main-img .slick-active .zoomImg", Collections.singletonList("src"), "https", "anhangueraferramentas.fbitsstatic.net");
-      List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".main-img .slick-slide .zoomImg", Collections.singletonList("src"), "https", "imgprd.martins.com.br", primaryImage);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#zoomImagemProduto", Collections.singletonList("data-zoom-image"), "https", "anhangueraferramentas.fbitsstatic.net");
+      List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".elevatezoom-gallery", Collections.singletonList("data-zoom-image"), "https", "imgprd.martins.com.br", primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".infoProd"));
 
       boolean available = !doc.select("#msgEstoqueDisponivel span").isEmpty();
