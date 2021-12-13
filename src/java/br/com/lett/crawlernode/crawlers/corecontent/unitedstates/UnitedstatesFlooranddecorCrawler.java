@@ -17,6 +17,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -46,13 +47,10 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
 
    @Override
    public void handleCookiesBeforeFetch() {
-      Cookie cookie = new Cookie.Builder("StoreID", storeId)
-         .domain("www.flooranddecor.com")
-         .path("/")
-         .isHttpOnly(true)
-         .isSecure(false)
-         .build();
-      this.cookiesWD.add(cookie);
+      BasicClientCookie cookie = new BasicClientCookie("StoreID", storeId);
+      cookie.setDomain("www.flooranddecor.com");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
    }
 
    @Override
