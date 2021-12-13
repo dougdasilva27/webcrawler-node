@@ -37,27 +37,10 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
 
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
-
    }
 
    protected String getStoreId() {
       return session.getOptions().optString("StoreID");
-   }
-
-   @Override
-   protected Object fetch() {
-      Document doc = null;
-      try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session, this.cookiesWD, "https://www.flooranddecor.com/");
-         webdriver.waitForElement(".b-pdp_details", 20000);
-
-         doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
-      } catch (Exception e) {
-         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-      }
-
-      return doc;
    }
 
 
