@@ -63,29 +63,6 @@ public class PedidosyaCrawler extends Crawler {
       return this.dataFetcher.get(session,request);
    }
 
-//   private JSONObject getinfoFromApi(){
-//      String internalId = getInternalIdFromUrl();
-//
-//     String storeId =  session.getOptions().optString("store_id");
-//
-//      String url = "https://www.pedidosya.com.ar/mobile/v1/products/" + internalId + "?restaurantId="+storeId+"&businessType=GROCERIES";
-//
-//      Map<String,String> headers = new HashMap<>();
-//     headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
-//
-//     Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setProxyservice(
-//           Arrays.asList(
-//              ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-//              ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-//              ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-//              ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-//              ProxyCollection.BUY_HAPROXY)).build();
-//      String resp = this.dataFetcher.get(session,request).getBody();
-//      return CrawlerUtils.stringToJson(resp);
-//
-//   }
-
-
    @Override
    public List<Product> extractInformation(JSONObject productInfo) throws Exception {
       super.extractInformation(productInfo);
