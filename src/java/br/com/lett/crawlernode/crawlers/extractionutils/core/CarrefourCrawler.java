@@ -220,7 +220,7 @@ public class CarrefourCrawler extends VTEXNewScraper {
                   boolean isBuyBox = sellers.length() > 1;
                   boolean isMainRetailer = isMainRetailer(sellerFullName);
 
-                  Pricing pricing = scrapPricing(doc, internalId, commertialOffer, discounts);
+                  Pricing pricing = scrapPricing(doc, internalId, commertialOffer, discounts, jsonSku);
                   List<String> sales = isDefaultSeller ? scrapSales(doc, offerJson, internalId, internalPid, pricing) : new ArrayList<>();
 
                   offers.add(Offer.OfferBuilder.create()
@@ -242,10 +242,15 @@ public class CarrefourCrawler extends VTEXNewScraper {
       return offers;
    }
 
-   @Override
-   protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson) throws MalformedPricingException {
-      Double principalPrice = comertial.optDouble("spotPrice");
-      Double priceFrom = comertial.optDouble("listPrice");
+   protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson, JSONObject jsonSku) throws MalformedPricingException {
+      Double principalPrice = JSONUtils.getDoubleValueFromJSON(comertial, "spotPrice", false);
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(comertial, "listPrice", false);
+
+      if(jsonSku.optString("measurementUnit").equals("kg")) {
+         Double unitMultiplier = jsonSku.optDouble("unitMultiplier");
+         principalPrice = Math.floor((principalPrice * unitMultiplier) * 100) / 100.0;
+         if(priceFrom != null) priceFrom = Math.floor((priceFrom * unitMultiplier) * 100) / 100.0;
+      }
 
       CreditCards creditCards = scrapCreditCards(comertial, discountsJson, true);
       BankSlip bankSlip = scrapBankSlip(principalPrice, comertial, discountsJson, true);
