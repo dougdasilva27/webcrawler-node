@@ -1,12 +1,14 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -21,12 +23,13 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
    public BrasilExtrabomCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.FETCHER;
    }
 
    @Override
    protected void processBeforeFetch() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("content-type", "application/x-www-form-urlencoded");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
       String payload = "cep=" + cep;
 
       Request request = Request.RequestBuilder.create()
@@ -35,13 +38,27 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
          .setPayload(payload)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
+               ProxyCollection.NO_PROXY))
          .build();
 
       Response response = dataFetcher.post(session, request);
       this.cookies = response.getCookies();
+   }
+
+   @Override
+   protected Document fetchDocument(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(API)
+         .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NO_PROXY))
+         .build();
+
+      return Jsoup.parse(dataFetcher.get(session, request).getBody());
    }
 
    @Override
