@@ -732,7 +732,6 @@ public class BrasilAmazonCrawler extends Crawler {
 
    protected Document fetchDocumentWithWD() {
       Document doc = null;
-
       try {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
 
@@ -740,27 +739,28 @@ public class BrasilAmazonCrawler extends Crawler {
 
          webdriver.waitLoad(2000);
 
-         webdriver.waitForElement(".a-icon.a-icon-arrow.a-icon-small.arrow-icon", 2000);
+         webdriver.waitForElement(".a-icon.a-icon-arrow.a-icon-small.arrow-icon", 10000);
 
          WebElement buyButtom = webdriver.driver.findElement(By.cssSelector(".a-icon.a-icon-arrow.a-icon-small.arrow-icon"));
          webdriver.clickOnElementViaJavascript(buyButtom);
 
-         webdriver.waitForElement("#aod-offer-list", 2000);
+         webdriver.waitForElement("#aod-offer-list", 10000);
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         webdriver.terminate();
 
          return doc;
 
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-
+         webdriver.terminate();
       }
 
       return doc;
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 90);
+      WebDriverWait wait = new WebDriverWait(driver, 900);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
