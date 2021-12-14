@@ -243,13 +243,13 @@ public class CarrefourCrawler extends VTEXNewScraper {
    }
 
    protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson, JSONObject jsonSku) throws MalformedPricingException {
-      Double principalPrice = comertial.optDouble("spotPrice");
-      Double priceFrom = comertial.optDouble("listPrice");
+      Double principalPrice = JSONUtils.getDoubleValueFromJSON(comertial, "spotPrice", false);
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(comertial, "listPrice", false);
 
       if(jsonSku.optString("measurementUnit").equals("kg")) {
          Double unitMultiplier = jsonSku.optDouble("unitMultiplier");
          principalPrice = Math.floor((principalPrice * unitMultiplier) * 100) / 100.0;
-         priceFrom = Math.floor((priceFrom * unitMultiplier) * 100) / 100.0;
+         if(priceFrom != null) priceFrom = Math.floor((priceFrom * unitMultiplier) * 100) / 100.0;
       }
 
       CreditCards creditCards = scrapCreditCards(comertial, discountsJson, true);
