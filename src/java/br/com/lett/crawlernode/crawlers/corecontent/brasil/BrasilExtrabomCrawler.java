@@ -4,10 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -41,28 +38,39 @@ public class BrasilExtrabomCrawler extends Crawler {
 
    public BrasilExtrabomCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.JSOUP);
+      config.setFetcher(FetchMode.FETCHER);
+      config.setParser(Parser.HTML);
    }
 
    @Override
    public void handleCookiesBeforeFetch() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("content-type", "application/x-www-form-urlencoded");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
       String payload = "cep=" + cep;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(API)
          .setHeaders(headers)
+         .setProxyservice(Collections.singletonList(ProxyCollection.NO_PROXY))
          .setPayload(payload)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
          .build();
 
-      Response response = dataFetcher.post(session, request);
+      Response response = this.dataFetcher.post(session, request);
       this.cookies = response.getCookies();
+   }
+
+   @Override
+   protected Response fetchResponse() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setHeaders(headers)
+         .setProxyservice(Collections.singletonList(ProxyCollection.NO_PROXY))
+         .build();
+
+     return this.dataFetcher.get(session, request);
    }
 
    @Override
