@@ -204,9 +204,6 @@ public class BrasilAmazonCrawler extends Crawler {
 
          products.add(product);
 
-         Logging.printLogInfo(logger, session, "PRODUCT" + product);
-
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -369,9 +366,7 @@ public class BrasilAmazonCrawler extends Crawler {
             if (block != null && block.contains("Desculpe")) {
                offerPage = fetchDocumentWithWD();
                Logging.printLogInfo(logger, session, "WEB DRIVER");
-
             }
-
                Elements ofertas = offerPage.select("#aod-offer");
                for (Element oferta : ofertas) {
 
@@ -747,9 +742,6 @@ public class BrasilAmazonCrawler extends Crawler {
          webdriver.waitForElement("#aod-offer-list", 10000);
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
-         webdriver.terminate();
-
-         return doc;
 
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
