@@ -95,7 +95,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
       JSONArray searchFilters = getProductsFilter();
 
       if (this.accessToken != null && !searchFilters.isEmpty()) {
-         String url =  "https://td2fvf3nfk.execute-api.us-east-1.amazonaws.com/PROD/filtered-products";
+         String url = "https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/PROD/filtered-products";
          this.log("Link onde são feitos os crawlers: " + url);
 
          JSONObject payload = new JSONObject();
@@ -130,9 +130,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
    }
 
    private JSONArray getProductsFilter (){
-
-      String url =  "https://td2fvf3nfk.execute-api.us-east-1.amazonaws.com/PROD/search-filters";
-
+      String url = "https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/PROD/search-filters";
       JSONObject payload = new JSONObject();
       payload.put("query", this.keywordWithoutAccents);
       Map<String, String> headers = new HashMap<>();
@@ -147,7 +145,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
               .setPayload(payload.toString())
               .build();
 
-      JSONObject result =  JSONUtils.stringToJson(new JavanetDataFetcher().post(session, request).getBody());
+     JSONObject result =  JSONUtils.stringToJson(new JavanetDataFetcher().post(session, request).getBody());
 
       return result.optJSONArray("productsId");
    }
