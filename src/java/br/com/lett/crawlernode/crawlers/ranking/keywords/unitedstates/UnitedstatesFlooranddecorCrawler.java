@@ -44,7 +44,7 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
    protected Document fetchDocument(String url) {
       Document doc = null;
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.BUY_HAPROXY, session, this.cookiesWD, "https://www.flooranddecor.com/");
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY, session, this.cookiesWD, "https://www.flooranddecor.com/");
          webdriver.waitForElement("div.l-plp-grid_item-wrapper", 20000);
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
@@ -53,6 +53,8 @@ public class UnitedstatesFlooranddecorCrawler extends CrawlerRankingKeywords {
 
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
+         webdriver.terminate();
+
       }
 
       return doc;
