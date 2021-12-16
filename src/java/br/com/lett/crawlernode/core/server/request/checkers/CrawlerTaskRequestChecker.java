@@ -79,7 +79,7 @@ public class CrawlerTaskRequestChecker {
          throw new SeedCrawlerSessionException("This market doesn't work in Seed - Request in seed doesn't accept mode webdriver");
       }
 
-      return false;
+      return true;
    }
 
 }
