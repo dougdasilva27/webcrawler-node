@@ -56,6 +56,7 @@ public class EquadorCoralcuencaCrawler extends CrawlerRankingKeywords {
    }
 
    protected Document fetch() {
+      Document doc = null;
       String url = null;
 
       if(this.currentPage == 1) {
@@ -77,8 +78,9 @@ public class EquadorCoralcuencaCrawler extends CrawlerRankingKeywords {
       WebElement city = webdriver.driver.findElement(By.xpath(("//div[@class='botonSelectCiudad']")));
       webdriver.clickOnElementViaJavascript(city);
       webdriver.waitPageLoad(35);
-
-      return Jsoup.parse(webdriver.getCurrentPageSource());
+      doc = Jsoup.parse(webdriver.getCurrentPageSource());
+      webdriver.terminate();
+      return doc;
    }
 
    @Override
