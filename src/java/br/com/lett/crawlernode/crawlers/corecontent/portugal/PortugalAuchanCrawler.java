@@ -59,11 +59,12 @@ public class PortugalAuchanCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", true);
          boolean available = doc.select(".auc-product-unavailable").isEmpty();
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".carousel-item picture source", Arrays.asList("srcset"), "http://", HOME_PAGE);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".auc-carousel__thumbnail-image-container img", Arrays.asList("src"), "https", HOME_PAGE, primaryImage);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a", true);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#productDetail .row .col-md-12"));
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".description-and-detail"));
          Offers offers = available ? scrapOffer(doc) : new Offers();
          List<String> eans = new ArrayList<>();
-         String ean = CrawlerUtils.scrapStringSimpleInfo(doc, "product-ean", true);
+         String ean = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ean", true);
          eans.add(ean);
          // Creating the product
 
@@ -72,11 +73,11 @@ public class PortugalAuchanCrawler extends Crawler {
             .setInternalId(internalId)
             .setInternalPid(internalId)
             .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
+            .setCategories(categories)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
+            .setEans(eans)
             .setOffers(offers)
             .build();
          products.add(product);
@@ -116,7 +117,7 @@ public class PortugalAuchanCrawler extends Crawler {
 
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".item-old-price", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price .strike-through .value", null, false, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sales .value", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
