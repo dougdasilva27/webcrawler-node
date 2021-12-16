@@ -7,11 +7,10 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Locale;
 
 public class EquadorFrecuentoCrawler extends CrawlerRankingKeywords {
@@ -21,51 +20,55 @@ public class EquadorFrecuentoCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      this.pageSize = 32;
+      this.pageSize = 20;
 
-      String url = "https://www.frecuento.com/frecuento/es/search?q=" + this.keywordEncoded + "%3Arelevance&page=" + (this.currentPage-1);
-      this.currentDoc = fetchDocument(url, new ArrayList<>());
+      String url = "https://app.frecuento.com/products-search/?limit=300&q=" + this.keywordEncoded;
 
-      Elements products = this.currentDoc.select("ul.product__list li");
+      JSONObject productsResponnse = fetchJSONObject(url);
+      JSONArray products = productsResponnse.getJSONArray("results");
 
-      if (totalProducts == 0) {
-         String totalBuscaTexto = CrawlerUtils.scrapStringSimpleInfo(currentDoc,".pagination-bar-results",true);
-         if(totalBuscaTexto!=null) {
-            String totalBusca = CommonMethods.substring(totalBuscaTexto.toLowerCase(Locale.ROOT), "de ", " producto", true);
-         totalProducts = Integer.parseInt(totalBusca!=null?totalBusca:"0");
+      for (int i = 0; i < products.length(); i++) {
+         if (products.get(i) instanceof JSONObject) {
+            checkCurrentPage(i);
+            JSONObject productJson = (JSONObject) products.get(i);
+
+            String internalPid = productJson.getInt("id") + "";
+            String name = productJson.getString("name");
+            String productUrl = scrapProductUrl(name, internalPid);
+
+            JSONArray images = productJson.getJSONArray("photos");
+            String image = images.length() > 0 ? images.getString(0) : "";
+
+            int priceInCents = CommonMethods.stringPriceToIntegerPrice(productJson.getString("amount_total"), '.', 0);
+            boolean isAvailable = productJson.getInt("stock") != 0;
+
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setInternalId(null)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setUrl(productUrl)
+               .setImageUrl(image)
+               .setAvailability(isAvailable)
+               .setPriceInCents(priceInCents)
+               .build();
+
+            saveDataProduct(productRanking);
          }
       }
-      for (Element element : products) {
-         String id = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "input[name=\"productCodePost\"]", "value");
-         String Pid ;
-         String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".product__list--name", "href");
-         String completeUrl = CrawlerUtils.completeUrl(productUrl, "https:", "www.frecuento.com");
-         Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(element, ".product__listing--price", null, true, '.', session, null);
 
-         if(id==null){
-            Pid=CommonMethods.getLast(completeUrl.split("/"));
-         }else {
-            Pid = id;
-         }
 
-         RankingProduct rankingProducts = RankingProductBuilder.create()
-            .setInternalId(id)
-            .setInternalPid(Pid)
-            .setName(CrawlerUtils.scrapStringSimpleInfo(element, ".product__list--name", true))
-            .setUrl(completeUrl)
-            .setImageUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "img", "data-src"))
-            .setAvailability(true)
-            .setPriceInCents(priceInCents)
-            .setIsSponsored(false)
-            .setKeyword(this.keywordEncoded)
-            .setPosition(this.position)
-            .setPageNumber(this.currentPage)
-            .build();
+   }
 
-         saveDataProduct(rankingProducts);
+   private String scrapProductUrl(String productName, String productId) {
+      String normalizedName = CommonMethods.removeAccents(productName).replaceAll("[^0-9a-zA-Z]+", "-").toLowerCase();
+      return "https://www.frecuento.com/" + normalizedName + "/" + productId;
+   }
+
+   private void checkCurrentPage(int productIndex) {
+      int currentPage = productIndex / this.pageSize + 1;
+      if (currentPage != this.currentPage) {
+         this.currentPage = currentPage;
       }
-
-
    }
 
    @Override
