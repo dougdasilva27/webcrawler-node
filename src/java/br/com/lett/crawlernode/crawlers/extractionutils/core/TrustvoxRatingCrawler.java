@@ -97,10 +97,11 @@ public class TrustvoxRatingCrawler {
   public Double getTotalRating(JSONObject trustVoxResponse) {
     String averageKey = "average";
 
-    if (trustVoxResponse.has(averageKey) && trustVoxResponse.get(averageKey) instanceof Double) {
-      return trustVoxResponse.getDouble(averageKey);
-    }
-    else {
+    if (trustVoxResponse.has(averageKey) && trustVoxResponse.opt(averageKey) instanceof Double) {
+      return trustVoxResponse.optDouble(averageKey);
+    } else if(trustVoxResponse.opt(averageKey) instanceof Integer) {
+       return (double) trustVoxResponse.optInt(averageKey);
+    } else {
        return 0d;
     }
   }
