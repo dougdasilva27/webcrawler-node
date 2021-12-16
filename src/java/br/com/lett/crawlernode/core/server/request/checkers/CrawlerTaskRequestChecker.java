@@ -25,6 +25,7 @@ public class CrawlerTaskRequestChecker {
             return checkSeedTaskRequest(request);
          } catch (CrawlerSeedRequestException e) {
             e.printStackTrace();
+            return false;
          }
       }
 
