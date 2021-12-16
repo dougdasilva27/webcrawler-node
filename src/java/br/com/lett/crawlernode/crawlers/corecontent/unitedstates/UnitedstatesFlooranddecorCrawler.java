@@ -47,10 +47,6 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-      if (session instanceof SeedCrawlerSession) {
-         Logging.printLogError(logger, session, "This market doesn't accept seed");
-         return null;
-      }
       Document doc = null;
       try {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY, session, this.cookiesWD, HOME_PAGE);
