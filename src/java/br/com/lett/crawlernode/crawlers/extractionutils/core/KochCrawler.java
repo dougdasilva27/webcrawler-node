@@ -38,20 +38,13 @@ public class KochCrawler extends Crawler {
 
    private String storeId;
 
-   public String getStoreId() {
-      return storeId;
-   }
-
-   public void setStoreId(String storeId) {
-      this.storeId = storeId;
-   }
-
    private static final String SELLER_FULLNAME = "Koch";
    private static final List<String> cards = Arrays.asList(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.DINERS.toString(), Card.ELO.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString());
 
    public KochCrawler(Session session) {
       super(session);
+      this.storeId = session.getOptions().optString("storeId");
    }
 
    @Override
