@@ -6,12 +6,14 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -57,10 +59,10 @@ public class EquadorFrecuentoCrawler extends Crawler {
    public List<Product> extractInformation(JSONObject jsonObject) throws Exception {
 
       List<Product> products = new ArrayList<>();
-
-      String primaryImage = (String) jsonObject.optJSONArray("photos").get(0);
+      JSONArray imagesJson = jsonObject.optJSONArray("photos");
+      List<String> images = imagesJson != null ? CrawlerUtils.scrapImagesListFromJSONArray(imagesJson, null, null, "", "", session) : null;
+      String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
       CategoryCollection categories = scrapCategories(jsonObject);
-      List<String> secondaryImages = scrapSecondaryImages(jsonObject, primaryImage);
 
       Product product = ProductBuilder.create()
          .setUrl(session.getOriginalURL())
@@ -68,7 +70,7 @@ public class EquadorFrecuentoCrawler extends Crawler {
          .setInternalPid(jsonObject.optString("id"))
          .setName(jsonObject.optString("name"))
          .setPrimaryImage(primaryImage)
-         .setSecondaryImages(secondaryImages)
+         .setSecondaryImages(images)
          .setCategories(categories)
          .setDescription(jsonObject.optString("description"))
          .setOffers(scrapOffer(jsonObject))
@@ -81,27 +83,19 @@ public class EquadorFrecuentoCrawler extends Crawler {
 
    }
 
-   private List<String> scrapSecondaryImages(JSONObject jsonObject, String primaryImage) {
-      List<String> secondaryImages = new ArrayList<>();
-      for(Object image : jsonObject.optJSONArray("photos")) {
-         if(image instanceof String && !((String) image).equals(primaryImage)) {
-            secondaryImages.add((String) image);
-         }
-      }
-      return secondaryImages;
-   }
-
    private CategoryCollection scrapCategories(JSONObject jsonObject) {
       CategoryCollection categories = new CategoryCollection();
-      for(Object category : jsonObject.optJSONArray("categories")) {
-         if(category instanceof JSONObject) {
-            JSONObject categoryJson = (JSONObject) category;
-            categories.add(categoryJson.optString("name"));
+      JSONArray categoriesJSON = jsonObject.optJSONArray("categories");
+      if(categoriesJSON != null) {
+         for(Object category : categoriesJSON) {
+            if(category instanceof JSONObject) {
+               JSONObject categoryJson = (JSONObject) category;
+               categories.add(categoryJson.optString("name"));
+            }
          }
       }
       return categories;
    }
-
 
    private Offers scrapOffer(JSONObject obj) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
@@ -136,7 +130,6 @@ public class EquadorFrecuentoCrawler extends Crawler {
          .setCreditCards(creditCards)
          .build();
    }
-
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
