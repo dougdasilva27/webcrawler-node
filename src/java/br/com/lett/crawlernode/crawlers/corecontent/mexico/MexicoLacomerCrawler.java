@@ -18,6 +18,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.commons.lang.StringUtils;
 import org.json.JSONObject;
 
 import java.util.*;
@@ -49,7 +50,7 @@ public class MexicoLacomerCrawler extends Crawler {
 
    public MexicoLacomerCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.FETCHER);
+      config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
@@ -67,12 +68,7 @@ public class MexicoLacomerCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX
-            )
-         ).build();
+         .build();
 
       String content = this.dataFetcher
          .get(session, request)
@@ -95,7 +91,7 @@ public class MexicoLacomerCrawler extends Crawler {
          if (!data.isEmpty()) {
 
             String internalId = JSONUtils.getIntegerValueFromJSON(data, "artCod", 0).toString();
-            String name = JSONUtils.getStringValue(data, "art_des_com");
+            String name = scrapProductName(data);
             CategoryCollection categories = crawlCategories(data);
             List<String> images = scrapImages(json);
             String primaryImage = scrapPrimaryImage(images);
@@ -128,6 +124,26 @@ public class MexicoLacomerCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private String scrapProductName(JSONObject data) {
+      String completeName = JSONUtils.getStringValue(data, "art_des_com");
+      if(completeName != null && !completeName.isEmpty()) {
+         return completeName;
+      }
+
+      String productName = "";
+      String name = JSONUtils.getStringValue(data, "artDes");
+      String brand = JSONUtils.getStringValue(data, "marDes");
+      int quantity = JSONUtils.getIntegerValueFromJSON(data, "artUco", 0);
+      String unity = JSONUtils.getStringValue(data, "artTun");
+
+      if(name != null && !name.isEmpty()) productName += name;
+      if(brand != null && !brand.isEmpty()) productName += " " + brand;
+      if(quantity != 0) productName += " " + quantity;
+      if(unity != null && !unity.isEmpty()) productName += " " + unity;
+
+      return productName;
    }
 
    private String scrapEan() {
