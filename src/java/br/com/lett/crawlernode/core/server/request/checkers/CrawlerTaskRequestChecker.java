@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest
 import br.com.lett.crawlernode.core.server.request.CrawlerSeedRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
+import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.exceptions.CrawlerSeedRequestException;
 import br.com.lett.crawlernode.util.Logging;
 import enums.ScrapersTypes;
@@ -24,6 +25,7 @@ public class CrawlerTaskRequestChecker {
          try {
             return checkSeedTaskRequest(request);
          } catch (CrawlerSeedRequestException e) {
+            Persistence.updateFrozenServerTask(((CrawlerSeedRequest) request).getTaskId(),e.getMessage());
             e.printStackTrace();
             return false;
          }
