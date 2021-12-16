@@ -4,7 +4,7 @@ import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest
 import br.com.lett.crawlernode.core.server.request.CrawlerSeedRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
-import br.com.lett.crawlernode.exceptions.SeedCrawlerSessionException;
+import br.com.lett.crawlernode.exceptions.CrawlerSeedRequestException;
 import br.com.lett.crawlernode.util.Logging;
 import enums.ScrapersTypes;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ public class CrawlerTaskRequestChecker {
       if (request instanceof CrawlerSeedRequest){
          try {
             return checkSeedTaskRequest(request);
-         } catch (SeedCrawlerSessionException e) {
+         } catch (CrawlerSeedRequestException e) {
             e.printStackTrace();
          }
       }
@@ -74,9 +74,9 @@ public class CrawlerTaskRequestChecker {
       return true;
    }
 
-   private static boolean checkSeedTaskRequest(Request request) throws SeedCrawlerSessionException {
+   private static boolean checkSeedTaskRequest(Request request) throws CrawlerSeedRequestException {
       if (request.isUseBrowser()) {
-         throw new SeedCrawlerSessionException("This market doesn't work in Seed - Request in seed doesn't accept mode webdriver");
+         throw new CrawlerSeedRequestException("This market doesn't work in Seed ");
       }
 
       return true;
