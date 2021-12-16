@@ -19,6 +19,7 @@ import org.openqa.selenium.WebElement;
 import java.io.UnsupportedEncodingException;
 
 public class EquadorCoralcuencaCrawler extends CrawlerRankingKeywords {
+
    public EquadorCoralcuencaCrawler(Session session) {
       super(session);
    }
@@ -26,6 +27,7 @@ public class EquadorCoralcuencaCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       Document document = fetch();
+      this.currentDoc = document;
 
       Elements products =  document.select(".listaProductoBus .wrapperDetalle");
       for (Element product : products) {
@@ -54,32 +56,35 @@ public class EquadorCoralcuencaCrawler extends CrawlerRankingKeywords {
    }
 
    protected Document fetch() {
+      Document doc = null;
+      String url = null;
 
-      String url = "https://www.coralhipermercados.com/buscar?q=" + this.keywordEncoded.replaceAll(" ","%20")+ "&page=" + this.currentPage;
+      if(this.currentPage == 1) {
+         url = "https://www.coralhipermercados.com/buscar?q=" + this.keywordEncoded.replaceAll(" ","%20");
+      } else {
+       url = "https://www.coralhipermercados.com/buscar?q=" + this.keywordEncoded.replaceAll(" ","%20")+ "&page=" + this.currentPage;
+
+      }
 
       webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.BUY_HAPROXY, session);
 
       this.log("awaiting page");
 
-
       webdriver.waitForElement(".lotties", 25);
 
       webdriver.waitLoad(6000);
+      webdriver.waitForElement(".botonSelectCiudad",25);
 
-
-      WebElement city = webdriver.driver.findElement(By.cssSelector(".botonSelectCiudad"));
+      WebElement city = webdriver.driver.findElement(By.xpath(("//div[@class='botonSelectCiudad']")));
       webdriver.clickOnElementViaJavascript(city);
-
-      webdriver.waitPageLoad(20);
-
-      Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
-
+      webdriver.waitPageLoad(35);
+      doc = Jsoup.parse(webdriver.getCurrentPageSource());
+      webdriver.terminate();
       return doc;
    }
 
    @Override
    protected boolean hasNextPage() {
-      return true;
+      return !this.currentDoc.select(".pagination li:last-of-type").hasClass("disabled");
    }
 }
