@@ -13,8 +13,6 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 
-import static org.bouncycastle.asn1.x509.X509ObjectIdentifiers.id;
-
 public class EquadorFrecuentoCrawler extends CrawlerRankingKeywords {
    public EquadorFrecuentoCrawler(Session session) {
       super(session);
