@@ -15,21 +15,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class KochCrawlerRanking extends CrawlerRankingKeywords {
-
-
    protected String storeId;
-
-   public String getStoreId() {
-      return storeId;
-   }
-
-   public void setStoreId(String storeId) {
-      this.storeId = storeId;
-   }
-
 
    public KochCrawlerRanking(Session session) {
       super(session);
+      this.storeId = session.getOptions().optString("storeId");
    }
 
    @Override
