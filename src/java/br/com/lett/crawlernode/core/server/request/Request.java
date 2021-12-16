@@ -20,6 +20,7 @@ public class Request {
    private String internalId;
    private Long processedId;
    private String queueName;
+   private boolean useBrowser;
 
    public Request() {
       super();
@@ -105,11 +106,19 @@ public class Request {
       this.sessionId = sessionId;
    }
 
+   public boolean isUseBrowser() {
+      return useBrowser;
+   }
+
+   public void setUseBrowser(boolean useBrowser) {
+      this.useBrowser = useBrowser;
+   }
+
    @Override
    public String toString() {
       return "Request[sessionId= " + sessionId + ", messageId=" + messageId + ", messageBody=" + parameter + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
             + ", internalId=" + internalId + ", processedId=" + processedId + ", marketId=" + market + ", queueName=" + queueName
-            + ", supplierId=" + supplierId + "]";
+            + ", supplierId=" + supplierId + ", useBrowser=" + useBrowser + "]";
    }
 
    public String getClassName() {
