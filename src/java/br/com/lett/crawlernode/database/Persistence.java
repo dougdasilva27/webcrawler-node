@@ -977,6 +977,31 @@ public class Persistence {
       }
    }
 
+   public static void updateFrozenServerTask(String taskId, String msg) {
+
+      if (taskId != null) {
+         Document taskDocument = new Document().append("updated", new Date()).append("progress", 100);
+
+         taskDocument.append("status", "ERROR");
+
+         taskDocument.append("result", new Document().append("error", msg));
+
+         long queryStartTime = System.currentTimeMillis();
+
+         try {
+            GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
+               MONGO_COLLECTION_SERVER_TASK);
+
+            JSONObject apacheMetadata = new JSONObject().put("mongo_elapsed_time", System.currentTimeMillis() - queryStartTime)
+               .put("query_type", "update_error_frozen_seed_servertask");
+
+         } catch (Exception e) {
+            Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+         }
+      }
+   }
+
+
    /**
     * Update frozen server task progress
     *
