@@ -39,6 +39,7 @@ public class RequestConverter {
    private static final String MARKET_USE_BROWSER = "use_browser";
    private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
    private static final String SESSION_ID = "sessionId";
+   private static final String USE_BROWSER = "use_browser";
 
    private RequestConverter() {
    }
@@ -74,6 +75,7 @@ public class RequestConverter {
       request.setMessageId(req.getHeader(MSG_ID_HEADER));
       request.setClassName(body.optString(BODY_CLASS_NAME));
       request.setSessionId(body.optString(SESSION_ID));
+      request.setUseBrowser((Boolean) body.optQuery("/market/" + USE_BROWSER));
 
       String options = body.optString(BODY_OPTIONS);
       if (options != null && !options.isEmpty()) {
