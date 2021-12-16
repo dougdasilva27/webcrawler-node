@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
@@ -16,6 +17,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -26,7 +28,7 @@ public class BrasilEpocacosmeticosCrawler extends VTEXOldScraper {
 
    public BrasilEpocacosmeticosCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.JSOUP);
+      config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
