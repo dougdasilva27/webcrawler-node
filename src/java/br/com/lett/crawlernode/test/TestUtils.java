@@ -2,11 +2,13 @@ package br.com.lett.crawlernode.test;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
@@ -16,9 +18,12 @@ import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.processor.ResultManager;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.ScraperInformation;
 import credentials.models.DBCredentials;
 import org.apache.kafka.common.acl.AclOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import java.sql.Connection;
@@ -34,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 public class TestUtils {
 
+   protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
    public static void initialize() {
       try {
@@ -70,7 +76,8 @@ public class TestUtils {
          } else {
             session = SessionFactory.createTestSession(parameter, market, scraperInformation);
          }
-
+         String className = scraperInformation.getClassName().split("\\.")[scraperInformation.getClassName().split("\\.").length - 1];
+         Logging.printLogDebug(logger, "Crawler running for class: " + ".("+ className +".java:1)");
          Task task = TaskFactory.createTask(session, scraperInformation.getClassName());
 
          if (task != null) {
@@ -159,5 +166,30 @@ public class TestUtils {
       return tests;
    }
 
+   public static String printProduct(Product product) {
+      StringBuilder sb = new StringBuilder();
 
+      int secondaryImagesNumber = product.getSecondaryImages() != null ? product.getSecondaryImages().size() : 0;
+      int categoriesNumber = (product.getCategory1() != null ? 1 : 0) + (product.getCategory2() != null ? 1 : 0) + (product.getCategory3() != null ? 1 : 0);
+
+      String status = product.getAvailable() ? "available" : product.getMarketplace() != null ? "marketplace" : "not available";
+
+      sb.append("\tinternalId: " + product.getInternalId() + "\n");
+      sb.append("\tinternalPid: " + product.getInternalPid() + "\n");
+      sb.append("\tname: " + product.getName() + "\n");
+      sb.append("\tstatus: " + status + "\n");
+      sb.append("\tprice: " + product.getPrice() + "\n");
+      sb.append("\tprice bank: " + (product.getPrices() != null ? product.getPrices().getBankTicketPrice() : null) + "\n");
+      sb.append("\tprice from: " + (product.getPrices() != null ? product.getPrices().getPriceFrom() : null) + "\n");
+      sb.append("\toffers: " + (product.getOffers() == null ? product.getOffers() : product.getOffers().size()) + "\n");
+      sb.append("\tprimary image: " + product.getPrimaryImage() + "\n");
+      sb.append("\tsecondary images: " + secondaryImagesNumber + "\n");
+      sb.append("\tcategories: " + categoriesNumber + "\n");
+      sb.append("\tdescription: " + "html code with " + product.getDescription().length() + " characters" + "\n");
+      sb.append("\teans: " + (product.getEans() == null ? product.getEans() : product.getEans().toString()) + "\n");
+
+
+
+      return sb.toString();
+   }
 }

@@ -342,10 +342,12 @@ public abstract class Crawler extends Task {
 
          if (Test.pathWrite != null) {
             String status = getFirstPartyRegexStatus(p);
-
+            printCrawledInformation(p);
+            Logging.printLogDebug(logger, session, "Seller Name:" + getFirstPartyRegex(p));
             TestHtmlBuilder.buildProductHtml(new JSONObject(p.toJson()), Test.pathWrite, status, session);
+         } else {
+            printCrawledInformation(p);
          }
-         printCrawledInformation(p);
       }
    }
 
@@ -410,7 +412,7 @@ public abstract class Crawler extends Task {
       } catch (Exception e) {
          Exporter.collectError(e, session);
          if (session instanceof TestCrawlerSession) {
-            ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
+            ((TestCrawlerSession) session).setLastError(e);
          }
          session.registerError(new SessionError(SessionError.EXCEPTION, e.getMessage()));
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
@@ -753,9 +755,10 @@ public abstract class Crawler extends Task {
       Offers offers = product.getOffers();
       if (offers != null && !offers.isEmpty()) {
          for (Offer offer : offers.getOffersList()) {
-            stringBuilder.append("\n--");
+            stringBuilder.append("\n[");
             stringBuilder.append(offer.getSlugSellerName());
-            stringBuilder.append("--");
+            stringBuilder.append("]");
+
          }
       }
       return stringBuilder.toString();

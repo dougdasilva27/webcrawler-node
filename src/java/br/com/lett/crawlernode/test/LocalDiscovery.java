@@ -6,10 +6,14 @@ import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.task.base.Task;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +21,8 @@ import java.util.stream.Collectors;
 
 public class LocalDiscovery {
 
-   JSONArray errors = new JSONArray();
+   protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
+   private final JSONArray errors = new JSONArray();
 
    public void discovery(Market market, List<String> keywords, Integer maxProducts, Integer corePoolSize) throws InterruptedException {
 
@@ -36,7 +41,7 @@ public class LocalDiscovery {
             }
 
          } else {
-            System.err.println("Erro instace Crawler Ranking");
+            Logging.printLogDebug(logger, "Erro instace Crawler Ranking");
          }
       }
 
@@ -44,32 +49,35 @@ public class LocalDiscovery {
 
       List<TestRunnable> tests = TestUtils.poolTaskProcess(market, urls, TestType.CORE, maxProducts, corePoolSize);
 
-      int count = 0;
+      int count = 1, countProducts = 0;
+
       for (TestRunnable test : tests) {
          for (Task task : test.tasks) {
             Session session = task.getSession();
             if (session instanceof TestCrawlerSession) {
+               System.out.println(count + "|| url: " + session.getOriginalURL());
+               count++;
                if (((TestCrawlerSession) session).getLastError() != null) {
                   JSONObject error = new JSONObject();
-                  error.put(((TestCrawlerSession) session).getLastError(), ((TestCrawlerSession) session).getLastError());
+                  error.put(session.getOriginalURL(), ((TestCrawlerSession) session).getLastError().getStackTrace());
                   errors.put(error);
-               }
-               count++;
-               System.out.println(count + "|| url: " + session.getOriginalURL());
-               if (((TestCrawlerSession) session).getProducts() != null) {
+                  System.out.println("\t " + ((TestCrawlerSession) session).getLastError().getMessage());
+               } else if (((TestCrawlerSession) session).getProducts() != null && !((TestCrawlerSession) session).getProducts().isEmpty()) {
+                  countProducts++;
                   for (Product product : ((TestCrawlerSession) session).getProducts()) {
-                     System.out.println("\t internalId: " + product.getInternalId() + " || isVoid: " + product.getName() == null + " || name: " + product.getName());
+                     System.out.println(TestUtils.printProduct(product));
                   }
+               }else {
+                  System.out.println("\t Nenhum produto encontrado");
                }
             }
          }
       }
-      CommonMethods.saveDataToAFile(errors, Test.pathWrite + "/log.json");
 
+      CommonMethods.saveDataToAFile(errors, Test.pathWrite + "/log.json");
       System.out.println("Products ranking found: " + products.size());
-      System.out.println(("Products core found: " + count));
+      System.out.println(("Products core found: " + countProducts));
 
    }
-
 
 }
