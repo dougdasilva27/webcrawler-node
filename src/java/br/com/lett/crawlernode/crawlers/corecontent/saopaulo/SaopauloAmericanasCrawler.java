@@ -310,7 +310,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
 
    private String scrapSellerIdFromURL(String rawSellerId) {
-      String sellerId = "";
+      String sellerId = null;
       if (rawSellerId != null) {
          Pattern pattern = Pattern.compile("sellerId=([0-9]*)");
          Matcher matcher = pattern.matcher(session.getOriginalURL());
