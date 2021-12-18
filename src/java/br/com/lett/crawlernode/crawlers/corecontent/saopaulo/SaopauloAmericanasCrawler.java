@@ -29,6 +29,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SaopauloAmericanasCrawler extends B2WCrawler {
 
@@ -209,14 +211,14 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
       if (!sellersFromHTML.isEmpty()) {
 
-         listSelectors.put("selectorSellerName",".seller-card__SellerInfo-pf2gd6-2 p:nth-child(2)");
-         listSelectors.put("selectorSellerId",".seller-card__ButtonBox-pf2gd6-4 a");
+         listSelectors.put("selectorSellerName", ".seller-card__SellerInfo-pf2gd6-2 p:nth-child(2)");
+         listSelectors.put("selectorSellerId", ".seller-card__ButtonBox-pf2gd6-4 a");
 
          setOffersForSellersPage(offers, sellersFromHTML, listSelectors);
       } else if (!sellersFromHTMLNewWay.isEmpty()) {
 
-         listSelectors.put("selectorSellerName",".sold-and-delivery__Seller-sc-1kx2hv4-1:nth-child(2)");
-         listSelectors.put("selectorSellerId",".seller-card__ButtonContainer-nrtn3f-6 a");
+         listSelectors.put("selectorSellerName", ".sold-and-delivery__Seller-sc-1kx2hv4-2:nth-child(2)");
+         listSelectors.put("selectorSellerId", ".seller-card__ButtonContainer-nrtn3f-6 a");
 
          setOffersForSellersPage(offers, sellersFromHTMLNewWay, listSelectors);
 
@@ -310,7 +312,11 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    private String scrapSellerIdFromURL(String rawSellerId) {
       String sellerId = "";
       if (rawSellerId != null) {
-         sellerId = CommonMethods.getLast(rawSellerId.split("sellerId")).replaceAll("[^0-9]", "").trim();
+         Pattern pattern = Pattern.compile("sellerId=([0-9]*)");
+         Matcher matcher = pattern.matcher(session.getOriginalURL());
+         if (matcher.find()) {
+            sellerId = matcher.group(1);
+         }
       }
       return sellerId;
    }
