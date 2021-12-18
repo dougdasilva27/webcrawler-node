@@ -35,8 +35,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    private static final String HOME_PAGE = "https://www.americanas.com.br/";
    private static final String MAIN_SELLER_NAME_LOWER = "americanas.com";
    private static final String MAIN_SELLER_NAME_LOWER_FROM_HTML = "Americanas";
-   private static final int RATING_API_VERSION = 1;
-   private static final String KEY_SHA_256 = "291cd512e18fb8148bb39aa57d389741fd588346b0fd8ce2260a21c3a34b6598";
 
    private static final List<String> UserAgent = Arrays.asList(
       "Mozilla/5.0 (iPhone; CPU iPhone OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
@@ -69,18 +67,11 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       Random random = new Random();
 
       Map<String, String> headers = new HashMap<>();
-
-//      super.headers.put("authority", "www.americanas.com.br");
       headers.put("sec-ch-ua", "\"Chromium\";v=\"92\", \" Not A;Brand\";v=\"99\", \"Google Chrome\";v=\"92\"");
       headers.put("sec-ch-ua-mobile", "?0");
       headers.put("upgrade-insecure-requests", "1");
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9");
-//      headers.put("sec-fetch-site", "none");
-//      headers.put("sec-fetch-mode", "navigate");
-//      headers.put("sec-fetch-user", "?1");
-//      headers.put("sec-fetch-dest", "document");
       headers.put("user-agent", UserAgent.get(random.nextInt(UserAgent.size())));
-//      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
 
       return headers;
    }
