@@ -98,16 +98,15 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
 
                if (productInfo != null && !productInfo.isEmpty()) {
                   JSONObject offers = getJson(productInfo, "offers");
-                  String internalId = JSONUtils.getValueRecursive(offers, "result.0.sku", String.class);
+                  String internalId = offers != null ? JSONUtils.getValueRecursive(offers, "result.0.sku", String.class) : null;
                   String internalPid = productInfo.optString("id");
                   String productUrl = homePage + "produto/" + internalPid;
                   String name = productInfo.optString("name");
                   JSONArray imageJson = getJsonArray(productInfo);
-                  String imageUrl = JSONUtils.getValueRecursive(imageJson, "0.large", String.class);
-                  int price = CommonMethods.doublePriceToIntegerPrice(JSONUtils.getValueRecursive(offers, "result.0.salesPrice", Double.class), 0);
+                  String imageUrl = imageJson != null ? JSONUtils.getValueRecursive(imageJson, "0.large", String.class) : null;
+                  int price = offers != null ? CommonMethods.doublePriceToIntegerPrice(JSONUtils.getValueRecursive(offers, "result.0.salesPrice", Double.class), 0) : null;
                   boolean isAvailable = price != 0;
 
-                  //New way to send products to save data product
                   RankingProduct productRanking = RankingProductBuilder.create()
                      .setUrl(productUrl)
                      .setInternalId(internalId)
