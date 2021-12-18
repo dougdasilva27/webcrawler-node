@@ -144,34 +144,6 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
    }
 
 
-   public JSONObject selectJsonFromHtml(Document doc) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException, UnsupportedEncodingException {
-      JSONObject jsonObject = new JSONObject();
-      Elements scripts = doc.select("body > script");
-
-      for (Element e : scripts) {
-         String script = e.html();
-         if (script.contains("window.__APOLLO_STATE__ =")) {
-            String readyToDecode = script.replace("%", "%25");
-            String decode = URLDecoder.decode(readyToDecode, "UTF-8");
-            String split = CrawlerUtils.getStringBetween(decode, "window.__APOLLO_STATE__ =", ",\"session\":") + "}";
-            jsonObject = CrawlerUtils.stringToJson(split);
-            break;
-         }
-      }
-
-      return jsonObject;
-   }
-
-   private String getStringWithRegex(JSONObject jsonObject, String regex) {
-      String url = null;
-      Pattern pattern = Pattern.compile(regex);
-      Matcher matcher = pattern.matcher(jsonObject.toString());
-      if (matcher.find()) {
-         url = matcher.group(1);
-      }
-      return url;
-   }
-
    private JSONObject getJson(JSONObject jsonObject, String type) {
       for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
          String key = it.next();
