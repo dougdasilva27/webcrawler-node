@@ -15,19 +15,13 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords {
 
@@ -94,7 +88,7 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
       JSONArray products = productsJson.optJSONArray("products");
 
       if (products != null && !products.isEmpty()) {
-         if (this.totalProducts == 0){
+         if (this.totalProducts == 0) {
             setTotalProducts(productsJson);
          }
          for (Object e : products) {
