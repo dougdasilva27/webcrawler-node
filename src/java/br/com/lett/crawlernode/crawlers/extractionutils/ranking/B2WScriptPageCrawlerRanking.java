@@ -139,10 +139,12 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
 
 
    private JSONObject getJson(JSONObject jsonObject, String type) {
-      for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
-         String key = it.next();
-         if (key.contains(type)) {
-            return jsonObject.optJSONObject(key);
+      if (jsonObject != null) {
+         for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
+            String key = it.next();
+            if (key.contains(type)) {
+               return jsonObject.optJSONObject(key);
+            }
          }
       }
 
