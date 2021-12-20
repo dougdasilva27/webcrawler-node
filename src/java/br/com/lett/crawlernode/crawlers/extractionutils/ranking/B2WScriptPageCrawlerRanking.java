@@ -42,6 +42,7 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
+         .setCookies(this.cookies)
          .mustSendContentEncoding(false)
          .setFetcheroptions(
             FetcherOptions.FetcherOptionsBuilder.create()
