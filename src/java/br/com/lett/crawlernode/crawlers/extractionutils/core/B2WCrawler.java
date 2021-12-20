@@ -620,8 +620,12 @@ public class B2WCrawler extends Crawler {
       JSONObject paymentOptions = SaopauloB2WCrawlersUtils.getJson(info, "paymentOptions");
       JSONArray installmentMin = SaopauloB2WCrawlersUtils.getJsonArrayInstallment(paymentOptions);
       Double priceFrom = scrapPriceFrom(info);
-      CreditCards creditCards = scrapCreditCards(paymentOptions);
       Double spotlightPrice = JSONUtils.getValueRecursive(installmentMin, "0.total", Double.class);
+      if (spotlightPrice == null){
+         Integer priceInt = JSONUtils.getValueRecursive(installmentMin, "0.total", Integer.class);
+         spotlightPrice = priceInt != null ? Double.valueOf(priceInt) : null;
+      }
+      CreditCards creditCards = scrapCreditCards(paymentOptions, spotlightPrice);
       BankSlip bt = scrapBankTicket(info);
 
       if (priceFrom != null) {
@@ -768,7 +772,7 @@ public class B2WCrawler extends Crawler {
       return skuMap;
    }
 
-   protected CreditCards scrapCreditCards(JSONObject paymentOptions) throws MalformedPricingException {
+   protected CreditCards scrapCreditCards(JSONObject paymentOptions, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
@@ -785,6 +789,13 @@ public class B2WCrawler extends Crawler {
             .setInstallments(installments)
             .build());
       }
+
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+
 
       return creditCards;
    }
