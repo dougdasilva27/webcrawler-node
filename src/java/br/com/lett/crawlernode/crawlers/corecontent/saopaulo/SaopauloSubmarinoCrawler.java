@@ -81,10 +81,11 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
 
       Offers offers = new Offers();
 
-      JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
+      JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
 
       //offerId é responsavel por definir qual sellers vai aparecer na primeira posição da pagina de sellers.
-      String offerId = JSONUtils.getValueRecursive(jsonSeller,"products."+ internalPid+".offers.result.0.id", String.class);
+      JSONObject offersJsonScript = B2WCrawler.getJson(jsonSeller, "OffersResult");
+      String offerId = offersJsonScript.optString("id");
       String offersPageUrl = " https://www.submarino.com.br/parceiros/" + internalPid + "?offerId=" + offerId + "&productSku=" + internalId;
 
       Document sellersDoc = acessOffersPage(offersPageUrl);
