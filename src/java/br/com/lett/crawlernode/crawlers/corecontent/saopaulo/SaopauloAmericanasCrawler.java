@@ -56,8 +56,18 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
+      super.listSelectors = getListSelectors();
       super.urlPageOffers = URL_PAGE_OFFERS;
       super.config.setFetcher(FetchMode.JSOUP);
+   }
+
+   private Map<String, String> getListSelectors() {
+      Map<String, String> listSelectors = new HashMap<>();
+      listSelectors.put("selectorSellerName", ".sold-and-delivery__Seller-sc-1kx2hv4-1:nth-child(2)");
+      listSelectors.put("selectorSellerId", ".seller-card__ButtonContainer-nrtn3f-6 a");
+      listSelectors.put("offers", ".src__OfferList-sc-3rb2gj-4 .src__Card-sc-3rb2gj-3");
+
+      return listSelectors;
    }
 
    @Override
@@ -119,27 +129,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       }
 
       return content;
-   }
-
-   @Override
-   protected RatingsReviews crawlRatingReviews(JSONObject frontPageJson, String skuInternalPid) {
-      RatingsReviews ratingReviews = new RatingsReviews();
-      JSONObject product = JSONUtils.getValueRecursive(frontPageJson, "pages.undefined.queries.productReviews.result.product", JSONObject.class);
-      JSONObject reviews = product != null ? product.optJSONObject("reviews") : null;
-
-      if (reviews != null) {
-
-         JSONObject rating = product.optJSONObject("rating");
-
-         if (rating != null) {
-            ratingReviews.setTotalWrittenReviews(rating.optInt("reviews"));
-            ratingReviews.setTotalRating(rating.optInt("reviews"));
-            ratingReviews.setAverageOverallRating(rating.optDouble("average"));
-            ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(reviews));
-         }
-      }
-
-      return ratingReviews;
    }
 
 
