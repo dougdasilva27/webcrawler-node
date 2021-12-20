@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import exceptions.MalformedPricingException;
@@ -33,6 +34,7 @@ import java.util.regex.Pattern;
 public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    private static final String HOME_PAGE = "https://www.americanas.com.br/";
+   private static final String URL_PAGE_OFFERS = "https://www.americanas.com.br/parceiros/";
    private static final String MAIN_SELLER_NAME_LOWER = "americanas.com";
    private static final String MAIN_SELLER_NAME_LOWER_FROM_HTML = "Americanas";
 
@@ -54,6 +56,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
+      super.urlPageOffers = URL_PAGE_OFFERS;
       super.config.setFetcher(FetchMode.JSOUP);
    }
 
@@ -61,7 +64,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    protected Document fetch() {
       return Jsoup.parse(fetchPage(session.getOriginalURL(), this.dataFetcher, cookies, headers, session));
    }
-
 
    public static Map<String, String> getHeaders() {
       Random random = new Random();
@@ -189,170 +191,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          .build();
    }
 
-   private void scrapAndSetInfoForMainPage(Document doc, Offers offers, String internalId, String internalPid, int arrayPosition) throws OfferException, MalformedPricingException {
-      JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
-      setOffersForMainPageSeller(offers, internalId, jsonSeller);
-   }
 
 
 
-
-   @Override
-   protected Offers scrapOffers(Document doc, String internalId, String internalPid, int arrayPosition) throws MalformedPricingException, OfferException {
-
-      Offers offers = new Offers();
-
-      String offersPageUrl = "https://www.americanas.com.br/parceiros/" + internalPid + "?productSku=" + internalId;
-
-//      Document sellersDoc = acessOffersPage(offersPageUrl);
-//      Elements sellersFromHTML = sellersDoc.select(".src__Background-sc-1y5gtgz-1 .src__Card-sc-1y5gtgz-3 > div");
-//      Elements sellersFromHTMLNewWay = sellersDoc.select(".src__OfferList-sc-3rb2gj-4 .src__Card-sc-3rb2gj-3");
-//      Map<String, String> listSelectors = new HashMap<>();
-//
-//      if (!sellersFromHTML.isEmpty()) {
-//
-//         listSelectors.put("selectorSellerName", ".seller-card__SellerInfo-pf2gd6-2 p:nth-child(2)");
-//         listSelectors.put("selectorSellerId", ".seller-card__ButtonBox-pf2gd6-4 a");
-//
-//         setOffersForSellersPage(offers, sellersFromHTML, listSelectors, sellersDoc);
-//      } else if (!sellersFromHTMLNewWay.isEmpty()) {
-//
-//         listSelectors.put("selectorSellerName", ".sold-and-delivery__Seller-sc-1kx2hv4-2:nth-child(2)");
-//         listSelectors.put("selectorSellerId", ".seller-card__ButtonContainer-nrtn3f-6 a");
-//
-//         setOffersForSellersPage(offers, sellersFromHTMLNewWay, listSelectors, sellersDoc);
-//
-//      } else {
-        /*
-               caso sellersFromHTML seja vazio significa que fomos bloqueados
-               durante a tentativa de capturar as informações na pagina de sellers
-               ou que o produto em questão não possui pagina de sellers.
-               Nesse caso devemos capturar apenas as informações da pagina principal.
-               */
-         scrapAndSetInfoForMainPage(doc, offers, internalId, internalPid, arrayPosition);
-
-  //    }
-
-      return offers;
-   }
-
-   protected Document acessOffersPage(String offersPageURL) {
-      return Jsoup.parse(fetchPage(offersPageURL, this.dataFetcher, cookies, headers, session));
-   }
-
-
-   private void setOffersForMainPageSeller(Offers offers, String internalId, JSONObject jsonSeller) throws OfferException, MalformedPricingException {
-      Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
-      JSONObject offersJson = getJson(jsonSeller, "OffersResult");
-
-      String keySeller = JSONUtils.getValueRecursive(offersJson, "seller.__ref", String.class);
-
-      JSONObject jsonInfoSeller = jsonSeller.optJSONObject(keySeller);
-      String name = jsonInfoSeller.optString("name");
-      String internalSellerId = jsonInfoSeller.optString("id");
-
-      Pricing pricing = scrapPricing(offersJson, 1, internalSellerId, mapOfSellerIdAndPrice, false);
-
-      Offer offer = Offer.OfferBuilder.create()
-         .setInternalSellerId(internalSellerId)
-         .setSellerFullName(name)
-         .setMainPagePosition(1)
-         .setSellersPagePosition(1)
-         .setPricing(pricing)
-         .setIsBuybox(false)
-         .setIsMainRetailer(false)
-         .build();
-
-      offers.add(offer);
-
-   }
-
-
-   private void setOffersForSellersPage(Offers offers, Elements sellers, Map<String, String> listSelectors, Document sellersDoc) throws MalformedPricingException, OfferException {
-
-      if (sellers.size() > 0) {
-
-         for (int i = 0; i < sellers.size(); i++) {
-            Element sellerInfo = sellers.get(i);
-            boolean isBuyBox = sellers.size() > 1;
-            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, listSelectors.get("selectorSellerName"), false);
-            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, listSelectors.get("selectorSellerId"), "href");
-            String sellerId = scrapSellerIdFromURL(rawSellerId);
-            if (sellerId == null) {
-               JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(sellersDoc, "script", "window.__APOLLO_STATE__ =", null, false, true);
-               JSONObject offersJson = getJson(jsonSeller, "OffersResult");
-               String keySeller = JSONUtils.getValueRecursive(offersJson, "seller.__ref", String.class);
-               JSONObject jsonInfoSeller = jsonSeller.optJSONObject(keySeller);
-               sellerId = jsonInfoSeller.optString("id");
-            }
-            Integer mainPagePosition = i == 0 ? 1 : null;
-            Integer sellersPagePosition = i + 1;
-            Pricing pricing = scrapPricingForOffersPage(sellerInfo);
-
-            Offer offer = Offer.OfferBuilder.create()
-               .setInternalSellerId(sellerId)
-               .setSellerFullName(sellerName)
-               .setMainPagePosition(mainPagePosition)
-               .setSellersPagePosition(sellersPagePosition)
-               .setPricing(pricing)
-               .setIsBuybox(isBuyBox)
-               .setIsMainRetailer(false)
-               .build();
-
-
-            offers.add(offer);
-         }
-      }
-   }
-
-
-   private String scrapSellerIdFromURL(String rawSellerId) {
-      String sellerId = null;
-      if (rawSellerId != null) {
-         Pattern pattern = Pattern.compile("sellerId=([0-9]*)");
-         Matcher matcher = pattern.matcher(session.getOriginalURL());
-         if (matcher.find()) {
-            sellerId = matcher.group(1);
-         }
-      }
-      return sellerId;
-   }
-
-   private Pricing scrapPricingForOffersPage(Element sellerInfo)
-      throws MalformedPricingException {
-
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__ListPrice-sc-1jvw02c-2", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__BestPrice-sc-1jvw02c-5", null, false, ',', session);
-      BankSlip bt = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCardsForSellersPage(sellerInfo, spotlightPrice);
-
-      return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom)
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(creditCards)
-         .setBankSlip(bt)
-         .build();
-   }
-
-   private CreditCards scrapCreditCardsForSellersPage(Element sellerInfo, Double spotlightPrice) throws MalformedPricingException {
-      CreditCards creditCards = new CreditCards();
-
-      Installments installments = new Installments();
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
-      }
-
-      for (String card : cards) {
-         creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
-      }
-
-      return creditCards;
-   }
 }

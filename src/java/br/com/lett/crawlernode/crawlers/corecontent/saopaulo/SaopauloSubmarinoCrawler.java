@@ -36,6 +36,7 @@ import org.jsoup.select.Elements;
 public class SaopauloSubmarinoCrawler extends B2WCrawler {
 
    private static final String HOME_PAGE = "https://www.submarino.com.br/";
+   private static final String URL_PAGE_OFFERS = "https://www.submarino.com.br/parceiros/";
    private static final String MAIN_SELLER_NAME_LOWER = "submarino";
    private static final String MAIN_SELLER_NAME_LOWER_FROM_HTML = "Submarino";
 
@@ -46,6 +47,7 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
+      super.urlPageOffers = URL_PAGE_OFFERS;
       super.config.setFetcher(FetchMode.JSOUP);
 
    }
@@ -76,172 +78,5 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
    }
 
 
-   @Override
-   protected Offers scrapOffers(Document doc, String internalId, String internalPid, int arrayPosition) throws MalformedPricingException, OfferException {
-
-      Offers offers = new Offers();
-
-      JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
-
-      //offerId é responsavel por definir qual sellers vai aparecer na primeira posição da pagina de sellers.
-      JSONObject offersJsonScript = B2WCrawler.getJson(jsonSeller, "OffersResult");
-      String offerId = offersJsonScript.optString("id");
-      String offersPageUrl = " https://www.submarino.com.br/parceiros/" + internalPid + "?offerId=" + offerId + "&productSku=" + internalId;
-
-      Document sellersDoc = acessOffersPage(offersPageUrl);
-
-      if (sellersDoc.select(".src__Background-qslyla-1 .src__Card-qslyla-3 > div").isEmpty()){
-         JSONObject offersJson = SaopauloB2WCrawlersUtils.newWayToExtractJsonOffers(jsonSeller,internalPid, arrayPosition);
-         setOffersForMainPageSeller(offers, offersJson, internalId);
-      } else {
-         Elements offersFromHTML = sellersDoc.select(".src__Background-qslyla-1 .src__Card-qslyla-3 > div");
-         setOffersForSellersPage(offers, offersFromHTML);
-      }
-
-      return offers;
-   }
-
-   private Document acessOffersPage(String offersPageURL) {
-      Request request = Request.RequestBuilder.create().setUrl(offersPageURL).setProxyservice(
-         Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-         )
-      ).build();
-      Response response = this.dataFetcher.get(session, request);
-      String content = response.getBody();
-
-      int statusCode = response.getLastStatusCode();
-
-      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-         Integer.toString(statusCode).charAt(0) != '3'
-         && statusCode != 404)) {
-         request.setProxyServices(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
-
-         content = new FetcherDataFetcher().get(session, request).getBody();
-      }
-
-      return Jsoup.parse(content);
-   }
-
-
-   private void setOffersForMainPageSeller(Offers offers, JSONObject offersJson, String internalId) throws OfferException, MalformedPricingException {
-      Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
-      boolean twoPositions = false;
-
-      if (offersJson.has(internalId)) {
-         JSONArray sellerInfo = offersJson.getJSONArray(internalId);
-         // The Business logic is: if we have more than 1 seller is buy box
-         boolean isBuyBox = sellerInfo.length() > 1;
-         for (int i = 0; i < sellerInfo.length(); i++) {
-            JSONObject info = (JSONObject) sellerInfo.get(i);
-
-            if (info.has("sellerName") && !info.isNull("sellerName") && info.has("id") && !info.isNull("id")) {
-               String name = info.get("sellerName").toString();
-               String internalSellerId = info.get("id").toString();
-               Integer mainPagePosition = i == 0 ? 1: null;
-               Integer sellersPagePosition = i + 1;
-
-               if (i > 0 && name.equalsIgnoreCase("b2w")) {
-                  sellersPagePosition = 1;
-                  twoPositions = true;
-               }
-               Pricing pricing = scrapPricing(info, i, internalSellerId, mapOfSellerIdAndPrice, false);
-
-               Offer offer = Offer.OfferBuilder.create()
-                  .setInternalSellerId(internalSellerId)
-                  .setSellerFullName(name)
-                  .setMainPagePosition(mainPagePosition)
-                  .setSellersPagePosition(sellersPagePosition)
-                  .setPricing(pricing)
-                  .setIsBuybox(isBuyBox)
-                  .setIsMainRetailer(false)
-                  .build();
-
-               offers.add(offer);
-            }
-         }
-      }
-   }
-
-
-   private void setOffersForSellersPage(Offers offers, Elements sellers) throws MalformedPricingException, OfferException {
-
-      if (sellers.size() > 0) {
-
-         for (int i = 0; i < sellers.size(); i++) {
-            Element sellerInfo = sellers.get(i);
-            boolean isBuyBox = sellers.size() > 1;
-            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, ".seller-card__SellerInfo-zjlv7o-2 p:nth-child(2)", false);
-            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, ".seller-card__ButtonBox-zjlv7o-4 a", "href");
-            String sellerId = scrapSellerIdFromURL(rawSellerId);
-            Integer mainPagePosition = i == 0 ? 1 : null;
-            Integer sellersPagePosition = i + 1;
-            Pricing pricing = scrapPricingForOffersPage(sellerInfo);
-
-            Offer offer = Offer.OfferBuilder.create()
-               .setInternalSellerId(sellerId)
-               .setSellerFullName(sellerName)
-               .setMainPagePosition(mainPagePosition)
-               .setSellersPagePosition(sellersPagePosition)
-               .setPricing(pricing)
-               .setIsBuybox(isBuyBox)
-               .setIsMainRetailer(false)
-               .build();
-
-            offers.add(offer);
-         }
-      }
-   }
-
-   private String scrapSellerIdFromURL(String rawSellerId) {
-      String sellerId = "";
-      if (rawSellerId != null) {
-         sellerId = CommonMethods.getLast(rawSellerId.split("sellerId")).replaceAll("[^0-9]", "").trim();
-      }
-      return sellerId;
-   }
-
-   private Pricing scrapPricingForOffersPage(Element sellerInfo)
-      throws MalformedPricingException {
-
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__ListPriceWrapper-sc-1jnodg3-1 span", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__BestPrice-sc-1jnodg3-5", null, false, ',', session);
-      BankSlip bt = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCardsForSellersPage(sellerInfo, spotlightPrice);
-
-      return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom)
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(creditCards)
-         .setBankSlip(bt)
-         .build();
-   }
-
-   private CreditCards scrapCreditCardsForSellersPage(Element sellerInfo, Double spotlightPrice) throws MalformedPricingException {
-      CreditCards creditCards = new CreditCards();
-
-      Installments installments = new Installments();
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
-      }
-
-      for (String card : cards) {
-         creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
-      }
-
-      return creditCards;
-   }
 
 }
