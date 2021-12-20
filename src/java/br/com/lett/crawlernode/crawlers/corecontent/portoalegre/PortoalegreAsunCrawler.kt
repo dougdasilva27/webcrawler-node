@@ -46,7 +46,7 @@ class PortoalegreAsunCrawler constructor(session: Session?) : Crawler(session) {
          webdriver.waitLoad(2000)
          val delivery = webdriver.driver.findElement(By.cssSelector(".method-delivery button"))
          webdriver.clickOnElementViaJavascript(delivery)
-         webdriver.waitLoad(5000)
+         webdriver.waitLoad(15000)
          Logging.printLogDebug(logger, session, "awaiting product page")
 
          val doc = Jsoup.parse(webdriver.currentPageSource)
