@@ -63,9 +63,9 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    private Map<String, String> getListSelectors() {
       Map<String, String> listSelectors = new HashMap<>();
-      listSelectors.put("selectorSellerName", ".sold-and-delivery__Seller-sc-1kx2hv4-1:nth-child(2)");
-      listSelectors.put("selectorSellerId", ".seller-card__ButtonContainer-nrtn3f-6 a");
-      listSelectors.put("offers", ".src__OfferList-sc-3rb2gj-4 .src__Card-sc-3rb2gj-3");
+      listSelectors.put("selectorSellerName", ".sold-and-delivery__Seller-sc-1fgd6h1-2");
+      listSelectors.put("selectorSellerId", ".src__ButtonUI-sc-16np9zs-3");
+      listSelectors.put("offers", ".src__Divider-sc-1y5gtgz-6");
 
       return listSelectors;
    }

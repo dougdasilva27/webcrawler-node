@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -14,7 +15,10 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import exceptions.MalformedPricingException;
@@ -88,25 +92,28 @@ public class B2WCrawler extends Crawler {
    }
 
    public static String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
-      Request request = RequestBuilder.create()
+
+      Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
-         .mustSendContentEncoding(false)
-         // .setHeaders(headers)
+         .setHeaders(headers)
+         .setSendUserAgent(false)
          .setFetcheroptions(
-            FetcherOptionsBuilder.create()
+            FetcherOptions.FetcherOptionsBuilder.create()
                .mustUseMovingAverage(false)
                .mustRetrieveStatistics(true)
                .setForbiddenCssSelector("#px-captcha")
                .build()
-         ).setProxyservice(
+         )
+         .setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
             )
-         ).build();
-
+         )
+         .build();
 
       Response response = df.get(session, request);
       String content = response.getBody();
@@ -116,11 +123,9 @@ public class B2WCrawler extends Crawler {
       if ((Integer.toString(statusCode).charAt(0) != '2' &&
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
-         request.setProxyServices(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR));
 
+
+         request.setHeaders(headers);
          content = new FetcherDataFetcher().get(session, request).getBody();
       }
 
@@ -145,7 +150,7 @@ public class B2WCrawler extends Crawler {
          String primaryImage = this.crawlPrimaryImage(infoProductJson);
          List<String> secondaryImages = this.crawlSecondaryImages(infoProductJson);
          String description = this.crawlDescription(apolloJson, doc, internalPid); //fix
-      //    RatingsReviews ratingReviews = crawlRatingReviews(infoProductJson);
+         //    RatingsReviews ratingReviews = crawlRatingReviews(infoProductJson);
          List<String> eans = crawlEan(infoProductJson);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title__Title-sc-1oqsqe9-0", true); // opt name
 
@@ -171,7 +176,7 @@ public class B2WCrawler extends Crawler {
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setOffers(offers)
-         //      .setRatingReviews(ratingReviews)
+               //      .setRatingReviews(ratingReviews)
                .setEans(eans)
                .build();
 
@@ -464,7 +469,7 @@ public class B2WCrawler extends Crawler {
    }
 
 
-   protected Document acessOffersPage(String offersPageURL) {
+   public Document accessOffersPage(String offersPageURL) {
       return Jsoup.parse(fetchPage(offersPageURL, this.dataFetcher, cookies, headers, session));
    }
 
@@ -480,17 +485,15 @@ public class B2WCrawler extends Crawler {
    protected Offers scrapOffers(Document doc, String internalId, String internalPid, int arrayPosition) throws MalformedPricingException, OfferException {
 
       Offers offers = new Offers();
-
       String offersPageUrl = urlPageOffers + internalPid + "?productSku=" + internalId;
+      Document sellersDoc = accessOffersPage(offersPageUrl);
+      Elements sellersFromHTML = sellersDoc.select(listSelectors.get("offers"));
 
-      Document sellersDoc = acessOffersPage(offersPageUrl);
-      Elements sellersFromHTML = sellersDoc.select( listSelectors.get("offers"));
-      Elements sellersFromHTMLNewWay = sellersDoc.select(".src__OfferList-sc-3rb2gj-4 .src__Card-sc-3rb2gj-3");
-      Elements sellersFromSubmarino = sellersDoc.select(".src__Divider-qslyla-6.iRXykc");
       if (!sellersFromHTML.isEmpty()) {
 
          setOffersForSellersPage(offers, sellersFromHTML, listSelectors, sellersDoc);
-      }  else {
+
+      } else {
         /*
                caso sellersFromHTML seja vazio significa que fomos bloqueados
                durante a tentativa de capturar as informações na pagina de sellers
@@ -507,11 +510,10 @@ public class B2WCrawler extends Crawler {
 
    protected void scrapAndSetInfoForMainPage(Document doc, Offers offers, String internalId, String internalPid, int arrayPosition) throws OfferException, MalformedPricingException {
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
-      setOffersForMainPageSeller(offers, internalId, jsonSeller);
+      setOffersForMainPageSeller(offers, jsonSeller);
    }
 
-
-   private void setOffersForMainPageSeller(Offers offers, String internalId, JSONObject jsonSeller) throws OfferException, MalformedPricingException {
+   private void setOffersForMainPageSeller(Offers offers, JSONObject jsonSeller) throws OfferException, MalformedPricingException {
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
       JSONObject offersJson = getJson(jsonSeller, "OffersResult");
 
@@ -536,7 +538,6 @@ public class B2WCrawler extends Crawler {
       offers.add(offer);
 
    }
-
 
    protected void setOffersForSellersPage(Offers offers, Elements sellers, Map<String, String> listSelectors, Document sellersDoc) throws MalformedPricingException, OfferException {
 
@@ -574,7 +575,6 @@ public class B2WCrawler extends Crawler {
          }
       }
    }
-
 
    protected Pricing scrapPricingForOffersPage(Element sellerInfo)
       throws MalformedPricingException {
@@ -617,8 +617,8 @@ public class B2WCrawler extends Crawler {
    protected Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice, boolean newWay)
       throws MalformedPricingException {
 
-      JSONObject paymentOptions = getJson(info, "paymentOptions");
-      JSONArray installmentMin = getJsonArrayInstallment(paymentOptions);
+      JSONObject paymentOptions = SaopauloB2WCrawlersUtils.getJson(info, "paymentOptions");
+      JSONArray installmentMin = SaopauloB2WCrawlersUtils.getJsonArrayInstallment(paymentOptions);
       Double priceFrom = scrapPriceFrom(info);
       CreditCards creditCards = scrapCreditCards(paymentOptions);
       Double spotlightPrice = JSONUtils.getValueRecursive(installmentMin, "0.total", Double.class);
@@ -768,35 +768,11 @@ public class B2WCrawler extends Crawler {
       return skuMap;
    }
 
-   public static JSONObject getJsonArray(JSONObject jsonObject) {
-      for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
-         String key = it.next();
-         if (key.contains("installment")) {
-            return jsonObject.optJSONArray(key).getJSONObject(0);
-         }
-
-      }
-      return new JSONObject();
-
-   }
-
-   public static JSONArray getJsonArrayInstallment(JSONObject jsonObject) {
-      for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
-         String key = it.next();
-         if (key.contains("installment") && key.contains("min")) {
-            return jsonObject.optJSONArray(key);
-         }
-
-      }
-      return new JSONArray();
-
-   }
-
    protected CreditCards scrapCreditCards(JSONObject paymentOptions) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
-      JSONObject installmentsObject = getJsonArray(paymentOptions);
+      JSONObject installmentsObject = SaopauloB2WCrawlersUtils.getJsonArray(paymentOptions);
 
       if (installmentsObject.has("quantity") && installmentsObject.has("value")) {
          installments.add(scrapInstallment(installmentsObject));

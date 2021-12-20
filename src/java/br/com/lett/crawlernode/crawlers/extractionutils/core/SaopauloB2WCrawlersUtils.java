@@ -738,4 +738,29 @@ public class SaopauloB2WCrawlersUtils {
          }
       }
    }
+
+   public static JSONArray getJsonArrayInstallment(JSONObject jsonObject) {
+      for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
+         String key = it.next();
+         if (key.contains("installment") && key.contains("min")) {
+            return jsonObject.optJSONArray(key);
+         }
+
+      }
+      return new JSONArray();
+
+   }
+   public static JSONObject getJsonArray(JSONObject jsonObject) {
+      for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
+         String key = it.next();
+         if (key.contains("installment")) {
+            return jsonObject.optJSONArray(key).getJSONObject(0);
+         }
+
+      }
+      return new JSONObject();
+
+   }
+
+
 }
