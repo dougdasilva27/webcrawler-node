@@ -60,6 +60,7 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       listSelectors.put("selectorSellerName", ".sold-and-delivery__Seller-sc-1vhzbzi-1");
       listSelectors.put("selectorSellerId", ".seller-card__ButtonContainer-zjlv7o-5 a");
       listSelectors.put("offers", ".src__Divider-qslyla-6.iRXykc");
+      listSelectors.put("hasPageOffers", ".more-offers__Text-sc-1rxqzae-0 ");
 
       return listSelectors;
    }

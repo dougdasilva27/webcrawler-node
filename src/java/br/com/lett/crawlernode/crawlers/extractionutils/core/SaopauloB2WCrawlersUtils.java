@@ -640,39 +640,14 @@ public class SaopauloB2WCrawlersUtils {
       }
    }
 
-//   public static JSONObject extractApolloOffersJson(JSONObject apoloJson) {
-//      JSONObject offersJson = new JSONObject();
-//      JSONObject rootQuery = apoloJson.optJSONObject("ROOT_QUERY");
-//      if (rootQuery != null) {
-//         for (String key : rootQuery.keySet()) {
-//            if (key.startsWith("product")) {
-//               JSONObject productJSON = rootQuery.optJSONObject(key);
-//               for (String keyOffer : productJSON.keySet()) {
-//                  if (key.startsWith("offer")) {
-//                  JSONObject offer = productJSON.optJSONObject(keyOffer);
-//                  JSONArray result = offer.optJSONArray("result");
-//                     for (Object o : result) {
-//
-//               if (o instanceof ) {
-//                  JSONArray offerResult = (JSONArray) obj;
-//
-//                     JSONObject offerObj = (JSONObject) o;
-//
-//                     extractOffer(apoloJson, offerObj.optString("__ref"), offersJson);
-//                  }
-//               }
-//            }}}
-//         }
-//      }
-//
-//      return offersJson;
-//   }
 
    public static JSONObject getJson(JSONObject jsonSeller, String type) {
-      for (Iterator<String> it = jsonSeller.keys(); it.hasNext(); ) {
-         String key = it.next();
-         if (key.contains(type)) {
-            return jsonSeller.optJSONObject(key);
+      if (jsonSeller != null) {
+         for (Iterator<String> it = jsonSeller.keys(); it.hasNext(); ) {
+            String key = it.next();
+            if (key.contains(type)) {
+               return jsonSeller.optJSONObject(key);
+            }
          }
       }
       return new JSONObject();
@@ -750,6 +725,7 @@ public class SaopauloB2WCrawlersUtils {
       return new JSONArray();
 
    }
+
    public static JSONObject getJsonArray(JSONObject jsonObject) {
       for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
          String key = it.next();

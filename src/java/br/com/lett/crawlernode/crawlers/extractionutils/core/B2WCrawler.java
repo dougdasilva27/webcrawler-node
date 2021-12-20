@@ -5,9 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -485,11 +483,15 @@ public class B2WCrawler extends Crawler {
    protected Offers scrapOffers(Document doc, String internalId, String internalPid, int arrayPosition) throws MalformedPricingException, OfferException {
 
       Offers offers = new Offers();
-      String offersPageUrl = urlPageOffers + internalPid + "?productSku=" + internalId;
-      Document sellersDoc = accessOffersPage(offersPageUrl);
-      Elements sellersFromHTML = sellersDoc.select(listSelectors.get("offers"));
+      Document sellersDoc = null;
+      if (!doc.select(listSelectors.get("hasPageOffers")).isEmpty()){
+         String offersPageUrl = urlPageOffers + internalPid + "?productSku=" + internalId;
+         sellersDoc = accessOffersPage(offersPageUrl);
+      }
 
-      if (!sellersFromHTML.isEmpty()) {
+      Elements sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
+
+      if (sellersFromHTML != null && !sellersFromHTML.isEmpty()) {
 
          setOffersForSellersPage(offers, sellersFromHTML, listSelectors, sellersDoc);
 
@@ -621,7 +623,7 @@ public class B2WCrawler extends Crawler {
       JSONArray installmentMin = SaopauloB2WCrawlersUtils.getJsonArrayInstallment(paymentOptions);
       Double priceFrom = scrapPriceFrom(info);
       Double spotlightPrice = JSONUtils.getValueRecursive(installmentMin, "0.total", Double.class);
-      if (spotlightPrice == null){
+      if (spotlightPrice == null) {
          Integer priceInt = JSONUtils.getValueRecursive(installmentMin, "0.total", Integer.class);
          spotlightPrice = priceInt != null ? Double.valueOf(priceInt) : null;
       }
@@ -794,7 +796,6 @@ public class B2WCrawler extends Crawler {
          .setInstallmentNumber(1)
          .setInstallmentPrice(spotlightPrice)
          .build());
-
 
 
       return creditCards;

@@ -55,8 +55,66 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
       listSelectors.put("selectorSellerName", ".sold-and-delivery__Seller-sc-1uigg93-1.jrIbum");
       listSelectors.put("selectorSellerId", ".src__ButtonUI-sc-1ruj90s-3.kgCDdH a");
       listSelectors.put("offers", ".src__Divider-rlbmr6-6.jFuQtP");
+      listSelectors.put("hasPageOffers", ".more-offers__Text-sc-1rxqzae-0");
 
       return listSelectors;
    }
 
+   @Override
+   protected Document fetch() {
+      setHeaders();
+      return Jsoup.parse(fetchPage(session.getOriginalURL(), session));
+   }
+
+   public static String fetchPage(String url, Session session) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("host", "www.shoptime.com.br");
+      headers.put("sec-ch-ua", " \" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\"");
+      headers.put("sec-ch-ua-mobile", "?0");
+      headers.put("upgrade-insecure-requests", "1");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("sec-fetch-site", "none");
+      headers.put("sec-fetch-mode", "navigate");
+      headers.put("sec-fetch-user", "?1");
+      headers.put("sec-fetch-dest", "document");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .mustSendContentEncoding(false)
+         .setHeaders(headers)
+         .setFetcheroptions(
+            FetcherOptions.FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .setForbiddenCssSelector("#px-captcha")
+               .build()
+         ).setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+            )
+         ).build();
+
+
+      Response response = new ApacheDataFetcher().get(session, request);
+      String content = response.getBody();
+
+      int statusCode = response.getLastStatusCode();
+
+      if ((Integer.toString(statusCode).charAt(0) != '2' &&
+         Integer.toString(statusCode).charAt(0) != '3'
+         && statusCode != 404)) {
+         request.setProxyServices(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY
+         ));
+
+         content = new JsoupDataFetcher().get(session, request).getBody();
+      }
+
+      return content;
+   }
 }
