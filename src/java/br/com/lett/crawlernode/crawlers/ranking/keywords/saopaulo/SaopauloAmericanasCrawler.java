@@ -29,7 +29,7 @@ public class SaopauloAmericanasCrawler extends B2WScriptPageCrawlerRanking {
    protected Document fetchPage() {
       String keyword = this.keywordWithoutAccents.replace(" ", "-");
 
-      String url = homePage + "busca/" + keyword + "?chave_search=achistory&limit=24&offset=" + (this.currentPage - 1) * pageSize;
+      String url = homePage + "busca/" + keyword + "?limit=24&offset=" + (this.currentPage - 1) * pageSize;
       this.log("Link onde são feitos os crawlers: " + url);
 
       Map<String, String> headers = new HashMap<>();
