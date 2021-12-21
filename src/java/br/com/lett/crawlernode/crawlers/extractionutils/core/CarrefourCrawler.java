@@ -88,8 +88,7 @@ public class CarrefourCrawler extends VTEXNewScraper {
                .build())
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NO_PROXY)
+            ProxyCollection.LUMINATI_SERVER_BR)
          )
          .build();
 

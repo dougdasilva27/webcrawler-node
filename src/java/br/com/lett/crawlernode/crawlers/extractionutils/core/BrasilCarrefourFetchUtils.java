@@ -11,7 +11,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 
-import javax.xml.crypto.Data;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -46,8 +45,7 @@ public class BrasilCarrefourFetchUtils {
                .build())
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NO_PROXY)
+            ProxyCollection.LUMINATI_SERVER_BR)
          )
          .build();
 
@@ -97,8 +95,8 @@ public class BrasilCarrefourFetchUtils {
          .setUrl(regionApiUrl)
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NO_PROXY))
+            ProxyCollection.LUMINATI_SERVER_BR
+            ))
          .setHeaders(headers)
          .build();
 
