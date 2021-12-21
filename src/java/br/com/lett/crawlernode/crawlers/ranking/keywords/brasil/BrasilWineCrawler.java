@@ -24,7 +24,6 @@ public class BrasilWineCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       String url = HOME_PAGE + "search.ep?keyWords=" + this.keywordEncoded + "&exibirEsgotados=false&pn=" + this.currentPage + "&listagem=horizontal&sorter=relevance-desc&filters=";
-      Integer currentPageUrl = (this.currentPage - 1) * this.pageSize;
       this.currentDoc = fetchDocument(url);
       Elements products = this.currentDoc.select(".ProductList-content ul li");
       if (!products.isEmpty()) {
