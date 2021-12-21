@@ -13,14 +13,16 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
 import models.Offer;
-import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
@@ -38,7 +40,6 @@ import org.jsoup.select.Elements;
 
 import java.text.Normalizer;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 public class B2WCrawler extends Crawler {
@@ -154,14 +155,14 @@ public class B2WCrawler extends Crawler {
          String description = this.crawlDescription(apolloJson, doc, internalPid); //fix
          RatingsReviews ratingReviews = crawlRatingReviews(infoProductJson);
          List<String> eans = crawlEan(infoProductJson);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title__Title-sc-1oqsqe9-0", true); // opt name
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title__Title-sc-1oqsqe9-0", true);
 
          JSONArray skuOptions = this.crawlSkuOptions(infoProductJson);
          for (int i = 0; i < skuOptions.length(); i++) {
             JSONObject skuJson = skuOptions.optJSONObject(i);
             String internalId = skuJson.optString("id");
             name = skuOptions.length() > 1 || name == null ? skuJson.optString("name") : name;
-            Offers offers = scrapOffers(doc, internalId, internalPid, i);
+            Offers offers = scrapOffers(doc, internalId, internalPid);
 
             setMainRetailer(offers);
 
@@ -319,11 +320,11 @@ public class B2WCrawler extends Crawler {
    }
 
 
-   protected Offers scrapOffers(Document doc, String internalId, String internalPid, int arrayPosition) throws MalformedPricingException, OfferException {
+   protected Offers scrapOffers(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
 
       Offers offers = new Offers();
       Document sellersDoc = null;
-      if (!doc.select(listSelectors.get("hasPageOffers")).isEmpty()){
+      if (!doc.select(listSelectors.get("hasPageOffers")).isEmpty()) {
          String offersPageUrl = urlPageOffers + internalPid + "?productSku=" + internalId;
          sellersDoc = accessOffersPage(offersPageUrl);
       }
@@ -342,14 +343,14 @@ public class B2WCrawler extends Crawler {
                Nesse caso devemos capturar apenas as informações da pagina principal.
                */
 
-         scrapAndSetInfoForMainPage(doc, offers, internalId, internalPid, arrayPosition);
+         scrapAndSetInfoForMainPage(doc, offers);
 
       }
 
       return offers;
    }
 
-   protected void scrapAndSetInfoForMainPage(Document doc, Offers offers, String internalId, String internalPid, int arrayPosition) throws OfferException, MalformedPricingException {
+   protected void scrapAndSetInfoForMainPage(Document doc, Offers offers) throws OfferException, MalformedPricingException {
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
       setOffersForMainPageSeller(offers, jsonSeller);
    }
@@ -364,7 +365,7 @@ public class B2WCrawler extends Crawler {
       String name = jsonInfoSeller.optString("name");
       String internalSellerId = jsonInfoSeller.optString("id");
 
-      Pricing pricing = scrapPricing(offersJson, 1, internalSellerId, mapOfSellerIdAndPrice, false);
+      Pricing pricing = scrapPricing(offersJson,  internalSellerId, mapOfSellerIdAndPrice);
 
       Offer offer = Offer.OfferBuilder.create()
          .setInternalSellerId(internalSellerId)
@@ -464,7 +465,7 @@ public class B2WCrawler extends Crawler {
       return creditCards;
    }
 
-   protected Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice, boolean newWay)
+   protected Pricing scrapPricing(JSONObject info, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice)
       throws MalformedPricingException {
 
       JSONObject paymentOptions = SaopauloB2WCrawlersUtils.getJson(info, "paymentOptions");
@@ -476,7 +477,6 @@ public class B2WCrawler extends Crawler {
          spotlightPrice = priceInt != null ? Double.valueOf(priceInt) : null;
       }
       CreditCards creditCards = scrapCreditCards(paymentOptions, spotlightPrice);
-      BankSlip bt = scrapBankTicket(info);
 
       if (priceFrom != null) {
          mapOfSellerIdAndPrice.put(internalSellerId, priceFrom);
@@ -488,7 +488,6 @@ public class B2WCrawler extends Crawler {
          .setPriceFrom(priceFrom)
          .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
-         .setBankSlip(bt)
          .build();
    }
 
@@ -496,75 +495,6 @@ public class B2WCrawler extends Crawler {
       return JSONUtils.getDoubleValueFromJSON(info, "salesPrice", false);
    }
 
-   protected BankSlip scrapBankTicket(JSONObject info) throws MalformedPricingException {
-
-      if (info.has("bankSlip")) {
-         return BankSlipBuilder.create()
-            .setFinalPrice(JSONUtils.getDoubleValueFromJSON(info, "bankSlip", true))
-            .setOnPageDiscount(JSONUtils.getDoubleValueFromJSON(info, "bankSlipDiscount", true))
-            .build();
-      } else {
-         return BankSlipBuilder.create()
-            .setFinalPrice(JSONUtils.getDoubleValueFromJSON(info, "defaultPrice", true))
-            .build();
-      }
-   }
-
-   private Double scrapSpotlightPrice(JSONObject info, CreditCards creditCards, int offerIndex, boolean newWay) {
-      Double featuredPrice = null;
-
-      if (!newWay || offerIndex == 0) {
-
-         Double spotlightPrice = info.optDouble("salesPrice");
-
-         if (spotlightPrice != null && !spotlightPrice.isNaN()) {
-            featuredPrice = spotlightPrice;
-
-            return featuredPrice;
-         }
-
-         Double price1x = creditCards.getCreditCard(DEFAULT_CARD.toString()).getInstallments().getInstallmentPrice(1);
-         Double bankTicket = CrawlerUtils.getDoubleValueFromJSON(info, "bakTicket", true, false);
-         Double defaultPrice = CrawlerUtils.getDoubleValueFromJSON(info, "defaultPrice", true, false);
-
-
-         if (offerIndex + 1 <= 3) {
-            for (Double value : Arrays.asList(price1x, bankTicket, defaultPrice)) {
-               if (featuredPrice == null || (value != null && value < featuredPrice)) {
-                  featuredPrice = value;
-               }
-            }
-         } else {
-
-            if (defaultPrice != null) {
-               featuredPrice = defaultPrice;
-            } else if (price1x != null) {
-               featuredPrice = price1x;
-            } else if (bankTicket != null) {
-               featuredPrice = bankTicket;
-            }
-         }
-      } else {
-         featuredPrice = info.optDouble("defaultPrice");
-      }
-
-      return featuredPrice;
-   }
-
-   /**
-    * Sort map by Value
-    *
-    * @param map
-    * @return
-    */
-   protected Map<String, Double> sortMapByValue(final Map<String, Double> map) {
-      return map.entrySet()
-         .stream()
-         .sorted(Map.Entry.comparingByValue())
-         .collect(
-            Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2,
-               LinkedHashMap::new));
-   }
 
    /*******************************
     * Product page identification *
