@@ -103,7 +103,7 @@ public class BrasilCarrefourFetchUtils {
       String response = dataFetcher.get(session, request).getBody();
       JSONArray responseJSON = JSONUtils.stringToJsonArray(response);
 
-      return responseJSON.getJSONObject(0) != null ? responseJSON.getJSONObject(0).optString("id") : null;
+      return responseJSON.optJSONObject(0) != null ? responseJSON.optJSONObject(0).optString("id") : null;
    }
 
 
