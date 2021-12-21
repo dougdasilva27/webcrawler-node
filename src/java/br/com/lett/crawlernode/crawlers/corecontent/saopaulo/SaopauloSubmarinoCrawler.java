@@ -49,20 +49,9 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
-      super.listSelectors = getListSelectors();
       super.urlPageOffers = URL_PAGE_OFFERS;
       super.config.setFetcher(FetchMode.JSOUP);
 
-   }
-
-   private Map<String, String> getListSelectors() {
-      Map<String, String> listSelectors = new HashMap<>();
-      listSelectors.put("selectorSellerName", ".sold-and-delivery__Seller-sc-1vhzbzi-1");
-      listSelectors.put("selectorSellerId", ".seller-card__ButtonContainer-zjlv7o-5 a");
-      listSelectors.put("offers", ".src__Divider-qslyla-6.iRXykc");
-      listSelectors.put("hasPageOffers", ".more-offers__Text-sc-1rxqzae-0 ");
-
-      return listSelectors;
    }
 
    @Override
@@ -149,23 +138,5 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       return Jsoup.parse(fetchPage(session.getOriginalURL(), session));
 
    }
-
-   @Override
-   protected Pricing scrapPricingForOffersPage(Element sellerInfo)
-      throws MalformedPricingException {
-
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__ListPriceWrapper-sc-1jnodg3-1 span", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__BestPrice-sc-1jnodg3-5", null, false, ',', session);
-      BankSlip bt = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCardsForSellersPage(sellerInfo, spotlightPrice);
-
-      return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom)
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(creditCards)
-         .setBankSlip(bt)
-         .build();
-   }
-
 
 }

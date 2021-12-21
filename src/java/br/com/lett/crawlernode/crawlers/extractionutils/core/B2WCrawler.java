@@ -13,10 +13,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import exceptions.MalformedPricingException;
@@ -53,7 +50,7 @@ public class B2WCrawler extends Crawler {
    protected List<String> subSellers;
    protected String homePage;
    protected String urlPageOffers;
-   protected Map<String, String> listSelectors;
+   protected Map<String, String> listSelectors = getListSelectors();
    protected Set<String> cards = Sets.newHashSet(DEFAULT_CARD.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -76,6 +73,16 @@ public class B2WCrawler extends Crawler {
       headers.put("sec-fetch-mode", "navigate");
       headers.put("sec-fetch-user", "?1");
       headers.put("sec-fetch-site", "none");
+   }
+
+   private Map<String, String> getListSelectors() {
+      Map<String, String> listSelectors = new HashMap<>();
+      listSelectors.put("selectorSellerName", "p[class^=\"sold-and-delivery__Seller-sc\"]");
+      listSelectors.put("selectorSellerId", "a[class^=\"src__ButtonUI-sc\"]");
+      listSelectors.put("offers", "div[class^=\"src__Divider\"]");
+      listSelectors.put("hasPageOffers", "span[class^=\"more-offers__Text-sc\"]");
+
+      return listSelectors;
    }
 
    @Override
@@ -134,12 +141,9 @@ public class B2WCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
 
-      // Json da pagina principal
       JSONObject apolloJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
-      // Pega só o que interessa do json da api
       JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(apolloJson);
-      // verifying if url starts with home page because on crawler seed,
-      // some seeds can be of another store
+
       if (infoProductJson.has("skus") && session.getOriginalURL().startsWith(this.homePage)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -148,7 +152,7 @@ public class B2WCrawler extends Crawler {
          String primaryImage = this.crawlPrimaryImage(infoProductJson);
          List<String> secondaryImages = this.crawlSecondaryImages(infoProductJson);
          String description = this.crawlDescription(apolloJson, doc, internalPid); //fix
-         //    RatingsReviews ratingReviews = crawlRatingReviews(infoProductJson);
+         RatingsReviews ratingReviews = crawlRatingReviews(infoProductJson);
          List<String> eans = crawlEan(infoProductJson);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title__Title-sc-1oqsqe9-0", true); // opt name
 
@@ -174,7 +178,7 @@ public class B2WCrawler extends Crawler {
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setOffers(offers)
-               //      .setRatingReviews(ratingReviews)
+               .setRatingReviews(ratingReviews)
                .setEans(eans)
                .build();
 
@@ -220,30 +224,21 @@ public class B2WCrawler extends Crawler {
       }
    }
 
-   /**
-    * Crawl rating and reviews stats using the bazaar voice endpoint. To get only the stats summary we
-    * need at first, we only have to do one request. If we want to get detailed information about each
-    * review, we must perform pagination.
-    * <p>
-    * The RatingReviews crawled in this method, is the same across all skus variations in a page.
-    *
-    * @param
-    * @return
-    */
    protected RatingsReviews crawlRatingReviews(JSONObject productJson) {
       RatingsReviews ratingReviews = new RatingsReviews();
 
       ratingReviews.setDate(session.getDate());
       JSONObject ratingInfo = productJson.optJSONObject("rating");
-      JSONObject reviewStatistics = ratingInfo.optJSONObject("review");
+      JSONObject reviewStatistics = ratingInfo.optJSONObject("reviews");
+      JSONObject ratingAverage = ratingInfo.optJSONObject("rating");
       AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValue(reviewStatistics);
 
-      Integer totalRating = getTotalReviewCount(reviewStatistics);
+      Integer totalRating = ratingAverage.optInt("reviews");
 
       ratingReviews.setAdvancedRatingReview(advancedRatingReview);
       ratingReviews.setTotalRating(totalRating);
       ratingReviews.setTotalWrittenReviews(totalRating);
-      ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
+      ratingReviews.setAverageOverallRating(ratingAverage.optDouble("average"));
 
       return ratingReviews;
    }
@@ -255,30 +250,30 @@ public class B2WCrawler extends Crawler {
       Integer star4 = 0;
       Integer star5 = 0;
 
-      if (reviewStatistics.has("RatingDistribution")) {
-         JSONArray ratingDistribution = reviewStatistics.getJSONArray("RatingDistribution");
+      if (reviewStatistics.has("ratingDistribution")) {
+         JSONArray ratingDistribution = reviewStatistics.getJSONArray("ratingDistribution");
          for (Object object : ratingDistribution) {
             JSONObject rating = (JSONObject) object;
-            Integer option = CrawlerUtils.getIntegerValueFromJSON(rating, "RatingValue", 0);
+            Integer option = CrawlerUtils.getIntegerValueFromJSON(rating, "ratingValue", 0);
 
-            if (rating.has("RatingValue") && option == 1 && rating.has("Count")) {
-               star1 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+            if (rating.has("ratingValue") && option == 1 && rating.has("count")) {
+               star1 = CrawlerUtils.getIntegerValueFromJSON(rating, "count", 0);
             }
 
-            if (rating.has("RatingValue") && option == 2 && rating.has("Count")) {
-               star2 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+            if (rating.has("ratingValue") && option == 2 && rating.has("count")) {
+               star2 = CrawlerUtils.getIntegerValueFromJSON(rating, "count", 0);
             }
 
-            if (rating.has("RatingValue") && option == 3 && rating.has("Count")) {
-               star3 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+            if (rating.has("ratingValue") && option == 3 && rating.has("count")) {
+               star3 = CrawlerUtils.getIntegerValueFromJSON(rating, "count", 0);
             }
 
-            if (rating.has("RatingValue") && option == 4 && rating.has("Count")) {
-               star4 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+            if (rating.has("ratingValue") && option == 4 && rating.has("count")) {
+               star4 = CrawlerUtils.getIntegerValueFromJSON(rating, "count", 0);
             }
 
-            if (rating.has("RatingValue") && option == 5 && rating.has("Count")) {
-               star5 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+            if (rating.has("ratingValue") && option == 5 && rating.has("count")) {
+               star5 = CrawlerUtils.getIntegerValueFromJSON(rating, "count", 0);
             }
 
          }
@@ -287,100 +282,6 @@ public class B2WCrawler extends Crawler {
       return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
    }
 
-   private Integer getTotalReviewCount(JSONObject reviewStatistics) {
-      Integer totalReviewCount = null;
-      if (reviewStatistics.has("TotalReviewCount")) {
-         totalReviewCount = reviewStatistics.getInt("TotalReviewCount");
-      }
-      return totalReviewCount;
-   }
-
-   private Double getAverageOverallRating(JSONObject reviewStatistics) {
-      Double avgOverallRating = null;
-      if (reviewStatistics.has("AverageOverallRating")) {
-         avgOverallRating = reviewStatistics.getDouble("AverageOverallRating");
-      }
-      return avgOverallRating;
-   }
-
-   /**
-    * e.g: http://api.bazaarvoice.com/data/reviews.json?apiversion=5.4
-    * &passkey=oqu6lchjs2mb5jp55bl55ov0d &Offset=0 &Limit=5 &Sort=SubmissionTime:desc
-    * &Filter=ProductId:113048617 &Include=Products &Stats=Reviews
-    * <p>
-    * Endpoint request parameters:
-    * <p>
-    * &passKey: the password used to request the bazaar voice endpoint. This pass key e crawled inside
-    * the html of the sku page, inside a script tag. More details on how to crawl this passKey
-    * </p>
-    * <p>
-    * &Offset: the number of the chunk of data retrieved by the endpoint. If we want the second chunk,
-    * we must add this value by the &Limit parameter.
-    * </p>
-    * <p>
-    * &Limit: the number of reviews that a request will return, at maximum.
-    * </p>
-    * <p>
-    * The others parameters we left as default.
-    * <p>
-    * Request Method: GET
-    */
-   private String assembleBazaarVoiceEndpointRequest(String skuInternalPid, String bazaarVoiceEnpointPassKey, Integer offset, Integer limit) {
-
-      StringBuilder request = new StringBuilder();
-
-      request.append("http://api.bazaarvoice.com/data/reviews.json?apiversion=5.4");
-      request.append("&passkey=" + bazaarVoiceEnpointPassKey);
-      request.append("&Offset=" + offset);
-      request.append("&Limit=" + limit);
-      request.append("&Sort=SubmissionTime:desc");
-      request.append("&Filter=ProductId:" + skuInternalPid);
-      request.append("&Include=Products");
-      request.append("&Stats=Reviews");
-
-      return request.toString();
-   }
-
-   /**
-    * Crawl the bazaar voice endpoint passKey on the sku page. The passKey is located inside a script
-    * tag, which contains a json object is several metadata, including the passKey.
-    *
-    * @param embeddedJSONObject
-    * @return
-    */
-   private String crawlBazaarVoiceEndpointPassKey(JSONObject embeddedJSONObject) {
-      String passKey = null;
-      if (embeddedJSONObject != null) {
-         if (embeddedJSONObject.has("configuration")) {
-            JSONObject configuration = embeddedJSONObject.getJSONObject("configuration");
-
-            if (configuration.has("bazaarvoicePasskey")) {
-               passKey = configuration.getString("bazaarvoicePasskey");
-            }
-         }
-      }
-      return passKey;
-   }
-
-   private JSONObject getReviewStatisticsJSON(JSONObject ratingReviewsEndpointResponse, String skuInternalPid) {
-      if (ratingReviewsEndpointResponse.has("Includes")) {
-         JSONObject includes = ratingReviewsEndpointResponse.getJSONObject("Includes");
-
-         if (includes.has("Products")) {
-            JSONObject products = includes.getJSONObject("Products");
-
-            if (products.has(skuInternalPid)) {
-               JSONObject product = products.getJSONObject(skuInternalPid);
-
-               if (product.has("ReviewStatistics")) {
-                  return product.getJSONObject("ReviewStatistics");
-               }
-            }
-         }
-      }
-
-      return new JSONObject();
-   }
 
    private List<String> crawlEan(JSONObject infoProductJson) {
       List<String> eans = new ArrayList<>();
@@ -405,74 +306,12 @@ public class B2WCrawler extends Crawler {
       return eans;
    }
 
-   private Offers scrapOffersnewWay(JSONObject skuJson, JSONObject offersJson, String sku) throws MalformedPricingException, OfferException {
-      Offers offers = new Offers();
-
-      JSONArray offersArray = offersJson.has(sku) ? offersJson.getJSONArray(sku) : skuJson.optJSONArray("offers");
-
-      boolean twoPositions = false;
-
-      if (offersArray != null && !offersArray.isEmpty()) {
-         Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
-
-         for (int i = 0; i < offersArray.length(); i++) {
-            JSONObject info = (JSONObject) offersArray.get(i);
-
-            boolean isBuyBox = offersArray.length() > 1;
-            String sellerName = info.optQuery("/seller/name").toString().trim();
-            String sellerId = info.optQuery("/seller/id").toString();
-
-            Integer mainPagePosition = i == 0 ? 1 : null;
-            Integer sellersPagePosition = i == 0 ? 1 : null;
-
-            if (i > 0 && sellerName.equalsIgnoreCase("b2w")) {
-               sellersPagePosition = 2;
-               twoPositions = true;
-            }
-
-            JSONObject pricesJson = info.has("defaultPrice") ? info : SaopauloB2WCrawlersUtils.extractPricesJson(info);
-
-            Pricing pricing = scrapPricing(pricesJson, i, sellerId, mapOfSellerIdAndPrice, true);
-
-            Offer offer = OfferBuilder.create()
-               .setInternalSellerId(sellerId)
-               .setSellerFullName(sellerName)
-               .setMainPagePosition(mainPagePosition)
-               .setSellersPagePosition(sellersPagePosition)
-               .setPricing(pricing)
-               .setIsBuybox(isBuyBox)
-               .setIsMainRetailer(false)
-               .build();
-
-            offers.add(offer);
-         }
-
-         if (offers.size() > 1) {
-            // Sellers page positios is order by price, in this map, price is the value
-            Map<String, Double> sortedMap = sortMapByValue(mapOfSellerIdAndPrice);
-            int position = 1;
-
-            for (Entry<String, Double> entry : sortedMap.entrySet()) {
-               for (Offer offer : offers.getOffersList()) {
-                  if (offer.getInternalSellerId().equals(entry.getKey())) {
-                     offer.setSellersPagePosition(position);
-                     position++;
-                  }
-               }
-            }
-         }
-      }
-
-      return offers;
-   }
-
-
    public Document accessOffersPage(String offersPageURL) {
       return Jsoup.parse(fetchPage(offersPageURL, this.dataFetcher, cookies, headers, session));
    }
 
    protected String scrapSellerIdFromURL(String rawSellerId) {
-      String sellerId = "";
+      String sellerId = null;
       if (rawSellerId != null) {
          sellerId = CommonMethods.getLast(rawSellerId.split("sellerId")).replaceAll("[^0-9]", "").trim();
       }
@@ -581,10 +420,10 @@ public class B2WCrawler extends Crawler {
    protected Pricing scrapPricingForOffersPage(Element sellerInfo)
       throws MalformedPricingException {
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__ListPrice-sc-1jvw02c-2", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__BestPrice-sc-1jvw02c-5", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, "div[class^=\"src__ListPrice\"] span", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".priceSales", null, false, ',', session);
       BankSlip bt = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCardsForSellersPage(sellerInfo, spotlightPrice);
+      CreditCards creditCards = scrapCreditCardsForSellersPage(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -594,7 +433,7 @@ public class B2WCrawler extends Crawler {
          .build();
    }
 
-   protected CreditCards scrapCreditCardsForSellersPage(Element sellerInfo, Double spotlightPrice) throws MalformedPricingException {
+   protected CreditCards scrapCreditCardsForSellersPage(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
@@ -602,6 +441,15 @@ public class B2WCrawler extends Crawler {
          installments.add(Installment.InstallmentBuilder.create()
             .setInstallmentNumber(1)
             .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
+
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
             .build());
       }
 

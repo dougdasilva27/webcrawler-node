@@ -46,19 +46,9 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.config.setFetcher(FetchMode.JSOUP);
       super.urlPageOffers = URL_PAGE_OFFERS;
-      super.listSelectors = getListSelectors();
       super.homePage = HOME_PAGE;
    }
 
-   private Map<String, String> getListSelectors() {
-      Map<String, String> listSelectors = new HashMap<>();
-      listSelectors.put("selectorSellerName", ".sold-and-delivery__Seller-sc-1uigg93-1.jrIbum");
-      listSelectors.put("selectorSellerId", ".src__ButtonUI-sc-1ruj90s-3.kgCDdH a");
-      listSelectors.put("offers", ".src__Divider-rlbmr6-6.jFuQtP");
-      listSelectors.put("hasPageOffers", ".more-offers__Text-sc-1rxqzae-0");
-
-      return listSelectors;
-   }
 
    @Override
    protected Document fetch() {

@@ -56,20 +56,10 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
-      super.listSelectors = getListSelectors();
       super.urlPageOffers = URL_PAGE_OFFERS;
       super.config.setFetcher(FetchMode.JSOUP);
    }
 
-   private Map<String, String> getListSelectors() {
-      Map<String, String> listSelectors = new HashMap<>();
-      listSelectors.put("selectorSellerName", ".sold-and-delivery__Seller-sc-1fgd6h1-2");
-      listSelectors.put("selectorSellerId", ".src__ButtonUI-sc-16np9zs-3");
-      listSelectors.put("offers", ".src__Divider-sc-1y5gtgz-6");
-      listSelectors.put("hasPageOffers", ".more-offers__Text-sc-15yqej3-0");
-
-      return listSelectors;
-   }
 
    @Override
    protected Document fetch() {
