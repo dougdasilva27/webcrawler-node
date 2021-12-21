@@ -345,7 +345,7 @@ public class B2WCrawler extends Crawler {
                Nesse caso devemos capturar apenas as informações da pagina principal.
                */
 
-            scrapAndSetInfoForMainPage(doc, offers);
+         scrapAndSetInfoForMainPage(doc, offers);
 
       }
 
@@ -357,13 +357,14 @@ public class B2WCrawler extends Crawler {
       setOffersForMainPageSeller(offers, jsonSeller);
    }
 
-   private boolean isAvailable(Document doc){
+   private boolean isAvailable(Document doc) {
       return doc.select("strong[class^=\"styles__Title-sc\"]").isEmpty();
    }
 
    private void setOffersForMainPageSeller(Offers offers, JSONObject jsonSeller) throws OfferException, MalformedPricingException {
+      // in this case, get only seller from main page
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
-      JSONObject offersJson = getJson(jsonSeller, "OffersResult");
+      JSONObject offersJson = SaopauloB2WCrawlersUtils.getJson(jsonSeller, "OffersResult");
 
       String keySeller = JSONUtils.getValueRecursive(offersJson, "seller.__ref", String.class);
 
@@ -393,19 +394,21 @@ public class B2WCrawler extends Crawler {
 
          for (int i = 0; i < sellers.size(); i++) {
             Element sellerInfo = sellers.get(i);
+            // The Business logic is: if we have more than 1 seller is buy box
             boolean isBuyBox = sellers.size() > 1;
             String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, listSelectors.get("selectorSellerName"), false);
             String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, listSelectors.get("selectorSellerId"), "href");
             String sellerId = scrapSellerIdFromURL(rawSellerId);
             if (sellers.size() == 1 && sellerId == null) {
                JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(sellersDoc, "script", "window.__APOLLO_STATE__ =", null, false, true);
-               JSONObject offersJson = getJson(jsonSeller, "OffersResult");
+               JSONObject offersJson = SaopauloB2WCrawlersUtils.getJson(jsonSeller, "OffersResult");
                String keySeller = JSONUtils.getValueRecursive(offersJson, "seller.__ref", String.class);
                JSONObject jsonInfoSeller = jsonSeller.optJSONObject(keySeller);
                sellerId = jsonInfoSeller.optString("id");
             }
             Integer mainPagePosition = i == 0 ? 1 : null;
             Integer sellersPagePosition = i + 1;
+
             Pricing pricing = scrapPricingForOffersPage(sellerInfo);
 
             Offer offer = Offer.OfferBuilder.create()
@@ -451,14 +454,6 @@ public class B2WCrawler extends Crawler {
             .build());
       }
 
-
-      for (String card : cards) {
-         creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
-      }
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
@@ -586,8 +581,8 @@ public class B2WCrawler extends Crawler {
    }
 
    private Installment scrapInstallment(JSONObject installmentJson) throws MalformedPricingException {
-      Integer quantity = installmentJson.getInt("quantity");
-      Double value = installmentJson.getDouble("value");
+      Integer quantity = installmentJson.optInt("quantity");
+      Double value = installmentJson.optDouble("value");
       Double interest = JSONUtils.getDoubleValueFromJSON(installmentJson, "taxedInterestRate", true);
 
       if (interest == null || interest == 0d) {
@@ -717,14 +712,5 @@ public class B2WCrawler extends Crawler {
       return Normalizer.normalize(description.toString(), Normalizer.Form.NFD).replaceAll("[^\n\t\r\\p{Print}]", "");
    }
 
-   public static JSONObject getJson(JSONObject jsonSeller, String type) {
-      for (Iterator<String> it = jsonSeller.keys(); it.hasNext(); ) {
-         String key = it.next();
-         if (key.contains(type)) {
-            return jsonSeller.optJSONObject(key);
-         }
-      }
-      return new JSONObject();
-   }
 
 }
