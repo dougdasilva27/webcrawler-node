@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptions
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -25,7 +26,6 @@ import models.pricing.CreditCards;
 import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.yaml.snakeyaml.util.UriEncoder;
 
@@ -44,6 +44,7 @@ public class CarrefourCrawler extends VTEXNewScraper {
    public CarrefourCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
+      super.config.setParser(Parser.HTML);
    }
 
    @Override
@@ -61,26 +62,19 @@ public class CarrefourCrawler extends VTEXNewScraper {
    }
 
    protected String getCep() {
-      return null;
+      return this.session.getOptions().optString("cep");
    }
 
-   protected String fetchPage(String url) {
+   @Override
+   protected Response fetchResponse() {
+      return fetchPage(session.getOriginalURL());
+   }
 
+   protected Response fetchPage(String url) {
       Map<String, String> headers = new HashMap<>();
-
-      String token = getLocationToken();
-
-      String userLocationData = getCep();
       headers.put("accept", "*/*");
-
-      StringBuilder cookiesBuilder = new StringBuilder();
-      if (token != null) {
-         cookiesBuilder.append("vtex_segment=").append(token).append(";");
-      }
-      if (userLocationData != null) {
-         cookiesBuilder.append("userLocationData=").append(userLocationData).append(";");
-      }
-      headers.put("cookie", cookiesBuilder.toString());
+      headers.put("authority", "mercado.carrefour.com.br");
+      headers.put("referer", "https://mercado.carrefour.com.br/");
 
       Request request = RequestBuilder.create()
          .setUrl(url)
@@ -94,15 +88,11 @@ public class CarrefourCrawler extends VTEXNewScraper {
                .build())
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.BUY,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NO_PROXY)
+            ProxyCollection.LUMINATI_SERVER_BR)
          )
          .build();
 
-      Response response = alternativeFetch(request);
-
-      return response.getBody();
+      return alternativeFetch(request);
    }
 
    protected Response alternativeFetch(Request request) {
@@ -128,11 +118,7 @@ public class CarrefourCrawler extends VTEXNewScraper {
          || statusCode == 404);
    }
 
-   @Override
-   protected Object fetch() {
 
-      return Jsoup.parse(fetchPage(session.getOriginalURL()));
-   }
 
    @Override
    protected String scrapPidFromApi(Document doc) {
@@ -161,7 +147,7 @@ public class CarrefourCrawler extends VTEXNewScraper {
             String url = homePage + "api/catalog_system/pub/products/search/" + path;
 
             if (crawlerApi == null) {
-               String body = fetchPage(url);
+               String body = fetchPage(url).getBody();
                crawlerApi = CrawlerUtils.stringToJsonArray(body);
             }
 
@@ -172,23 +158,23 @@ public class CarrefourCrawler extends VTEXNewScraper {
             }
          } else {
 
-            String hash = "b082ca6ae008539025025f4d5d400982b7ca216375467a82bad61395d389a5f2";
+            String hash = "23b86dcb5a024ded294ae53d368a436a618bbe6ab70de9b84cfdf6b37b76d648";
             String productSlug = regex("//.*[/](.*)/p", session.getOriginalURL());
 
-
+            String regionId = BrasilCarrefourFetchUtils.getRegionId(dataFetcher, this.getCep(), session);
             String extensions = "{\"persistedQuery\":{\"sha256Hash\":\"" + hash + "\"}}";
-            String variables = "{\"slug\":\"" + productSlug + "\"}";
+            String variables = "{\"slug\":\"" + productSlug + "\", \"regionId\":\"" +  regionId + "\"}";
             String variablesBase64 = Base64.getEncoder().encodeToString(variables.getBytes());
 
             StringBuilder url = new StringBuilder();
-            url.append("https://mercado.carrefour.com.br/graphql/?operationName=BrowserProductPageQuery&extensions=");
+            url.append("https://mercado.carrefour.com.br/graphql/?operationName=ProductQuery&extensions=");
             url.append(extensions);
             url.append("&variables=");
             url.append(variablesBase64);
 
             String urlEncoded = UriEncoder.encode(url.toString());
 
-            String body = fetchPage(urlEncoded);
+            String body = fetchPage(urlEncoded).getBody();
             JSONObject api = CrawlerUtils.stringToJSONObject(body);
             productApi = JSONUtils.getValueRecursive(api, "data.vtex.product", JSONObject.class);
             productObject = productApi;

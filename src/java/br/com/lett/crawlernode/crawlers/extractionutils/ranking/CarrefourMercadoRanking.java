@@ -64,33 +64,8 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
       return session.getOptions().optString("vtex_segment");
    }
 
-   protected String getRegionId() {
-      String cep = getCep();
-
-      if(cep == null) return null;
-
-      String regionApiUrl = "https://mercado.carrefour.com.br/api/checkout/pub/regions?country=BRA&postalCode="+ cep + "&sc=2";
-      Map<String, String> headers = new HashMap<>();
-      headers.put("authority", "mercado.carrefour.com.br");
-      headers.put("sec-ch-ua", "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"96\", \"Google Chrome\";v=\"96\"");
-      headers.put("sec-ch-ua-mobile", "?0");
-      headers.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36");
-      headers.put("sec-ch-ua-platform", "\"Windows\"");
-      headers.put("accept", "*/*");
-      headers.put("sas-fetch-site", "same-origin");
-      headers.put("sas-fetch-mode", "cors");
-      headers.put("sas-fetch-dest", "empty");
-      headers.put("referer", "https://mercado.carrefour.com.br/s/"+ this.keywordEncoded +"?map=term");
-
-      Request request = Request.RequestBuilder.create().setUrl(regionApiUrl).setHeaders(headers).build();
-      String response = dataFetcher.get(session, request).getBody();
-      JSONArray responseJSON = JSONUtils.stringToJsonArray(response);
-
-      return responseJSON.getJSONObject(0) != null ? responseJSON.getJSONObject(0).optString("id") : null;
-   }
-
    protected String getCep() {
-      return null;
+      return this.session.getOptions().optString("cep");
    }
 
    protected String buildUrl(String homepage) {
@@ -117,7 +92,7 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
 
       JSONObject facet = new JSONObject();
       facet.put("key", "region-id");
-      facet.put("value", getRegionId());
+      facet.put("value", BrasilCarrefourFetchUtils.getRegionId(dataFetcher, getCep(), session));
 
       selectedFacets.put(facet);
 

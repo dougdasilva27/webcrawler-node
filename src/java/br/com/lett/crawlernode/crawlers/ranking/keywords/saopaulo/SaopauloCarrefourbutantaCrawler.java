@@ -39,9 +39,4 @@ public class SaopauloCarrefourbutantaCrawler extends BrasilCarrefourCrawler {
    protected String getCep() {
       return LOCATION;
    }
-
-   @Override
-   protected String getRegionId() {
-      return REGION_ID;
-   }
 }
