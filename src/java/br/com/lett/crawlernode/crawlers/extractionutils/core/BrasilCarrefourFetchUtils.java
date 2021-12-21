@@ -46,8 +46,7 @@ public class BrasilCarrefourFetchUtils {
                .build())
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.LUMINATI_SERVER_BR,
             ProxyCollection.NO_PROXY)
          )
          .build();
@@ -94,7 +93,15 @@ public class BrasilCarrefourFetchUtils {
       headers.put("sas-fetch-dest", "empty");
       headers.put("referer", "https://mercado.carrefour.com.br/");
 
-      Request request = Request.RequestBuilder.create().setUrl(regionApiUrl).setHeaders(headers).build();
+      Request request = Request.RequestBuilder.create()
+         .setUrl(regionApiUrl)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.NO_PROXY))
+         .setHeaders(headers)
+         .build();
+
       String response = dataFetcher.get(session, request).getBody();
       JSONArray responseJSON = JSONUtils.stringToJsonArray(response);
 
