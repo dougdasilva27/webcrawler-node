@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -13,25 +13,20 @@ import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-
-import java.util.*;
-
 import models.Offer;
 import models.Offers;
-import models.pricing.BankSlip;
-import models.pricing.CreditCard;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
-import models.pricing.Installments;
-import models.pricing.Pricing;
+import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+
+import java.io.IOException;
+import java.util.*;
 
 public class BrasilExtrabomCrawler extends Crawler {
 
    private static final String API = "https://www.extrabom.com.br/carrinho/verificarCepDepositoType/";
    private static final String SELLER_FULL_NAME = "Extrabom";
-   private String cep = this.session.getOptions().optString("cep");
+   private final String cep = this.session.getOptions().optString("cep");
 
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(),
       Card.DINERS.toString());
@@ -48,12 +43,17 @@ public class BrasilExtrabomCrawler extends Crawler {
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
       String payload = "cep=" + cep;
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(API)
-         .setHeaders(headers)
-         .setProxyservice(Collections.singletonList(ProxyCollection.NO_PROXY))
-         .setPayload(payload)
-         .build();
+      Request request = null;
+      try {
+         request = Request.RequestBuilder.create()
+            .setUrl(API)
+            .setHeaders(headers)
+            .setProxy(getFixedIp())
+            .setPayload(payload)
+            .build();
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
 
       Response response = this.dataFetcher.post(session, request);
       this.cookies = response.getCookies();
@@ -64,13 +64,18 @@ public class BrasilExtrabomCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setHeaders(headers)
-         .setProxyservice(Collections.singletonList(ProxyCollection.NO_PROXY))
-         .build();
+      Request request = null;
+      try {
+         request = Request.RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setHeaders(headers)
+            .setProxy(getFixedIp())
+            .build();
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
 
-     return this.dataFetcher.get(session, request);
+      return this.dataFetcher.get(session, request);
    }
 
    @Override
@@ -201,6 +206,17 @@ public class BrasilExtrabomCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   public LettProxy getFixedIp() throws IOException {
+
+      LettProxy lettProxy = new LettProxy();
+      lettProxy.setSource("fixed_ip");
+      lettProxy.setPort(3144);
+      lettProxy.setAddress("haproxy.lett.global");
+      lettProxy.setLocation("brazil");
+
+      return lettProxy;
    }
 
 }
