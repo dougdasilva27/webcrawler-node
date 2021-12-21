@@ -23,14 +23,14 @@ public class SaopauloAmericanasCrawler extends B2WScriptPageCrawlerRanking {
       return HOME_PAGE;
    }
 
-   @Override
+
    protected Document fetchPage() {
       String keyword = this.keywordWithoutAccents.replace(" ", "-");
 
       String url = homePage + "busca/" + keyword + "?limit=24&offset=" + (this.currentPage - 1) * pageSize;
       this.log("Link onde são feitos os crawlers: " + url);
 
-      Map<String,String> headers = new HashMap<>();
+      Map<String, String> headers = new HashMap<>();
 
       headers.put("authority", "www.americanas.com.br");
       headers.put("sec-ch-ua", " \" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\"");
@@ -44,6 +44,8 @@ public class SaopauloAmericanasCrawler extends B2WScriptPageCrawlerRanking {
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
 
-      return Jsoup.parse(br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloAmericanasCrawler.fetchPage(url,this.dataFetcher,this.cookies,headers,session));
+      return Jsoup.parse(br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloAmericanasCrawler.fetchPage(url, this.dataFetcher, this.cookies, headers, session));
    }
+
+
 }

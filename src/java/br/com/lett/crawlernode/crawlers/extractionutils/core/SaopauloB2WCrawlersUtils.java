@@ -9,15 +9,16 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 public class SaopauloB2WCrawlersUtils {
 
    /**
     * B2W has two types of crawler
-    *
+    * <p>
     * Old Way: Shoptime New Way: Americanas and Submarino
-    *
+    * <p>
     * this happen because americanas and submarino have changed their sites, but shoptime no
     */
 
@@ -30,7 +31,6 @@ public class SaopauloB2WCrawlersUtils {
     */
 
    /**
-    *
     * @param doc
     * @return
     */
@@ -60,41 +60,21 @@ public class SaopauloB2WCrawlersUtils {
     * Nesse novo site da americanas todas as principais informações dos skus estão em um json no html,
     * esse json é muito grande, por isso pego somente o que preciso e coloco em outro json para
     * facilitar a captura de informações
-    *
+    * <p>
     * { internalPid = '51612', skus:[ { internal_id: '546', variationName: '110v' } ], images:{
     * primaryImage: '123.jpg'. secondaryImages: [ '1.jpg', '2.jpg' ] }, categories:[ { id: '123', name:
     * 'cafeteira' } ], prices:{ 546:{ stock: 1706 bankTicket: 59.86 installments: [ { quantity: 1,
     * value: 54.20 } ] } }
-    *
+    * <p>
     * }
     */
 
-   public static JSONObject assembleJsonProductWithNewWay(JSONObject initialJson, JSONObject apolloJson) {
+   public static JSONObject assembleJsonProductWithNewWay(JSONObject apolloJson) {
       JSONObject jsonProduct = new JSONObject();
 
-      JSONObject productJson = new JSONObject();
+      JSONObject productJson = extractProductFromApollo(apolloJson);
 
-      JSONArray skus = new JSONArray();
-
-      if (initialJson.has("product")) {
-         productJson = initialJson.optJSONObject("product");
-
-         skus = optJSONSkus(initialJson);
-         jsonProduct.put("skus", skus);
-      } else if (initialJson.has("products")) {
-         JSONObject products = initialJson.optJSONObject("products");
-
-         if (!products.isEmpty()) {
-            productJson = products.optJSONObject(products.keys().next());
-
-            skus = optJSONSkus(productJson);
-         }
-      }
-
-      if (skus.isEmpty()) {
-         skus = optJSONSkusApollo(apolloJson);
-         productJson = extractProductFromApollo(apolloJson);
-      }
+      JSONArray skus = optJSONSkusApollo(apolloJson);
 
       jsonProduct.put("skus", skus);
 
@@ -109,26 +89,20 @@ public class SaopauloB2WCrawlersUtils {
          jsonProduct.put("name", productJson.get("name"));
       }
 
-      JSONObject jsonForPrices;
-      if (productJson.has("offers")) {
-         jsonForPrices = productJson;
-      } else {
-         jsonForPrices = initialJson;
-      }
-
-      JSONObject jsonPrices = extractJsonOffers(jsonForPrices, internalPid);
-      jsonProduct.put("prices", jsonPrices);
-
       JSONObject jsonImages = optJSONImages(productJson);
       jsonProduct.put("images", jsonImages);
 
       JSONArray jsonCategories = optJSONCategories(productJson);
       jsonProduct.put("categories", jsonCategories);
 
+      JSONObject rating = optJSONRating(productJson);
+      jsonProduct.put("rating", rating);
+
 
       return jsonProduct;
 
    }
+
 
    private static JSONObject extractProductFromApollo(JSONObject apollo) {
       JSONObject product = new JSONObject();
@@ -226,6 +200,25 @@ public class SaopauloB2WCrawlersUtils {
 
       return jsonCategories;
    }
+
+   private static JSONObject optJSONRating(JSONObject productJson) {
+      JSONObject jsonRating = new JSONObject();
+
+      if (productJson.has("rating")) {
+         JSONObject rating = productJson.optJSONObject("rating");
+         jsonRating.put("rating", rating);
+      }
+
+      JSONObject reviews = getJson(productJson, "reviews");
+      JSONArray result = reviews != null ? reviews.optJSONArray("result") : new JSONArray();
+      if (!result.isEmpty()) {
+         jsonRating.put("reviews", reviews);
+      }
+
+
+      return jsonRating;
+   }
+
 
    private static JSONObject optJSONImages(JSONObject productJson) {
       JSONObject jsonImages = new JSONObject();
@@ -400,9 +393,9 @@ public class SaopauloB2WCrawlersUtils {
 
                   setBoleto(payment, jsonSeller);
                   setCard(payment, jsonSeller, moreQuantityOfInstallments);
-                  setSpotlightPriceForSellers(payment,jsonSeller);
+                  setSpotlightPriceForSellers(payment, jsonSeller);
 
-               } else if(jsonOffer.has("paymentOptions")) {
+               } else if (jsonOffer.has("paymentOptions")) {
                   JSONObject payment = jsonOffer.optJSONObject("paymentOptions");
 
                   setBoleto(payment, jsonSeller);
@@ -467,11 +460,11 @@ public class SaopauloB2WCrawlersUtils {
                jsonSeller.put("id", seller.get("id"));
             }
          }
-      } else if (!jsonOffer.isEmpty()){
+      } else if (!jsonOffer.isEmpty()) {
          if (jsonOffer.has("seller")) {
             JSONObject seller = jsonOffer.optJSONObject("seller");
 
-            if(seller.has("name")){
+            if (seller.has("name")) {
                jsonSeller.put("sellerName", seller.get("name").toString().toLowerCase().trim());
             }
 
@@ -496,11 +489,11 @@ public class SaopauloB2WCrawlersUtils {
       }
    }
 
-   private static void setSpotlightPriceForSellers(JSONObject payment, JSONObject jsonSeller){
-      if(payment.has("minQuantity")){
+   private static void setSpotlightPriceForSellers(JSONObject payment, JSONObject jsonSeller) {
+      if (payment.has("minQuantity")) {
          JSONArray minQuantity = payment.optJSONArray("minQuantity");
-         for(Object o : minQuantity){
-            if( o instanceof JSONObject) {
+         for (Object o : minQuantity) {
+            if (o instanceof JSONObject) {
                JSONObject paymentInfo = (JSONObject) o;
                Double setSpotlighPrice = paymentInfo.optDouble("total");
 
@@ -652,29 +645,17 @@ public class SaopauloB2WCrawlersUtils {
       }
    }
 
-   public static JSONObject extractApolloOffersJson(JSONObject apoloJson) {
-      JSONObject offersJson = new JSONObject();
-      JSONObject rootQuery = apoloJson.optJSONObject("ROOT_QUERY");
-      if (rootQuery != null) {
-         for (String key : rootQuery.keySet()) {
-            if (key.startsWith("product(")) {
-               JSONObject productJSON = rootQuery.optJSONObject(key);
-               Object obj = productJSON.optQuery("/offers/result");
 
-               if (obj instanceof JSONArray) {
-                  JSONArray offerResult = (JSONArray) obj;
-
-                  for (Object o : offerResult) {
-                     JSONObject offerObj = (JSONObject) o;
-
-                     extractOffer(apoloJson, offerObj.optString("__ref"), offersJson);
-                  }
-               }
+   public static JSONObject getJson(JSONObject jsonSeller, String type) {
+      if (jsonSeller != null) {
+         for (Iterator<String> it = jsonSeller.keys(); it.hasNext(); ) {
+            String key = it.next();
+            if (key.contains(type)) {
+               return jsonSeller.optJSONObject(key);
             }
          }
       }
-
-      return offersJson;
+      return new JSONObject();
    }
 
    private static void extractOffer(JSONObject apoloJson, String key, JSONObject offersJson) {
@@ -737,4 +718,30 @@ public class SaopauloB2WCrawlersUtils {
          }
       }
    }
+
+   public static JSONArray getJsonArrayInstallment(JSONObject jsonObject) {
+      for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
+         String key = it.next();
+         if (key.contains("installment") && key.contains("min")) {
+            return jsonObject.optJSONArray(key);
+         }
+
+      }
+      return new JSONArray();
+
+   }
+
+   public static JSONObject getJsonArray(JSONObject jsonObject) {
+      for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
+         String key = it.next();
+         if (key.contains("installment")) {
+            return jsonObject.optJSONArray(key).getJSONObject(0);
+         }
+
+      }
+      return new JSONObject();
+
+   }
+
+
 }
