@@ -26,7 +26,6 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
-import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Pricing.PricingBuilder;
@@ -162,7 +161,8 @@ public class B2WCrawler extends Crawler {
             JSONObject skuJson = skuOptions.optJSONObject(i);
             String internalId = skuJson.optString("id");
             name = skuOptions.length() > 1 || name == null ? skuJson.optString("name") : name;
-            Offers offers = scrapOffers(doc, internalId, internalPid);
+            boolean available = isAvailable(doc);
+            Offers offers = available ? scrapOffers(doc, internalId, internalPid) : new Offers();
 
             setMainRetailer(offers);
 
@@ -230,17 +230,18 @@ public class B2WCrawler extends Crawler {
 
       ratingReviews.setDate(session.getDate());
       JSONObject ratingInfo = productJson.optJSONObject("rating");
-      JSONObject reviewStatistics = ratingInfo.optJSONObject("reviews");
-      JSONObject ratingAverage = ratingInfo.optJSONObject("rating");
-      AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValue(reviewStatistics);
+      if (ratingInfo != null && !ratingInfo.isEmpty()) {
+         JSONObject reviewStatistics = ratingInfo.optJSONObject("reviews");
+         JSONObject ratingAverage = ratingInfo.optJSONObject("rating");
+         AdvancedRatingReview advancedRatingReview = reviewStatistics != null ? getTotalStarsFromEachValue(reviewStatistics) : new AdvancedRatingReview();
 
-      Integer totalRating = ratingAverage.optInt("reviews");
+         Integer totalRating = ratingAverage.optInt("reviews");
 
-      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-      ratingReviews.setTotalRating(totalRating);
-      ratingReviews.setTotalWrittenReviews(totalRating);
-      ratingReviews.setAverageOverallRating(ratingAverage.optDouble("average"));
-
+         ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+         ratingReviews.setTotalRating(totalRating);
+         ratingReviews.setTotalWrittenReviews(totalRating);
+         ratingReviews.setAverageOverallRating(ratingAverage.optDouble("average"));
+      }
       return ratingReviews;
    }
 
@@ -251,8 +252,8 @@ public class B2WCrawler extends Crawler {
       Integer star4 = 0;
       Integer star5 = 0;
 
-      if (reviewStatistics.has("ratingDistribution")) {
-         JSONArray ratingDistribution = reviewStatistics.getJSONArray("ratingDistribution");
+      JSONArray ratingDistribution = reviewStatistics.optJSONArray("ratingDistribution");
+      if (ratingDistribution != null) {
          for (Object object : ratingDistribution) {
             JSONObject rating = (JSONObject) object;
             Integer option = CrawlerUtils.getIntegerValueFromJSON(rating, "ratingValue", 0);
@@ -336,6 +337,7 @@ public class B2WCrawler extends Crawler {
          setOffersForSellersPage(offers, sellersFromHTML, listSelectors, sellersDoc);
 
       } else {
+
         /*
                caso sellersFromHTML seja vazio significa que fomos bloqueados
                durante a tentativa de capturar as informações na pagina de sellers
@@ -343,7 +345,7 @@ public class B2WCrawler extends Crawler {
                Nesse caso devemos capturar apenas as informações da pagina principal.
                */
 
-         scrapAndSetInfoForMainPage(doc, offers);
+            scrapAndSetInfoForMainPage(doc, offers);
 
       }
 
@@ -353,6 +355,10 @@ public class B2WCrawler extends Crawler {
    protected void scrapAndSetInfoForMainPage(Document doc, Offers offers) throws OfferException, MalformedPricingException {
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
       setOffersForMainPageSeller(offers, jsonSeller);
+   }
+
+   private boolean isAvailable(Document doc){
+      return doc.select("strong[class^=\"styles__Title-sc\"]").isEmpty();
    }
 
    private void setOffersForMainPageSeller(Offers offers, JSONObject jsonSeller) throws OfferException, MalformedPricingException {
@@ -365,7 +371,7 @@ public class B2WCrawler extends Crawler {
       String name = jsonInfoSeller.optString("name");
       String internalSellerId = jsonInfoSeller.optString("id");
 
-      Pricing pricing = scrapPricing(offersJson,  internalSellerId, mapOfSellerIdAndPrice);
+      Pricing pricing = scrapPricing(offersJson, internalSellerId, mapOfSellerIdAndPrice);
 
       Offer offer = Offer.OfferBuilder.create()
          .setInternalSellerId(internalSellerId)
