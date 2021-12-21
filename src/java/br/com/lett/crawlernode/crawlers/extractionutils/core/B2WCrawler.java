@@ -151,7 +151,7 @@ public class B2WCrawler extends Crawler {
          CategoryCollection categories = crawlCategories(infoProductJson);
          String primaryImage = this.crawlPrimaryImage(infoProductJson);
          List<String> secondaryImages = this.crawlSecondaryImages(infoProductJson);
-         String description = this.crawlDescription(apolloJson, doc, internalPid); //fix
+         String description = this.crawlDescription(apolloJson, doc, internalPid);
          RatingsReviews ratingReviews = crawlRatingReviews(infoProductJson);
          List<String> eans = crawlEan(infoProductJson);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title__Title-sc-1oqsqe9-0", true);
