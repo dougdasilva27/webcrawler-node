@@ -21,20 +21,20 @@ import org.json.JSONObject;
 
 import java.util.*;
 
-public abstract class MerconnectCrawler extends Crawler {
+public class MerconnectCrawler extends Crawler {
 
-   protected MerconnectCrawler(Session session) {
+   public MerconnectCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.JSOUP);
+      config.setFetcher(FetchMode.APACHE);
    }
 
    //Client ID and Client Secret can be found in token request. If you cannot found this request in browser, open the website in anonymous mode tracking the requests.
    protected String getClientId(){
-      return session.getOptions().optString("CLIENT_SECRET");
+      return session.getOptions().optString("CLIENT_ID");
    };
 
    protected String getClientSecret(){
-      return session.getOptions().optString("CLIENT_ID");
+      return session.getOptions().optString("CLIENT_SECRET");
    };
 
    //The store id can be found in the product json in the key "marketId"
@@ -58,7 +58,7 @@ public abstract class MerconnectCrawler extends Crawler {
 
          Map<String, String> headers = new HashMap<>();
          headers.put("Accept-Encoding", "gzip, deflate, br");
-         headers.put("Content-Type", "application/json;charset=UTF-8");
+         headers.put("Content-Type", "application/json");
          headers.put("Connection", "keep-alive");
          headers.put("Authorization", "Bearer " + fetchApiToken(headers));
 
