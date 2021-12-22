@@ -29,14 +29,22 @@ public abstract class MerconnectCrawler extends Crawler {
    }
 
    //Client ID and Client Secret can be found in token request. If you cannot found this request in browser, open the website in anonymous mode tracking the requests.
-   protected abstract String getClientId();
+   protected String getClientId(){
+      return session.getOptions().optString("CLIENT_SECRET");
+   };
 
-   protected abstract String getClientSecret();
+   protected String getClientSecret(){
+      return session.getOptions().optString("CLIENT_ID");
+   };
 
    //The store id can be found in the product json in the key "marketId"
-   protected abstract String getStoreId();
+   protected  String getStoreId(){
+      return session.getOptions().optString("STORE_ID");
+   };
 
-   protected abstract String getSellerName();
+   protected String getSellerName(){
+      return session.getOptions().optString("SELLER_NAME");
+   };
 
    @Override
    protected JSONObject fetch() {
