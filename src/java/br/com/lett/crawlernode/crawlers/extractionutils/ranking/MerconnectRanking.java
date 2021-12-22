@@ -15,30 +15,38 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class MerconnectRanking extends CrawlerRankingKeywords {
+public class MerconnectRanking extends CrawlerRankingKeywords {
 
    /**
     * Can be found in the request https://www.merconnect.com.br/mapp/v2/markets/by_neighborhood?cep=xxxxx
     *
     * @return store id for cep
     */
-   protected abstract String getStoreId();
+   protected String getStoreId(){
+      return session.getOptions().optString("STORE_ID");
+   };
 
    /**
     * Can be found in the request https://www.merconnect.com.br/oauth/token
     *
     * @return client id
     */
-   protected abstract String getClientId();
+   protected String getClientId(){
+      return session.getOptions().optString("CLIENT_ID");
+   };
 
    /**
     * Can be found in the request https://www.merconnect.com.br/oauth/token
     *
     * @return client secret
     */
-   protected abstract String getClientSecret();
+   protected String getClientSecret(){
+      return session.getOptions().optString("CLIENT_SECRET");
+   };
 
-   protected abstract String getHomePage();
+   protected String getHomePage(){
+      return session.getOptions().optString("STORE_HOME");
+   };
 
    protected MerconnectRanking(Session session) {
       super(session);
