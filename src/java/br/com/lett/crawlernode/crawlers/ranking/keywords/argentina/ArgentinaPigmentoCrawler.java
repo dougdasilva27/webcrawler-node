@@ -34,7 +34,7 @@ public class ArgentinaPigmentoCrawler extends CrawlerRankingKeywords {
       for (Element product : products) {
          String slug = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "a.vtex-product-summary-2-x-clearLink.h-100.flex.flex-column", "href");
          String link = "https://www.perfumeriaspigmento.com.ar" + slug;
-         String jsonKey = "Product:" + slug.substring(1, slug.indexOf("/p"));
+         String jsonKey = "Product:" + slug.substring(1, slug.lastIndexOf("/p"));
          String internalPid = jsonProducts.has(jsonKey) ? jsonProducts.optJSONObject(jsonKey).optString("productId") : null;
 
          String name = CrawlerUtils.scrapStringSimpleInfo(product, "span.vtex-product-summary-2-x-productBrand.vtex-product-summary-2-x-brandName.t-body", true);
