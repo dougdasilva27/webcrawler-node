@@ -48,7 +48,7 @@ public class MerconnectRanking extends CrawlerRankingKeywords {
       return session.getOptions().optString("STORE_HOME");
    };
 
-   protected MerconnectRanking(Session session) {
+   public MerconnectRanking(Session session) {
       super(session);
       pageSize = 25;
    }
