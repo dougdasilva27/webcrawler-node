@@ -51,7 +51,7 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
    @Override
    protected Document fetchDocument(String url) {
       Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
+      headers.put("user-agent", "LettDigital/1.0");
 
       Request request = null;
       try {
