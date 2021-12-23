@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.*;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -27,7 +28,6 @@ import java.util.*;
 public class PedidosyaCrawler extends Crawler {
    public PedidosyaCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.FETCHER);
       config.setParser(Parser.JSON);
    }
 
@@ -41,26 +41,46 @@ public class PedidosyaCrawler extends Crawler {
       ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
       ProxyCollection.BUY_HAPROXY);
-   public void handleCookiesBeforeFetch() {
-      Request request = Request.RequestBuilder.create().setUrl("https://www.pedidosya.com.ar").setProxyservice(
-         proxies).build();
-      this.cookies = this.dataFetcher.get(session,request).getCookies();
-   }
+   private List<DataFetcher> fetchers = Arrays.asList(new ApacheDataFetcher(),new JavanetDataFetcher(),new JsoupDataFetcher(),new FetcherDataFetcher());
+
 
    @Override
    protected Response fetchResponse() {
-      String internalId = getInternalIdFromUrl();
+      Response responseCookies ;
+      Response response = new Response() ;
 
-      String storeId =  session.getOptions().optString("store_id");
+      for (DataFetcher fetcher : fetchers) {
+         Request request = Request.RequestBuilder.create().setUrl("https://www.pedidosya.com.ar").setProxyservice(
+            proxies).build();
+         responseCookies = this.dataFetcher.get(session,request);
+         if (responseCookies.isSuccess()){
+            this.cookies = responseCookies.getCookies();
+            break;
+         }
+      }
 
-      String url = "https://www.pedidosya.com.ar/mobile/v1/products/" + internalId + "?restaurantId="+storeId+"&businessType=GROCERIES";
+      for (DataFetcher fetcher : fetchers) {
 
-      Map<String,String> headers = new HashMap<>();
-      headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
+         String internalId = getInternalIdFromUrl();
 
-      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setProxyservice(
-         proxies).build();
-      return this.dataFetcher.get(session,request);
+         String storeId =  session.getOptions().optString("store_id");
+
+         String url = "https://www.pedidosya.com.ar/mobile/v1/products/" + internalId + "?restaurantId="+storeId+"&businessType=GROCERIES";
+
+         Map<String,String> headers = new HashMap<>();
+         headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
+
+         Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setProxyservice(
+            proxies).build();
+
+         response = fetcher.get(session,request);
+         if (response.isSuccess()){
+            break;
+         }
+      }
+
+         return response;
+
    }
 
    @Override
