@@ -55,6 +55,7 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
          boolean available = doc.selectFirst("[title=\"Adicionar ao carrinho\"]") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
          Elements colors = doc.select(".variation-group .options label");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,"li.image img", Arrays.asList("src"),"", "", primaryImage);
 
          for (Element e : colors) {
             String colorName = CrawlerUtils.scrapStringSimpleInfo(e, "span b", false);
@@ -75,6 +76,7 @@ public class CuritibaSchummancuritibaCrawler extends Crawler {
                .setInternalPid(internalPid)
                .setName(colorName)
                .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
