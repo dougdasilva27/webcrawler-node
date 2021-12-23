@@ -2,19 +2,35 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.florianopolis;
 
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.AngeloniSuperUtils;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.apache.http.cookie.Cookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 
+import java.util.List;
+
 public class FlorianopolisAngeloniCrawler extends CrawlerRankingKeywords {
    private static final String HOME_PAGE = "https://www.angeloni.com.br/";
 
    public FlorianopolisAngeloniCrawler(Session session) {
       super(session);
+   }
+
+   @Override
+   protected List<Cookie> fetchCookies(String url) {
+      return AngeloniSuperUtils.fetchLocationCookies(session, this.dataFetcher);
+   }
+
+   @Override
+   protected void processBeforeFetch() {
+      if(this.cookies.isEmpty()) {
+         this.cookies = AngeloniSuperUtils.fetchLocationCookies(session, this.dataFetcher);
+      }
    }
 
    @Override
