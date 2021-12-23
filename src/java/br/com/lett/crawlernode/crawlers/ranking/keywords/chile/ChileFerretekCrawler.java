@@ -37,13 +37,21 @@ public class ChileFerretekCrawler extends CrawlerRankingKeywords {
 
       if (!products.isEmpty()) {
          for(Element product : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".imgGrilla", "href").split("/")[1];
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".imgGrilla", "href");
+            if (internalId != null) {
+               if (internalId.split("/").length > 1) {
+                  internalId = internalId.split("/")[1];
+               }
+            }
             String productUrl = "https://herramientas.cl" + "/" + CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".imgGrilla", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(product, ".nombreGrilla.link", true);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".imgGrilla > img", Collections.singletonList("src"), "https", "herramientas.cl");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".valorGrilla.link", null, true, ',', session, 0);
-            if (CrawlerUtils.scrapStringSimpleInfo(product, ".valorGrilla.link", true).equals("")) {
-               price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".valorGrilla.link > .conDescuento", null, true, ',', session, 0);
+            String valorGrilla = CrawlerUtils.scrapStringSimpleInfo(product, ".valorGrilla.link", true);
+            if (valorGrilla != null) {
+               if (valorGrilla.equals("")) {
+                  price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".valorGrilla.link > .conDescuento", null, true, ',', session, 0);
+               }
             }
             boolean isAvailable = checkIfIsAvailable(product);
 
@@ -75,6 +83,10 @@ public class ChileFerretekCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return !CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc,".container.paginador > :last-child", "href").equals("javascript:void(0)");
+      String hrefNextPageButton = CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc,".container.paginador > :last-child", "href");
+      if (hrefNextPageButton != null) {
+         return !hrefNextPageButton.equals("javascript:void(0)");
+      }
+      return false;
    }
 }

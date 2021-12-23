@@ -40,7 +40,10 @@ public class ChileFerretekCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"meta[itemprop=sku]", "content");
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".infoProducto > span.codigo", true).replace("Ref: ", "");
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".infoProducto > span.codigo", true);
+         if (internalId != null) {
+            internalId = internalId.replace("Ref: ", "");
+         }
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".info-product > .infoProducto > h2", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imgPrincipal > a > img", Collections.singletonList("src"), "https", "herramientas.cl");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".thumbsGaleriaFicha > a", Collections.singletonList("href"), "https", "herramientas.cl", primaryImage);
