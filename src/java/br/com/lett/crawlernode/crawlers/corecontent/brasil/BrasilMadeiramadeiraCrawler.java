@@ -190,7 +190,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select("body.black-friday-theme").isEmpty();
+      return doc.selectFirst("span:contains(Perguntas e Respostas)") != null;
    }
 
    private RatingsReviews scrapRating(JSONObject product) {
