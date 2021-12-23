@@ -292,7 +292,21 @@ public abstract class Crawler extends Task {
       // get crawled product by it's internalId
       Logging.printLogDebug(logger, session, "Selecting product with internalId " + session.getInternalId());
       Product crawledProduct = filter(products, session.getInternalId());
-      crawledInternalId = crawledProduct.getInternalId();
+
+      if (!crawledProduct.isVoid()) {
+         crawledInternalId = crawledProduct.getInternalId();
+      } else if (!products.isEmpty()) {
+         StringBuilder stringBuilder = new StringBuilder();
+         int countP = 0;
+         for (Product p : products) {
+            if(countP>0){
+               stringBuilder.append(" | ");
+            }
+            stringBuilder.append(p.getInternalId());
+            countP++;
+         }
+         crawledInternalId = stringBuilder.toString();
+      }
 
       // if the product is void run the active void analysis
       Product activeVoidResultProduct = crawledProduct;
