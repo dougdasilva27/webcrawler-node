@@ -7,11 +7,7 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -23,14 +19,13 @@ import java.util.Map;
 public class CuritibaSchummancuritibaCrawler extends CrawlerRankingKeywords {
    private String HOME_PAGE = "https://www.schumann.com.br/";
    private Integer pageSize = 12;
+
    public CuritibaSchummancuritibaCrawler(Session session) {
       super(session);
    }
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-
-     //String url = HOME_PAGE + "catalogsearch/result/index/?p=" + this.currentPage + "&product_list_limit=" + pageSize + "&q=" + this.keywordEncoded;
       String url = this.fetchApi();
       this.currentDoc = fetchDocument(url);
       Elements products = this.currentDoc.select(".row.mx-0 li");
@@ -53,9 +48,7 @@ public class CuritibaSchummancuritibaCrawler extends CrawlerRankingKeywords {
                .setPriceInCents(price)
                .setAvailability(isAvailable)
                .build();
-
             saveDataProduct(productRanking);
-
          }
       } else {
          this.result = false;
@@ -70,7 +63,7 @@ public class CuritibaSchummancuritibaCrawler extends CrawlerRankingKeywords {
    protected String fetchApi() {
       Map<String, String> headers = new HashMap<>();
 
-      String url = HOME_PAGE + this.keywordEncoded+"?pg="+ this.currentPage;
+      String url = HOME_PAGE + this.keywordEncoded + "?pg=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
 
@@ -86,12 +79,9 @@ public class CuritibaSchummancuritibaCrawler extends CrawlerRankingKeywords {
       return response.getRedirectUrl();
    }
 
-
    @Override
    protected void setTotalProducts() {
-      //(this.currentDoc, ".product-count", false)
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".product-count", false);
-
       this.log("Total: " + this.totalProducts);
    }
 }
