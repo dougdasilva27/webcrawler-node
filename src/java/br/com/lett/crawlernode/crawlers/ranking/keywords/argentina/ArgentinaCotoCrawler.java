@@ -4,8 +4,11 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import com.google.common.collect.Maps;
@@ -13,67 +16,65 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.Collections;
 import java.util.Map;
 
 import static br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 
 public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
-
-   private String nextUrl;
-
    public ArgentinaCotoCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
-      this.pageSize = 60;
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
+      this.pageSize = 72;
       this.log("Página " + this.currentPage);
-      if (currentPage == 1) {
-         JSONObject jsonObject = fetchUrl();
-         String urlDoc = "https://www.cotodigital3.com.ar/sitios/cdigi/browse" + jsonObject.optQuery("/canonicalLink/navigationState");
-         this.currentDoc = fetchDocument(urlDoc);
-      }
+      String url = getPageUrl();
+      this.log("URL : " + url);
+      this.currentDoc = fetchDocument(url);
 
-      if (null != nextUrl) {
-         this.currentDoc = fetchDocument(nextUrl);
-      }
       Elements products = this.currentDoc.select("#products > li");
       pageSize = products.size();
-      //se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-      if (products.size() >= 1) {
-         //se o total de busca não foi setado ainda, chama a função para setar
+
+      if (!products.isEmpty()) {
          if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
-
-            // InternalPid
             String internalPid = crawlInternalPid(e);
-
-            // InternalId
             String internalId = crawlInternalId(e);
+            String productUrl = "https://www.cotodigital3.com.ar" + e.select("a").attr("href").replaceAll("(\\r|\\n)", "");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".descrip_full", true);
+            String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".atg_store_productImage img", Collections.singletonList("src"), "https", "www.cotodigital3.com.ar");
+            Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".atg_store_productPrice", null, false, ',', session, 0);
+            boolean available = priceInCents != 0;
 
-            // Url do produto
-            String productUrl = crawlProductUrl(e);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setImageUrl(image)
+               .setName(name)
+               .setPriceInCents(priceInCents)
+               .setAvailability(available)
+               .build();
 
-            saveDataProduct(internalId, internalPid, productUrl);
-
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
          }
       }
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private JSONObject fetchUrl() {
-      Map<String, String> headers = Maps.newHashMap();
-      headers.put("Content-Type", "application/x-www-form-urlencoded");
-      headers.put("Accept", " application/json");
-      headers.put("Accept-Encoding", " gzip, deflate, br");
-      String url = "https://www.cotodigital3.com.ar/sitios/cdigi/assembler?format=json&Dy=1&assemblerContentCollection=/content/Shared/Auto-Suggest%20Panels&Ntt=" + keywordEncoded;
-      Request request = RequestBuilder.create().setCookies(cookies).setHeaders(headers).setUrl(url).build();
-      Response response = new ApacheDataFetcher().get(session, request);
-      cookies = response.getCookies();
-      return CrawlerUtils.stringToJson(response.getBody());
+   private String getPageUrl() {
+      int productsShow = this.currentPage == 1 ? 0 : this.pageSize * (this.currentPage - 1);
+      return "https://www.cotodigital3.com.ar/sitios/cdigi/browse?Dy=1&Nf=product.startDate%7CLTEQ+1.640304E12%7C%7Cproduct.endDate%7CGTEQ+1.640304E12&No=" + productsShow + "&Nr=AND%28product.language%3Aespa%C3%B1ol%2Cproduct.sDisp_200%3A1004%2Cproduct.siteId%3ACotoDigital%2COR%28product.siteId%3ACotoDigital%29%29&Nrpp=72&Ntt="+ this.keywordEncoded +"&Nty=1&_D%3AidSucursal=+&_D%3AsiteScope=+&atg_store_searchInput=" + this.keywordEncoded + "&idSucursal=200&siteScope=ok";
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      if(this.totalProducts == 0 && this.currentPage == 1 ) return true;
+
+      return this.totalProducts > 0 && this.currentPage * this.pageSize < this.totalProducts;
    }
 
    @Override
@@ -104,18 +105,6 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
    }
 
    private String crawlInternalPid(Element e) {
-
       return e.attr("id").replaceAll("[^0-9]", "").trim();
-   }
-
-   private String crawlProductUrl(Element e) {
-      String productUrl = null;
-      Element eUrl = e.select(".product_info_container > a").first();
-
-      if (eUrl != null) {
-         productUrl = "https://www.cotodigital3.com.ar" + eUrl.attr("href");
-      }
-
-      return productUrl;
    }
 }
