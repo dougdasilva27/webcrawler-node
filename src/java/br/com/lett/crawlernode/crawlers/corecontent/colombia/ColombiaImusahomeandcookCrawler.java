@@ -41,7 +41,7 @@ public class ColombiaImusahomeandcookCrawler extends Crawler {
          String name = scrapNameAndBrand(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imagen.hide-for-small-only img", Arrays.asList("src"), "http", "cdn.coordiutil.com");
          List<String> secondaryImage = CrawlerUtils.scrapSecondaryImages(doc, ".splide__slide.thumbnails img", Arrays.asList("src"), "https", "cdn.coordiutil.com", primaryImage);
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".descripcion-corta", false);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".descripcion-corta","section#tabdescripcion"));
          boolean available = !doc.select(".button.comprar-button").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
