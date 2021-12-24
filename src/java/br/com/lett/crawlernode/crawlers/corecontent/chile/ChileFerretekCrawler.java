@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -38,13 +39,16 @@ public class ChileFerretekCrawler extends Crawler {
       if(isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,".product_id", "value");
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".js_main_product div:first-child", true);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#product_details > h1", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".carousel-inner .active img", Collections.singletonList("src"), "https", "herramientas.cl");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".carousel-inner .carousel-item:not(:first-child) img", Collections.singletonList("src"), "https", "herramientas.cl", primaryImage);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb-item:not(:first-child, :last-child)", false);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("#product_full_description"));
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"meta[itemprop=sku]", "content");
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".infoProducto > span.codigo", true);
+         if (internalId != null) {
+            internalId = internalId.replace("Ref: ", "");
+         }
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".info-product > .infoProducto > h2", true);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imgPrincipal > a > img", Collections.singletonList("src"), "https", "herramientas.cl");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".thumbsGaleriaFicha > a", Collections.singletonList("href"), "https", "herramientas.cl", primaryImage);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb > li:not(:last-child)", true);
+         String description = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"meta[property*=description]", "content");
          boolean availableToBuy = checkIfIsAvailable(doc);
 
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
@@ -70,7 +74,7 @@ public class ChileFerretekCrawler extends Crawler {
    }
 
    private boolean checkIfIsAvailable(Document doc) {
-     return doc.select(".out-stock-msg").isEmpty();
+     return doc.select(".stock > .no-stock-ficha").isEmpty();
    }
 
    private Offers scrapOffer(Document doc) throws MalformedPricingException, OfferException {
@@ -91,11 +95,21 @@ public class ChileFerretekCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".oe_currency_value", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".content_precio > .precioOfertaFicha", null, true, ',', session);
+      String priceFromStr = CrawlerUtils.scrapStringSimpleInfo(doc, ".content_precio > .precioNormal", true);
+      Double priceFrom = null;
+      if (priceFromStr != null) {
+         priceFromStr = priceFromStr.substring(priceFromStr.indexOf("$") + 1);
+         priceFrom = MathUtils.parseDoubleWithComma(priceFromStr);
+      }
+
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(doc);
 
       return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
          .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(bankSlip)
          .setCreditCards(creditCards)
          .build();
    }
@@ -107,13 +121,14 @@ public class ChileFerretekCrawler extends Crawler {
       Integer installmentsNumber = 1;
 
       if(hasInstallments(doc)) {
-         cardPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".text-muted > .oe_currency_value", null, true, ',', session);
-         Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(".text-muted", doc, false, "x", ", sin", true, ',');
+         cardPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".content_precio > .precioOfertaFicha", null, true, ',', session);
+         Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment("span.cuotas", doc, false, "$", ", sin", true, ',');
          if (!installment.isAnyValueNull()) {
             installmentsNumber = installment.getFirst();
+            cardPrice = Double.valueOf(installment.getSecond());
          }
       } else {
-         cardPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".oe_currency_value", null, true, ',', session);
+         cardPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".content_precio > .precioOfertaFicha", null, true, ',', session);
       }
 
       Installments installments = new Installments();
@@ -136,10 +151,10 @@ public class ChileFerretekCrawler extends Crawler {
    }
 
    private boolean hasInstallments(Document doc) {
-      return !doc.select("h4 .text-muted > .oe_currency_value").isEmpty();
+      return !doc.select("span.cuotas").isEmpty();
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.select("#product_details") != null;
+      return !doc.select(".info-product > .infoProducto").isEmpty();
    }
 }

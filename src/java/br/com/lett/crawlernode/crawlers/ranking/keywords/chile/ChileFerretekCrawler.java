@@ -28,19 +28,31 @@ public class ChileFerretekCrawler extends CrawlerRankingKeywords {
 
       this.log("Página : " + this.currentPage);
 
-      String url = "https://herramientas.cl/shop/page/" + currentPage + "?search=" + keywordEncoded;
+      String url = "https://herramientas.cl/busquedas?buscar=" + keywordEncoded + "&linea=0&categoria=0&marca=0&desde=0&hasta=0&order=0&page=" + currentPage;
+
       this.log("URL : " + url);
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".oe_product_cart");
+      Elements products = this.currentDoc.select(".grilla-productos > .grilla.grilla-dos");
 
-      if(!products.isEmpty()) {
+      if (!products.isEmpty()) {
          for(Element product : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "button", "data-product-id");
-            String productUrl = "https://herramientas.cl" + CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".card-body > a", "href");
-            String name = CrawlerUtils.scrapStringSimpleInfo(product, ".card-body h6", true);
-            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".card-body img", Collections.singletonList("src"), "https", "herramientas.cl");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".oe_currency_value", null, true, ',', session, 0);
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".imgGrilla", "href");
+            if (internalId != null) {
+               if (internalId.split("/").length > 1) {
+                  internalId = internalId.split("/")[1];
+               }
+            }
+            String productUrl = "https://herramientas.cl" + "/" + CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".imgGrilla", "href");
+            String name = CrawlerUtils.scrapStringSimpleInfo(product, ".nombreGrilla.link", true);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".imgGrilla > img", Collections.singletonList("src"), "https", "herramientas.cl");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".valorGrilla.link", null, true, ',', session, 0);
+            String valorGrilla = CrawlerUtils.scrapStringSimpleInfo(product, ".valorGrilla.link", true);
+            if (valorGrilla != null) {
+               if (valorGrilla.equals("")) {
+                  price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".valorGrilla.link > .conDescuento", null, true, ',', session, 0);
+               }
+            }
             boolean isAvailable = checkIfIsAvailable(product);
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -66,11 +78,15 @@ public class ChileFerretekCrawler extends CrawlerRankingKeywords {
    }
 
    private boolean checkIfIsAvailable(Element product) {
-      return product.select(".out-stock-msg").isEmpty();
+      return product.select(".imgGrilla > .no-stock-grilla").isEmpty();
    }
 
    @Override
    protected boolean hasNextPage() {
-      return !this.currentDoc.select(".pagination .page-item:last-child").hasClass("disabled");
+      String hrefNextPageButton = CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc,".container.paginador > :last-child", "href");
+      if (hrefNextPageButton != null) {
+         return !hrefNextPageButton.equals("javascript:void(0)");
+      }
+      return false;
    }
 }
