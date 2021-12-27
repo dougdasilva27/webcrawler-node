@@ -54,15 +54,19 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
          JSONArray jsonObject = new JSONArray(scriptFromHtml);
          JSONObject productInfo = JSONUtils.getValueRecursive(jsonObject, "0.props.pageProps.product", JSONObject.class);
 
-         int internalPid = productInfo.optInt("id");
+         Integer internalPid = productInfo.optInt("id");
          String name = productInfo.optString("name") + " " + productInfo.getString("color");
          String description = productInfo.optString("description");
-         int ean = productInfo.optInt("ean");
+         Integer ean = productInfo.optInt("ean");
          List<String> eans = new ArrayList<>();
-         eans.add(Integer.toString(ean));
-         boolean available = scrapAvailability(productInfo);
+         eans.add(ean.toString());
+         Boolean available = scrapAvailability(productInfo);
          Offers offers = available ? scrapOffers(productInfo) : new Offers();
+
          CategoryCollection categories = crawlCategories(productInfo);
+         String categories1 = categories.size() > 0 ? categories.getCategory(0) : null;
+         String categories2 = categories.size() > 1 ? categories.getCategory(1) : null;
+         String categories3 = categories.size() > 2 ? categories.getCategory(2) : null;
 
          List<String> images = crawlImages(productInfo);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
@@ -71,15 +75,17 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
-            .setInternalId(Integer.toString(internalPid))
-            .setInternalPid(Integer.toString(internalPid))
+            .setInternalId(internalPid.toString())
+            .setInternalPid(internalPid.toString())
             .setName(name)
             .setOffers(offers)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setEans(eans)
-            .setCategories(categories)
+            .setCategory1(categories1)
+            .setCategory2(categories2)
+            .setCategory3(categories3)
             .setRatingReviews(ratingsReviews)
             .build();
 
@@ -97,45 +103,41 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
       Offers offers = new Offers();
 
-      JSONArray offersJson = product.optJSONArray("buyBox");
+      JSONObject offersJson = JSONUtils.getValueRecursive(product, "buyBox.0", JSONObject.class);
+      String sellerName = JSONUtils.getValueRecursive(offersJson, "seller.name", String.class);
+      Integer sellerId = JSONUtils.getValueRecursive(offersJson, "seller.id", Integer.class);
+      JSONArray installmentsInfo = offersJson.optJSONArray("installmentToDisplay");
 
-      if (offersJson != null) {
-         for (Object offerObject : offersJson) {
-            if (!(offerObject instanceof JSONObject)) continue;
+      for (Object installment : installmentsInfo) {
+         Pricing pricing = scrapPricing(offersJson, installment);
+         List<String> sales = new ArrayList<>();
 
-            JSONObject offer = (JSONObject) offerObject;
-            String sellerName = JSONUtils.getValueRecursive(offer, "seller.name", String.class);
-            Integer sellerId = JSONUtils.getValueRecursive(offer, "seller.id", Integer.class);
-            JSONArray installmentsInfo = offer.optJSONArray("installmentToDisplay");
-            Pricing pricing = scrapPricing(offer, installmentsInfo);
-            List<String> sales = new ArrayList<>();
-
-            Offer currentOffer = Offer.OfferBuilder.create()
-               .setUseSlugNameAsInternalSellerId(false)
-               .setSellerFullName(MAIN_SELLER)
-               .setInternalSellerId(sellerId.toString())
-               .setSellerFullName(sellerName)
-               .setMainPagePosition(1)
-               .setIsBuybox(true)
-               .setIsMainRetailer(sellerName != null && sellerName.equalsIgnoreCase(MAIN_SELLER))
-               .setSales(sales)
-               .setPricing(pricing)
-               .build();
-
-            offers.add(currentOffer);
-         }
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(false)
+            .setSellerFullName(MAIN_SELLER)
+            .setInternalSellerId(sellerId.toString())
+            .setSellerFullName(sellerName)
+            .setMainPagePosition(1)
+            .setIsBuybox(true)
+            .setIsMainRetailer(sellerName != null && sellerName.equalsIgnoreCase(MAIN_SELLER))
+            .setSales(sales)
+            .setPricing(pricing)
+            .build());
       }
+
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject offer, JSONArray installments) throws MalformedPricingException {
+   private Pricing scrapPricing(JSONObject offer, Object installment) throws MalformedPricingException {
       JSONObject priceJson = offer.optJSONObject("price");
       Double priceFrom = priceJson.optDouble("productMPrice");
 
       Double spotlightPrice = priceJson.optDouble("inCash");
       BankSlip bankSlipPrice = BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build();
 
-      CreditCards creditCards = scrapCreditCards(installments, spotlightPrice);
+      JSONObject maxInstallments = (JSONObject) installment;
+
+      CreditCards creditCards = scrapCreditCards(maxInstallments, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -146,7 +148,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditCards(JSONArray installmentsInfo, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(JSONObject installmentsInfo, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = scrapInstallments(installmentsInfo);
@@ -170,23 +172,19 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       return creditCards;
    }
 
-   private Installments scrapInstallments(JSONArray installmentsInfo) throws MalformedPricingException {
+   private Installments scrapInstallments(JSONObject installmentsInfo) throws MalformedPricingException {
       Installments installments = new Installments();
 
-      if (installmentsInfo != null) {
-         for (Object installmentObject : installmentsInfo) {
-            if (!(installmentObject instanceof JSONObject)) continue;
-            JSONObject installment = (JSONObject) installmentObject;
-            Double value = installment.optDouble("value");
-            Integer installmentsNumbers = installment.optInt("number");
-            Double finalPrice = installment.optDouble("total");
+      if (installmentsInfo != null){
+         Double value = installmentsInfo.optDouble("value");
+         Integer installmentsNumbers = installmentsInfo.optInt("number");
+         Double finalPrice = installmentsInfo.optDouble("total");
 
-            installments.add(Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(installmentsNumbers)
-               .setInstallmentPrice(value)
-               .setFinalPrice(finalPrice)
-               .build());
-         }
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(installmentsNumbers)
+            .setInstallmentPrice(value)
+            .setFinalPrice(finalPrice)
+            .build());
       }
       return installments;
    }
