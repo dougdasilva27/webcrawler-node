@@ -80,6 +80,7 @@ public class CarrefourCrawler extends VTEXNewScraper {
          .setUrl(url)
          .setHeaders(headers)
          .setSendUserAgent(false)
+         .setCookies(this.cookies)
          .mustSendContentEncoding(false)
          .setFetcheroptions(
             FetcherOptionsBuilder.create()
