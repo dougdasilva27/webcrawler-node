@@ -125,7 +125,7 @@ public class CarrefourCrawler extends VTEXNewScraper {
       String internalPid = super.scrapPidFromApi(doc);
       if (internalPid == null) {
          JSONObject json = crawlProductApi(internalPid, null);
-         internalPid = json != null ? json.optString("id") : null;
+         internalPid = json != null ? json.optString("productId") : null;
       }
       return internalPid;
    }
