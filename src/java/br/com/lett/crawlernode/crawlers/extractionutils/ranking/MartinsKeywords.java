@@ -59,12 +59,12 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
 
   @Override
   public void extractProductsFromCurrentPage() {
-    this.pageSize = 9;
+    this.pageSize = 12;
     this.log("Página " + this.currentPage);
 
-    // monta a url com a keyword e a página
-    String url = "https://www.martinsatacado.com.br/biggysearch/?text=/search?query="
-        + this.keywordWithoutAccents.replace(" ", "%20") + "&operator=and&fuzzy=0&page=" + this.currentPage;
+    // monta a url com a keyword, page size e a página
+    String url = "https://www.martinsatacado.com.br/busca/?text=/engage/search/v3/search?terms=" + this.keywordWithoutAccents.replace(" ", "%20") + "&resultsperpage=" + this.pageSize + "&saleschannel=default&page=" + this.currentPage;
+
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocumentWithWebDriver(url);
