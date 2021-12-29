@@ -35,7 +35,7 @@ public class ArgentinaPigmentoCrawler extends CrawlerRankingKeywords {
          String slug = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "a.vtex-product-summary-2-x-clearLink.h-100.flex.flex-column", "href");
          String link = "https://www.perfumeriaspigmento.com.ar" + slug;
          String jsonKey = "Product:" + slug.substring(1, slug.lastIndexOf("/p"));
-         String internalPId = jsonProducts.has(jsonKey) ? jsonProducts.optJSONObject(jsonKey).optString("productId") : null;
+         String internalPid = jsonProducts.has(jsonKey) ? jsonProducts.optJSONObject(jsonKey).optString("productId") : null;
 
          String name = CrawlerUtils.scrapStringSimpleInfo(product, "span.vtex-product-summary-2-x-productBrand.vtex-product-summary-2-x-brandName.t-body", true);
          String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "img.vtex-product-summary-2-x-imageNormal.vtex-product-summary-2-x-image", "src");
@@ -45,7 +45,7 @@ public class ArgentinaPigmentoCrawler extends CrawlerRankingKeywords {
          //New way to send products to save data product
          RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(link)
-            .setInternalPid(internalPId)
+            .setInternalPid(internalPid)
             .setName(name)
             .setImageUrl(imageUrl)
             .setPriceInCents(price)
