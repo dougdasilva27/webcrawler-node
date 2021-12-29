@@ -71,8 +71,14 @@ public class BrasilVilanova extends Crawler {
       try {
          Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+         if(doc.select("body").isEmpty()) {
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         }
+
          webdriver.waitLoad(10000);
 
          if (doc.selectFirst("button.btn-politicas-cookies") != null) {
@@ -84,8 +90,8 @@ public class BrasilVilanova extends Crawler {
             webdriver.clickOnElementViaJavascript(allow);
          }
 
-         webdriver.waitLoad(10000);
-         WebElement openlogin = webdriver.driver.findElement(By.cssSelector(".open-login"));
+         webdriver.waitLoad(15000);
+         WebElement openlogin = webdriver.driver.findElement(By.cssSelector("a.open-login"));
          webdriver.clickOnElementViaJavascript(openlogin);
          waitForElement(webdriver.driver, "#fazer-login");
          webdriver.findAndClick("#fazer-login", 2000);
