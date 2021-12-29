@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.B2WCrawlerRanking;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.B2WScriptPageCrawlerRanking;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -13,9 +12,10 @@ public class SaopauloShoptimeCrawler extends B2WScriptPageCrawlerRanking {
 
    private static final String HOME_PAGE = "https://www.shoptime.com.br/";
 
-  public SaopauloShoptimeCrawler(Session session) {
-    super(session);
-  }
+   public SaopauloShoptimeCrawler(Session session) {
+      super(session);
+   }
+
    @Override
    protected String getHomePage() {
       return HOME_PAGE;
@@ -28,7 +28,7 @@ public class SaopauloShoptimeCrawler extends B2WScriptPageCrawlerRanking {
       String url = homePage + "busca/" + keyword + "?limit=24&offset=" + (this.currentPage - 1) * pageSize;
       this.log("Link onde são feitos os crawlers: " + url);
 
-      Map<String,String> headers = new HashMap<>();
+      Map<String, String> headers = new HashMap<>();
 
       headers.put("authority", "www.americanas.com.br");
       headers.put("sec-ch-ua", " \" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\"");
@@ -41,6 +41,6 @@ public class SaopauloShoptimeCrawler extends B2WScriptPageCrawlerRanking {
       headers.put("sec-fetch-dest", "document");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
 
-      return Jsoup.parse(br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloAmericanasCrawler.fetchPage(url,this.dataFetcher,this.cookies,headers,session));
+      return Jsoup.parse(br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloAmericanasCrawler.fetchPage(url, this.dataFetcher, this.cookies, headers, session));
    }
 }

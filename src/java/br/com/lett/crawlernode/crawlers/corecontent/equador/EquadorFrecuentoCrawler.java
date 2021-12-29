@@ -6,23 +6,17 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.apache.avro.data.Json;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -45,17 +39,17 @@ public class EquadorFrecuentoCrawler extends Crawler {
    protected Response fetchResponse() {
       List<Product> products = new ArrayList<>();
 
-      String regex = "www.frecuento.com/producto/([0-9]*)";
+      String regex = "www.frecuento.com?\\/([0-9a-zA-Z\\s\\-]*)\\/?([0-9]*)";
 
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
       final Matcher matcher = pattern.matcher(session.getOriginalURL());
 
       String id = null;
       if (matcher.find()) {
-         id = matcher.group(1);
+         id = matcher.group(2);
       }
       Request request = Request.RequestBuilder.create()
-         .setUrl("https://app.frecuento.com/products/" + id + "?image=1024x1024")
+         .setUrl("https://app.frecuento.com/products/" + id)
          .setFollowRedirects(true)
          .build();
       return this.dataFetcher.get(session, request);
@@ -65,15 +59,19 @@ public class EquadorFrecuentoCrawler extends Crawler {
    public List<Product> extractInformation(JSONObject jsonObject) throws Exception {
 
       List<Product> products = new ArrayList<>();
-
-      String image = (String) jsonObject.optJSONArray("photos").get(0);
+      JSONArray imagesJson = jsonObject.optJSONArray("photos");
+      List<String> images = imagesJson != null ? CrawlerUtils.scrapImagesListFromJSONArray(imagesJson, null, null, "", "", session) : null;
+      String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
+      CategoryCollection categories = scrapCategories(jsonObject);
 
       Product product = ProductBuilder.create()
          .setUrl(session.getOriginalURL())
          .setInternalId(jsonObject.optString("code"))
          .setInternalPid(jsonObject.optString("id"))
          .setName(jsonObject.optString("name"))
-         .setPrimaryImage(image)
+         .setPrimaryImage(primaryImage)
+         .setSecondaryImages(images)
+         .setCategories(categories)
          .setDescription(jsonObject.optString("description"))
          .setOffers(scrapOffer(jsonObject))
          .build();
@@ -85,6 +83,19 @@ public class EquadorFrecuentoCrawler extends Crawler {
 
    }
 
+   private CategoryCollection scrapCategories(JSONObject jsonObject) {
+      CategoryCollection categories = new CategoryCollection();
+      JSONArray categoriesJSON = jsonObject.optJSONArray("categories");
+      if(categoriesJSON != null) {
+         for(Object category : categoriesJSON) {
+            if(category instanceof JSONObject) {
+               JSONObject categoryJson = (JSONObject) category;
+               categories.add(categoryJson.optString("name"));
+            }
+         }
+      }
+      return categories;
+   }
 
    private Offers scrapOffer(JSONObject obj) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
@@ -119,7 +130,6 @@ public class EquadorFrecuentoCrawler extends Crawler {
          .setCreditCards(creditCards)
          .build();
    }
-
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();

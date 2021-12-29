@@ -47,7 +47,7 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
 
       String url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid + (parameters == null ? "" : parameters);
 
-      String page = fetchPage(url);
+      String page = fetchPage(url).getBody();
       JSONArray array = CrawlerUtils.stringToJsonArray(page);
 
       if (!array.isEmpty()) {

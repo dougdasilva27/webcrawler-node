@@ -3,6 +3,10 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 import java.util.HashMap;
 import java.util.Map;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -25,29 +29,22 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
 
-      String initPayload = "{\n" +
-         "  \"operationName\": \"setDeliveryOption\",\n" +
-         "  \"variables\": {\n" +
-         "    \"deliveryOption\": {\n" +
-         "      \"address\": {\n" +
-         "        \"latitude\": " + session.getOptions().optString("latitude")  + ",\n" +
-         "        \"longitude\": " + session.getOptions().optString("longitude")  + ",\n" +
-         "        \"zipcode\": \"" + session.getOptions().optString("zipCode") + "\",\n" +
-         "        \"street\": \"" + session.getOptions().optString("street") + "\",\n" +
-         "        \"neighborhood\": \"" + session.getOptions().optString("neighborhood") + "\",\n" +
-         "        \"city\": \"" + session.getOptions().optString("city") + "\",\n" +
-         "        \"province\": \"" + session.getOptions().optString("province") + "\",\n" +
-         "        \"country\": \"BR\",\n" +
-         "        \"number\": \"" + session.getOptions().optString("number") + "\",\n" +
-         "        \"referencePoint\": \"\"\n" +
-         "      },\n" +
-         "      \"deliveryMethod\": \"DELIVERY\",\n" +
-         "      \"schedule\": \"NOW\"\n" +
-         "    },\n" +
-         "    \"forceOverrideProducts\": false\n" +
-         "  },\n" +
-         "  \"query\": \"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption: $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n          addressLine2\\n          referencePoint\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n            referencePoint\\n          }\\n        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"\n" +
-         "}";
+      String initPayload = "{\"" +
+         "operationName\":\"setDeliveryOption\",\"" +
+         "variables\":{\"" +
+            "deliveryOption\":{\"" +
+               "address\":{\"" +
+                  "latitude\":"+  session.getOptions().optString("latitude") + ",\"" +
+                  "longitude\":"+ session.getOptions().optString("longitude") +",\"" +
+                  "zipcode\":\""+session.getOptions().optString("zipCode") + "\",\"" +
+                  "street\":\""+session.getOptions().optString("street")+"\",\"" +
+                  "neighborhood\":\""+session.getOptions().optString("neighborhood")+"\",\"" +
+                   "city\":\""+session.getOptions().optString("city")+"\",\"" +
+                   "province\":\""+ session.getOptions().optString("province") +"\",\"" +
+                   "country\":\"BR\",\"" +
+                   "number\":\""+session.getOptions().optString("number")+"\"" +
+                "},\"" +
+         "deliveryMethod\":\"DELIVERY\",\"schedule\":\"NOW\"},\"forceOverrideProducts\":false},\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption: $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n          addressLine2\\n          referencePoint\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n            referencePoint\\n          }\\n        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
 
       Integer contentLength = initPayload.length();
       headers.put("Content-Length", contentLength.toString());
@@ -73,11 +70,7 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
       headers.put("Connection","keep-alive");
 
       String payload =
-         "{\"variables\":{\"searchTerm\":\"" + this.keywordEncoded
-            + "\",\"limit\":"+20+"},\"query\":\"query search($searchTerm: String!, $limit: Int) {  search(searchTerm: $searchTerm) {    items(limit: $limit) "
-            + "{      id      type      displayName      images      applicableDiscount {        presentedDiscountValue        discountType        finalValue      }"
-            + "      category {        id        displayName      }      brand {        id        displayName      }      price {        min        max      }    }"
-            + "  }}\",\"operationName\":\"search\"}";
+         "{\"operationName\":\"newSearch\",\"variables\":{\"searchTerm\":\"" + this.keywordWithoutAccents + "\",\"limit\":20},\"query\":\"query newSearch($searchTerm: String!, $limit: Int) {\\n  newSearch(searchTerm: $searchTerm) {\\n    items(limit: $limit) {\\n      id\\n      type\\n      displayName\\n      images\\n      applicableDiscount {\\n        presentedDiscountValue\\n        discountType\\n        finalValue\\n      }\\n      category {\\n        id\\n        displayName\\n      }\\n      brand {\\n        id\\n        displayName\\n      }\\n      price {\\n        min\\n        max\\n      }\\n    }\\n  }\\n}\\n\"}";
 
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
          .setPayload(payload)
@@ -91,7 +84,7 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
 
@@ -100,7 +93,7 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
       JSONObject json = fetch();
       JSONObject data = json.optJSONObject("data");
       if (data != null) {
-         JSONObject search = data.optJSONObject("search");
+         JSONObject search = data.optJSONObject("newSearch");
          JSONArray items = search.optJSONArray("items");
          if(!items.isEmpty()){
             for (Object item : items) {
@@ -110,14 +103,23 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
                   String internalId = product.optString("id");
                   String internalPId = internalId;
                   String productUrl = scrapUrl(product, internalId);
-                  saveDataProduct(internalId, internalPId, productUrl);
+                  String name = product.optString("displayName");
+                  JSONArray images = product.getJSONArray("images");
+                  String image = images.length() > 0 ? images.getString(0) : "";
+                  int priceInCents = scrapPrice(product);
+                  boolean isAvailable = priceInCents != 0;
 
-                  this.log(
-                     "Position: " + this.position +
-                        " - InternalId: " + internalId +
-                        " - InternalPid: " + internalPId +
-                        " - Url: " + productUrl
-                  );
+                  RankingProduct productRanking = RankingProductBuilder.create()
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPId)
+                     .setName(name)
+                     .setUrl(productUrl)
+                     .setImageUrl(image)
+                     .setAvailability(isAvailable)
+                     .setPriceInCents(priceInCents)
+                     .build();
+
+                  saveDataProduct(productRanking);
 
                   if (this.arrayProducts.size() == productsLimit) {
                      break;
@@ -130,6 +132,23 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
          }
          this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
       }
+   }
+
+   private int scrapPrice(JSONObject product) {
+      JSONObject applicableDiscount = product.optJSONObject("applicableDiscount");
+      int priceInCents = 0;
+
+      if (applicableDiscount != null) {
+         Double price = JSONUtils.getDoubleValueFromJSON(applicableDiscount, "finalValue", true);
+         priceInCents = (int) Math.round(100 * price);
+      } else {
+         JSONObject price = product.optJSONObject("price");
+         if (price != null) {
+            Double min = JSONUtils.getDoubleValueFromJSON(price, "min", true);
+            priceInCents = (int) Math.round(100 * min);
+         }
+      }
+      return priceInCents;
    }
 
    private String scrapUrl(JSONObject product, String id) {

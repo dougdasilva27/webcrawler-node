@@ -32,7 +32,7 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
    public CarrefourMercadoRanking(Session session) {
       super(session);
       dataFetcher = new JsoupDataFetcher();
-      this.pageSize = 12;
+      this.pageSize = 19;
    }
 
    private static final String OPERATION_NAME = "SearchQuery";
@@ -64,16 +64,8 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
       return session.getOptions().optString("vtex_segment");
    }
 
-   protected String getRegionId() {
-      String[] chunks = getLocation().split("\\.");
-
-      JSONObject locationJson = JSONUtils.stringToJson(new String(Base64.getDecoder().decode(chunks[0]), StandardCharsets.UTF_8));
-
-      return locationJson.optString("regionId", null);
-   }
-
    protected String getCep() {
-      return null;
+      return this.session.getOptions().optString("cep");
    }
 
    protected String buildUrl(String homepage) {
@@ -91,7 +83,7 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
       url.append("&extensions=").append(URLEncoder.encode(extensions.toString(), StandardCharsets.UTF_8));
 
       JSONObject variables = new JSONObject();
-      variables.put("fullText", URLEncoder.encode(this.location, StandardCharsets.UTF_8));
+      variables.put("fullText", URLEncoder.encode(this.location, StandardCharsets.UTF_8).replace("+", "%20"));
       variables.put("sort", "");
       variables.put("from", this.arrayProducts.size());
       variables.put("to", this.arrayProducts.size() + this.pageSize);
@@ -100,7 +92,7 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
 
       JSONObject facet = new JSONObject();
       facet.put("key", "region-id");
-      facet.put("value", getRegionId());
+      facet.put("value", BrasilCarrefourFetchUtils.getRegionId(dataFetcher, getCep(), session));
 
       selectedFacets.put(facet);
 

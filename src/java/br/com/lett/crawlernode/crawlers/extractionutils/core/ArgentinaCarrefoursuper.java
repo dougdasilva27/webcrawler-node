@@ -16,6 +16,7 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -34,6 +35,16 @@ public abstract class ArgentinaCarrefoursuper extends CarrefourCrawler {
    protected ArgentinaCarrefoursuper(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      String vtex_segment = getLocationToken();
+      BasicClientCookie cookie = new BasicClientCookie("vtex_segment", vtex_segment);
+      cookie.setDomain("www.carrefour.com.ar");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+      super.handleCookiesBeforeFetch();
    }
 
    @Override

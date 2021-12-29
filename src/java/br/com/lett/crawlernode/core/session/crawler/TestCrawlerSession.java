@@ -27,7 +27,7 @@ public class TestCrawlerSession extends Session {
 
    private TestType type;
 
-   private String lastError;
+   private Exception lastError;
 
    private List<Product> products;
 
@@ -135,11 +135,11 @@ public class TestCrawlerSession extends Session {
       this.voidAttemptsCounter++;
    }
 
-   public String getLastError() {
+   public Exception getLastError() {
       return lastError;
    }
 
-   public void setLastError(String lastError) {
+   public void setLastError(Exception lastError) {
       this.lastError = lastError;
    }
 

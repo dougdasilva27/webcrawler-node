@@ -15,15 +15,11 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -46,6 +42,7 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
+         .setCookies(this.cookies)
          .mustSendContentEncoding(false)
          .setFetcheroptions(
             FetcherOptions.FetcherOptionsBuilder.create()
@@ -79,20 +76,21 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
 
    }
 
+
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
-      Document doc = fetchPage();
-      JSONObject json = selectJsonFromHtml(doc);
-
-      JSONObject search = json != null ? getProducts(json) : null;
-      JSONArray products = search != null ? search.optJSONArray("products") : null;
+      this.currentDoc = fetchPage();
+      JSONObject json = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "body > script", "window.__APOLLO_STATE__ =", null, false, false);
+      JSONObject rootQuery = json.optJSONObject("ROOT_QUERY");
+      JSONObject productsJson = getJson(rootQuery, "search");
+      JSONArray products = productsJson.optJSONArray("products");
 
       if (products != null && !products.isEmpty()) {
          if (this.totalProducts == 0) {
-            setTotalProducts(search);
+            setTotalProducts(productsJson);
          }
          for (Object e : products) {
             if (e instanceof JSONObject) {
@@ -100,16 +98,16 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
                JSONObject productInfo = productJson.optJSONObject("product");
 
                if (productInfo != null && !productInfo.isEmpty()) {
-
-                  String internalId = JSONUtils.getValueRecursive(productInfo, "offers.result.0.sku", String.class);
+                  JSONObject offers = getJson(productInfo, "offers");
+                  String internalId = offers != null ? JSONUtils.getValueRecursive(offers, "result.0.sku", String.class) : null;
                   String internalPid = productInfo.optString("id");
                   String productUrl = homePage + "produto/" + internalPid;
                   String name = productInfo.optString("name");
-                  String imageUrl = JSONUtils.getValueRecursive(productJson, "images.0.large", String.class);
-                  int price = CommonMethods.doublePriceToIntegerPrice(JSONUtils.getValueRecursive(productInfo, "offers.result.0.salesPrice", Double.class), 0);
+                  JSONArray imageJson = getJsonArray(productInfo);
+                  String imageUrl = imageJson != null ? JSONUtils.getValueRecursive(imageJson, "0.large", String.class) : null;
+                  int price = offers != null ? CommonMethods.doublePriceToIntegerPrice(JSONUtils.getValueRecursive(offers, "result.0.salesPrice", Double.class), 0) : null;
                   boolean isAvailable = price != 0;
 
-                  //New way to send products to save data product
                   RankingProduct productRanking = RankingProductBuilder.create()
                      .setUrl(productUrl)
                      .setInternalId(internalId)
@@ -140,44 +138,34 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
    }
 
 
-   public JSONObject selectJsonFromHtml(Document doc) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException, UnsupportedEncodingException {
-      JSONObject jsonObject = new JSONObject();
-      Elements scripts = doc.select("body > script");
-
-      for (Element e : scripts) {
-         String script = e.html();
-         if (script.contains("window.__PRELOADED_STATE__ =")) {
-            String readyToDecode = script.replace("%", "%25");
-            String decode = URLDecoder.decode(readyToDecode, "UTF-8");
-            String split = CrawlerUtils.getStringBetween(decode, "window.__PRELOADED_STATE__ =", ",\"session\":") + "}";
-            jsonObject = CrawlerUtils.stringToJson(split);
-            break;
-         }
-      }
-
-      return jsonObject;
-   }
-
-   private JSONObject getProducts(JSONObject json) {
-      JSONObject search = new JSONObject();
-      JSONObject pages = json.optJSONObject("pages");
-      if (pages != null) {
-         Iterator<String> keys = pages.keys();
-         String currentKey;
-         while (keys.hasNext()) {
-            currentKey = keys.next();
-            JSONObject valueContent = pages.optJSONObject(currentKey);
-            if (valueContent != null && valueContent.has("queries")) {
-               search = JSONUtils.getValueRecursive(valueContent, "queries.pageSearch.result.search", JSONObject.class);
-               break;
+   private JSONObject getJson(JSONObject jsonObject, String type) {
+      if (jsonObject != null) {
+         for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
+            String key = it.next();
+            if (key.contains(type)) {
+               return jsonObject.optJSONObject(key);
             }
          }
       }
-      return search;
+
+      return new JSONObject();
+
    }
 
-   private void setTotalProducts(JSONObject json) {
-      this.totalProducts = JSONUtils.getValueRecursive(json, "total", Integer.class);
+   private JSONArray getJsonArray(JSONObject jsonObject) {
+      for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
+         String key = it.next();
+         if (key.contains("image")) {
+            return jsonObject.optJSONArray(key);
+         }
+
+      }
+      return new JSONArray();
+
+   }
+
+   protected void setTotalProducts(JSONObject json) {
+      this.totalProducts = json.optInt("total");
       this.log("Total da busca: " + this.totalProducts);
    }
 }

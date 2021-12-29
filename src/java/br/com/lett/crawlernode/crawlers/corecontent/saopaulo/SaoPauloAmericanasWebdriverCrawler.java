@@ -45,7 +45,7 @@ public class SaoPauloAmericanasWebdriverCrawler extends SaopauloAmericanasCrawle
    }
 
    @Override
-   protected Document acessOffersPage(String offersPageURL) {
+   public Document accessOffersPage(String offersPageURL) {
       return webdriverRequest(offersPageURL);
    }
 

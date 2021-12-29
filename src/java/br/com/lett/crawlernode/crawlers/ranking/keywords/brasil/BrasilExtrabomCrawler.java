@@ -1,16 +1,18 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,27 +23,48 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
    public BrasilExtrabomCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.FETCHER;
    }
 
    @Override
    protected void processBeforeFetch() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("content-type", "application/x-www-form-urlencoded");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
       String payload = "cep=" + cep;
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(API)
-         .setHeaders(headers)
-         .setPayload(payload)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
-         .build();
+      Request request = null;
+      try {
+         request = Request.RequestBuilder.create()
+            .setUrl(API)
+            .setHeaders(headers)
+            .setPayload(payload)
+            .setProxy(getFixedIp())
+            .build();
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
 
       Response response = dataFetcher.post(session, request);
       this.cookies = response.getCookies();
+   }
+
+   @Override
+   protected Document fetchDocument(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("user-agent", "LettDigital/1.0");
+
+      Request request = null;
+      try {
+         request = Request.RequestBuilder.create()
+            .setUrl(url)
+            .setHeaders(headers)
+            .setProxy(getFixedIp())
+            .build();
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
+
+      return Jsoup.parse(dataFetcher.get(session, request).getBody());
    }
 
    @Override
@@ -99,5 +122,16 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
       Element pagination = this.currentDoc.selectFirst(".pagination-box a:nth-last-child(2) > span");
       String selector = pagination != null ? pagination.text() : null;
       return selector != null && selector.contains("»");
+   }
+
+   public LettProxy getFixedIp() throws IOException {
+
+      LettProxy lettProxy = new LettProxy();
+      lettProxy.setSource("fixed_ip");
+      lettProxy.setPort(3144);
+      lettProxy.setAddress("haproxy.lett.global");
+      lettProxy.setLocation("brazil");
+
+      return lettProxy;
    }
 }

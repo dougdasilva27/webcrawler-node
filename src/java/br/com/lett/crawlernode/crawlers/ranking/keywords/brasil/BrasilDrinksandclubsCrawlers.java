@@ -34,15 +34,16 @@ public class BrasilDrinksandclubsCrawlers extends CrawlerRankingKeywords {
             String productName = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc,".product__head",false);
             Integer productPrice = CrawlerUtils.scrapPriceInCentsFromHtml(this.currentDoc,".list-price span",null,true,',',session,null);
             String productImage = product.select("img").attr("src");
-            String internalId = product.select("div[id_produto]").attr("id_produto");
+            String internalPid = product.select("div[id_produto]").attr("id_produto");
+            String outOfStockMessage = CrawlerUtils.scrapStringSimpleInfo(product, ".out-of-stock", false);
+            boolean isAvailable = outOfStockMessage == null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalId)
-               .setInternalPid(internalId)
+               .setInternalPid(internalPid)
                .setName(productName)
                .setPriceInCents(productPrice)
-               .setAvailability(productPrice != null)
+               .setAvailability(isAvailable)
                .setImageUrl(productImage)
                .build();
 
