@@ -37,6 +37,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -362,12 +363,15 @@ public class BrasilAmazonCrawler extends Crawler {
 
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
-            String block = CrawlerUtils.scrapStringSimpleInfoByAttribute(offerPage, "#h a img", "alt");
-            if (block != null && block.contains("Desculpe")) {
+            Elements block = offerPage.select("img#d");
+            if (block != null && !block.isEmpty()) {
                offerPage = fetchDocumentWithWD();
-               Logging.printLogInfo(logger, session, "WEB DRIVER");
+            } else {
+               //This works as a metric to measure amazon webdriver requests
+               session.setWebDriver(false);
             }
-               Elements ofertas = offerPage.select("#aod-offer");
+
+            Elements ofertas = offerPage.select("#aod-offer");
                for (Element oferta : ofertas) {
 
                   String name = scrapSellerName(oferta).trim();
@@ -724,11 +728,23 @@ public class BrasilAmazonCrawler extends Crawler {
 
    }
 
+   public void setCookiesWD() {
+      for (org.apache.http.cookie.Cookie cookiePage : this.cookies){
+         org.openqa.selenium.Cookie cookie = new Cookie.Builder(cookiePage.getName(), cookiePage.getValue())
+            .domain(HOST)
+            .path("/")
+            .isHttpOnly(true)
+            .isSecure(false)
+            .build();
+         this.cookiesWD.add(cookie);
+      }
+   }
 
    protected Document fetchDocumentWithWD() {
       Document doc = null;
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, session);
+         setCookiesWD();
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY, session, this.cookiesWD, HOME_PAGE);
 
          Logging.printLogInfo(logger, session, "awaiting product page load");
 
