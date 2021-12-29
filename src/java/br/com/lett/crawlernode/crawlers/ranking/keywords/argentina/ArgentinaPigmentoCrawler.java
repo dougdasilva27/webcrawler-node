@@ -45,7 +45,7 @@ public class ArgentinaPigmentoCrawler extends CrawlerRankingKeywords {
          //New way to send products to save data product
          RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(link)
-            .setInternalId(internalPid)
+            .setInternalPid(internalPid)
             .setName(name)
             .setImageUrl(imageUrl)
             .setPriceInCents(price)
