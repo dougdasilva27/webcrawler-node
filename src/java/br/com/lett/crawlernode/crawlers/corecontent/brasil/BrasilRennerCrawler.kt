@@ -7,10 +7,12 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
+import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler
 import br.com.lett.crawlernode.util.*
 import exceptions.MalformedPricingException
 import models.Offer
 import models.Offers
+import models.RatingsReviews
 import models.pricing.CreditCard.CreditCardBuilder
 import models.pricing.CreditCards
 import models.pricing.Installment
@@ -53,6 +55,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
       val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb ul li:not(:first-child):not(:last-child) a")
       val internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value")
 
+      val ratings = scrapRating(internalPid, doc)
       val skus = scrapProductVariations(doc)
 
       skus.map { sku ->
@@ -83,6 +86,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
          val name = "${baseName.toUpperCase()} ${variants.joinToString(separator = " ")}"
 
+
          val product = ProductBuilder()
             .setUrl(session.originalURL)
             .setInternalId(sku)
@@ -93,7 +97,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
             .setSecondaryImages(images.subList(1, images.size))
             .setDescription(description)
             .setOffers(offers)
-            .setRatingReviews(null)
+            .setRatingReviews(ratings)
             .build()
 
          products addNonNull product
@@ -251,6 +255,11 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
    private fun isProductPage(document: Document): Boolean {
       return document.selectFirst(".product_name") != null
+   }
+
+   private fun scrapRating( internalPid: String?, doc: Document?): RatingsReviews? {
+      val trustVox = TrustvoxRatingCrawler(session, "110773", logger)
+      return trustVox.extractRatingAndReviews(internalPid, doc, dataFetcher)
    }
 
    private fun unavailableProducts(doc: Document): MutableList<Product> {
