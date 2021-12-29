@@ -68,7 +68,7 @@ public class BrasilCasaDeGeCrawler extends Crawler {
          String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
          String description = scrapDescription(productJson);
          CategoryCollection categories = scrapCategories(productJson);
-         boolean available = productJson.optInt("inventory_quantity") > 0;
+         boolean available = JSONUtils.getIntegerValueFromJSON(productJson, "inventory_quantity", 0) > 0;
          Offers offers = available ? scrapOffers(productJson) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -108,9 +108,10 @@ public class BrasilCasaDeGeCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
-      Double spotlightPrice = product.optDouble("price");
-      Double priceFrom = product.optDouble("price_compare_at");
-      Double bankslipDiscount = Double.valueOf(product.optInt("discount_percent_boleto"));
+      Double spotlightPrice =  JSONUtils.getDoubleValueFromJSON(product, "price", true);
+      Double priceFrom =  JSONUtils.getDoubleValueFromJSON(product, "price_compare_at", true);
+
+      Double bankslipDiscount = Double.valueOf(JSONUtils.getIntegerValueFromJSON(product, "discount_percent_boleto", 0));
 
       if (spotlightPrice.equals(priceFrom)) {
          priceFrom = null;
@@ -130,8 +131,8 @@ public class BrasilCasaDeGeCrawler extends Crawler {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
 
-      int installmentsNumber = product.optInt("installment_no_fee");
-      double installmentsPrice = product.optDouble("price_installment_no_fee");
+      int installmentsNumber = JSONUtils.getIntegerValueFromJSON(product, "installment_no_fee", 0);
+      double installmentsPrice = JSONUtils.getDoubleValueFromJSON(product, "price_installment_no_fee", true);
 
       if(installmentsNumber == 0 || installmentsPrice == 0d) {
          installmentsNumber = 1;
