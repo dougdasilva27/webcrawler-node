@@ -35,7 +35,7 @@ public class BrasilCasaDeGeCrawler extends CrawlerRankingKeywords {
                String name = productJson.optString("name");
                String productUrl = scrapProductUrl(productJson);
                String image = productJson.optString("img_spotlight");
-               int priceInCents = (int) Math.round(JSONUtils.getDoubleValueFromJSON(productJson, "price", true)  * 100);
+               int priceInCents = (int) Math.round(productJson.optDouble("price", 0d)  * 100);
                boolean available = productJson.optInt("inventory_quantity") > 0;
 
                RankingProduct productRanking = RankingProductBuilder.create()
