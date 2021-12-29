@@ -728,7 +728,7 @@ public class BrasilAmazonCrawler extends Crawler {
    protected Document fetchDocumentWithWD() {
       Document doc = null;
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, session);
 
          Logging.printLogInfo(logger, session, "awaiting product page load");
 
