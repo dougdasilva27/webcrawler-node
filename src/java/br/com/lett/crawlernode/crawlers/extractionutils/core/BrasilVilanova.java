@@ -85,11 +85,10 @@ public class BrasilVilanova extends Crawler {
          }
 
          webdriver.waitLoad(10000);
-         waitForElement(webdriver.driver, "button.open-login");
-         WebElement openlogin = webdriver.driver.findElement(By.cssSelector("button.open-login"));
+         WebElement openlogin = webdriver.driver.findElement(By.cssSelector(".open-login"));
          webdriver.clickOnElementViaJavascript(openlogin);
-         waitForElement(webdriver.driver, "button[id=fazer-login]");
-         webdriver.findAndClick("button[id=fazer-login]", 2000);
+         waitForElement(webdriver.driver, "#fazer-login");
+         webdriver.findAndClick("#fazer-login", 2000);
 
 
          Logging.printLogDebug(logger, session, "Sending credentials...");
