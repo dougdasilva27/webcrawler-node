@@ -358,7 +358,7 @@ public abstract class RappiCrawler extends Crawler {
       if (json.has("name")) {
          nameComplet.append(json.optString("name")).append(" ");
       }
-      if (json.has("quantity")) {
+      if (json.has("quantity") && json.optInt("quantity") != 0) {
          nameComplet.append(json.optString("quantity")).append(" ");
          if (json.has("unit_type")) {
             nameComplet.append(json.optString("unit_type"));
