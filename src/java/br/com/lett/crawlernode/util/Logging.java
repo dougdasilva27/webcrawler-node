@@ -81,6 +81,7 @@ public class Logging {
       if (session != null) {
          metadata.put("market", session.getMarket().getName());
          metadata.put("market_id", session.getMarket().getNumber());
+         metadata.put("web_driver", session.isWebDriver());
 
          String internalId = session.getInternalId();
          if (internalId != null) {

@@ -66,6 +66,8 @@ public class Session {
     */
    protected Long supplierId;
 
+   protected boolean webDriver;
+
    /**
     * Errors occurred during crawling session
     */
@@ -117,6 +119,7 @@ public class Session {
       sessionId = request.getSessionId();
       this.market = market;
       supplierId = request.getSupplierId();
+      webDriver = request.isUseBrowser();
 
       this.options = request.getOptions();
 
@@ -300,6 +303,7 @@ public class Session {
       sb.append("queueName: " + getQueueName() + "\n");
       sb.append("url: " + originalURL + "\n");
       sb.append("marketId: " + market.getNumber() + "\n");
+      sb.append("webdriver " + webDriver + "\n");
 
       return sb.toString();
    }
@@ -326,5 +330,13 @@ public class Session {
 
    public void setImageProxies(List<String> imageProxies) {
       this.imageProxies = imageProxies;
+   }
+
+   public boolean isWebDriver() {
+      return webDriver;
+   }
+
+   public void setWebDriver(boolean webDriver) {
+      this.webDriver = webDriver;
    }
 }

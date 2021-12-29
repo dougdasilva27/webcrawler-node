@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
@@ -35,6 +36,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -71,7 +78,7 @@ public class BrasilAmazonCrawler extends Crawler {
    }
 
 
-   private String requestMethod (String url) {
+   private String requestMethod(String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "gzip, deflate, br");
       headers.put("authority", "www.amazon.com.br");
@@ -356,37 +363,46 @@ public class BrasilAmazonCrawler extends Crawler {
 
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
+            Elements block = offerPage.select("img#d");
+            if (block != null && !block.isEmpty()) {
+               offerPage = fetchDocumentWithWD();
+            } else {
+               //This works as a metric to measure amazon webdriver requests
+               session.setWebDriver(false);
+            }
+
             Elements ofertas = offerPage.select("#aod-offer");
-            for (Element oferta : ofertas) {
+               for (Element oferta : ofertas) {
 
-               String name = scrapSellerName(oferta).trim();
+                  String name = scrapSellerName(oferta).trim();
 
-               Pricing pricing = scrapSellersPagePricing(oferta);
-               String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
+                  Pricing pricing = scrapSellersPagePricing(oferta);
+                  String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
 
-               String sellerId = scrapSellerIdByUrl(sellerUrl);
+                  String sellerId = scrapSellerIdByUrl(sellerUrl);
 
-               boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
+                  boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
 
-               if (sellerId == null) {
-                  sellerId = CommonMethods.toSlug(SELLER_NAME);
-               }
+                  if (sellerId == null) {
+                     sellerId = CommonMethods.toSlug(SELLER_NAME);
+                  }
 
-               if (!offers.contains(sellerId)){
+                  if (!offers.contains(sellerId)) {
 
-                  offers.add(OfferBuilder.create()
-                     .setInternalSellerId(sellerId)
-                     .setSellerFullName(name)
-                     .setSellersPagePosition(pos)
-                     .setIsBuybox(false)
-                     .setIsMainRetailer(isMainRetailer)
-                     .setPricing(pricing)
-                     .build());
+                     offers.add(OfferBuilder.create()
+                        .setInternalSellerId(sellerId)
+                        .setSellerFullName(name)
+                        .setSellersPagePosition(pos)
+                        .setIsBuybox(false)
+                        .setIsMainRetailer(isMainRetailer)
+                        .setPricing(pricing)
+                        .build());
 
-                  pos++;
+                     pos++;
+                  }
                }
             }
-         }
+
       }
       return offers;
    }
@@ -711,4 +727,49 @@ public class BrasilAmazonCrawler extends Crawler {
       return ean != null ? new ArrayList<>(Arrays.asList(ean.split(","))) : null;
 
    }
+
+   public void setCookiesWD() {
+      for (org.apache.http.cookie.Cookie cookiePage : this.cookies){
+         org.openqa.selenium.Cookie cookie = new Cookie.Builder(cookiePage.getName(), cookiePage.getValue())
+            .domain(HOST)
+            .path("/")
+            .isHttpOnly(true)
+            .isSecure(false)
+            .build();
+         this.cookiesWD.add(cookie);
+      }
+   }
+
+   protected Document fetchDocumentWithWD() {
+      Document doc = null;
+      try {
+         setCookiesWD();
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY, session, this.cookiesWD, HOME_PAGE);
+
+         Logging.printLogInfo(logger, session, "awaiting product page load");
+
+         webdriver.waitLoad(2000);
+
+         webdriver.waitForElement(".a-icon.a-icon-arrow.a-icon-small.arrow-icon", 10000);
+
+         WebElement buyButtom = webdriver.driver.findElement(By.cssSelector(".a-icon.a-icon-arrow.a-icon-small.arrow-icon"));
+         webdriver.clickOnElementViaJavascript(buyButtom);
+
+         webdriver.waitForElement("#aod-offer-list", 10000);
+
+         doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+      } catch (Exception e) {
+         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
+         webdriver.terminate();
+      }
+
+      return doc;
+   }
+
+   public static void waitForElement(WebDriver driver, String cssSelector) {
+      WebDriverWait wait = new WebDriverWait(driver, 900);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+   }
+
 }
