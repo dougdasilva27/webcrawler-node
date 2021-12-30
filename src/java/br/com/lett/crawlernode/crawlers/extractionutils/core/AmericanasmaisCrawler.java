@@ -21,17 +21,14 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public abstract class AmericanasmaisCrawler extends Crawler {
 
@@ -70,7 +67,6 @@ public abstract class AmericanasmaisCrawler extends Crawler {
                .build()
          ).setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
             )
@@ -86,7 +82,6 @@ public abstract class AmericanasmaisCrawler extends Crawler {
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
             ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR));
 
@@ -101,25 +96,21 @@ public abstract class AmericanasmaisCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
-      JSONObject json = selectJsonFromHtml(doc);
+      JSONObject apolloJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
+      JSONObject json = extractProductFromApollo(apolloJson);
 
       if (json.has("products")) {
 
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalId = getProductId();
-         JSONObject productData = (JSONObject) json.optQuery("/products/" + internalId);
+         JSONObject productData = (JSONObject) json.optQuery("/products/0/product");
 
          if (productData != null) {
             String name = productData.optString("name");
-            Collection<String> categories = categories(json); //Has only one category
-            JSONArray imageJson = productData.optJSONArray("images");
-            List<String> images = getImages(imageJson);
-            String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
-            String description = getDescription(productData);
-            JSONObject dataOffers = (JSONObject) productData.query("/offers/result/0");
+            String primaryImage = (String) productData.optQuery("/images/0/large");
+            JSONObject dataOffers = SaopauloB2WCrawlersUtils.getJson(apolloJson, "OffersResult");
             Offers offers = dataOffers != null ? scrapOffers(dataOffers, doc) : new Offers();
             RatingsReviews rating = scrapRating(productData);
-
 
             // Creating the product
             Product product = ProductBuilder.create()
@@ -127,10 +118,7 @@ public abstract class AmericanasmaisCrawler extends Crawler {
                .setInternalId(internalId)
                .setInternalPid(internalId)
                .setName(name)
-               .setCategories(categories)
                .setPrimaryImage(primaryImage)
-               .setSecondaryImages(images)
-               .setDescription(description)
                .setRatingReviews(rating)
                .setOffers(offers)
                .build();
@@ -144,38 +132,22 @@ public abstract class AmericanasmaisCrawler extends Crawler {
       return products;
    }
 
-   public JSONObject selectJsonFromHtml(Document doc) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException, UnsupportedEncodingException {
-      JSONObject jsonObject = new JSONObject();
-      Elements scripts = doc.select("body > script");
+   private static JSONObject extractProductFromApollo(JSONObject apollo) {
+      JSONObject product = new JSONObject();
 
-      for (Element e : scripts) {
-         String script = e.html();
-         if (script.contains("window.__PRELOADED_STATE__ =")) {
-            String split = CrawlerUtils.extractSpecificStringFromScript(script, "window.__PRELOADED_STATE__ = \"", true, "}", true)
-               .replace("undefined", "\"undefined\"")
-               .replace("\"\"undefined\"\"", "undefined") + "}";
-            jsonObject = CrawlerUtils.stringToJson(split);
-            break;
-         }
-      }
-      return jsonObject;
-   }
-
-   private List<String> getImages(JSONArray imageJson) {
-     List<String> images = new ArrayList<>();
-      imageJson.forEach(obj -> {
-         if (obj instanceof JSONObject) {
-            JSONObject imageObj = (JSONObject) obj;
-            if (imageObj.has("extraLarge")) {
-              images.add(imageObj.optString("extraLarge"));
-            } else if (imageObj.has("large")) {
-               images.add(imageObj.optString("large"));
-
+      JSONObject root = apollo.optJSONObject("ROOT_QUERY");
+      if (root != null) {
+         for (String key : root.keySet()) {
+            if (key.startsWith("search")) {
+               product = root.optJSONObject(key);
+               break;
             }
          }
-      });
-      return images;
+      }
+
+      return product;
    }
+
 
    private String getProductId() {
       String[] extractId = session.getOriginalURL().split("&conteudo=");
@@ -185,43 +157,6 @@ public abstract class AmericanasmaisCrawler extends Crawler {
 
       return null;
    }
-
-   private String getDescription(JSONObject productData) {
-      StringBuilder stringBuilder = new StringBuilder();
-      String description = productData.optString("description");
-      if (description != null) {
-         stringBuilder.append("descrição: ");
-         stringBuilder.append(description);
-      }
-      JSONArray properties = JSONUtils.getValueRecursive(productData, "attributes.0.properties", JSONArray.class);
-      if (properties != null) {
-         stringBuilder.append("informações técnicas: ");
-         for (Object obj : properties) {
-            if (obj instanceof JSONObject) {
-               JSONObject property = (JSONObject) obj;
-               String name = property.optString("name");
-               String value = property.optString("value");
-
-               if (name != null && value != null) {
-                  stringBuilder.append(name).append(": ").append(value);
-               }
-
-            }
-         }
-      }
-
-      return stringBuilder.toString();
-   }
-
-   private Collection<String> categories(JSONObject json) {
-      Collection<String> categories = new ArrayList<>();
-      String category = JSONUtils.getValueRecursive(json, "aggregations.categories.0.options.0.value", String.class);
-      if (category != null) {
-         categories.add(category);
-      }
-      return categories;
-   }
-
 
    private Offers scrapOffers(JSONObject dataOffers, Document doc) throws OfferException, MalformedPricingException {
 
@@ -244,7 +179,7 @@ public abstract class AmericanasmaisCrawler extends Crawler {
 
    private List<String> scrapSales(Document doc) {
       List<String> sales = new ArrayList<>();
-      String sale = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-grid-item .TextUI-xlll2j-3", true);
+      String sale = CrawlerUtils.scrapStringSimpleInfo(doc, "p[class^=\"styles__BadgeText\"]", true);
       if (sale != null) {
          sales.add(sale);
       }
