@@ -3,12 +3,11 @@ package br.com.lett.crawlernode.aws.sqs;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.amazonaws.services.sqs.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.Logging;
 import enums.QueueName;
@@ -90,6 +89,14 @@ public class QueueService {
       batchMessageBatchRequest.setEntries(entries);
 
       return sqs.sendMessageBatch(batchMessageBatchRequest);
+   }
+
+   public static SendMessageResult SendMessageResult(AmazonSQS sqs, String queueName, String entry) {
+      SendMessageRequest send_msg_request = new SendMessageRequest()
+         .withQueueUrl(queueName)
+         .withMessageBody(entry);
+       return sqs.sendMessage(send_msg_request);
+
    }
 
    /**
