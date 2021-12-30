@@ -1,11 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.MalformedUrlException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -21,17 +20,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SaopauloSondaCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.sondadelivery.com.br/";
 
-   private static final String SELLER_FULL_NAME = "Sonda Sao Paulo";
+   private static final String SELLER_FULL_NAME = "Sonda";
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(),
       Card.DINERS.toString());
+   private final String locate = session.getOptions().optString("LOCATE");
 
    public SaopauloSondaCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.HTML);
    }
 
    @Override
@@ -40,6 +43,29 @@ public class SaopauloSondaCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
+   @Override
+   protected Response fetchResponse() {
+      if (!checkLocale()){
+         throw new MalformedUrlException("URL não corresponde ao market");
+      }
+
+      return super.fetchResponse();
+   }
+
+   private String getLocaleFromUrl() {
+      String localeUrl = null;
+      Pattern pattern = Pattern.compile("br\\/(.*)\\/produto");
+      Matcher matcher = pattern.matcher(session.getOriginalURL());
+      if (matcher.find()) {
+         localeUrl = matcher.group(1);
+      }
+      return localeUrl;
+   }
+
+   private boolean checkLocale(){
+      String localeUrl = getLocaleFromUrl();
+      return localeUrl.equals(locate) || locate.isEmpty();
+   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {

@@ -14,10 +14,13 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import java.util.Arrays;
 
 public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
+   String locate;
 
    public SaopauloSondaCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.APACHE;
+      String locateOpt = session.getOptions().optString("LOCATE");
+      this.locate = locateOpt.isEmpty() ? "delivery" : locateOpt;
    }
 
    @Override
@@ -26,7 +29,7 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       String url =
-         "https://www.sondadelivery.com.br/delivery/busca/" + this.keywordWithoutAccents.replace(" ", "%20") + "/" + this.currentPage + "/96/0/";
+         "https://www.sondadelivery.com.br/"+this.locate+"/busca/" + this.keywordWithoutAccents.replace(" ", "%20") + "/" + this.currentPage + "/96/0/";
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
