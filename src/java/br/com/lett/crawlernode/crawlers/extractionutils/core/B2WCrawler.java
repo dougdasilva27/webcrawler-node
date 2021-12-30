@@ -142,11 +142,10 @@ public class B2WCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       JSONObject apolloJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
-      JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(apolloJson);
 
-      if (infoProductJson.has("skus") && session.getOriginalURL().startsWith(this.homePage)) {
+      if (!apolloJson.isEmpty() && session.getOriginalURL().startsWith(this.homePage)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
+         JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(apolloJson);
          String internalPid = this.crawlInternalPid(infoProductJson);
          CategoryCollection categories = crawlCategories(infoProductJson);
          String primaryImage = this.crawlPrimaryImage(infoProductJson);

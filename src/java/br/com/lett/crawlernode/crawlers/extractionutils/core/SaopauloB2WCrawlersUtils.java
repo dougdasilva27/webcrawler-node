@@ -210,7 +210,7 @@ public class SaopauloB2WCrawlersUtils {
       }
 
       JSONObject reviews = getJson(productJson, "reviews");
-      JSONArray result = reviews != null ? reviews.optJSONArray("result") : new JSONArray();
+      JSONArray result = reviews != null && !reviews.isEmpty() ? reviews.optJSONArray("result") : new JSONArray();
       if (!result.isEmpty()) {
          jsonRating.put("reviews", reviews);
       }
