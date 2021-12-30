@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.*;
@@ -33,9 +34,8 @@ import org.jsoup.select.Elements;
 
 /**
  * Date: 06/12/2018
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class MexicoAmazonCrawler extends Crawler {
 
@@ -87,14 +87,14 @@ public class MexicoAmazonCrawler extends Crawler {
 
          JSONArray images = this.amazonScraperUtils.scrapImagesJSONArray(doc);
          String primaryImage = this.amazonScraperUtils.scrapPrimaryImage(images, doc, IMAGES_PROTOCOL, IMAGES_HOST);
-         String secondaryImages = this.amazonScraperUtils.scrapSecondaryImages(images, IMAGES_PROTOCOL, IMAGES_HOST);
+         List<String> secondaryImages = this.amazonScraperUtils.scrapSecondaryImages(images, IMAGES_PROTOCOL, IMAGES_HOST);
 
          String description = crawlDescription(doc);
          Integer stock = null;
 
          Offer mainPageOffer = scrapMainPageOffer(doc);
          List<Document> docOffers = fetchDocumentsOffers(doc, internalId);
-         Offers offers = scrapOffers(doc ,docOffers, mainPageOffer);
+         Offers offers = scrapOffers(doc, docOffers, mainPageOffer);
 
          String ean = crawlEan(doc);
 
@@ -134,7 +134,7 @@ public class MexicoAmazonCrawler extends Crawler {
 
    private Offer scrapMainPageOffer(Document doc) throws OfferException, MalformedPricingException {
       String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text a", false);
-      if (seller == null){
+      if (seller == null) {
          seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text", false);
       }
       String sellerUrl = CrawlerUtils.scrapUrl(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text a", "href", "https", HOST);
@@ -152,7 +152,7 @@ public class MexicoAmazonCrawler extends Crawler {
          }
       }
 
-      if(seller == null){
+      if (seller == null) {
          seller = CrawlerUtils.scrapStringSimpleInfo(doc, "div.tabular-buybox div.tabular-buybox-text span.a-size-small", false);
       }
 
@@ -163,7 +163,7 @@ public class MexicoAmazonCrawler extends Crawler {
             sellerId = CommonMethods.toSlug(seller);
          }
 
-         if(seller.contains("México")){
+         if (seller.contains("México")) {
             seller = seller.replace("México", "").trim();
          }
 
@@ -227,17 +227,17 @@ public class MexicoAmazonCrawler extends Crawler {
          .build();
    }
 
-   private String scrapSellerName(Element oferta){
+   private String scrapSellerName(Element oferta) {
       String name = "";
-      if(oferta != null){
+      if (oferta != null) {
          String rawSallerName = CrawlerUtils.scrapStringSimpleInfoByAttribute(oferta, ".a-button-inner input", "aria-label");
 
-         if(rawSallerName == null){
+         if (rawSallerName == null) {
             rawSallerName = CrawlerUtils.scrapStringSimpleInfo(oferta, ".a-button-inner span .a-offscreen", false);
          }
 
-         String split = rawSallerName != null?rawSallerName.split("del vendedor")[1]: null;
-         name = split != null? split.split("el precio")[0]: null;
+         String split = rawSallerName != null ? rawSallerName.split("del vendedor")[1] : null;
+         name = split != null ? split.split("el precio")[0] : null;
       }
       return name;
    }
@@ -247,7 +247,7 @@ public class MexicoAmazonCrawler extends Crawler {
       int pos = 1;
 
 
-      if(mainPageOffer != null){
+      if (mainPageOffer != null) {
          mainPageOffer.setSellersPagePosition(pos);
          offers.add(mainPageOffer);
          pos = 2;
@@ -289,7 +289,7 @@ public class MexicoAmazonCrawler extends Crawler {
 
    private Pricing scrapSellersPagePricing(Element doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price span", null, false, '.', session);
-      if(spotlightPrice == null) {
+      if (spotlightPrice == null) {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price .a-offscreen", null, false, ',', session);
       }
       CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
@@ -437,7 +437,7 @@ public class MexicoAmazonCrawler extends Crawler {
       return name;
    }
 
-   private Document fetchDocumentsOffersRequest(int page, String internalId){
+   private Document fetchDocumentsOffersRequest(int page, String internalId) {
 
       String urlMarketPlace = "https://www.amazon.com.mx/gp/aod/ajax/ref=aod_page_" + page + "?asin=" + internalId + "&pageno=" + page;
 
@@ -445,7 +445,7 @@ public class MexicoAmazonCrawler extends Crawler {
       headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
 
-      String response =  amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher);
+      String response = amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher);
       Document doc = Jsoup.parse(response);
       headers.put("referer", urlMarketPlace);
 
@@ -465,25 +465,25 @@ public class MexicoAmazonCrawler extends Crawler {
 
       int page = 1;
 
-      if(marketplaceUrl == null){
+      if (marketplaceUrl == null) {
          marketplaceUrl = doc.selectFirst(".a-section.a-spacing-base span .a-declarative a");
       }
 
-      if(marketplaceUrl == null){
+      if (marketplaceUrl == null) {
          marketplaceUrl = doc.selectFirst(".a-box-inner .olp-text-box");
       }
 
       if (marketplaceUrl != null) {
 
-         Document docMarketplace = fetchDocumentsOffersRequest(page,internalId);
+         Document docMarketplace = fetchDocumentsOffersRequest(page, internalId);
          docs.add(docMarketplace);
 
-         int totalOffers = CrawlerUtils.scrapIntegerFromHtml(docMarketplace,"#aod-filter-offer-count-string" ,false);
+         int totalOffers = CrawlerUtils.scrapIntegerFromHtml(docMarketplace, "#aod-filter-offer-count-string", false);
          Elements offers = docMarketplace.select("#aod-offer");
 
-         if(totalOffers != offers.size()) {
+         if (totalOffers != offers.size()) {
             page++;
-            docMarketplace = fetchDocumentsOffersRequest(page,internalId);
+            docMarketplace = fetchDocumentsOffersRequest(page, internalId);
             docs.add(docMarketplace);
          }
       }
