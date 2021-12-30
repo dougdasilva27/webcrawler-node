@@ -10,10 +10,12 @@ import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlersUtils;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -24,7 +26,6 @@ import org.jsoup.select.Elements;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
@@ -107,34 +108,35 @@ public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
 
       Document doc = fetchPage();
 
-      JSONObject json = selectJsonFromHtml(doc);
-
-      JSONObject products = json.optJSONObject("products");
+      JSONObject apolloJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
+      JSONObject json = extractProductFromApollo(apolloJson);
+      JSONArray products = json.optJSONArray("products");
 
       if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts(json);
-         }
-         for (String internalId : products.toMap().keySet()) {
-            String productUrl = HOME_PAGE + storeId + "/ship?ordenacao=relevance&conteudo=" + internalId;
-            JSONObject productInfo = products.optJSONObject(internalId);
-            if (productInfo != null) {
-               String name = productInfo.optString("name");
-               String imgUrl = JSONUtils.getValueRecursive(productInfo, "images.0.large", String.class);
-               Integer price = CommonMethods.doublePriceToIntegerPrice(JSONUtils.getValueRecursive(productInfo, "offers.result.0.salesPrice", Double.class), 0);
-               boolean isAvailable = price != 0;
+         for (Object o : products) {
+            if (o instanceof JSONObject) {
+               JSONObject productJson = (JSONObject) o;
+               JSONObject productInfo = productJson.optJSONObject("product");
+               if (productInfo != null) {
+                  String internalId = productInfo.optString("id");
+                  String productUrl = HOME_PAGE + storeId + "/ship?ordenacao=relevance&conteudo=" + internalId;
+                  String name = productInfo.optString("name");
+                  String imgUrl = JSONUtils.getValueRecursive(productInfo, "images.0.large", String.class);
+                  Integer price = CommonMethods.doublePriceToIntegerPrice(getPrice(apolloJson, productInfo), 0);
+                  boolean isAvailable = price != 0;
 
-               RankingProduct productRanking = RankingProductBuilder.create()
-                  .setUrl(productUrl)
-                  .setInternalId(internalId)
-                  .setInternalPid(internalId)
-                  .setName(name)
-                  .setPriceInCents(price)
-                  .setImageUrl(imgUrl)
-                  .setAvailability(isAvailable)
-                  .build();
+                  RankingProduct productRanking = RankingProductBuilder.create()
+                     .setUrl(productUrl)
+                     .setInternalId(internalId)
+                     .setInternalPid(internalId)
+                     .setName(name)
+                     .setPriceInCents(price)
+                     .setImageUrl(imgUrl)
+                     .setAvailability(isAvailable)
+                     .build();
 
-               saveDataProduct(productRanking);
+                  saveDataProduct(productRanking);
+               }
             }
          }
       }
@@ -143,6 +145,36 @@ public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
          + this.arrayProducts.size() + " produtos crawleados");
 
    }
+
+
+   private static JSONObject extractProductFromApollo(JSONObject apollo) {
+      JSONObject product = new JSONObject();
+
+      JSONObject root = apollo.optJSONObject("ROOT_QUERY");
+      if (root != null) {
+         for (String key : root.keySet()) {
+            if (key.startsWith("search")) {
+               product = root.optJSONObject(key);
+               break;
+            }
+         }
+      }
+
+      return product;
+   }
+
+   private String getKeyOffer(JSONObject productInfo) {
+      JSONObject offers = SaopauloB2WCrawlersUtils.getJson(productInfo, "offers");
+      return (String) offers.optQuery("/result/0/__ref");
+
+   }
+
+   private double getPrice(JSONObject apollo, JSONObject productInfo) {
+      String keyOffers = getKeyOffer(productInfo);
+      JSONObject offer = apollo.optJSONObject(keyOffers);
+      return offer.optDouble("salesPrice", 0);
+   }
+
 
    public JSONObject selectJsonFromHtml(Document doc) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException, UnsupportedEncodingException {
       JSONObject jsonObject = new JSONObject();
@@ -161,18 +193,8 @@ public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
       return jsonObject;
    }
 
-   private void setTotalProducts(JSONObject json) {
-      JSONObject jsonObject = json.optJSONObject("pages");
-      for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
-         String key = it.next();
-         if (!key.equals("type")) {
-            JSONObject jsonObjectWithKey = jsonObject.optJSONObject(key);
-            this.totalProducts = JSONUtils.getValueRecursive(jsonObjectWithKey, "queries.getStoreOffersAcom.result.search.total", Integer.class);
-            ;
-            this.log("Total da busca: " + this.totalProducts);
-            break;
-         }
-      }
-
+   @Override
+   protected boolean hasNextPage() {
+      return true;
    }
 }
