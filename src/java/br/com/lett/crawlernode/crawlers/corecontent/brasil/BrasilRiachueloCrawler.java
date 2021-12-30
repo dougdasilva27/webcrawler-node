@@ -224,8 +224,23 @@ public class BrasilRiachueloCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject json, String variationName) throws MalformedPricingException {
-      Double spotLightPrice = JSONUtils.getValueRecursive(json, variationName + ".price.final", Double.class);
-      Double priceFrom = JSONUtils.getValueRecursive(json, variationName + ".price.regular", Double.class);
+      Object spotLightPriceObject = json.optQuery("/" + variationName + "/price/final");
+      Object priceFromObject = json.optQuery("/" + variationName + "/price/regular");
+
+      Double spotLightPrice = null;
+      Double priceFrom = null;
+
+         if(spotLightPriceObject instanceof Integer) {
+            spotLightPrice = (double) (int) spotLightPriceObject;
+         } else if (spotLightPriceObject instanceof Double) {
+            spotLightPrice = (double) spotLightPriceObject;
+         }
+
+         if(priceFromObject instanceof Integer) {
+            priceFrom = (double) (int) priceFromObject;
+         } else if (priceFromObject instanceof Double) {
+            priceFrom = (double) priceFromObject;
+         }
 
       if (priceFrom != null && priceFrom.equals(spotLightPrice)) {
          priceFrom = null;
