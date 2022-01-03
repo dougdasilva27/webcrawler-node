@@ -11,14 +11,12 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -36,17 +34,13 @@ import java.util.List;
 public class BrasilAmazonWDCrawler extends Crawler {
 
 
-   protected BrasilAmazonWDCrawler(Session session) {
+   public BrasilAmazonWDCrawler(Session session) {
       super(session);
    }
 
    private final AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
    Product product = null;
-   private static final String HOST = "www.amazon.com.br";
-   private static final String SELLER_NAME = "amazon.com.br";
-   private static final String SELLER_NAME_2 = "amazon.com";
-   private static final String SELLER_NAME_3 = "Amazon";
 
    private static final String IMAGES_HOST = "images-na.ssl-images-amazon.com";
    private static final String IMAGES_PROTOCOL = "https";
@@ -54,7 +48,7 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
    protected Object fetch() {
       Document doc = null;
-      Document docOffers;
+      Document docOffers = null;
       try {
 
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY, session);
@@ -67,11 +61,14 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
-         WebElement buyButtom = webdriver.driver.findElement(By.cssSelector(".a-icon.a-icon-arrow.a-icon-small.arrow-icon"));
-         webdriver.clickOnElementViaJavascript(buyButtom);
+         if (!doc.select(".a-icon.a-icon-arrow.a-icon-small.arrow-icon").isEmpty()) {
 
-         webdriver.waitForElement("#aod-offer-list", 10000);
-         docOffers = Jsoup.parse(webdriver.getCurrentPageSource());
+            WebElement buyButtom = webdriver.driver.findElement(By.cssSelector(".a-icon.a-icon-arrow.a-icon-small.arrow-icon"));
+            webdriver.clickOnElementViaJavascript(buyButtom);
+
+            webdriver.waitForElement("#aod-offer-list", 10000);
+            docOffers = Jsoup.parse(webdriver.getCurrentPageSource());
+         }
 
          product = extractProduct(doc, docOffers);
 
@@ -115,7 +112,8 @@ public class BrasilAmazonWDCrawler extends Crawler {
          String description = amazonScraperUtils.crawlDescription(doc);
          Integer stock = null;
          List<String> eans = amazonScraperUtils.crawlEan(doc);
-         Offers offers = scrapOffers(doc, docOffers);
+         Offer mainPageOffer = amazonScraperUtils.scrapMainPageOffer(doc);
+         Offers offers = scrapOffers(doc, docOffers, mainPageOffer);
 
          RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
          ratingReviewsCollection.addRatingReviews(amazonScraperUtils.crawlRating(doc, internalId));
@@ -150,74 +148,36 @@ public class BrasilAmazonWDCrawler extends Crawler {
    }
 
 
-   public Offers scrapOffers(Document doc, Document offerPage) throws OfferException, MalformedPricingException {
+   public Offers scrapOffers(Document doc, Document offerPage,  Offer mainPageOffer) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       int pos = 1;
+
+      if (mainPageOffer != null) {
+         mainPageOffer.setSellersPagePosition(pos);
+         offers.add(mainPageOffer);
+         pos = 2;
+      }
 
       Elements buyBox = doc.select(".a-box.mbc-offer-row.pa_mbc_on_amazon_offer");
 
       if (buyBox != null && !buyBox.isEmpty()) {
          for (Element oferta : buyBox) {
-
-            String name = CrawlerUtils.scrapStringSimpleInfo(oferta, ".a-size-small.mbcMerchantName", true);
-
-            Pricing pricing = amazonScraperUtils.scrapSellersPagePricingInBuyBox(oferta);
-            String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
-
-            String sellerId = amazonScraperUtils.scrapSellerIdByUrl(sellerUrl);
-            boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
-
-            if (sellerId == null) {
-               sellerId = CommonMethods.toSlug(SELLER_NAME);
-            }
-
-            offers.add(Offer.OfferBuilder.create()
-               .setInternalSellerId(sellerId)
-               .setSellerFullName(name)
-               .setSellersPagePosition(pos)
-               .setIsBuybox(false)
-               .setIsMainRetailer(isMainRetailer)
-               .setPricing(pricing)
-               .build());
-
+            amazonScraperUtils.getOffersFromBuyBox(oferta, pos, offers);
             pos++;
+
          }
       }
-
 
       if (offerPage != null) {
          Elements ofertas = offerPage.select("#aod-offer");
          for (Element oferta : ofertas) {
 
-            String name = amazonScraperUtils.scrapSellerName(oferta).trim();
+            amazonScraperUtils.getOffersFromOfferPage(oferta, pos, offers);
 
-            Pricing pricing = amazonScraperUtils.scrapSellersPagePricing(oferta);
-            String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
-
-            String sellerId = amazonScraperUtils.scrapSellerIdByUrl(sellerUrl);
-
-            boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
-
-            if (sellerId == null) {
-               sellerId = CommonMethods.toSlug(SELLER_NAME);
-            }
-
-            if (!offers.contains(sellerId)) {
-
-               offers.add(Offer.OfferBuilder.create()
-                  .setInternalSellerId(sellerId)
-                  .setSellerFullName(name)
-                  .setSellersPagePosition(pos)
-                  .setIsBuybox(false)
-                  .setIsMainRetailer(isMainRetailer)
-                  .setPricing(pricing)
-                  .build());
-
-               pos++;
-            }
+            pos++;
          }
-
       }
+
       return offers;
    }
 

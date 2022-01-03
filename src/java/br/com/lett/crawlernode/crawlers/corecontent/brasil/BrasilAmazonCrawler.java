@@ -11,13 +11,12 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.google.common.collect.Sets;
 import enums.QueueName;
 import exceptions.MalformedPricingException;
@@ -25,7 +24,6 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -42,12 +40,7 @@ import java.util.*;
  */
 public class BrasilAmazonCrawler extends Crawler {
 
-   private static final String HOST = "www.amazon.com.br";
-   private static final String HOME_PAGE = "https://" + HOST;
-
-   private static final String SELLER_NAME = "amazon.com.br";
-   private static final String SELLER_NAME_2 = "amazon.com";
-   private static final String SELLER_NAME_3 = "Amazon";
+   private static final String HOME_PAGE = "https://" + AmazonScraperUtils.HOST;
 
    private static final String IMAGES_HOST = "images-na.ssl-images-amazon.com";
    private static final String IMAGES_PROTOCOL = "https";
@@ -266,42 +259,21 @@ public class BrasilAmazonCrawler extends Crawler {
       Offers offers = new Offers();
       int pos = 1;
 
-      Elements buyBox = doc.select(".a-box.mbc-offer-row.pa_mbc_on_amazon_offer");
-
-      if (buyBox != null && !buyBox.isEmpty()) {
-         for (Element oferta : buyBox) {
-
-            String name = CrawlerUtils.scrapStringSimpleInfo(oferta, ".a-size-small.mbcMerchantName", true);
-
-            Pricing pricing = amazonScraperUtils.scrapSellersPagePricingInBuyBox(oferta);
-            String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
-
-            String sellerId = amazonScraperUtils.scrapSellerIdByUrl(sellerUrl);
-            boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
-
-            if (sellerId == null) {
-               sellerId = CommonMethods.toSlug(SELLER_NAME);
-            }
-
-            offers.add(Offer.OfferBuilder.create()
-               .setInternalSellerId(sellerId)
-               .setSellerFullName(name)
-               .setSellersPagePosition(pos)
-               .setIsBuybox(false)
-               .setIsMainRetailer(isMainRetailer)
-               .setPricing(pricing)
-               .build());
-
-            pos++;
-         }
-      }
-
-
       if (mainPageOffer != null) {
          mainPageOffer.setSellersPagePosition(pos);
          offers.add(mainPageOffer);
          pos = 2;
       }
+
+      Elements buyBox = doc.select(".a-box.mbc-offer-row.pa_mbc_on_amazon_offer");
+
+      if (buyBox != null && !buyBox.isEmpty()) {
+         for (Element oferta : buyBox) {
+            amazonScraperUtils.getOffersFromBuyBox(oferta, pos, offers);
+            pos++;
+         }
+      }
+
 
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
@@ -309,33 +281,8 @@ public class BrasilAmazonCrawler extends Crawler {
             if (block.isEmpty()) {
                Elements ofertas = offerPage.select("#aod-offer");
                for (Element oferta : ofertas) {
-
-                  String name = amazonScraperUtils.scrapSellerName(oferta).trim();
-
-                  Pricing pricing = amazonScraperUtils.scrapSellersPagePricing(oferta);
-                  String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
-
-                  String sellerId = amazonScraperUtils.scrapSellerIdByUrl(sellerUrl);
-
-                  boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
-
-                  if (sellerId == null) {
-                     sellerId = CommonMethods.toSlug(SELLER_NAME);
-                  }
-
-                  if (!offers.contains(sellerId)) {
-
-                     offers.add(Offer.OfferBuilder.create()
-                        .setInternalSellerId(sellerId)
-                        .setSellerFullName(name)
-                        .setSellersPagePosition(pos)
-                        .setIsBuybox(false)
-                        .setIsMainRetailer(isMainRetailer)
-                        .setPricing(pricing)
-                        .build());
-
-                     pos++;
-                  }
+                  amazonScraperUtils.getOffersFromOfferPage(oferta, pos, offers);
+                  pos++;
                }
             } else {
                sendMessage();
@@ -351,9 +298,31 @@ public class BrasilAmazonCrawler extends Crawler {
 
    private void sendMessage() {
 
-      JSONObject jsonToSentToQueue = mountMessageToSendToQueue(session.getMarket());
-      QueueService.SendMessageResult(Main.queueHandler.getSqs(), QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString(), jsonToSentToQueue.toString());
+      if (session instanceof TestCrawlerSession) {
+         Logging.printLogWarn(logger, session, "Block in offers page - don't send to queue because is a test");
+
+      } else {
+
+         JSONObject jsonToSentToQueue = mountMessageToSendToQueue(session.getMarket());
+         QueueService.SendMessageResult(Main.queueHandler.getSqs(), QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString(), jsonToSentToQueue.toString());
+      }
+
    }
+
+//   private void sendMessage() {
+//      SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
+//      JSONObject jsonToSentToQueue = mountMessageToSendToQueue(session.getMarket());
+//      entry.setMessageBody(jsonToSentToQueue.toString());
+//      List<SendMessageBatchRequestEntry> entries = new ArrayList<>();
+//      SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString(), entries);
+//
+//      // get send request results
+//      List<SendMessageBatchResultEntry> successResultEntryList = messagesResult.getSuccessful();
+//
+//      Logging.printLogDebug(logger, session, successResultEntryList.size() + " messages sended to " + QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString());
+//
+//
+//   }
 
 
    public JSONObject mountMessageToSendToQueue(Market market) {
