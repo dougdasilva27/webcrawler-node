@@ -315,14 +315,18 @@ public class BrasilAmazonCrawler extends Crawler {
       marketInfo.put("marketId", market.getId());
       marketInfo.put("use_browser", "true");
       marketInfo.put("name", market.getName());
-      jsonToSendToCrawler.put("type", "core");
+      jsonToSendToCrawler.put("type", session.getScraperType());
       jsonToSendToCrawler.put("sessionId", sessionId);
       jsonToSendToCrawler.put("options", new JSONObject());
       jsonToSendToCrawler.put("market", marketInfo);
       jsonToSendToCrawler.put("className", "br.com.lett.crawlernode.crawlers.corecontent.brasil.BrasilAmazonWDCrawler");
       jsonToSendToCrawler.put("parameters", session.getOriginalURL());
-      jsonToSendToCrawler.put("processedId", session.getProcessedId());
-      jsonToSendToCrawler.put("internalId", session.getInternalId());
+      if (session.getProcessedId() != null){
+         jsonToSendToCrawler.put("processedId", session.getProcessedId());
+      }
+      if (session.getProcessedId() != null){
+         jsonToSendToCrawler.put("internalId", session.getInternalId());
+      }
 
       return jsonToSendToCrawler;
    }
