@@ -88,6 +88,8 @@ public class Session {
 
    protected JSONObject options;
 
+   protected String scraperType;
+
    /**
     * Default empty constructor
     */
@@ -120,6 +122,7 @@ public class Session {
       this.market = market;
       supplierId = request.getSupplierId();
       webDriver = request.isUseBrowser();
+      scraperType = request.getScraperType();
 
       this.options = request.getOptions();
 
@@ -338,5 +341,9 @@ public class Session {
 
    public void setWebDriver(boolean webDriver) {
       this.webDriver = webDriver;
+   }
+
+   public String getScraperType() {
+      return scraperType;
    }
 }
