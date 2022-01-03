@@ -97,7 +97,7 @@ public class EspanaAmazonCrawler extends Crawler {
 
          JSONArray images = this.amazonScraperUtils.scrapImagesJSONArray(doc);
          String primaryImage = this.amazonScraperUtils.scrapPrimaryImage(images, doc, IMAGES_PROTOCOL, IMAGES_HOST);
-         String secondaryImages = this.amazonScraperUtils.scrapSecondaryImages(images, IMAGES_PROTOCOL, IMAGES_HOST);
+         List<String> secondaryImages = this.amazonScraperUtils.scrapSecondaryImages(images, IMAGES_PROTOCOL, IMAGES_HOST);
 
          String description = crawlDescription(doc);
          Integer stock = null;

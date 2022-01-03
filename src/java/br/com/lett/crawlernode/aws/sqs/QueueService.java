@@ -3,12 +3,11 @@ package br.com.lett.crawlernode.aws.sqs;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.amazonaws.services.sqs.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.Logging;
 import enums.QueueName;
@@ -73,6 +72,7 @@ public class QueueService {
       queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_EQI_WEBDRIVER.toString(),QUEUE_URL+QueueName.WEB_SCRAPER_PRODUCT_EQI_WEBDRIVER.toString());
       queueURLMap.put(QueueName.PRODUCT_IMAGE_DOWNLOAD_SEED.toString(), QUEUE_URL + QueueName.PRODUCT_IMAGE_DOWNLOAD_SEED.toString());
       queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_ZE_DELIVERY.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_PRODUCT_ZE_DELIVERY.toString());
+      queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString());
 
    }
 
@@ -90,6 +90,14 @@ public class QueueService {
       batchMessageBatchRequest.setEntries(entries);
 
       return sqs.sendMessageBatch(batchMessageBatchRequest);
+   }
+
+   public static SendMessageResult SendMessageResult(AmazonSQS sqs, String queueName, String entry) {
+      SendMessageRequest send_msg_request = new SendMessageRequest()
+         .withQueueUrl(queueName)
+         .withMessageBody(entry);
+       return sqs.sendMessage(send_msg_request);
+
    }
 
    /**
