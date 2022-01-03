@@ -321,8 +321,9 @@ public class BrasilAmazonCrawler extends Crawler {
       jsonToSendToCrawler.put("market", marketInfo);
       jsonToSendToCrawler.put("className", "br.com.lett.crawlernode.crawlers.corecontent.brasil.BrasilAmazonWDCrawler");
       jsonToSendToCrawler.put("parameters", session.getOriginalURL());
+      jsonToSendToCrawler.put("processedId", session.getProcessedId());
 
       return jsonToSendToCrawler;
-
    }
+
 }
