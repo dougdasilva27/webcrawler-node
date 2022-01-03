@@ -425,7 +425,9 @@ public abstract class Crawler extends Task {
          }
       } catch (ResponseCodeException e) {
          Logging.printLogWarn(logger, session, "ResponseCodeException: " + e.getMessage());
-         if (session instanceof TestCrawlerSession) {
+         if (session instanceof SeedCrawlerSession) {
+            session.registerError(new SessionError(SessionError.EXCEPTION, e.getMessage()));
+         } else if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(e);
          }
       } catch (Exception e) {
