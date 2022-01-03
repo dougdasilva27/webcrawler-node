@@ -120,6 +120,9 @@ public class BrasilLojamondelezCrawler extends Crawler {
             String internalId = crawlInternalId(skuJson);
             List<String> eans = Arrays.asList(internalId);
             String name = crawlName(skuJson);
+            if (doc.selectFirst(".product-grid-container .picking-quantity span")!=null) {
+               name = name + " - " + doc.selectFirst(".product-grid-container .picking-quantity span").text();
+            }
             Offers offers = isAvailable(skuJson) ? scrapOffers(skuJson, doc) : new Offers();
 
             Product product = ProductBuilder.create()
