@@ -299,7 +299,7 @@ public abstract class Crawler extends Task {
          StringBuilder stringBuilder = new StringBuilder();
          int countP = 0;
          for (Product p : products) {
-            if(countP>0){
+            if (countP > 0) {
                stringBuilder.append(" | ");
             }
             stringBuilder.append(p.getInternalId());
@@ -423,6 +423,11 @@ public abstract class Crawler extends Task {
          for (Product p : products) {
             processedProducts.add(ProductDTO.processCaptureData(p, session));
          }
+      } catch (ResponseCodeException e) {
+         Logging.printLogWarn(logger, session, "ResponseCodeException: " + e.getMessage());
+         if (session instanceof TestCrawlerSession) {
+            ((TestCrawlerSession) session).setLastError(e);
+         }
       } catch (Exception e) {
          Exporter.collectError(e, session);
          if (session instanceof TestCrawlerSession) {
@@ -433,7 +438,6 @@ public abstract class Crawler extends Task {
 
          return new ArrayList<>();
       }
-
       return processedProducts;
    }
 
