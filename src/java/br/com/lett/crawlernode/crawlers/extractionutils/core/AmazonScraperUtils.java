@@ -701,21 +701,23 @@ public class AmazonScraperUtils {
       String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", AmazonScraperUtils.HOST);
 
       String sellerId = scrapSellerIdByUrl(sellerUrl);
-      boolean isMainRetailer = name.equalsIgnoreCase(AmazonScraperUtils.SELLER_NAME) || name.equalsIgnoreCase(AmazonScraperUtils.SELLER_NAME_2) || name.equalsIgnoreCase(AmazonScraperUtils.SELLER_NAME_3);
+      if (name != null) {
+         boolean isMainRetailer = name.equalsIgnoreCase(AmazonScraperUtils.SELLER_NAME) || name.equalsIgnoreCase(AmazonScraperUtils.SELLER_NAME_2) || name.equalsIgnoreCase(AmazonScraperUtils.SELLER_NAME_3);
 
-      if (sellerId == null) {
-         sellerId = CommonMethods.toSlug(AmazonScraperUtils.SELLER_NAME);
+         if (sellerId == null) {
+            sellerId = CommonMethods.toSlug(AmazonScraperUtils.SELLER_NAME);
+         }
+
+         offers.add(Offer.OfferBuilder.create()
+            .setInternalSellerId(sellerId)
+            .setSellerFullName(name)
+            .setSellersPagePosition(pos)
+            .setIsBuybox(false)
+            .setIsMainRetailer(isMainRetailer)
+            .setPricing(pricing)
+            .build());
+
       }
-
-      offers.add(Offer.OfferBuilder.create()
-         .setInternalSellerId(sellerId)
-         .setSellerFullName(name)
-         .setSellersPagePosition(pos)
-         .setIsBuybox(false)
-         .setIsMainRetailer(isMainRetailer)
-         .setPricing(pricing)
-         .build());
-
    }
 
    public void getOffersFromOfferPage(Element oferta, int pos, Offers offers) throws MalformedPricingException, OfferException {

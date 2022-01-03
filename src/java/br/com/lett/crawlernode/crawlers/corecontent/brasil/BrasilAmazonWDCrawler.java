@@ -33,7 +33,6 @@ import java.util.List;
 
 public class BrasilAmazonWDCrawler extends Crawler {
 
-
    public BrasilAmazonWDCrawler(Session session) {
       super(session);
    }
@@ -44,7 +43,6 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
    private static final String IMAGES_HOST = "images-na.ssl-images-amazon.com";
    private static final String IMAGES_PROTOCOL = "https";
-
 
    protected Object fetch() {
       Document doc = null;
