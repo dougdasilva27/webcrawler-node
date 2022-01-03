@@ -305,6 +305,7 @@ public class BrasilAmazonCrawler extends Crawler {
    }
 
    public JSONObject mountMessageToSendToQueue(Market market) {
+      String sessionId = UUID.randomUUID().toString();
 
       JSONObject jsonToSendToCrawler = new JSONObject();
       JSONObject marketInfo = new JSONObject();
@@ -315,6 +316,7 @@ public class BrasilAmazonCrawler extends Crawler {
       marketInfo.put("use_browser", "true");
       marketInfo.put("name", market.getName());
       jsonToSendToCrawler.put("type", "core");
+      jsonToSendToCrawler.put("sessionId", sessionId);
       jsonToSendToCrawler.put("options", new JSONObject());
       jsonToSendToCrawler.put("market", marketInfo);
       jsonToSendToCrawler.put("className", "br.com.lett.crawlernode.crawlers.corecontent.brasil.BrasilAmazonWDCrawler");
