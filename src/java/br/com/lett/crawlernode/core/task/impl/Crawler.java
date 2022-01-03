@@ -397,17 +397,26 @@ public abstract class Crawler extends Task {
 
       try {
          Response response = null;
-         Object obj;
+         Object obj = null;
 
          Parser parser = this.config.getParser();
 
          if (parser != Parser.NONE) {
             response = fetchResponse();
+         } else {
+            obj = fetch();
+            if (obj instanceof Response) {
+               response = (Response) obj;
+            }
+         }
+
+         if (response != null) {
+            if (parser == Parser.NONE) {
+               parser = Parser.HTML;
+            }
             validateResponse(response);
             validateBody(response.getBody(), parser);
             obj = parser.parse(response.getBody());
-         } else {
-            obj = fetch();
          }
 
          session.setProductPageResponse(obj);
@@ -453,7 +462,7 @@ public abstract class Crawler extends Task {
       }
    }
 
-   private void validateResponse(Response response) throws ResponseCodeException {
+   protected void validateResponse(Response response) throws ResponseCodeException {
       if (Integer.toString(response.getLastStatusCode()).charAt(0) != '2' && Integer.toString(response.getLastStatusCode()).charAt(0) != '3') {
          switch (response.getLastStatusCode()) {
             case 403:
@@ -509,7 +518,7 @@ public abstract class Crawler extends Task {
          Request request = RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
          Response response = dataFetcher.get(session, request);
 
-         html = response.getBody();
+         return response;
       }
       return Jsoup.parse(html);
    }
