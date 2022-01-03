@@ -274,7 +274,6 @@ public class BrasilAmazonCrawler extends Crawler {
          }
       }
 
-
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
             Elements block = offerPage.select("img#d");
@@ -297,33 +296,13 @@ public class BrasilAmazonCrawler extends Crawler {
 
 
    private void sendMessage() {
-
       if (session instanceof TestCrawlerSession) {
          Logging.printLogWarn(logger, session, "Block in offers page - don't send to queue because is a test");
-
       } else {
-
          JSONObject jsonToSentToQueue = mountMessageToSendToQueue(session.getMarket());
          QueueService.SendMessageResult(Main.queueHandler.getSqs(), QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString(), jsonToSentToQueue.toString());
       }
-
    }
-
-//   private void sendMessage() {
-//      SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
-//      JSONObject jsonToSentToQueue = mountMessageToSendToQueue(session.getMarket());
-//      entry.setMessageBody(jsonToSentToQueue.toString());
-//      List<SendMessageBatchRequestEntry> entries = new ArrayList<>();
-//      SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString(), entries);
-//
-//      // get send request results
-//      List<SendMessageBatchResultEntry> successResultEntryList = messagesResult.getSuccessful();
-//
-//      Logging.printLogDebug(logger, session, successResultEntryList.size() + " messages sended to " + QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString());
-//
-//
-//   }
-
 
    public JSONObject mountMessageToSendToQueue(Market market) {
 
