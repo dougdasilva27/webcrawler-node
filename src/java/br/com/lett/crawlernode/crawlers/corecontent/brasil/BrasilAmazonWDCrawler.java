@@ -103,7 +103,6 @@ public class BrasilAmazonWDCrawler extends Crawler {
    }
 
    private Product extractProduct(Document doc, Document docOffers) throws MalformedProductException, OfferException, MalformedPricingException {
-      if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = amazonScraperUtils.crawlInternalId(doc);
@@ -141,9 +140,6 @@ public class BrasilAmazonWDCrawler extends Crawler {
             .setRatingReviews(ratingReviews)
             .setOffers(offers)
             .build();
-      } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-      }
 
       return product;
    }
