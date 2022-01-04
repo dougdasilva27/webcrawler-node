@@ -55,13 +55,21 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
          webdriver.waitLoad(2000);
 
-         webdriver.waitForElement(".a-icon.a-icon-arrow.a-icon-small.arrow-icon", 10000);
+         webdriver.waitForElement("#dp", 10000);
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
-         if (!doc.select(".a-icon.a-icon-arrow.a-icon-small.arrow-icon").isEmpty()) {
+         String clickOffers = null;
 
-            WebElement buyButtom = webdriver.driver.findElement(By.cssSelector(".a-icon.a-icon-arrow.a-icon-small.arrow-icon"));
+         if (!doc.select(".a-icon.a-icon-arrow.a-icon-small.arrow-icon").isEmpty()) {
+            clickOffers = ".a-icon.a-icon-arrow.a-icon-small.arrow-icon";
+         } else if (!doc.select("#olp_feature_div span.a-declarative .a-link-normal").isEmpty()) {
+            clickOffers = "#olp_feature_div span.a-declarative .a-link-normal";
+         }
+
+         if (clickOffers != null) {
+
+            WebElement buyButtom = webdriver.driver.findElement(By.cssSelector(clickOffers));
             webdriver.clickOnElementViaJavascript(buyButtom);
 
             webdriver.waitForElement("#aod-offer-list", 10000);
@@ -146,7 +154,7 @@ public class BrasilAmazonWDCrawler extends Crawler {
    }
 
 
-   public Offers scrapOffers(Document doc, Document offerPage,  Offer mainPageOffer) throws OfferException, MalformedPricingException {
+   public Offers scrapOffers(Document doc, Document offerPage, Offer mainPageOffer) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       int pos = 1;
 
