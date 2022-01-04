@@ -39,6 +39,12 @@ public class BrasilExtrabomCrawler extends Crawler {
 
    @Override
    public void handleCookiesBeforeFetch() {
+      try {
+         Thread.sleep(3000);
+      } catch (InterruptedException e) {
+         e.printStackTrace();
+      }
+
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "LettDigital/1.0");
       String payload = "cep=" + cep;
@@ -61,6 +67,13 @@ public class BrasilExtrabomCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
+
+      try {
+         Thread.sleep(5000);
+      } catch (InterruptedException e) {
+         e.printStackTrace();
+      }
+
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "LettDigital/1.0");
 
