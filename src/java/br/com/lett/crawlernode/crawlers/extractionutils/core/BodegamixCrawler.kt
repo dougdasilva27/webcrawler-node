@@ -66,6 +66,7 @@ class BodegamixCrawler(session: Session) : Crawler(session) {
       val offers = scrapOffers(doc)
       val primaryImage = doc.selectFirst(".gallery .picture img").attr("src")
       val description = doc.selectFirst(".short-description").text()
+      val eans = listOf(doc.selectFirst(".short-description > strong:nth-child(5)").text());
 
       products.add(
          ProductBuilder.create()
@@ -77,6 +78,7 @@ class BodegamixCrawler(session: Session) : Crawler(session) {
             .setCategories(categories)
             .setDescription(description)
             .setPrimaryImage(primaryImage)
+            .setEans(eans)
             .build()
       )
 
