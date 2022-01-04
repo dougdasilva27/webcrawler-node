@@ -28,11 +28,7 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void processBeforeFetch() {
-      try {
-         Thread.sleep(3000);
-      } catch (InterruptedException e) {
-         e.printStackTrace();
-      }
+
 
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "LettDigital/1.0");
@@ -56,11 +52,6 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url) {
-      try {
-         Thread.sleep(3000);
-      } catch (InterruptedException e) {
-         e.printStackTrace();
-      }
 
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "LettDigital/1.0");
@@ -83,7 +74,7 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() {
 
       try {
-         Thread.sleep(5000);
+         Thread.sleep(3000);
       } catch (InterruptedException e) {
          e.printStackTrace();
       }
