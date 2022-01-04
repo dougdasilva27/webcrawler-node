@@ -57,7 +57,7 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
    @Override
    protected Document fetchDocument(String url) {
       try {
-         Thread.sleep(5000);
+         Thread.sleep(3000);
       } catch (InterruptedException e) {
          e.printStackTrace();
       }
@@ -83,7 +83,7 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() {
 
       try {
-         Thread.sleep(3000);
+         Thread.sleep(5000);
       } catch (InterruptedException e) {
          e.printStackTrace();
       }
