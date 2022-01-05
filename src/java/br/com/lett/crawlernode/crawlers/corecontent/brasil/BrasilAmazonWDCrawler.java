@@ -29,7 +29,9 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 public class BrasilAmazonWDCrawler extends Crawler {
 
@@ -44,18 +46,25 @@ public class BrasilAmazonWDCrawler extends Crawler {
    private static final String IMAGES_HOST = "images-na.ssl-images-amazon.com";
    private static final String IMAGES_PROTOCOL = "https";
 
+   private static final List<String> ProxyList = Arrays.asList(
+      ProxyCollection.BUY_HAPROXY,
+      ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
+   );
+
    protected Object fetch() {
+      Random random = new Random();
       Document doc = null;
       Document docOffers = null;
+
       try {
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY, session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyList.get(random.nextInt(ProxyList.size())), session);
 
          Logging.printLogInfo(logger, session, "awaiting product page load");
 
-         webdriver.waitLoad(2000);
 
-         webdriver.waitForElement("#dp", 10000);
+         webdriver.waitForElement("#dp", 5000);
+
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
@@ -72,11 +81,13 @@ public class BrasilAmazonWDCrawler extends Crawler {
             WebElement buyButtom = webdriver.driver.findElement(By.cssSelector(clickOffers));
             webdriver.clickOnElementViaJavascript(buyButtom);
 
-            webdriver.waitForElement("#aod-offer-list", 10000);
+            webdriver.waitForElement("#aod-offer-list", 5000);
             docOffers = Jsoup.parse(webdriver.getCurrentPageSource());
+
+            product = extractProduct(doc, docOffers);
+
          }
 
-         product = extractProduct(doc, docOffers);
 
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
@@ -96,59 +107,55 @@ public class BrasilAmazonWDCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
-
-      products.add(product);
+      if (product != null) {
+         products.add(product);
+      } else {
+         Logging.printLogDebug(logger, session, "Not have page offers " + this.session.getOriginalURL());
+      }
 
       return products;
    }
 
    private Product extractProduct(Document doc, Document docOffers) throws MalformedProductException, OfferException, MalformedPricingException {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = amazonScraperUtils.crawlInternalId(doc);
-         String internalPid = internalId;
-         String name = amazonScraperUtils.crawlName(doc);
-         CategoryCollection categories = amazonScraperUtils.crawlCategories(doc);
+      String internalId = amazonScraperUtils.crawlInternalId(doc);
+      String internalPid = internalId;
+      String name = amazonScraperUtils.crawlName(doc);
+      CategoryCollection categories = amazonScraperUtils.crawlCategories(doc);
 
-         JSONArray images = this.amazonScraperUtils.scrapImagesJSONArray(doc);
-         String primaryImage = this.amazonScraperUtils.scrapPrimaryImage(images, doc, IMAGES_PROTOCOL, IMAGES_HOST);
-         List<String> secondaryImages = this.amazonScraperUtils.scrapSecondaryImages(images, IMAGES_PROTOCOL, IMAGES_HOST);
+      JSONArray images = this.amazonScraperUtils.scrapImagesJSONArray(doc);
+      String primaryImage = this.amazonScraperUtils.scrapPrimaryImage(images, doc, IMAGES_PROTOCOL, IMAGES_HOST);
+      List<String> secondaryImages = this.amazonScraperUtils.scrapSecondaryImages(images, IMAGES_PROTOCOL, IMAGES_HOST);
 
-         String description = amazonScraperUtils.crawlDescription(doc);
-         Integer stock = null;
-         List<String> eans = amazonScraperUtils.crawlEan(doc);
-         Offer mainPageOffer = amazonScraperUtils.scrapMainPageOffer(doc);
-         Offers offers = scrapOffers(doc, docOffers, mainPageOffer);
+      String description = amazonScraperUtils.crawlDescription(doc);
+      Integer stock = null;
+      List<String> eans = amazonScraperUtils.crawlEan(doc);
+      Offer mainPageOffer = amazonScraperUtils.scrapMainPageOffer(doc);
+      Offers offers = scrapOffers(doc, docOffers, mainPageOffer);
 
-         RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-         ratingReviewsCollection.addRatingReviews(amazonScraperUtils.crawlRating(doc, internalId));
-         RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+      RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+      ratingReviewsCollection.addRatingReviews(amazonScraperUtils.crawlRating(doc, internalId));
+      RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
 
-         product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setStock(stock)
-            .setEans(eans)
-            .setRatingReviews(ratingReviews)
-            .setOffers(offers)
-            .build();
+      product = ProductBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setInternalId(internalId)
+         .setInternalPid(internalPid)
+         .setName(name)
+         .setCategory1(categories.getCategory(0))
+         .setCategory2(categories.getCategory(1))
+         .setCategory3(categories.getCategory(2))
+         .setPrimaryImage(primaryImage)
+         .setSecondaryImages(secondaryImages)
+         .setDescription(description)
+         .setStock(stock)
+         .setEans(eans)
+         .setRatingReviews(ratingReviews)
+         .setOffers(offers)
+         .build();
 
       return product;
    }
-
-
-   private boolean isProductPage(Document doc) {
-      return doc.select("#dp").first() != null;
-   }
-
 
    public Offers scrapOffers(Document doc, Document offerPage, Offer mainPageOffer) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
