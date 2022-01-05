@@ -28,8 +28,10 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void processBeforeFetch() {
+
+
       Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
+      headers.put("user-agent", "LettDigital/1.0");
       String payload = "cep=" + cep;
 
       Request request = null;
@@ -50,6 +52,7 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url) {
+
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "LettDigital/1.0");
 
@@ -69,6 +72,13 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() {
+
+      try {
+         Thread.sleep(3000);
+      } catch (InterruptedException e) {
+         e.printStackTrace();
+      }
+
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
 

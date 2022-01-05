@@ -62,7 +62,9 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
          Logging.printLogInfo(logger, session, "awaiting product page load");
 
+
          webdriver.waitForElement("#dp", 5000);
+
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
@@ -115,7 +117,6 @@ public class BrasilAmazonWDCrawler extends Crawler {
    }
 
    private Product extractProduct(Document doc, Document docOffers) throws MalformedProductException, OfferException, MalformedPricingException {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = amazonScraperUtils.crawlInternalId(doc);
       String internalPid = internalId;
@@ -155,7 +156,6 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
       return product;
    }
-
 
    public Offers scrapOffers(Document doc, Document offerPage, Offer mainPageOffer) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();

@@ -453,7 +453,7 @@ public abstract class Crawler extends Task {
    }
 
    private void validateBody(String response, Parser parser) throws RequestException {
-      if (parser == Parser.HTML && !response.startsWith("<")) {
+      if (parser == Parser.HTML && !Pattern.compile(".*\\<[^>]+>.*", Pattern.DOTALL).matcher(response).matches()) {
          throw new RequestException("Unexpected body: response is not HTML");
       } else if (parser == Parser.JSON && !response.startsWith("{")) {
          throw new RequestException("Unexpected body: response is not Json");
