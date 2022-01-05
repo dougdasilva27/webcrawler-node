@@ -62,9 +62,7 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
          Logging.printLogInfo(logger, session, "awaiting product page load");
 
-         webdriver.waitLoad(2000);
-
-         webdriver.waitForElement("#dp", 1000);
+         webdriver.waitForElement("#dp", 5000);
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
@@ -81,7 +79,7 @@ public class BrasilAmazonWDCrawler extends Crawler {
             WebElement buyButtom = webdriver.driver.findElement(By.cssSelector(clickOffers));
             webdriver.clickOnElementViaJavascript(buyButtom);
 
-            webdriver.waitForElement("#aod-offer-list", 1000);
+            webdriver.waitForElement("#aod-offer-list", 5000);
             docOffers = Jsoup.parse(webdriver.getCurrentPageSource());
          }
 
