@@ -15,6 +15,8 @@ import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -71,8 +73,8 @@ public class BrasilBemolCrawler extends Crawler {
          String secondaryImages = scrapSimpleSecondaryImages(doc, ".wd-product-media-selector .image:not(.selected) img", Arrays.asList("data-image-large", "data-image-big", "data-small", "src"),
                "https:", "d3ddx6b2p2pevg.cloudfront.net", primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".wrapper-detalhe-produto .descriptions", ".wrapper-detalhe-produto .caracteristicas"));
-
-         // Creating the product
+         List<String> eans = new ArrayList<String>();
+         eans.add(getEans(description));
          Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
@@ -86,6 +88,7 @@ public class BrasilBemolCrawler extends Crawler {
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setRatingReviews(ratingsReviews)
+               .setEans(eans)
                .build();
 
          products.add(product);
@@ -96,6 +99,16 @@ public class BrasilBemolCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private String getEans(String doc) {
+      String eans = null;
+      Pattern pattern = Pattern.compile("label>EAN<\\/label> <span>(.[0-9]*)<\\/span");
+      Matcher matcher = pattern.matcher(doc);
+      if (matcher.find()) {
+         eans = matcher.group(1);
+      }
+      return eans;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
