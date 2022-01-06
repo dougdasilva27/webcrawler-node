@@ -69,8 +69,8 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
          List<WebElement> productPage = webdriver.findElementsByCssSelector("#dp");
          //this will try 3 times
-         if (productPage.isEmpty() && n <= 3){
-            Logging.printLogDebug(logger, session, "Test " + n +" times");
+         if (productPage.isEmpty() && n <= 3) {
+            Logging.printLogDebug(logger, session, "Test " + n + " times");
             fetch();
             n++;
          }
@@ -97,7 +97,7 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
             List<WebElement> offersList = webdriver.findElementsByCssSelector("#aod-offer-list");
 
-            if (offersList.isEmpty()){
+            if (offersList.isEmpty()) {
                Logging.printLogDebug(logger, session, "Click again offers page!");
 
                webdriver.waitLoad(1000);
@@ -127,14 +127,14 @@ public class BrasilAmazonWDCrawler extends Crawler {
    }
 
 
-   public void scrollInsideElement(){
+   public void scrollInsideElement() {
       JavascriptExecutor js = (JavascriptExecutor) webdriver.driver;
       String script = "document.querySelector('#all-offers-display-scroller').scrollBy(0,document.querySelector('#all-offers-display-scroller').scrollHeight)";
       js.executeScript(script);
    }
 
 
-   private void loadAllOffers()  {
+   private void loadAllOffers() {
       List<WebElement> webElementList = webdriver.findElementsByCssSelector("#aod-offer");
       int listSize = webElementList.size();
       Logging.printLogDebug(logger, session, "load offers");
