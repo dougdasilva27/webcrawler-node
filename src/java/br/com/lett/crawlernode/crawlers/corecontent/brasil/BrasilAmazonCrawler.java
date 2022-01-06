@@ -327,7 +327,7 @@ public class BrasilAmazonCrawler extends Crawler {
       marketInfo.put("regex", market.getFirstPartyRegex());
       marketInfo.put("fullName", market.getFullName());
       marketInfo.put("marketId", market.getId());
-      marketInfo.put("use_browser", "true");
+      marketInfo.put("use_browser", true);
       marketInfo.put("name", market.getName());
       jsonToSendToCrawler.put("type", session.getScraperType());
       jsonToSendToCrawler.put("sessionId", sessionId);
