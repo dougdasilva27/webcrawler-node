@@ -57,7 +57,6 @@ public class CrawlerWebdriver {
    }
 
 
-
    public void acquireLock() {
       try {
          SEMAPHORE.acquire();

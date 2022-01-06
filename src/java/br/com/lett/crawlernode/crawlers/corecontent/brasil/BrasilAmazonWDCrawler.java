@@ -23,6 +23,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -45,49 +46,64 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
    private static final String IMAGES_HOST = "images-na.ssl-images-amazon.com";
    private static final String IMAGES_PROTOCOL = "https";
+   private int n = 1;
 
    private static final List<String> ProxyList = Arrays.asList(
-      ProxyCollection.BUY_HAPROXY,
-      ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
+      ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
    );
 
    protected Object fetch() {
       Random random = new Random();
       Document doc = null;
-      Document docOffers = null;
+      Document docOffers;
 
       try {
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyList.get(random.nextInt(ProxyList.size())), session);
+         String proxy = ProxyList.get(random.nextInt(ProxyList.size()));
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxy, session);
+         Logging.printLogDebug(logger, session, "Check page product!");
 
-         Logging.printLogInfo(logger, session, "awaiting product page load");
-
-
-         webdriver.waitForElement("#dp", 5000);
-
+         webdriver.waitForElement("#dp", 20);
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
          String clickOffers = null;
 
-         if (!doc.select(".a-icon.a-icon-arrow.a-icon-small.arrow-icon").isEmpty()) {
-            clickOffers = ".a-icon.a-icon-arrow.a-icon-small.arrow-icon";
-         } else if (!doc.select("#olp_feature_div span.a-declarative .a-link-normal").isEmpty()) {
-            clickOffers = "#olp_feature_div span.a-declarative .a-link-normal";
+         if (!doc.select(AmazonScraperUtils.listSelectors.get("linkOffer")).isEmpty()) {
+            clickOffers = AmazonScraperUtils.listSelectors.get("linkOffer");
+         } else if (!doc.select(AmazonScraperUtils.listSelectors.get("iconArrowOffer")).isEmpty()) {
+            clickOffers = AmazonScraperUtils.listSelectors.get("iconArrowOffer");
+
          }
 
          if (clickOffers != null) {
-
             WebElement buyButtom = webdriver.driver.findElement(By.cssSelector(clickOffers));
+            webdriver.waitLoad(1000);
+            Logging.printLogDebug(logger, session, "Click offers page");
+
             webdriver.clickOnElementViaJavascript(buyButtom);
 
-            webdriver.waitForElement("#aod-offer-list", 5000);
-            docOffers = Jsoup.parse(webdriver.getCurrentPageSource());
+            List<WebElement> offersList = webdriver.findElementsByCssSelector("#aod-offer-list");
 
+            if (offersList.isEmpty()) {
+               Logging.printLogDebug(logger, session, "Click again offers page!");
+
+               webdriver.waitLoad(1000);
+               webdriver.clickOnElementViaJavascript(webdriver.driver.findElement(By.cssSelector(clickOffers)));
+            }
+
+            webdriver.waitForElement("#aod-offer-list", 30);
+
+            loadAllOffers();
+
+            docOffers = Jsoup.parse(webdriver.getCurrentPageSource());
             product = extractProduct(doc, docOffers);
 
          }
-
 
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
@@ -98,8 +114,37 @@ public class BrasilAmazonWDCrawler extends Crawler {
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 900);
+      WebDriverWait wait = new WebDriverWait(driver, 20);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+   }
+
+
+   public void scrollInsideElement() {
+      JavascriptExecutor js = (JavascriptExecutor) webdriver.driver;
+      String script = "document.querySelector('#all-offers-display-scroller').scrollBy(0,document.querySelector('#all-offers-display-scroller').scrollHeight)";
+      js.executeScript(script);
+   }
+
+
+   private void loadAllOffers() {
+      List<WebElement> webElementList = webdriver.findElementsByCssSelector("#aod-offer");
+      int listSize = webElementList.size();
+      Logging.printLogDebug(logger, session, "load offers");
+
+      boolean finish = false;
+
+      do {
+         scrollInsideElement();
+         webdriver.waitLoad(3000);
+         webElementList = webdriver.findElementsByCssSelector("#aod-offer");
+         int currentListSize = webElementList.size();
+         if (currentListSize != listSize) {
+            listSize = currentListSize;
+         } else {
+            finish = true;
+         }
+      } while (!finish);
+
    }
 
 

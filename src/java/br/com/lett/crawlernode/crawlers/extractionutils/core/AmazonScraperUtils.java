@@ -44,6 +44,7 @@ public class AmazonScraperUtils {
    public static final String SELLER_NAME = "amazon.com.br";
    public static final String SELLER_NAME_2 = "amazon.com";
    public static final String SELLER_NAME_3 = "Amazon";
+   public static Map<String, String> listSelectors = getListSelectors();
 
 
    protected Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
@@ -53,6 +54,14 @@ public class AmazonScraperUtils {
    public AmazonScraperUtils(Logger logger, Session session) {
       this.logger = logger;
       this.session = session;
+   }
+
+   private static Map<String, String> getListSelectors() {
+      Map<String, String> listSelectors = new HashMap<>();
+      listSelectors.put("iconArrowOffer", ".a-icon.a-icon-arrow.a-icon-small.arrow-icon");
+      listSelectors.put("linkOffer", "#olp_feature_div span.a-declarative .a-link-normal");
+
+      return listSelectors;
    }
 
    public List<Cookie> handleCookiesBeforeFetch(String url, List<Cookie> cookies, DataFetcher dataFetcher) {
@@ -735,7 +744,7 @@ public class AmazonScraperUtils {
          sellerId = CommonMethods.toSlug(AmazonScraperUtils.SELLER_NAME);
       }
 
-      if (!offers.contains(sellerId)) {
+      if (!offers.contains(sellerId) && !offers.containsSeller(name)) {
 
          offers.add(Offer.OfferBuilder.create()
             .setInternalSellerId(sellerId)

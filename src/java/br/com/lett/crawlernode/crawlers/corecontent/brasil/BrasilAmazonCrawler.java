@@ -274,24 +274,36 @@ public class BrasilAmazonCrawler extends Crawler {
          }
       }
 
+      //send to webdriver only whirpool and gopro
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
-            Elements block = offerPage.select("img#d");
-            if (block.isEmpty()) {
+            if (checkIfSendToQueue(offerPage, doc)) {
+               sendMessage();
+               Logging.printLogDebug(logger, session, "Block in offers page - sending to try webdriver");
+            } else {
                Elements ofertas = offerPage.select("#aod-offer");
                for (Element oferta : ofertas) {
                   amazonScraperUtils.getOffersFromOfferPage(oferta, pos, offers);
                   pos++;
                }
-            } else {
-               sendMessage();
-               Logging.printLogError(logger, session, "Block in offers page - sending to try webdriver");
-
             }
          }
 
       }
       return offers;
+   }
+
+   private boolean pageOfferIsBlocked(Document offerPage) {
+      Element block = offerPage.selectFirst("#aod-offer");
+      return block == null;
+   }
+
+   private boolean checkIfSendToQueue(Document offerPage, Document doc) {
+      List<Long> specificSuppliers = Arrays.asList(174l, 1470l);
+      boolean hasPageOffers = !doc.select(AmazonScraperUtils.listSelectors.get("iconArrowOffer")).isEmpty() || !doc.select(AmazonScraperUtils.listSelectors.get("linkOffer")).isEmpty();
+
+      return pageOfferIsBlocked(offerPage) && session.getSupplierId() != null && specificSuppliers.contains(session.getSupplierId()) && hasPageOffers;
+
    }
 
 
@@ -321,10 +333,10 @@ public class BrasilAmazonCrawler extends Crawler {
       jsonToSendToCrawler.put("market", marketInfo);
       jsonToSendToCrawler.put("className", "br.com.lett.crawlernode.crawlers.corecontent.brasil.BrasilAmazonWDCrawler");
       jsonToSendToCrawler.put("parameters", session.getOriginalURL());
-      if (session.getProcessedId() != null){
+      if (session.getProcessedId() != null) {
          jsonToSendToCrawler.put("processedId", session.getProcessedId());
       }
-      if (session.getProcessedId() != null){
+      if (session.getProcessedId() != null) {
          jsonToSendToCrawler.put("internalId", session.getInternalId());
       }
 
