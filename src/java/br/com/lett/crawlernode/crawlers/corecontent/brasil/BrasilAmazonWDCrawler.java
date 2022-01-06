@@ -48,7 +48,6 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
    private static final List<String> ProxyList = Arrays.asList(
       ProxyCollection.BUY_HAPROXY,
-      ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
@@ -68,7 +67,7 @@ public class BrasilAmazonWDCrawler extends Crawler {
          Logging.printLogInfo(logger, session, "awaiting product page load");
 
 
-         webdriver.waitForElement("#dp", 5000);
+         webdriver.waitForElement("#dp", 5);
 
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
@@ -83,10 +82,11 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
          if (clickOffers != null) {
             WebElement buyButtom = webdriver.driver.findElement(By.cssSelector(clickOffers));
-            webdriver.waitForElement(clickOffers, 1000);
+//            wait.until(drive -> drive.findElement(By.cssSelector(finalClickOffers))
+            webdriver.waitForElement(clickOffers, 10);
             webdriver.clickOnElementViaJavascript(buyButtom);
 
-            webdriver.waitForElement("#aod-offer-list", 5000);
+            webdriver.waitForElement("#aod-offer-list", 10);
             loadAllOffers();
 
             docOffers = Jsoup.parse(webdriver.getCurrentPageSource());
@@ -105,22 +105,19 @@ public class BrasilAmazonWDCrawler extends Crawler {
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 900);
+      WebDriverWait wait = new WebDriverWait(driver, 20);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
-   private void loadAllOffers() {
+   private void loadAllOffers() throws InterruptedException {
      List<WebElement> webElementList = webdriver.findElementsByCssSelector("#aod-offer");
      int listSize = webElementList.size();
 
      boolean finish = false;
-     WebElement container = webdriver.findElementByCssSelector("#all-offers-display-scroller");
-
 
      do {
-        WebElement webElement = webElementList.get(listSize - 1);
-        webdriver.scrollToElement(webElement);
-        webdriver.waitLoad(5000);
+        webdriver.scrollInsideElement("#all-offers-display-scroller");
+        webdriver.wait(750);
         webElementList = webdriver.findElementsByCssSelector("#aod-offer");
         int currentListSize = webElementList.size();
         if (currentListSize != listSize){
@@ -129,6 +126,8 @@ public class BrasilAmazonWDCrawler extends Crawler {
            finish = true;
         }
      } while (!finish);
+
+     System.err.println(listSize + " Offers loaded");
 
    }
 

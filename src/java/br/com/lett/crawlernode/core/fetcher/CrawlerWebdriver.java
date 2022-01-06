@@ -75,9 +75,10 @@ public class CrawlerWebdriver {
       return driver.findElements(By.cssSelector(selector));
    }
 
-   public void scrollToElement(WebElement webElement){
+   public void scrollInsideElement(String selector){
       JavascriptExecutor js = (JavascriptExecutor) driver;
-      js.executeScript("window.scrollBy(0,1000)");
+      String script = "document.querySelector('"+selector+"').scrollBy(0,document.querySelector('"+selector+"').scrollHeight)";
+      js.executeScript(script);
    }
 
    /**
