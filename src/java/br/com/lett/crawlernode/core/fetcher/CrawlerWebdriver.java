@@ -57,7 +57,6 @@ public class CrawlerWebdriver {
    }
 
 
-
    public void acquireLock() {
       try {
          SEMAPHORE.acquire();
@@ -73,12 +72,6 @@ public class CrawlerWebdriver {
 
    public List<WebElement> findElementsByCssSelector(String selector) {
       return driver.findElements(By.cssSelector(selector));
-   }
-
-   public void scrollInsideElement(String selector){
-      JavascriptExecutor js = (JavascriptExecutor) driver;
-      String script = "document.querySelector('"+selector+"').scrollBy(0,document.querySelector('"+selector+"').scrollHeight)";
-      js.executeScript(script);
    }
 
    /**
