@@ -48,13 +48,18 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
    private static final List<String> ProxyList = Arrays.asList(
       ProxyCollection.BUY_HAPROXY,
-      ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
+      ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
    );
 
    protected Object fetch() {
       Random random = new Random();
       Document doc = null;
-      Document docOffers = null;
+      Document docOffers;
 
       try {
 
@@ -68,18 +73,20 @@ public class BrasilAmazonWDCrawler extends Crawler {
 
          String clickOffers = null;
 
-         if (!doc.select(".a-icon.a-icon-arrow.a-icon-small.arrow-icon").isEmpty()) {
-            clickOffers = ".a-icon.a-icon-arrow.a-icon-small.arrow-icon";
-         } else if (!doc.select("#olp_feature_div span.a-declarative .a-link-normal").isEmpty()) {
-            clickOffers = "#olp_feature_div span.a-declarative .a-link-normal";
+         if (!doc.select(AmazonScraperUtils.listSelectors.get("iconArrowOffer")).isEmpty()) {
+            clickOffers = AmazonScraperUtils.listSelectors.get("iconArrowOffer");
+         } else if (!doc.select(AmazonScraperUtils.listSelectors.get("linkOffer")).isEmpty()) {
+            clickOffers = AmazonScraperUtils.listSelectors.get("linkOffer");
          }
 
          if (clickOffers != null) {
-
             WebElement buyButtom = webdriver.driver.findElement(By.cssSelector(clickOffers));
+            webdriver.waitForElement(clickOffers, 1000);
             webdriver.clickOnElementViaJavascript(buyButtom);
 
             webdriver.waitForElement("#aod-offer-list", 5000);
+            loadAllOffers();
+
             docOffers = Jsoup.parse(webdriver.getCurrentPageSource());
 
             product = extractProduct(doc, docOffers);
@@ -100,6 +107,30 @@ public class BrasilAmazonWDCrawler extends Crawler {
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
+   private void loadAllOffers() {
+     List<WebElement> webElementList = webdriver.findElementsByCssSelector("#aod-offer");
+     int listSize = webElementList.size();
+
+     boolean finish = false;
+     WebElement container = webdriver.findElementByCssSelector("#all-offers-display-scroller");
+
+
+     do {
+        WebElement webElement = webElementList.get(listSize - 1);
+        webdriver.scrollToElement(webElement);
+        webdriver.waitLoad(5000);
+        webElementList = webdriver.findElementsByCssSelector("#aod-offer");
+        int currentListSize = webElementList.size();
+        if (currentListSize != listSize){
+           listSize = currentListSize;
+        } else {
+           finish = true;
+        }
+     } while (!finish);
+
+   }
+
+
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -115,7 +146,6 @@ public class BrasilAmazonWDCrawler extends Crawler {
    }
 
    private Product extractProduct(Document doc, Document docOffers) throws MalformedProductException, OfferException, MalformedPricingException {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = amazonScraperUtils.crawlInternalId(doc);
       String internalPid = internalId;

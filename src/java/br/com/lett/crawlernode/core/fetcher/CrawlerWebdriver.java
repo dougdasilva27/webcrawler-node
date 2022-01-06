@@ -75,6 +75,11 @@ public class CrawlerWebdriver {
       return driver.findElements(By.cssSelector(selector));
    }
 
+   public void scrollToElement(WebElement webElement){
+      JavascriptExecutor js = (JavascriptExecutor) driver;
+      js.executeScript("window.scrollBy(0,1000)");
+   }
+
    /**
     * Get the html source of the current page loaded in the webdriver.
     */
