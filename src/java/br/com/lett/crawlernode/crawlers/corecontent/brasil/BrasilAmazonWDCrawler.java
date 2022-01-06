@@ -67,15 +67,7 @@ public class BrasilAmazonWDCrawler extends Crawler {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxy, session);
          Logging.printLogDebug(logger, session, "Check page product!");
 
-         List<WebElement> productPage = webdriver.findElementsByCssSelector("#dp");
-         //this will try 3 times
-         if (productPage.isEmpty() && n <= 3) {
-            Logging.printLogDebug(logger, session, "Test " + n + " times");
-            fetch();
-            n++;
-         }
-
-         webdriver.waitLoad(3000);
+         webdriver.waitForElement("#dp", 20);
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
@@ -152,8 +144,6 @@ public class BrasilAmazonWDCrawler extends Crawler {
             finish = true;
          }
       } while (!finish);
-
-      System.err.println(listSize + " Offers loaded");
 
    }
 

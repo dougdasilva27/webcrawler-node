@@ -744,7 +744,7 @@ public class AmazonScraperUtils {
          sellerId = CommonMethods.toSlug(AmazonScraperUtils.SELLER_NAME);
       }
 
-      if (!offers.contains(sellerId)) {
+      if (!offers.contains(sellerId) && !offers.containsSeller(name)) {
 
          offers.add(Offer.OfferBuilder.create()
             .setInternalSellerId(sellerId)
