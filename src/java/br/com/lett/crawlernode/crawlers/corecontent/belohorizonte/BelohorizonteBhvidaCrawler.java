@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.Pair;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -42,7 +43,7 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.bread-crumb a", true);
          String description = crawlDescription(doc);
          String primaryImage = json.optString("image");
-
+         List<String> eans = crawlEans(doc);
          boolean available = doc.selectFirst(".btn-addcart-product-detail") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
@@ -54,6 +55,7 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setDescription(description)
+            .setEans(eans)
             .setOffers(offers)
             .build();
 
@@ -65,6 +67,16 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private List<String> crawlEans(Document doc) {
+      List<String> eans = new ArrayList<>();
+      String ean = CrawlerUtils.scrapStringSimpleInfo(doc, ".produto-det-atributos td:contains(EAN) ~ td", true);
+
+      if(ean != null) {
+         eans.add(ean);
+      }
+      return eans;
    }
 
    private String crawlDescription(Document doc) {
@@ -125,9 +137,20 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
 
       if(priceElement.html().contains("no cart")){
          Double cardPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.det-preco > strong > span > b", null, true, ',', session);
+         Integer cardInstallments = 1;
+
+         if(cardPrice == null) {
+            Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".desconto",priceElement , false, "x", "", true, ',');
+            if(!pair.isAnyValueNull()) {
+               cardPrice = pair.getSecond().doubleValue();
+               cardInstallments = pair.getFirst();
+            } else {
+               cardPrice = spotlightPrice;
+            }
+         }
 
          installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
+            .setInstallmentNumber(cardInstallments)
             .setInstallmentPrice(cardPrice)
             .build());
       }else{
