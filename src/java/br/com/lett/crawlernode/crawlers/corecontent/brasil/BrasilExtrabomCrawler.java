@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -24,45 +23,15 @@ import java.util.*;
 
 public class BrasilExtrabomCrawler extends Crawler {
 
-   private static final String API = "https://www.extrabom.com.br/carrinho/verificarCepDepositoType/";
    private static final String SELLER_FULL_NAME = "Extrabom";
-   private final String cep = this.session.getOptions().optString("cep");
+   private final String sellerId = session.getOptions().optString("seller_id");
 
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(),
       Card.DINERS.toString());
 
    public BrasilExtrabomCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.FETCHER);
       config.setParser(Parser.HTML);
-   }
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      try {
-         Thread.sleep(3000);
-      } catch (InterruptedException e) {
-         e.printStackTrace();
-      }
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "LettDigital/1.0");
-      String payload = "cep=" + cep;
-
-      Request request = null;
-      try {
-         request = Request.RequestBuilder.create()
-            .setUrl(API)
-            .setHeaders(headers)
-            .setProxy(getFixedIp())
-            .setPayload(payload)
-            .build();
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
-
-      Response response = this.dataFetcher.post(session, request);
-      this.cookies = response.getCookies();
    }
 
    @Override
@@ -74,13 +43,15 @@ public class BrasilExtrabomCrawler extends Crawler {
          e.printStackTrace();
       }
 
+      String url = session.getOriginalURL() + "?Id_seller=" + sellerId;
+
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "LettDigital/1.0");
 
       Request request = null;
       try {
          request = Request.RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
+            .setUrl(url)
             .setHeaders(headers)
             .setProxy(getFixedIp())
             .build();

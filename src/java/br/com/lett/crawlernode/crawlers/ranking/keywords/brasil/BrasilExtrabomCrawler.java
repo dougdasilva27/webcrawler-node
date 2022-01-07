@@ -1,9 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -18,36 +16,10 @@ import java.util.Map;
 
 public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
-   private static final String API = "https://www.extrabom.com.br/carrinho/verificarCepDepositoType/";
-   private String cep = this.session.getOptions().optString("cep");
+   private final String sellerId = this.session.getOptions().optString("seller_id");
 
    public BrasilExtrabomCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
-   }
-
-   @Override
-   protected void processBeforeFetch() {
-
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "LettDigital/1.0");
-      String payload = "cep=" + cep;
-
-      Request request = null;
-      try {
-         request = Request.RequestBuilder.create()
-            .setUrl(API)
-            .setHeaders(headers)
-            .setPayload(payload)
-            .setProxy(getFixedIp())
-            .build();
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
-
-      Response response = dataFetcher.post(session, request);
-      this.cookies = response.getCookies();
    }
 
    @Override
@@ -82,7 +54,7 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.extrabom.com.br/busca/?q=" + this.keywordEncoded + "&page=" + this.currentPage;
+      String url = "https://www.extrabom.com.br/busca/?q=" + this.keywordEncoded + "&Id_seller" + sellerId + "&page=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
