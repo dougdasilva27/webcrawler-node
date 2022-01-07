@@ -121,7 +121,7 @@ public abstract class CrawlerRanking extends Task {
    public void processTask() {
       extractProducts();
 
-      this.log("Foram " + this.arrayProducts.size() + " lidos");
+      Logging.printLogInfo(logger, "Extracted " + arrayProducts.size() + " products from " + session.getMarket().getName());
    }
 
    @Override
@@ -201,6 +201,7 @@ public abstract class CrawlerRanking extends Task {
          if (this.totalProducts < 1 && !this.arrayProducts.isEmpty()) {
             setTotalProducts();
          }
+
 
          if (this.position == productsLimit) {
             log(productsLimit + " reached products!");
@@ -294,7 +295,6 @@ public abstract class CrawlerRanking extends Task {
     */
    @Deprecated
    protected void saveDataProduct(String internalId, String pid, String url) {
-      this.position++;
       saveDataProduct(internalId, pid, url, position);
    }
 
@@ -313,8 +313,6 @@ public abstract class CrawlerRanking extends Task {
       rankingProducts.setInternalId(internalId);
       rankingProducts.setInteranlPid(pid);
       rankingProducts.setUrl(url);
-      rankingProducts.setPosition(position);
-
       saveDataProduct(rankingProducts, false);
    }
 
@@ -353,7 +351,7 @@ public abstract class CrawlerRanking extends Task {
       metadataJson.put("position", product.getPosition());
       metadataJson.put("url", product.getUrl());
 
-      Logging.logInfo(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
+      Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
 
       if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
