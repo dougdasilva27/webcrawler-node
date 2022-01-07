@@ -66,7 +66,7 @@ class BodegamixCrawler(session: Session) : Crawler(session) {
       val offers = scrapOffers(doc)
       val primaryImage = doc.selectFirst(".gallery .picture img").attr("src")
       val description = doc.selectFirst(".short-description").text()
-      val eans = listOf(Regex("Código de Barras: ([^ |\n]*) ").find(description)?.groupValues?.get(1))
+      val eans = listOf(Regex("Código de Barras: ([^ ]*) ").find(description)?.groupValues?.get(1))
 
       products.add(
          ProductBuilder.create()
