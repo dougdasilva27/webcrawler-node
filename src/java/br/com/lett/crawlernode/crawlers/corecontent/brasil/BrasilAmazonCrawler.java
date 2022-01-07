@@ -73,6 +73,7 @@ public class BrasilAmazonCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
@@ -88,6 +89,7 @@ public class BrasilAmazonCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
