@@ -26,6 +26,8 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MrestoqueunidasulCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Mr Estoque Unidasul";
@@ -103,15 +105,16 @@ public class MrestoqueunidasulCrawler extends Crawler {
          Logging.printLogDebug(
             logger, session, "Product page identified: " + session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[data-product]", "data-product");
+         String internalId = scrapInternalId(doc);
          String internalPid = scrapPid(doc);
          String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product__images__grid img", "alt");
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:nth-child(2)):not(:first-child) a");
          List<String> images = scrapImage(doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-         String description = CrawlerUtils.scrapSimpleDescription(doc,  Arrays.asList(".grid-descriptions"));
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".grid-descriptions"));
          boolean available = !doc.select("a.js-buy-items").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
+         List<String> eans = scrapEan(doc);
 
          Product product =
             ProductBuilder.create()
@@ -122,6 +125,7 @@ public class MrestoqueunidasulCrawler extends Crawler {
                .setCategories(categories)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(images)
+               .setEans(eans)
                .setOffers(offers)
                .setDescription(description)
                .build();
@@ -137,6 +141,35 @@ public class MrestoqueunidasulCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return !doc.select("#product-detail").isEmpty();
+   }
+
+   private String scrapInternalId(Document doc) {
+
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".flex.flex--column.margin-top--m a", "href");
+      Pattern pattern = Pattern.compile("id\\/(.*)\\/basket");
+      Matcher matcher = pattern.matcher(internalId);
+      if (matcher.find()) {
+         return matcher.group(1);
+      }
+
+      return null;
+   }
+
+   private List<String> scrapEan(Document doc) {
+      String ean;
+      List<String> eans = new ArrayList<>();
+      Elements especifications = doc.select(".grid-descriptions .specs p");
+      for (Element e : especifications) {
+         String spec = CrawlerUtils.scrapStringSimpleInfo(e, ".font--bold", true);
+         if (spec != null && spec.contains("Barras")) {
+            ean = e.ownText();
+            if (ean != null) {
+               eans.add(ean.replace(":", "").trim());
+            }
+            break;
+         }
+      }
+      return eans;
    }
 
    private String scrapDescription(Document doc) {
