@@ -21,15 +21,6 @@ public class CrawlerTaskRequestChecker {
    public static boolean checkRequest(Request request) {
       String scraperType = request.getScraperType();
 
-      if (request instanceof CrawlerSeedRequest){
-         try {
-            return checkSeedTaskRequest(request);
-         } catch (CrawlerSeedRequestException e) {
-            Persistence.updateFrozenServerTask(((CrawlerSeedRequest) request).getTaskId(),e.getMessage());
-            e.printStackTrace();
-            return false;
-         }
-      }
 
       if (request instanceof ImageCrawlerRequest) {
          return checkImageTaskRequest(request);
@@ -77,12 +68,5 @@ public class CrawlerTaskRequestChecker {
       return true;
    }
 
-   private static boolean checkSeedTaskRequest(Request request) throws CrawlerSeedRequestException {
-      if (request.isUseBrowser()) {
-         throw new CrawlerSeedRequestException("This market doesn't work in Seed ");
-      }
-
-      return true;
-   }
 
 }
