@@ -117,10 +117,10 @@ public class JsoupDataFetcher implements DataFetcher {
 
             org.jsoup.Connection.Response res;
 
-            System.setProperty( "http.proxyhost", proxySelected.get(0).getAddress());
-            System.setProperty( "http.proxyUser", proxySelected.get(0).getUser());
-            System.setProperty( "http.proxyPass", proxySelected.get(0).getPass());
-            System.setProperty( "http.proxyport", String.valueOf(proxySelected.get(0).getPort()));
+            System.setProperty("http.proxyhost", proxySelected.get(0).getAddress());
+            System.setProperty("http.proxyUser", proxySelected.get(0).getUser());
+            System.setProperty("http.proxyPass", proxySelected.get(0).getPass());
+            System.setProperty("http.proxyport", String.valueOf(proxySelected.get(0).getPort()));
 
             if (getMethod) {
                res = Jsoup.connect(request.getUrl())
@@ -131,7 +131,6 @@ public class JsoupDataFetcher implements DataFetcher {
                      .headers(headers)
                      .timeout(20000)
                      .followRedirects(request.isFollowRedirects())
-                  //   .proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxySelected.get(0).getAddress(), proxySelected.get(0).getPort())))
                      .execute();
             } else {
                res = Jsoup.connect(request.getUrl())
@@ -142,7 +141,6 @@ public class JsoupDataFetcher implements DataFetcher {
                      .headers(headers)
                      .timeout(20000)
                      .followRedirects(request.isFollowRedirects())
-                     .proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxySelected.get(0).getAddress(), proxySelected.get(0).getPort())))
                      .requestBody(request.getPayload())
                      .execute();
             }
