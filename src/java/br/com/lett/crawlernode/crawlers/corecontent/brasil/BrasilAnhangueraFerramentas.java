@@ -24,7 +24,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
-import software.amazon.awssdk.utils.Logger;
 
 import java.util.*;
 import java.util.regex.Matcher;
