@@ -52,7 +52,7 @@ public class BrasilAnhangueraFerramentas extends CrawlerRankingKeywords {
 
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
-                  .setInternalId(internalPid)
+                  .setInternalId(null)
                   .setInternalPid(internalPid)
                   .setImageUrl(imgUrl)
                   .setName(name)
