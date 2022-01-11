@@ -3,17 +3,16 @@ package br.com.lett.crawlernode.core.fetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import org.apache.poi.ss.formula.functions.T;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.Wait;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
@@ -176,5 +175,10 @@ public class CrawlerWebdriver {
    public void waitForElement(String cssSelector, int timeOutInSeconds) {
       WebDriverWait wait = new WebDriverWait(driver, timeOutInSeconds);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+   }
+
+   public void waitForElement(ExpectedCondition<T> condition, int timeOutInSeconds) {
+      WebDriverWait wait = new WebDriverWait(driver, timeOutInSeconds);
+      wait.until(condition);
    }
 }
