@@ -60,13 +60,13 @@ public class BrasilAnhangueraFerramentas extends Crawler {
       Document doc = null;
       try {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
-         webdriver.waitForElement(".page-produto", 30);
          String volts = getButtonVariation(variation.toString());
          String button = "[data-valoratributo=" + volts + "]";
 
+         webdriver.waitForElement(button, 20);
          WebElement variationButton = webdriver.driver.findElement(By.cssSelector(button));
          webdriver.clickOnElementViaJavascript(variationButton);
-         webdriver.waitLoad(5000);
+         webdriver.waitLoad(10000);
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
@@ -92,7 +92,11 @@ public class BrasilAnhangueraFerramentas extends Crawler {
 
          if (!variations.isEmpty()) {
             for (Element el : variations) {
-               products.add(extractProductFromHtml(fetchDocumentVariation(el), ratingsReviews));
+               Document docVariation = fetchDocumentVariation(el);
+               if (docVariation != null) {
+                  Product product = extractProductFromHtml(docVariation, ratingsReviews);
+                  products.add(product);
+               }
             }
          } else {
             products.add(extractProductFromHtml(doc, ratingsReviews));
