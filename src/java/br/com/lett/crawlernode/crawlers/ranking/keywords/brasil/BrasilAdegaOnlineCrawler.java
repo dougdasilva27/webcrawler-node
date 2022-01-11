@@ -14,6 +14,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebElement;
 
 import java.util.*;
@@ -25,21 +26,26 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
+   @Override
+   protected void processBeforeFetch() {
+      Cookie cookie = new Cookie.Builder("__age_checker-history", "pass")
+         .domain("www.adegaonline.com.br")
+         .path("/")
+         .isHttpOnly(false)
+         .isSecure(false)
+         .build();
+      this.cookiesWD.add(cookie);
+   }
+
    protected Document fetch() {
-      String url = "https://www.adegaonline.com.br/search?q=" + this.keywordEncoded + "&type=product&page=" + this.currentPage;
+      String HOME_PAGE = "https://www.adegaonline.com.br";
+      String url = HOME_PAGE + "/search?q=" + this.keywordEncoded + "&type=product&page=" + this.currentPage;
       Document doc = null;
 
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
-
-         webdriver.waitLoad(30000);
-
-         WebElement ageVerificationButton = webdriver.driver.findElement(By.cssSelector("#agp_row > div > div > div.agp__inputContainer > div > form:nth-child(1) > input"));
-         webdriver.clickOnElementViaJavascript(ageVerificationButton);
-         webdriver.waitLoad(20000);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.BUY_HAPROXY, session, this.cookiesWD, "https://www.adegaonline.com.br");
 
          webdriver.waitForElement(".ProductList--grid div.ProductItem", 30);
-         webdriver.waitPageLoad(20);
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
          webdriver.terminate();
@@ -77,6 +83,7 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
                   .setInternalId(internalId)
+                  .setInternalPid(internalId)
                   .setName(name)
                   .setImageUrl(imgUrl)
                   .setPriceInCents(priceInCents)
