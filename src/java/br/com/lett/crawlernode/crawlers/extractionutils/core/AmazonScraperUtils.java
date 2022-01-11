@@ -90,13 +90,8 @@ public class AmazonScraperUtils {
          request = request
             .setProxyservice(
                Arrays.asList(
-                  ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-                  ProxyCollection.BUY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+                  ProxyCollection.INFATICA_LOGIN
+               ))
             .mustSendContentEncoding(false)
             .setFetcheroptions(FetcherOptionsBuilder.create()
                .mustRetrieveStatistics(true)
@@ -106,12 +101,8 @@ public class AmazonScraperUtils {
 
          request.setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY)).setFetcheroptions(FetcherOptionsBuilder.create()
+               ProxyCollection.INFATICA_LOGIN
+            )).setFetcheroptions(FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
             .setForbiddenCssSelector("#captchacharacters").build());
       }
@@ -138,11 +129,8 @@ public class AmazonScraperUtils {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+               ProxyCollection.INFATICA_LOGIN
+            ))
          .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
          .build();
 
@@ -155,11 +143,8 @@ public class AmazonScraperUtils {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+               ProxyCollection.INFATICA_LOGIN
+            ))
          .setFetcheroptions(FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
             .setForbiddenCssSelector("#captchacharacters").build())
