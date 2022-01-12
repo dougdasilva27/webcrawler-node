@@ -10,7 +10,6 @@ import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.ConsoleHackTools;
 import br.com.lett.crawlernode.util.Logging;
 import org.json.JSONArray;
 import org.json.JSONObject;
