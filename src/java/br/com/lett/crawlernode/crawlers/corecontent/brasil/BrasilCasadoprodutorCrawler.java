@@ -116,10 +116,10 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
 
    private List<String> scrapEans(Document doc) {
       List<String> eans = new ArrayList<>();
-      Element ean = doc.selectFirst("body[class^=\"catalog-product-view\"]");
+      String ean = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "body[class^=\"catalog-product-view\"]","class" );
       if (ean != null) {
          Pattern pattern = Pattern.compile("product-([0-9]*)-");
-         Matcher matcher = pattern.matcher(session.getOriginalURL());
+         Matcher matcher = pattern.matcher(ean.toString());
          if (matcher.find()) {
             eans.add(matcher.group(1));
          }
