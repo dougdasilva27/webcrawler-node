@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -57,6 +58,9 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
 
       Response response = new JsoupDataFetcher().post(session, request);
       visitorId = response.getHeaders().get("x-visitorid");
+      if(visitorId == null || visitorId.isEmpty()) {
+         Logging.printLogError(logger, "FAILED TO GET VISITOR ID");
+      }
       return CrawlerUtils.stringToJson(response.getBody());
    }
 
