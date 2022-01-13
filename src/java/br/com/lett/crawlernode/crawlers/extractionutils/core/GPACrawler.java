@@ -387,11 +387,10 @@ public class GPACrawler extends Crawler {
             String sellerName = JSONUtils.getStringValue(sellerinfo, "name");
             boolean isMainRetailersMainRetailer = sellerinfo.optString("sellType", "").equals("1P");
 
-
             Offer offer = Offer.OfferBuilder.create()
                .setUseSlugNameAsInternalSellerId(true)
                .setSellerFullName(sellerName)
-               .setSales(Collections.singletonList(sales))
+               .setSales(sales != null ? Collections.singletonList(sales) : Collections.singletonList(""))
                .setMainPagePosition(1)
                .setSellersPagePosition(1)
                .setIsBuybox(true)
