@@ -9,10 +9,8 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -20,9 +18,11 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -31,6 +31,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class BrasilMartinsCrawler extends Crawler {
 
@@ -67,16 +68,16 @@ public class BrasilMartinsCrawler extends Crawler {
          return super.fetch();
       }
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
 
          Logging.printLogInfo(logger, session, "awaiting product page without login");
 
-         webdriver.waitLoad(2000);
+         webdriver.waitLoad(4500);
 
          WebElement buyButtom = webdriver.driver.findElement(By.cssSelector("#btnBuyProd"));
          webdriver.clickOnElementViaJavascript(buyButtom);
 
-         webdriver.driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
+         webdriver.driver.manage().timeouts().pageLoadTimeout(25, TimeUnit.SECONDS);
 
          waitForElement(webdriver.driver, "#js_username_login");
          WebElement email = webdriver.driver.findElement(By.cssSelector("#js_username_login"));
@@ -133,59 +134,79 @@ public class BrasilMartinsCrawler extends Crawler {
          Logging.printLogInfo(
             logger, session, "Product page identified: " + session.getOriginalURL());
 
-         String internalId = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#id", "value").split("_"));
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".qdDetails .title", true);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) > a", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(
-            doc,
-            ".imagePrincipal img",
-            Collections.singletonList("src"),
-            "https",
-            "imgprd.martins.com.br");
-         List<String> secondaryImages =
-            CrawlerUtils.scrapSecondaryImages(
-               doc,
-               ".galeryImages img",
-               Collections.singletonList("src"),
-               "https",
-               "imgprd.martins.com.br",
-               primaryImage);
-         String description =
-            CrawlerUtils.scrapSimpleDescription(
-               doc,
-               Arrays.asList(".qdDetails .cods", ".details", "#especfication", ".body #details"));
-         List<String> eans =
-            Collections.singletonList(
-               CrawlerUtils.scrapStringSimpleInfo(doc, ".cods .col-2 p", true));
-         RatingsReviews ratingsReviews = scrapRating(doc, internalId);
-         boolean available = !doc.select(".js-add-to-cart").isEmpty();
-         Offers offers = available ? scrapOffers(doc) : new Offers();
+         List<String> variations = scrapVariations(doc);
 
-
-         // Creating the product
-         Product product =
-            ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setRatingReviews(ratingsReviews)
-               .setSecondaryImages(secondaryImages)
-               .setOffers(offers)
-               .setDescription(description)
-               .setEans(eans)
-               .build();
-
-         products.add(product);
+         if(!variations.isEmpty()) {
+            for (String variation : variations) {
+               products.add(extractProductFromHtml(doc, variation));
+            }
+         } else {
+            products.add(extractProductFromHtml(doc, ""));
+         }
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + session.getOriginalURL());
       }
 
       return products;
+   }
+
+   private Product extractProductFromHtml(Document doc, String variation) throws OfferException, MalformedPricingException, MalformedProductException {
+      String internalId = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#id", "value").split("_"));
+      String variationInternalId = internalId;
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".qdDetails .title", true);
+      Double variationPrice = null;
+
+      if(!variation.isEmpty()) {
+         String variationName = StringUtils.substringBetween(variation, "(", ")");
+         String variationSlug = CrawlerUtils.toSlug(variationName);
+         variationPrice = convertPrice(variation);
+         if(!"1-unid".equals(variationSlug)) {
+            variationInternalId += "-" + variationSlug;
+            name += " " + variationName;
+         }
+      }
+
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) > a", true);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imagePrincipal img", Collections.singletonList("src"), "https", "imgprd.martins.com.br");
+      List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".galeryImages img", Collections.singletonList("src"), "https", "imgprd.martins.com.br", primaryImage);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".qdDetails .cods", ".details", "#especfication", ".body #details"));
+      List<String> eans = Collections.singletonList(CrawlerUtils.scrapStringSimpleInfo(doc, ".cods .col-2 p", true));
+      RatingsReviews ratingsReviews = scrapRating(doc, internalId);
+      boolean available = !doc.select(".js-add-to-cart").isEmpty();
+      Offers offers = available ? scrapOffers(doc, variationPrice) : new Offers();
+
+      return ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(variationInternalId)
+            .setInternalPid(internalId)
+            .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setRatingReviews(ratingsReviews)
+            .setSecondaryImages(secondaryImages)
+            .setOffers(offers)
+            .setDescription(description)
+            .setEans(eans)
+            .build();
+   }
+
+   private Double convertPrice(String variation) {
+      Double price = null;
+      String priceString = StringUtils.substringAfter(variation, "R$");
+      try {
+         price = MathUtils.normalizeTwoDecimalPlaces(MathUtils.parseDoubleWithComma(priceString));
+      } catch (Exception e) {
+         e.printStackTrace();
+      }
+      return price;
+   }
+
+   private List<String> scrapVariations(Document doc) {
+      List<Element> variations = doc.select(".popover .gr-line:not(:first-child) b");
+      return variations.stream().map(Element::text).collect(Collectors.toList());
    }
 
    private RatingsReviews scrapRating(Document doc, String internalId) {
@@ -210,9 +231,9 @@ public class BrasilMartinsCrawler extends Crawler {
       return !doc.select("input#id").isEmpty();
    }
 
-   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc, Double variationPrice) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
+      Pricing pricing = scrapPricing(doc, variationPrice);
       //Site hasn't any sale
 
       offers.add(Offer.OfferBuilder.create()
@@ -228,8 +249,14 @@ public class BrasilMartinsCrawler extends Crawler {
 
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".qdValue .value", null, true, ',', session);
+   private Pricing scrapPricing(Document doc, Double variationPrice) throws MalformedPricingException {
+      Double spotlightPrice;
+
+      if(variationPrice != null) {
+         spotlightPrice = variationPrice;
+      } else {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".qdValue .value", null, true, ',', session);
+      }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       //Site hasn't any product with old price
 
