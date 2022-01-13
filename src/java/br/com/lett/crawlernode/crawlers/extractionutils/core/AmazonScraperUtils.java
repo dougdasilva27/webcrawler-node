@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -141,7 +142,7 @@ public class AmazonScraperUtils {
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
          headers.put("Accept-Encoding", "no");
-         response = new FetcherDataFetcher().get(session, request);
+         response = new JsoupDataFetcher().get(session, request);
       }
 
       return response;
