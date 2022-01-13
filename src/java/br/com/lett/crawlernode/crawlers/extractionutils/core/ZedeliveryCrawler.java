@@ -95,6 +95,9 @@ public class ZedeliveryCrawler extends Crawler {
 
       Response response = new JsoupDataFetcher().post(session, request);
       visitorId = response.getHeaders().get("x-visitorid");
+      if(visitorId == null || visitorId.isEmpty()) {
+         Logging.printLogError(logger, "FAILED TO GET VISITOR ID");
+      }
       return CrawlerUtils.stringToJson(response.getBody());
    }
 
