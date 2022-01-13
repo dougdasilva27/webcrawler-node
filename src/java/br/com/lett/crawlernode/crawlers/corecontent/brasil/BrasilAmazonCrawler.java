@@ -2,8 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -52,7 +50,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
    @Override
    public void handleCookiesBeforeFetch() {
-      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, new FetcherDataFetcher());
+      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, new JsoupDataFetcher());
    }
 
 
@@ -62,33 +60,26 @@ public class BrasilAmazonCrawler extends Crawler {
       headers.put("authority", "www.amazon.com.br");
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.104 Safari/537.36");
 
-      Request requestApache = Request.RequestBuilder.create()
+      Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_LOGIN
-            ))
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
-         .build();
-
-
-      Request requestJSOUP = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.INFATICA_LOGIN
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY
             ))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
             .mustUseMovingAverage(false)
             .setForbiddenCssSelector("#captchacharacters").build())
          .build();
-
-      Request request = dataFetcher instanceof JsoupDataFetcher ? requestJSOUP : requestApache;
 
       Response response = dataFetcher.get(session, request);
 
@@ -98,11 +89,8 @@ public class BrasilAmazonCrawler extends Crawler {
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
 
-         if (dataFetcher instanceof ApacheDataFetcher) {
-            response = new ApacheDataFetcher().get(session, requestApache);
-         } else {
-            response = new JsoupDataFetcher().get(session, requestJSOUP);
-         }
+         response = new JsoupDataFetcher().get(session, request);
+
       }
 
       return response.getBody();
@@ -186,7 +174,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
    public Document fetchDocumentsOffersRequest(String internalId, int page) {
       Document doc;
-      String urlMarketPlace = "https://www.amazon.com.br/gp/aod/ajax/ref=aod_page_" + page + "?asin=" + internalId + "&m=&smid=&sourcecustomerorglistid=&sourcecustomerorglistitemid=&pc=dp&isonlyrenderofferlist=true&pageno=" + page + "&experienceId=aodAjaxMain";
+      String urlMarketPlace = "https://www.amazon.com.br/gp/product/ajax/ref=aod_page_" + page + "?asin=" + internalId + "&pc=dp&isonlyrenderofferlist=true&pageno=" + page + "&experienceId=aodAjaxMain";
 
       int maxAttempt = 3;
       int attempt = 1;
@@ -231,13 +219,13 @@ public class BrasilAmazonCrawler extends Crawler {
       if (marketplaceUrl != null) {
 
          int totalOffers = CrawlerUtils.scrapIntegerFromHtml(doc, ".a-box-inner .olp-text-box span", true, 0);
-         if (totalOffers == 0){
+         if (totalOffers == 0) {
             totalOffers = CrawlerUtils.scrapIntegerFromHtml(doc, "#olp_feature_div span.a-declarative .a-link-normal span", true, 0);
          }
 
-         int paginationOffers =  totalOffers/10 + 1;
+         int paginationOffers = totalOffers / 10 + 1;
 
-        // this way will catch all offers pagination
+         // this way will catch all offers pagination
          for (int i = 1; i <= paginationOffers; i++) {
             Document docMarketplace = fetchDocumentsOffersRequest(internalId, i);
             docs.add(docMarketplace);
