@@ -63,7 +63,7 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title span", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li:not(:first-child)");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".__descricao"));
-         boolean available = doc.select(".out-of-stock").isEmpty();
+         boolean available = doc.select(".product.alert.stock").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder._block-content-loading img", Collections.singletonList("src"), "https:", "www.casadoprodutor.com.br");
