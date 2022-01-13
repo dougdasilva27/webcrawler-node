@@ -38,7 +38,8 @@ public class BelohorizonteSantahelenaCrawler extends CrawlerRankingKeywords {
          String internalId = e.classNames().stream().filter(s -> s.matches("post-[0-9^]*")).findFirst()
             .map(s -> s.replaceAll("[^0-9]", ""))
             .orElseThrow(InternalIdNotFound::new);
-         Integer priceInCents = (int) Math.round(CrawlerUtils.scrapDoublePriceFromHtml(e, ".price", null, false, ',', session) * 100);
+         Double price = CrawlerUtils.scrapDoublePriceFromHtml(e, ".price", null, false, ',', session);
+         int priceInCents = price != null ? (int) Math.round(price * 100) : 0;
          String image = CrawlerUtils.scrapSimplePrimaryImage(e, "img", Arrays.asList("src"), "https", "santahelenacenter.com.br");
          boolean available = e.selectFirst("form") != null;
 
