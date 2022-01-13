@@ -2010,7 +2010,7 @@ public class CrawlerUtils {
          sale = Integer.toString(value);
       }
 
-      return sale;
+      return sale != null ? sale : "";
    }
 
    public static ProductBuilder scrapSchemaOrg(Document doc) {
