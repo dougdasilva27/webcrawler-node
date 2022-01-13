@@ -62,7 +62,7 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute.sku .value", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title span", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li:not(:first-child)");
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".__descricao"));
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".description"));
          boolean available = doc.select(".product.alert.stock").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
@@ -99,15 +99,15 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-
-
       Pricing pricing = scrapPricing(doc);
+      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
       offers.add(OfferBuilder.create()
          .setIsBuybox(false)
          .setPricing(pricing)
          .setSellerFullName(FULL_SELLER_NAME)
          .setIsMainRetailer(true)
+         .setSales(sales)
          .setUseSlugNameAsInternalSellerId(true)
          .build());
 
