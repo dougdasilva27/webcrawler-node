@@ -272,18 +272,13 @@ public class BrasilCasaeconstrucaoCrawler extends Crawler {
    private List<String> crawlEans(Document doc) {
       List<String> eans = new ArrayList<String>();
       Element techSpecs = doc.selectFirst(".tech-specs > table > tbody");
-      String techSpecsStr;
 
       if (techSpecs != null) {
-         techSpecsStr = techSpecs.outerHtml();
-      } else {
-         return eans;
-      }
-
-      Pattern pattern = Pattern.compile("<td>Código de Barras:</td>[ \n]*<td>([^</td>]*)</td>");
-      Matcher matcher = pattern.matcher(techSpecsStr);
-      while (matcher.find()) {
-         eans.add(matcher.group(1));
+         Pattern pattern = Pattern.compile("<td>Código de Barras:</td>[ \n]*<td>([^</td>]*)</td>");
+         Matcher matcher = pattern.matcher(techSpecs.toString());
+         while (matcher.find()) {
+            eans.add(matcher.group(1));
+         }
       }
 
       return eans;
