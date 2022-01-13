@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Paula
@@ -57,15 +59,15 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
          Logging.printLogDebug(logger, session,
             "Product page identified: " + this.session.getOriginalURL());
 
-
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "meta[itemprop=sku]", "content");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name  h1", true);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute.sku .value", true);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title span", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li:not(:first-child)");
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".__descricao"));
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".description"));
+         boolean available = doc.select(".product.alert.stock").isEmpty();
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
-         Offers offers = doc.selectFirst(".out-of-stock") == null ? scrapOffers(doc) : new Offers();
-
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image img", Collections.singletonList("src"), "https:", "www.casadoprodutor.com.br");
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder._block-content-loading img", Collections.singletonList("src"), "https:", "www.casadoprodutor.com.br");
+         List<String> eans = scrapEans(doc);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -78,6 +80,7 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
             .setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
+            .setEans(eans)
             .setDescription(description)
             .build();
 
@@ -96,20 +99,34 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-
-
       Pricing pricing = scrapPricing(doc);
+      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
       offers.add(OfferBuilder.create()
          .setIsBuybox(false)
          .setPricing(pricing)
          .setSellerFullName(FULL_SELLER_NAME)
          .setIsMainRetailer(true)
+         .setSales(sales)
          .setUseSlugNameAsInternalSellerId(true)
          .build());
 
       return offers;
    }
+
+   private List<String> scrapEans(Document doc) {
+      List<String> eans = new ArrayList<>();
+      String ean = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "body[class^=\"catalog-product-view\"]","class" );
+      if (ean != null) {
+         Pattern pattern = Pattern.compile("product-([0-9]*)-");
+         Matcher matcher = pattern.matcher(ean.toString());
+         if (matcher.find()) {
+            eans.add(matcher.group(1));
+         }
+      }
+      return eans;
+   }
+
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
@@ -117,7 +134,7 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, false, ',', session);
 
       CreditCards creditCards = new CreditCards();
-      Installments installments = scrapInstallments(doc);
+      Installments installments = scrapInstallments(doc, spotlightPrice);
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
@@ -137,17 +154,25 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
          .build();
    }
 
-   private Installments scrapInstallments(Document doc) throws MalformedPricingException {
+   private Installments scrapInstallments(Document doc, Double spotlightPrice) throws MalformedPricingException {
       Installments installments = new Installments();
+
+      installments.add(InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       Elements elements = doc.select(".parcelas-list tbody tr");
       for (Element element : elements) {
          Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallmentFromString(element.text(), "x", "", true);
-         installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(pair.getFirst())
-            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
-            .build());
+         if (!pair.isAnyValueNull()) {
+            installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(pair.getFirst())
+               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
+               .build());
+         }
       }
+
       return installments;
    }
 
