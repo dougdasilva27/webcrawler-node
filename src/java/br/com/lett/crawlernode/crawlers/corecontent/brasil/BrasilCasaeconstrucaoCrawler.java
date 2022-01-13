@@ -18,6 +18,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
@@ -69,6 +72,7 @@ public class BrasilCasaeconstrucaoCrawler extends Crawler {
          String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
          RatingsReviews ratingReviews = crawlRating(internalId);
          boolean available = crawlAvailability(doc);
+         List<String> eans = crawlEans(doc);
 
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
@@ -84,6 +88,7 @@ public class BrasilCasaeconstrucaoCrawler extends Crawler {
             .setDescription(description)
             .setRatingReviews(ratingReviews)
             .setOffers(offers)
+            .setEans(eans)
             .build();
 
          products.add(product);
@@ -264,4 +269,18 @@ public class BrasilCasaeconstrucaoCrawler extends Crawler {
       return doc.selectFirst("[id~=btnAddBasket]") != null;
    }
 
+   private List<String> crawlEans(Document doc) {
+      List<String> eans = new ArrayList<String>();
+      Element techSpecs = doc.selectFirst(".tech-specs > table > tbody");
+
+      if (techSpecs != null) {
+         Pattern pattern = Pattern.compile("<td>Código de Barras:</td>[ \n]*<td>([^</td>]*)</td>");
+         Matcher matcher = pattern.matcher(techSpecs.toString());
+         while (matcher.find()) {
+            eans.add(matcher.group(1));
+         }
+      }
+
+      return eans;
+   }
 }
