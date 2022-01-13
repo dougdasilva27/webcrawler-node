@@ -16,6 +16,7 @@ import models.pricing.BankSlip;
 import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.util.*;
 
@@ -32,7 +33,7 @@ public class ArgentinaCompreahoraCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("x-requested-with", "XMLHttpRequest");
       headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
-
+      headers.put("referer", "https://www.compreahora.com.ar/");
 
       String payload = "username=federico.serrano%40scmalaga.com.ar" +
          "&password=Cl112007*";
@@ -60,6 +61,8 @@ public class ArgentinaCompreahoraCrawler extends Crawler {
       String primaryImage = CrawlerUtils.scrapPrimaryImageMagento(imagesArray);
       String secondaryImages = CrawlerUtils.scrapSecondaryImagesMagento(imagesArray, primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList(".data.item.content .value", ".data.item.content .additional-composition-wrapper"));
+      List<String> eans = new ArrayList<String>();
+      eans.add(getEans(document));
       boolean available = document.selectFirst(".stock.available") != null;
       Offers offers = available ? scrapOffers(document) : new Offers();
 
@@ -72,9 +75,15 @@ public class ArgentinaCompreahoraCrawler extends Crawler {
          .setSecondaryImages(secondaryImages)
          .setDescription(description)
          .setOffers(offers)
+         .setEans(eans)
          .build());
 
       return products;
+   }
+
+   private String getEans(Element doc) {
+
+      return  CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute.sku .value", false);
    }
 
    private Offers scrapOffers(Document document) throws OfferException, MalformedPricingException {
