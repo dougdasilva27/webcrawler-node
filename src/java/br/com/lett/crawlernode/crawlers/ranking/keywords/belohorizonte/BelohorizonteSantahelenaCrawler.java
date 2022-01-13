@@ -1,11 +1,17 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.belohorizonte;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.InternalIdNotFound;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.Arrays;
 
 public class BelohorizonteSantahelenaCrawler extends CrawlerRankingKeywords {
 
@@ -27,13 +33,33 @@ public class BelohorizonteSantahelenaCrawler extends CrawlerRankingKeywords {
       Elements products = this.currentDoc.select(".products.columns-4 li");
 
       for (Element e : products) {
+         String name = CrawlerUtils.scrapStringSimpleInfo(e, "h3", true);
          String productUrl = CrawlerUtils.scrapUrl(e, ".container-inner a", "href", "https", "santahelenacenter.com.br");
          String internalId = e.classNames().stream().filter(s -> s.matches("post-[0-9^]*")).findFirst()
             .map(s -> s.replaceAll("[^0-9]", ""))
             .orElseThrow(InternalIdNotFound::new);
+         Integer priceInCents = (int) Math.round(CrawlerUtils.scrapDoublePriceFromHtml(e, ".price", null, false, ',', session) * 100);
+         String image = CrawlerUtils.scrapSimplePrimaryImage(e, "img", Arrays.asList("src"), "https", "santahelenacenter.com.br");
+         boolean available = e.selectFirst("form") != null;
 
-         saveDataProduct(internalId, null, productUrl);
-         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+         try {
+            RankingProduct rankingProduct = RankingProductBuilder.create()
+               .setName(name)
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setImageUrl(image)
+               .setAvailability(available)
+               .setPriceInCents(priceInCents)
+               .build();
+
+            saveDataProduct(rankingProduct);
+         } catch (MalformedProductException error) {
+            this.log(error.getMessage());
+         }
+
+         if (this.arrayProducts.size() == productsLimit) {
+            break;
+         }
       }
    }
 
