@@ -90,7 +90,6 @@ public class AmazonScraperUtils {
          request = request
             .setProxyservice(
                Arrays.asList(
-                  ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                   ProxyCollection.BUY,
                   ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                   ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
@@ -106,7 +105,6 @@ public class AmazonScraperUtils {
 
          request.setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
