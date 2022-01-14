@@ -31,6 +31,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.net.Proxy;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -49,6 +50,7 @@ public abstract class CNOVANewCrawler extends Crawler {
 
    public CNOVANewCrawler(Session session) {
       super(session);
+      super.dataFetcher = new JsoupDataFetcher();
 
       homePage = "https://www." + getStore() + ".com.br";
    }
@@ -108,46 +110,21 @@ public abstract class CNOVANewCrawler extends Crawler {
       Request request = RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
-         .setFetcheroptions(FetcherOptionsBuilder.create()
-            .mustUseMovingAverage(false)
-            .mustRetrieveStatistics(true)
-            .build())
+         .setSendUserAgent(true)
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.BUY,
                ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY
             )
          )
          .build();
 
-
-      return alternativeFetch(request);
-   }
-
-   private Response alternativeFetch(Request request) {
-      List<DataFetcher> httpClients = Arrays.asList(new JsoupDataFetcher());
-
-      Response response = null;
-
-      for (DataFetcher localDataFetcher : httpClients) {
-         response = localDataFetcher.get(session, request);
-         if (checkResponse(response)) {
-            return response;
-         }
-      }
-
-      return response;
-   }
-
-   boolean checkResponse(Response response) {
-      int statusCode = response.getLastStatusCode();
-
-      return (Integer.toString(statusCode).charAt(0) == '2'
-         || Integer.toString(statusCode).charAt(0) == '3'
-         || statusCode == 404);
+      return this.dataFetcher.get(session, request);
    }
 
    @Override
