@@ -1,10 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.*;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -118,8 +115,9 @@ public abstract class CNOVANewCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.BUY_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY
             )
          )
@@ -130,7 +128,7 @@ public abstract class CNOVANewCrawler extends Crawler {
    }
 
    private Response alternativeFetch(Request request) {
-      List<DataFetcher> httpClients = Arrays.asList(new JsoupDataFetcher(), new FetcherDataFetcher());
+      List<DataFetcher> httpClients = Arrays.asList(new JsoupDataFetcher());
 
       Response response = null;
 

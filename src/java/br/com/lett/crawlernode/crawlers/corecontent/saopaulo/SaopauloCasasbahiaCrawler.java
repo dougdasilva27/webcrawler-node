@@ -14,7 +14,7 @@ public class SaopauloCasasbahiaCrawler extends CNOVANewCrawler {
 
    public SaopauloCasasbahiaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
