@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -65,11 +65,11 @@ public class AmazonScraperUtils {
    }
 
    public List<Cookie> handleCookiesBeforeFetch(String url, List<Cookie> cookies, DataFetcher dataFetcher) {
-      Request request = getRequestCookies(url, cookies);
+      Request request = getRequestCookies(url, cookies, dataFetcher);
       return CrawlerUtils.fetchCookiesFromAPage(request, "www.amazon.com.br", "/", null, session, dataFetcher);
    }
 
-   public Request getRequestCookies(String url, List<Cookie> cookies) {
+   public Request getRequestCookies(String url, List<Cookie> cookies, DataFetcher dataFetcher) {
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "no");
@@ -83,19 +83,36 @@ public class AmazonScraperUtils {
       RequestBuilder request = RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
-         .setHeaders(headers)
-         .setProxyservice(
+         .setHeaders(headers);
+
+      if (dataFetcher instanceof FetcherDataFetcher) {
+
+         request = request
+            .setProxyservice(
+               Arrays.asList(
+                  ProxyCollection.BUY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+            .mustSendContentEncoding(false)
+            .setFetcheroptions(FetcherOptionsBuilder.create()
+               .mustRetrieveStatistics(true)
+               .setForbiddenCssSelector("#captchacharacters")
+               .build());
+      } else {
+
+         request.setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
-            )).setFetcheroptions(FetcherOptionsBuilder.create()
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY)).setFetcheroptions(FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
             .setForbiddenCssSelector("#captchacharacters").build());
+      }
 
       return request.build();
    }
@@ -113,26 +130,40 @@ public class AmazonScraperUtils {
 
    private Response fetchResponse(String url, Map<String, String> headers, List<Cookie> cookies, DataFetcher dataFetcher) {
 
-      Request request = RequestBuilder.create()
+      Request requestApache = RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY
-            ))
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
          .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
          .build();
 
       Map<String, String> headersClone = new HashMap<>(headers);
       headersClone.put("Accept-Encoding", "no");
+
+      Request requestFetcher = RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .setFetcheroptions(FetcherOptionsBuilder.create()
+            .mustRetrieveStatistics(true)
+            .setForbiddenCssSelector("#captchacharacters").build())
+         .build();
+
+      Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestApache;
 
       Response response = dataFetcher.get(session, request);
 
@@ -141,8 +172,13 @@ public class AmazonScraperUtils {
       if ((Integer.toString(statusCode).charAt(0) != '2' &&
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
-         headers.put("Accept-Encoding", "no");
-         response = new JsoupDataFetcher().get(session, request);
+
+         if (dataFetcher instanceof FetcherDataFetcher) {
+            response = new ApacheDataFetcher().get(session, requestApache);
+         } else {
+            headers.put("Accept-Encoding", "no");
+            response = new FetcherDataFetcher().get(session, requestFetcher);
+         }
       }
 
       return response;
