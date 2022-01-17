@@ -151,13 +151,20 @@ public class ApacheDataFetcher implements DataFetcher {
 
             // creating the redirect strategy so we can get the final redirected URL
             DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
-            HttpHost proxy = randProxy != null ? new HttpHost(randProxy.getAddress(), randProxy.getPort()) : null;
-            RequestConfig requestConfig = FetchUtilities.getRequestConfig(proxy, request.isFollowRedirects(), session);
+
+            System.setProperty("http.proxyhost", randProxy.getAddress());
+            System.setProperty("http.proxyport", String.valueOf(randProxy.getPort()));
+
+            if (randProxy.getUser() != null) {
+               System.setProperty("http.proxyPass", randProxy.getPass());
+               System.setProperty("http.proxyUser", randProxy.getUser());
+
+            }
 
             CloseableHttpClient httpclient =
                HttpClients.custom()
                   .setDefaultCookieStore(cookieStore)
-                  .setUserAgent(randUserAgent).setDefaultRequestConfig(requestConfig)
+                  .setUserAgent(randUserAgent)
                   .setRedirectStrategy(redirectStrategy)
                   .setDefaultCredentialsProvider(credentialsProvider)
                   .setDefaultHeaders(reqHeaders)
@@ -176,7 +183,6 @@ public class ApacheDataFetcher implements DataFetcher {
 
                HttpPost httpPost = new HttpPost(url);
                httpPost.setEntity(input);
-               httpPost.setConfig(requestConfig);
 
                if (headers.containsKey(HttpHeaders.CONTENT_TYPE) && payload != null) {
                   httpPost.setEntity(new StringEntity(payload, ContentType.create(headers.get(HttpHeaders.CONTENT_TYPE))));
@@ -190,7 +196,6 @@ public class ApacheDataFetcher implements DataFetcher {
                closeableHttpResponse = httpclient.execute(httpPost, localContext);
             } else if (method.equals(FetchUtilities.GET_REQUEST)) {
                HttpGet httpGet = new HttpGet(url);
-               httpGet.setConfig(requestConfig);
 
                // do request
                closeableHttpResponse = httpclient.execute(httpGet, localContext);
