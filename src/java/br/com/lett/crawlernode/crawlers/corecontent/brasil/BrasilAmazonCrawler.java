@@ -88,8 +88,10 @@ public class BrasilAmazonCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
@@ -195,10 +197,9 @@ public class BrasilAmazonCrawler extends Crawler {
       return products;
    }
 
-   public Document fetchDocumentsOffersRequest(String internalId) {
+   public Document fetchDocumentsOffersRequest(String internalId, int page) {
       Document doc;
-      String urlMarketPlace = "https://www.amazon.com.br/gp/aod/ajax/ref=dp_aod_NEW_mbc?asin=" + internalId + "&m=&qid=&smid=&sourcecustomerorglistid=&sourcecustomerorglistitemid=&sr=&pc=dp";
-
+      String urlMarketPlace = "https://www.amazon.com.br/gp/product/ajax/ref=aod_page_" + page + "?asin=" + internalId + "&pc=dp&isonlyrenderofferlist=true&pageno=" + page + "&experienceId=aodAjaxMain";
       int maxAttempt = 3;
       int attempt = 1;
 
@@ -241,15 +242,18 @@ public class BrasilAmazonCrawler extends Crawler {
 
       if (marketplaceUrl != null) {
 
-         Document docMarketplace = fetchDocumentsOffersRequest(internalId);
-         docs.add(docMarketplace);
+         int totalOffers = CrawlerUtils.scrapIntegerFromHtml(doc, ".a-box-inner .olp-text-box span", true, 0);
 
-         int totalOffers = CrawlerUtils.scrapIntegerFromHtml(docMarketplace, "#aod-filter-offer-count-string", false);
-         Elements offers = docMarketplace.select("#aod-offer");
+         if (totalOffers == 0) {
+            totalOffers = CrawlerUtils.scrapIntegerFromHtml(doc, "#olp_feature_div span.a-declarative .a-link-normal span", true, 0);
+         }
 
-         if (totalOffers != offers.size()) {
-            docMarketplace = fetchDocumentsOffersRequest(internalId);
+         int paginationOffers = totalOffers / 10 + 1;
+
+         for (int i = 1; i <= paginationOffers; i++) {
+            Document docMarketplace = fetchDocumentsOffersRequest(internalId, i);
             docs.add(docMarketplace);
+
          }
       }
       return docs;
