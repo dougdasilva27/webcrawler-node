@@ -252,7 +252,7 @@ public class CrawlerUtils {
 
    public static Integer scrapPriceInCentsFromHtml(Element doc, String cssSelector, String att, boolean ownText, char priceFormat, Session session ,Integer defaultValue) {
       Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, cssSelector, att, ownText, priceFormat, session);
-      if (price != null) return (int) (price * 100);
+      if (price != null) return (int) Math.round((price * 100));
       return defaultValue;
    }
 
