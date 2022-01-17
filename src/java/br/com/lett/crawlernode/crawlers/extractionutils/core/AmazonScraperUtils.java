@@ -87,7 +87,6 @@ public class AmazonScraperUtils {
          .setHeaders(headers);
 
       if (dataFetcher instanceof FetcherDataFetcher) {
-
          request = request
             .setProxyservice(
                Arrays.asList(
@@ -102,14 +101,23 @@ public class AmazonScraperUtils {
                .mustRetrieveStatistics(true)
                .setForbiddenCssSelector("#captchacharacters")
                .build());
-      } else {
-
+      } else if (dataFetcher instanceof JsoupDataFetcher) {
          request.setProxyservice(
             Arrays.asList(
                ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY)).setFetcheroptions(FetcherOptionsBuilder.create()
+            .mustRetrieveStatistics(true)
+            .setForbiddenCssSelector("#captchacharacters").build());
+      } else {
+         request.setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY)).setFetcheroptions(FetcherOptionsBuilder.create()
@@ -184,10 +192,10 @@ public class AmazonScraperUtils {
             .setForbiddenCssSelector("#captchacharacters").build())
          .build();
 
-      Request request = null;
-      if (dataFetcher instanceof FetcherDataFetcher){
+      Request request;
+      if (dataFetcher instanceof FetcherDataFetcher) {
          request = requestFetcher;
-      } else if (dataFetcher instanceof JsoupDataFetcher){
+      } else if (dataFetcher instanceof JsoupDataFetcher) {
          request = requestJsoup;
       } else {
          request = requestApache;
