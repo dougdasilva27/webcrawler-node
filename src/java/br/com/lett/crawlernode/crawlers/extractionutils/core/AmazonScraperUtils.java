@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -165,7 +166,32 @@ public class AmazonScraperUtils {
             .setForbiddenCssSelector("#captchacharacters").build())
          .build();
 
-      Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestApache;
+      Request requestJsoup = RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .setFetcheroptions(FetcherOptionsBuilder.create()
+            .mustRetrieveStatistics(true)
+            .setForbiddenCssSelector("#captchacharacters").build())
+         .build();
+
+      Request request = null;
+      if (dataFetcher instanceof FetcherDataFetcher){
+         request = requestFetcher;
+      } else if (dataFetcher instanceof JsoupDataFetcher){
+         request = requestJsoup;
+      } else {
+         request = requestApache;
+      }
 
       Response response = dataFetcher.get(session, request);
 
