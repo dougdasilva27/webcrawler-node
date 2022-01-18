@@ -14,7 +14,7 @@ public class SaopauloExtramarketplaceCrawler extends CNOVANewCrawler {
 
    public SaopauloExtramarketplaceCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
