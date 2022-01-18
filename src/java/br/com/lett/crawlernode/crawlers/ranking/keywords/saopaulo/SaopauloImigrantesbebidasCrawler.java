@@ -1,10 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.List;
 
 public class SaopauloImigrantesbebidasCrawler extends CrawlerRankingKeywords {
 
@@ -15,7 +20,7 @@ public class SaopauloImigrantesbebidasCrawler extends CrawlerRankingKeywords {
     }
 
     @Override
-    protected void extractProductsFromCurrentPage() {
+    protected void extractProductsFromCurrentPage() throws MalformedProductException {
         this.log("Página " + this.currentPage);
 
         this.pageSize = 20;
@@ -31,13 +36,26 @@ public class SaopauloImigrantesbebidasCrawler extends CrawlerRankingKeywords {
                 setTotalProducts();
 
             for (Element product : products) {
+                String productUrl = CrawlerUtils.scrapUrl(product, ".product__link", "href", "https", BASE_URL);
                 String internalId = scrapInternalId(product);
                 String internalPid = internalId;
-                String productUrl = CrawlerUtils.scrapUrl(product, ".product__link", "href", "https", BASE_URL);
+                String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".productItem__name", "title");
+                String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".productItem__image > img", List.of("data-src"), "https", BASE_URL);
+                Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".productItem__price .productItem__price--value", null, false, ',', session, 0);
+                boolean isAvailable = !product.selectFirst("article").classNames().contains("productItem--out-of-stock");
 
-                saveDataProduct(internalId, internalPid, productUrl);
+                RankingProduct productRanking = RankingProductBuilder.create()
+                    .setUrl(productUrl)
+                    .setInternalId(internalId)
+                    .setInternalPid(internalPid)
+                    .setName(name)
+                    .setImageUrl(imageUrl)
+                    .setPriceInCents(price)
+                    .setAvailability(isAvailable)
+                    .build();
 
-                this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+                saveDataProduct(productRanking);
+
                 if (this.arrayProducts.size() == productsLimit)
                     break;
             }
@@ -51,7 +69,7 @@ public class SaopauloImigrantesbebidasCrawler extends CrawlerRankingKeywords {
 
     @Override
     protected void setTotalProducts() {
-        this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".pagination > li:nth-last-child(2) > a", true, 0);
+        this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".pagination > li:nth-last-child(1) > a", true, 0);
         super.setTotalProducts();
     }
 
