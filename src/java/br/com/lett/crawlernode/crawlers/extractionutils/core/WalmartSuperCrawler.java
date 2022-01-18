@@ -7,18 +7,23 @@ import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offers;
 import models.prices.Prices;
+import models.pricing.CreditCards;
+import models.pricing.Pricing;
 import org.apache.http.HttpHeaders;
+import org.eclipse.jetty.util.ajax.JSON;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -27,10 +32,13 @@ import java.util.*;
 public class WalmartSuperCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://super.walmart.com.mx";
+   private static final String SELLER_FULL_NAME = "Walmart Super Mexico";
+   private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString());
 
    public WalmartSuperCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setParser(Parser.JSON);
    }
 
    String store_id  = session.getOptions().optString("store_id");
@@ -42,7 +50,7 @@ public class WalmartSuperCrawler extends Crawler {
    }
 
    @Override
-   protected Object fetch() {
+   protected Response fetchResponse() {
       String url = session.getOriginalURL();
 
       if (url.contains("?")) {
@@ -64,9 +72,9 @@ public class WalmartSuperCrawler extends Crawler {
          .setCookies(cookies)
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
          .build();
@@ -76,10 +84,10 @@ public class WalmartSuperCrawler extends Crawler {
          .setUrl(apiUrl)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
          .build();
 
@@ -100,48 +108,38 @@ public class WalmartSuperCrawler extends Crawler {
          }
       }
 
-      return CrawlerUtils.stringToJson(response.getBody());
+      return response;
    }
 
    @Override
    public List<Product> extractInformation(JSONObject apiJson) throws Exception {
-      super.extractInformation(apiJson);
       List<Product> products = new ArrayList<>();
 
       if (apiJson.has("skuId")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = crawlInternalId(apiJson);
-         String name = crawlName(apiJson);
-         Float price = crawlPrice(apiJson);
-         Prices prices = crawlPrices(price);
-         boolean available = crawlAvailability(apiJson);
-         CategoryCollection categories = crawlCategories(apiJson);
+         String internalId = apiJson.optString("skuId");
+         String name = apiJson.optString("skuDisplayNameText");
          String primaryImage = crawlPrimaryImage(internalId);
          List<String> secondaryImages = crawlSecondaryImages(internalId);
+         CategoryCollection categories = crawlCategories(apiJson);
          String description = crawlDescription(apiJson);
-         Integer stock = null;
-         String ean = internalId;
          List<String> eans = new ArrayList<>();
-         eans.add(ean);
+         eans.add(internalId);
+         boolean available = crawlAvailability(apiJson);
+         Offers offers = available ? crawlOffers(apiJson, internalId) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setName(name)
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(available)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
+            .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            .setStock(stock)
-            .setMarketplace(new Marketplace())
             .setEans(eans)
+            .setOffers(offers)
             .build();
 
          products.add(product);
@@ -154,38 +152,63 @@ public class WalmartSuperCrawler extends Crawler {
 
    }
 
-   private String crawlInternalId(JSONObject apiJson) {
-      String internalId = null;
+   private Offers crawlOffers(JSONObject apiJson, String internalId) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(apiJson, internalId);
 
-      if (apiJson.has("skuId")) {
-         internalId = apiJson.getString("skuId");
-      }
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .build());
 
-      return internalId;
+      return offers;
    }
 
-   private String crawlName(JSONObject apiJson) {
-      String name = null;
+   private Pricing scrapPricing(JSONObject apiJson, String internalId) throws MalformedPricingException {
+      String spotlightPriceString = apiJson.optString("specialPrice");
+      String priceFromString = apiJson.optString("basePrice");
+      Double spotlightPrice = null;
+      Double priceFrom = null;
 
-      if (apiJson.has("skuDisplayNameText")) {
-         name = apiJson.getString("skuDisplayNameText");
+      if(spotlightPriceString.isEmpty()){
+         JSONObject priceObject = crawlPriceApi(internalId);
+         spotlightPrice = CommonMethods.objectToDouble(priceObject.optQuery("/skuinfo/" + internalId + "_" + store_id + "/activeSpecialPrice"));
+         priceFrom = CommonMethods.objectToDouble(priceObject.optQuery("/skuinfo/" + internalId + "_" + store_id + "/activeOriginalPrice"));
+      } else {
+         spotlightPrice = Double.valueOf(spotlightPriceString);
+         priceFrom = Double.valueOf(priceFromString);
       }
 
-      return name;
+      if(Objects.equals(spotlightPrice, priceFrom)){
+         priceFrom = null;
+      }
+
+      CreditCards creditCards = CrawlerUtils.scrapCreditCards(spotlightPrice, cards);
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .build();
    }
 
-   private Float crawlPrice(JSONObject apiJson) {
-      Float price = null;
+   private JSONObject crawlPriceApi(String internalId) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuPriceInventoryPromotions?skuId="+internalId+"&storeId=" + store_id)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .build();
 
-      if (apiJson.has("specialPrice")) {
-         String priceText = apiJson.get("specialPrice").toString().replaceAll("[^0-9.]", "");
-
-         if (!priceText.isEmpty()) {
-            price = Float.parseFloat(priceText);
-         }
-      }
-
-      return price;
+      return  CrawlerUtils.stringToJson(dataFetcher.get(session, request).getBody());
    }
 
    private boolean crawlAvailability(JSONObject apiJson) {
@@ -201,7 +224,6 @@ public class WalmartSuperCrawler extends Crawler {
    }
 
    private String crawlPrimaryImage(String id) {
-
       return "https://res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/gr/images/product-images/img_large/" + id + "L.jpg";
    }
 
@@ -291,19 +313,6 @@ public class WalmartSuperCrawler extends Crawler {
          desc.append("<span float=\"right\">" + attributesMap.get("value") + " </span>");
          desc.append("</div>");
       }
-   }
-
-   private Prices crawlPrices(Float price) {
-      Prices prices = new Prices();
-      prices.setBankTicketPrice(price);
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         installmentPriceMap.put(1, price);
-
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      }
-
-      return prices;
    }
 }
 

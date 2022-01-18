@@ -571,6 +571,22 @@ public class CommonMethods {
       }
       return sb.toString();
    }
+   /**
+    * Transform a object to Double if possible
+    *
+    * @param object
+    * @return Double || null
+    */
+   public static Double objectToDouble(Object object) {
+      Double result = null;
+      if(object instanceof Integer) {
+         result = (double) (int) object;
+      } else if (object instanceof Double) {
+         result = (double) object;
+      }
+
+      return result;
+   }
 
 
 
