@@ -2006,7 +2006,7 @@ public class CrawlerUtils {
       String sale = null;
 
       if (pricing.getPriceFrom() != null && pricing.getPriceFrom() > pricing.getSpotlightPrice()) {
-         Integer value = ((Double) ((pricing.getSpotlightPrice() / pricing.getPriceFrom() - 1d) * 100d)).intValue();
+         Integer value = (int) Math.round((pricing.getSpotlightPrice() / pricing.getPriceFrom() - 1d) * 100d);
          sale = Integer.toString(value);
       }
 
