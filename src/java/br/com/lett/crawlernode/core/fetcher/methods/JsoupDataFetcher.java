@@ -1,13 +1,12 @@
 package br.com.lett.crawlernode.core.fetcher.methods;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +18,7 @@ import javax.net.ssl.SSLSession;
 
 import org.apache.http.HttpHeaders;
 import org.json.JSONObject;
+import org.jsoup.Connection;
 import org.jsoup.Connection.Method;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -115,37 +115,7 @@ public class JsoupDataFetcher implements DataFetcher {
 
             org.jsoup.Connection.Response res;
 
-            System.setProperty("http.proxyhost", proxySelected.get(0).getAddress());
-            System.setProperty("http.proxyport", String.valueOf(proxySelected.get(0).getPort()));
-
-            if (proxySelected.get(0).getUser() != null) {
-               System.setProperty("http.proxyPass", proxySelected.get(0).getPass());
-               System.setProperty("http.proxyUser", proxySelected.get(0).getUser());
-
-            }
-
-            if (getMethod) {
-               res = Jsoup.connect(request.getUrl())
-                     .method(Method.GET)
-                     .ignoreContentType(true)
-                     .ignoreHttpErrors(true)
-                     .sslSocketFactory(FetchUtilities.createSSLSocketFactory())
-                     .headers(headers)
-                     .timeout(20000)
-                     .followRedirects(request.isFollowRedirects())
-                     .execute();
-            } else {
-               res = Jsoup.connect(request.getUrl())
-                     .method(Method.POST)
-                     .ignoreHttpErrors(true)
-                     .ignoreContentType(true)
-                     .sslSocketFactory(FetchUtilities.createSSLSocketFactory())
-                     .headers(headers)
-                     .timeout(20000)
-                     .followRedirects(request.isFollowRedirects())
-                     .requestBody(request.getPayload())
-                     .execute();
-            }
+            res = executeRequest(getMethod, request, headers, proxySelected);
 
             String content = res.body();
 
@@ -213,6 +183,36 @@ public class JsoupDataFetcher implements DataFetcher {
       response.setRequests(requests);
 
       return response;
+   }
+
+   private Connection.Response executeRequest(boolean getMethod, Request request, Map<String, String> headers, List<LettProxy> proxySelected) throws NoSuchAlgorithmException, KeyManagementException, IOException {
+      Connection connection = Jsoup.connect(request.getUrl())
+         .method(getMethod ? Method.GET : Method.POST)
+         .ignoreContentType(true)
+         .ignoreHttpErrors(true)
+         .sslSocketFactory(FetchUtilities.createSSLSocketFactory())
+         .headers(headers)
+         .timeout(20000)
+         .followRedirects(request.isFollowRedirects());
+
+      if(!getMethod) {
+         connection.requestBody(request.getPayload());
+      }
+
+      if(!proxySelected.get(0).getSource().contains("infatica")) {
+         connection.proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxySelected.get(0).getAddress(), proxySelected.get(0).getPort())));
+      } else {
+         setProxyInfatica(proxySelected);
+      }
+
+      return connection.execute();
+   }
+
+   private void setProxyInfatica(List<LettProxy> proxySelected) {
+      System.setProperty("http.proxyhost", proxySelected.get(0).getAddress());
+      System.setProperty("http.proxyport", String.valueOf(proxySelected.get(0).getPort()));
+      System.setProperty("http.proxyPass", proxySelected.get(0).getPass());
+      System.setProperty("http.proxyUser", proxySelected.get(0).getUser());
    }
 
    @Override
