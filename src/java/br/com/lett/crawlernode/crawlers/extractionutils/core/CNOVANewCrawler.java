@@ -114,7 +114,6 @@ public abstract class CNOVANewCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.BUY,
                ProxyCollection.BUY_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,

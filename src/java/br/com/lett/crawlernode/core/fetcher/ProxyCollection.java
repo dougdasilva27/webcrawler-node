@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -80,13 +81,15 @@ public class ProxyCollection {
     *         service name was not found.
     */
    public List<LettProxy> getProxy(String serviceName) {
+      List<LettProxy> proxyList = new ArrayList<>();
       if (proxyMap.containsKey(serviceName)) {
-         return proxyMap.get(serviceName);
+         proxyList = proxyMap.get(serviceName);
+         Collections.shuffle(proxyList);
+         return proxyList;
       }
 
       Logging.printLogDebug(logger, "Proxy service not found...returning empty array");
-
-      return new ArrayList<>();
+      return proxyList;
    }
 
    /**
