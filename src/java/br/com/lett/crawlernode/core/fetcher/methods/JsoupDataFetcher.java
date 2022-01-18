@@ -77,8 +77,6 @@ public class JsoupDataFetcher implements DataFetcher {
 
             if (proxy.toLowerCase().contains("netnut_residential") && !proxy.toLowerCase().contains("haproxy")) {
                proxies.add(proxy + "_haproxy");
-            } else if (proxy.toLowerCase().contains("infatica")) {
-               proxies.add(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY);
             } else if (proxy.toLowerCase().contains("luminati_server")) {
                proxies.add(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
             } else {
@@ -117,6 +115,15 @@ public class JsoupDataFetcher implements DataFetcher {
 
             org.jsoup.Connection.Response res;
 
+            System.setProperty("http.proxyhost", proxySelected.get(0).getAddress());
+            System.setProperty("http.proxyport", String.valueOf(proxySelected.get(0).getPort()));
+
+            if (proxySelected.get(0).getUser() != null) {
+               System.setProperty("http.proxyPass", proxySelected.get(0).getPass());
+               System.setProperty("http.proxyUser", proxySelected.get(0).getUser());
+
+            }
+
             if (getMethod) {
                res = Jsoup.connect(request.getUrl())
                      .method(Method.GET)
@@ -126,7 +133,6 @@ public class JsoupDataFetcher implements DataFetcher {
                      .headers(headers)
                      .timeout(20000)
                      .followRedirects(request.isFollowRedirects())
-                     .proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxySelected.get(0).getAddress(), proxySelected.get(0).getPort())))
                      .execute();
             } else {
                res = Jsoup.connect(request.getUrl())
@@ -137,7 +143,6 @@ public class JsoupDataFetcher implements DataFetcher {
                      .headers(headers)
                      .timeout(20000)
                      .followRedirects(request.isFollowRedirects())
-                     .proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxySelected.get(0).getAddress(), proxySelected.get(0).getPort())))
                      .requestBody(request.getPayload())
                      .execute();
             }
