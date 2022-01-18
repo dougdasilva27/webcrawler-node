@@ -3,12 +3,7 @@ package br.com.lett.crawlernode.core.fetcher.methods;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.models.PageContent;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.fetcher.models.*;
 import br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
@@ -16,21 +11,6 @@ import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-
-import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
-
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -50,10 +30,7 @@ import org.apache.http.config.SocketConfig;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.*;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
@@ -62,6 +39,20 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
+import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class ApacheDataFetcher implements DataFetcher {
 
@@ -152,16 +143,7 @@ public class ApacheDataFetcher implements DataFetcher {
             // creating the redirect strategy so we can get the final redirected URL
             DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
 
-            System.setProperty("http.proxyhost", randProxy.getAddress());
-            System.setProperty("http.proxyport", String.valueOf(randProxy.getPort()));
-
-            if (randProxy.getUser() != null) {
-               System.setProperty("http.proxyPass", randProxy.getPass());
-               System.setProperty("http.proxyUser", randProxy.getUser());
-
-            }
-
-            CloseableHttpClient httpclient =
+            HttpClientBuilder http =
                HttpClients.custom()
                   .setDefaultCookieStore(cookieStore)
                   .setUserAgent(randUserAgent)
@@ -170,8 +152,17 @@ public class ApacheDataFetcher implements DataFetcher {
                   .setDefaultHeaders(reqHeaders)
                   .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory())
                   .setSSLHostnameVerifier(hostNameVerifier)
-                  .setDefaultSocketConfig(socketConfig)
-                  .build();
+                  .setDefaultSocketConfig(socketConfig);
+
+            if (randProxy != null && !randProxy.getSource().contains("infatica")) {
+               HttpHost proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
+               RequestConfig requestConfig = FetchUtilities.getRequestConfig(proxy, request.isFollowRedirects(), session);
+               http.setDefaultRequestConfig(requestConfig);
+            } else {
+               setProxyInfatica(randProxy);
+            }
+
+            CloseableHttpClient httpclient = http.build();
 
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
@@ -311,6 +302,16 @@ public class ApacheDataFetcher implements DataFetcher {
 
       response.setRequests(requests);
       return response;
+   }
+
+   private void setProxyInfatica(LettProxy randProxy) {
+      if (randProxy != null) {
+         System.setProperty("http.proxyhost", randProxy.getAddress());
+         System.setProperty("http.proxyport", String.valueOf(randProxy.getPort()));
+         System.setProperty("http.proxyPass", randProxy.getPass());
+         System.setProperty("http.proxyUser", randProxy.getUser());
+      }
+
    }
 
    @Override
