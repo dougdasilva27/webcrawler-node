@@ -52,6 +52,7 @@ public class BrasilCentralarCrawler extends Crawler {
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".carousel.image-gallery__image.js-gallery-image .item:not(:first-child) img", Collections.singletonList("data-src"), "https", "centralar.com.br", primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-classifications", ".tab-details"));
          boolean availableToBuy = !doc.select("#addToCartButton").isEmpty();
+         List<String> eans = scrapEans(doc);
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
 
          // Creating the product
@@ -64,6 +65,7 @@ public class BrasilCentralarCrawler extends Crawler {
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
+            .setEans(eans)
             .build();
 
          products.add(product);
@@ -74,6 +76,16 @@ public class BrasilCentralarCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private List<String> scrapEans(Document doc) {
+         List<String> eans = new ArrayList<>();
+         List<Element> eanElements = doc.select("td:contains(EAN) ~ td");
+
+         if(!eanElements.isEmpty()) {
+            eanElements.forEach(eanElement -> eans.add(eanElement.text()));
+         }
+         return eans;
    }
 
 
