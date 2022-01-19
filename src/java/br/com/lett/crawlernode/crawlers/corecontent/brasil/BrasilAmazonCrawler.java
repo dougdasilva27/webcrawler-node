@@ -57,7 +57,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
    @Override
    public void handleCookiesBeforeFetch() {
-      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, new JsoupDataFetcher());
+      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, new FetcherDataFetcher());
    }
 
    private String requestMethod(String url) {
@@ -72,6 +72,7 @@ public class BrasilAmazonCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
