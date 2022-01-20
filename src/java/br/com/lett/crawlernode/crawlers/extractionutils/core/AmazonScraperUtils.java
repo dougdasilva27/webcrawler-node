@@ -101,13 +101,7 @@ public class AmazonScraperUtils {
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .setProxy(GlobalConfigurations.proxies.getProxy(ProxyCollection.INFATICA_RESIDENTIAL_BR).get(0))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
          .build();
 
