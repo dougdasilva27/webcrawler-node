@@ -5,8 +5,8 @@ import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+import br.com.lett.crawlernode.util.JSONUtils
+import br.com.lett.crawlernode.util.toJson
 import java.util.HashMap
 
 /**
@@ -15,7 +15,7 @@ import java.util.HashMap
  * @author Fellype Layunne
  *
  */
-abstract class BrasilSemardriveCrawler(session: Session) : CrawlerRankingKeywords(session) {
+abstract class BrasilSemardriveCrawlerkt(session: Session) : CrawlerRankingKeywords(session) {
 
    companion object {
       const val HOME_PAGE = "https://drive.gruposemar.com.br/products"
@@ -51,19 +51,10 @@ abstract class BrasilSemardriveCrawler(session: Session) : CrawlerRankingKeyword
       cookies = response.cookies
    }
 
-   fun fetchDocument(): Document {
-      val url = "${HOME_PAGE}?keywords=${keywordEncoded}&page=${currentPage}&utf8=%E2%9C%93"
-
-      val token = cookies.first {
-         it.name == "guest_token"
-      }?.value ?: ""
+   fun fetchDocument(): String {
+      val url = "https://www.semarentrega.com.br/ccstoreui/v1/search?suppressResults=false&searchType=simple&No=1&Nrpp=24&Ntt=${keywordEncoded}&page=${currentPage-1}"
 
       val headers: MutableMap<String, String> = HashMap()
-
-      headers["cookie"] = "guest_token=${token};"
-      headers["authority"] = "drive.gruposemar.com.br"
-      headers["accept"] = "text/html, application/xhtml+xml"
-      headers["user-agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
 
       val request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -72,29 +63,26 @@ abstract class BrasilSemardriveCrawler(session: Session) : CrawlerRankingKeyword
 
       val response = dataFetcher.get(session, request)
 
-      return Jsoup.parse(response?.body ?: "")
+      return response.body//return Jsoup.parse(response?.body ?: "")
    }
 
    override fun extractProductsFromCurrentPage() {
 
-      if (currentPage == 1) {
-         handleCookies()
-      }
 
-      currentDoc = fetchDocument()
+      val body = fetchDocument()
+      val obj = body.toJson()
+      val products = obj.getJSONObject("resultsList").getJSONArray("records")
 
-      val products = currentDoc.select("#product-results .product")
-
-      for (product in products) {
-
-         val internalId = product.selectFirst(".buttons input[name=variant_id]")?.attr("value")
-
-         val path = product.selectFirst(".text a")?.attr("href") ?: ""
-
-         val productUrl = "$HOME_PAGE$path"
-
-         saveDataProduct(internalId, internalId, productUrl)
-         log(">>> productId: $internalId || url: $productUrl || name: ${product.selectFirst(".text .product-title")?.text() ?: ""}")
+      for (p in products) {
+         val poduct = JSONUtils.getValueRecursive(p,"attributes,product.repositoryId,0", ",", String.javaClass, "")
+//         val internalId = product
+//
+//         val path = product.selectFirst(".text a")?.attr("href") ?: ""
+//
+//         val productUrl = "$HOME_PAGE$path"
+//
+//         saveDataProduct(internalId, internalId, productUrl)
+//         log(">>> productId: $internalId || url: $productUrl || name: ${product.selectFirst(".text .product-title")?.text() ?: ""}")
       }
    }
 
