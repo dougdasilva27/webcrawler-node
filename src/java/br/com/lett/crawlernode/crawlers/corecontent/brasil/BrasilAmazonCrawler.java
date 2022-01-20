@@ -51,7 +51,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
    public BrasilAmazonCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.APACHE);
       super.config.setParser(Parser.HTML);
    }
 
@@ -66,7 +66,7 @@ public class BrasilAmazonCrawler extends Crawler {
       headers.put("authority", "www.amazon.com.br");
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.104 Safari/537.36");
 
-      Request requestApache = Request.RequestBuilder.create()
+      Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
@@ -81,27 +81,6 @@ public class BrasilAmazonCrawler extends Crawler {
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
          .build();
 
-
-      Request requestJSOUP = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create()
-            .mustRetrieveStatistics(true)
-            .mustUseMovingAverage(false)
-            .setForbiddenCssSelector("#captchacharacters").build())
-         .build();
-
-      Request request = dataFetcher instanceof JsoupDataFetcher ? requestJSOUP : requestApache;
-
       Response response = dataFetcher.get(session, request);
 
       int statusCode = response.getLastStatusCode();
@@ -111,9 +90,9 @@ public class BrasilAmazonCrawler extends Crawler {
          && statusCode != 404)) {
 
          if (dataFetcher instanceof ApacheDataFetcher) {
-            response = new JsoupDataFetcher().get(session, requestJSOUP);
+            response = new FetcherDataFetcher().get(session, request);
          } else {
-            response = new ApacheDataFetcher().get(session, requestApache);
+            response = new ApacheDataFetcher().get(session, request);
          }
       }
 
