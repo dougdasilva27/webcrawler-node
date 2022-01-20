@@ -164,7 +164,7 @@ public class AmazonScraperUtils {
          && statusCode != 404)) {
 
          if (dataFetcher instanceof FetcherDataFetcher) {
-            response = new FetcherDataFetcher().get(session, requestApache);
+            response = new ApacheDataFetcher().get(session, requestApache);
          } else {
             headers.put("Accept-Encoding", "no");
             response = new ApacheDataFetcher().get(session, requestFetcher);
