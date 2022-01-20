@@ -111,9 +111,9 @@ public class BrasilAmazonCrawler extends Crawler {
          && statusCode != 404)) {
 
          if (dataFetcher instanceof ApacheDataFetcher) {
-            response = new ApacheDataFetcher().get(session, requestApache);
-         } else {
             response = new JsoupDataFetcher().get(session, requestJSOUP);
+         } else {
+            response = new ApacheDataFetcher().get(session, requestApache);
          }
       }
 

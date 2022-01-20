@@ -167,7 +167,7 @@ public class AmazonScraperUtils {
             response = new ApacheDataFetcher().get(session, requestApache);
          } else {
             headers.put("Accept-Encoding", "no");
-            response = new ApacheDataFetcher().get(session, requestFetcher);
+            response = new FetcherDataFetcher().get(session, requestFetcher);
          }
       }
 
