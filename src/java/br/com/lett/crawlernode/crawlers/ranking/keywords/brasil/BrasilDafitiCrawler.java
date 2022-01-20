@@ -1,9 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+
+import java.util.Arrays;
 
 public class BrasilDafitiCrawler extends CrawlerRankingKeywords {
 
@@ -12,7 +18,7 @@ public class BrasilDafitiCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected void extractProductsFromCurrentPage() {
+  protected void extractProductsFromCurrentPage() throws MalformedProductException {
     // número de produtos por página do market
     this.pageSize = 48;
 
@@ -24,7 +30,7 @@ public class BrasilDafitiCrawler extends CrawlerRankingKeywords {
 
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select("div.product-box div[id]");
+    Elements products = this.currentDoc.select("div.product-box");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0)
@@ -32,14 +38,28 @@ public class BrasilDafitiCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
         // seta o id da classe pai com o id retirado do elements
-        String internalPid = e.attr("id");
+        String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[id]", "id");
         String internalId = null;
 
         // monta a url
-        Element urlElement = e.select(" > a").first();
+        Element urlElement = e.select("div[id] > a").first();
         String productUrl = urlElement.attr("href");
+        String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-box-title", true);
+        Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".product-box-price-to", null, true, ',', session,null);
+        Boolean isAvailable = price != null;
+        String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image", Arrays.asList("src"), "https", "t-static.dafiti.com.br");
 
-        saveDataProduct(internalId, internalPid, productUrl);
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .setImageUrl(imageUrl)
+            .build();
+
+         saveDataProduct(productRanking);
 
         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
