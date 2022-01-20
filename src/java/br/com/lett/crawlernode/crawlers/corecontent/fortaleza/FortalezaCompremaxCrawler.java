@@ -90,6 +90,8 @@ public class FortalezaCompremaxCrawler extends Crawler {
          String primaryImage = productInfo.optString("image");
          String name = productInfo.optString("short_description");
          int stock = productInfo.optInt("stock");
+         List <String> eans = new ArrayList<String>();
+         eans.add(productInfo.optString("bar_code"));
          Offers offers = scrapOffer(productInfo);
          Product product =
             ProductBuilder.create()
@@ -100,6 +102,7 @@ public class FortalezaCompremaxCrawler extends Crawler {
                .setPrimaryImage(primaryImage)
                .setStock(stock)
                .setOffers(offers)
+               .setEans(eans)
                .build();
 
          products.add(product);
