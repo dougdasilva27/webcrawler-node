@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -12,6 +13,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -35,6 +37,8 @@ import org.slf4j.Logger;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.*;
+
+import static br.com.lett.crawlernode.util.CrawlerUtils.setCookie;
 
 public class AmazonScraperUtils {
 
@@ -66,11 +70,23 @@ public class AmazonScraperUtils {
    }
 
    public List<Cookie> handleCookiesBeforeFetch(String url, List<Cookie> cookies, DataFetcher dataFetcher) {
-      Request request = getRequestCookies(url, cookies, dataFetcher);
-      return CrawlerUtils.fetchCookiesFromAPage(request, "www.amazon.com.br", "/", null, session, dataFetcher);
+      Response response = getRequestCookies(url, cookies, dataFetcher);
+      return fetchCookiesFromAPage(response, "www.amazon.com.br", "/");
    }
 
-   public Request getRequestCookies(String url, List<Cookie> cookies, DataFetcher dataFetcher) {
+   public static List<Cookie> fetchCookiesFromAPage(Response response, String domain, String path) {
+      List<Cookie> cookies = new ArrayList<>();
+
+      List<Cookie> cookiesResponse = response.getCookies();
+      for (Cookie cookieResponse : cookiesResponse) {
+            cookies.add(setCookie(cookieResponse.getName(), cookieResponse.getValue(), domain, path));
+      }
+
+      return cookies;
+   }
+
+
+   public Response getRequestCookies(String url, List<Cookie> cookies, DataFetcher dataFetcher) {
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "no");
@@ -81,52 +97,49 @@ public class AmazonScraperUtils {
       headers.put("cache-control", "max-age=0");
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
 
-      RequestBuilder request = RequestBuilder.create()
+      Request requestFetcher = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
-         .setHeaders(headers);
+         .setHeaders(headers)
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
+         .build();
 
-      if (dataFetcher instanceof FetcherDataFetcher) {
-         request = request
-            .setProxyservice(
-               Arrays.asList(
-                  ProxyCollection.BUY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
-            .mustSendContentEncoding(false)
-            .setFetcheroptions(FetcherOptionsBuilder.create()
-               .mustRetrieveStatistics(true)
-               .setForbiddenCssSelector("#captchacharacters")
-               .build());
-      } else if (dataFetcher instanceof JsoupDataFetcher) {
-         request.setProxyservice(
+      Request requestJSOUP = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY)).setFetcheroptions(FetcherOptionsBuilder.create()
-            .mustRetrieveStatistics(true)
-            .setForbiddenCssSelector("#captchacharacters").build());
-      } else {
-         request.setProxyservice(
-            Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY)).setFetcheroptions(FetcherOptionsBuilder.create()
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
-            .setForbiddenCssSelector("#captchacharacters").build());
+            .mustUseMovingAverage(false)
+            .setForbiddenCssSelector("#captchacharacters").build())
+         .build();
+
+      Request request = dataFetcher instanceof JsoupDataFetcher ? requestJSOUP : requestFetcher;
+
+      Response response = dataFetcher.get(session, request);
+
+      int statusCode = response.getLastStatusCode();
+
+      if ((Integer.toString(statusCode).charAt(0) != '2' &&
+         Integer.toString(statusCode).charAt(0) != '3'
+         && statusCode != 404)) {
+
+         if (dataFetcher instanceof FetcherDataFetcher) {
+            response = new JsoupDataFetcher().get(session, requestJSOUP);
+         } else {
+            response = new FetcherDataFetcher().get(session, requestFetcher);
+         }
       }
 
-      return request.build();
+      return response;
    }
 
    public Response fetchProductPageResponse(List<Cookie> cookies, DataFetcher dataFetcher) {
@@ -148,8 +161,8 @@ public class AmazonScraperUtils {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
@@ -164,44 +177,14 @@ public class AmazonScraperUtils {
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+      //   .setProxy(GlobalConfigurations.proxies.getProxy(ProxyCollection.INFATICA_RESIDENTIAL_BR).get(0))
          .setFetcheroptions(FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
             .setForbiddenCssSelector("#captchacharacters").build())
          .build();
 
-      Request requestJsoup = RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
-         .setFetcheroptions(FetcherOptionsBuilder.create()
-            .mustRetrieveStatistics(true)
-            .setForbiddenCssSelector("#captchacharacters").build())
-         .build();
 
-      Request request;
-      if (dataFetcher instanceof FetcherDataFetcher) {
-         request = requestFetcher;
-      } else if (dataFetcher instanceof JsoupDataFetcher) {
-         request = requestJsoup;
-      } else {
-         request = requestApache;
-      }
+      Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestApache;
 
       Response response = dataFetcher.get(session, request);
 
