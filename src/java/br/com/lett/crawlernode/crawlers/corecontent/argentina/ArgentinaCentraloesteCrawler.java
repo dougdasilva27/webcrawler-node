@@ -52,6 +52,7 @@ public class ArgentinaCentraloesteCrawler extends Crawler {
          String stock = CrawlerUtils.scrapStringSimpleInfo(doc, ".stock.available span", true);
          boolean available = stock != null && stock.contains("En stock");
          Offers offers = available ? scrapOffers(doc) : new Offers();
+         List<String> eans = scrapEan(doc);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -60,6 +61,7 @@ public class ArgentinaCentraloesteCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setPrimaryImage(primaryImage)
+            .setEans(eans)
             .setDescription(description)
             .setOffers(offers)
             .build();
@@ -75,6 +77,16 @@ public class ArgentinaCentraloesteCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".product.attribute.sku") != null;
+   }
+
+   protected List<String> scrapEan(Document doc) {
+      List<String> eans = new ArrayList<>();
+      String ean = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute.sku .value", true);
+      if (ean != null) {
+         eans.add(ean);
+      }
+      return eans;
+
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
