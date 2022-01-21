@@ -39,13 +39,12 @@ public class BrasilSemardriveCrawler extends Crawler {
    public List<Product> extractInformation(Document document) throws Exception {
       String script = CrawlerUtils.scrapScriptFromHtml(document, "#CC-schema-org-server");
       JSONArray scriptJsonArray = CrawlerUtils.stringToJsonArray(script);
-     // String productInternalId = scriptJsonArray.getJSONObject(0).getJSONArray("offers").getJSONObject(0).getJSONObject("itemOffered").getString("productID");
       String productInternalId  = scriptJsonArray.optQuery("/0/offers/0/itemOffered/productID").toString();
       List<Product> products = new ArrayList<>();
       String productData = captureData(productInternalId);
       JSONObject productDataJson = CrawlerUtils.stringToJson(productData);
       String productName = productDataJson.getString("displayName");
-      String productPrimaryImage = "https://www.semarentrega.com.br" + productDataJson.getString("primaryFullImageURL");
+      String productPrimaryImage = "https://www.semarentrega.com.br" + productDataJson.optString("primaryFullImageURL");
       String productDescription = getDescription(productDataJson);
 
       Product product = ProductBuilder.create()

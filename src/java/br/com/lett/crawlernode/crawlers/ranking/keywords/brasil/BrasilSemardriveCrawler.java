@@ -45,11 +45,11 @@ public class BrasilSemardriveCrawler extends CrawlerRankingKeywords {
          for (Object arrayOfArrays : productsList) {
             JSONObject jsonInfo = (JSONObject) arrayOfArrays;
             JSONArray records = jsonInfo.getJSONArray("records");
-            String productUrl = "https://www.semarentrega.com.br" + records.getJSONObject(0).getJSONObject("attributes").getJSONArray("product.route").getString(0);
-            String internalId = jsonInfo.getJSONObject("attributes").getJSONArray("product.repositoryId").getString(0);
-            String name = records.getJSONObject(0).getJSONObject("attributes").getJSONArray("sku.displayName").getString(0);
-            String imgUrl = "https://www.semarentrega.com.br" + records.getJSONObject(0).getJSONObject("attributes").getJSONArray("product.primaryFullImageURL").getString(0);
-            String Sprice = records.getJSONObject(0).getJSONObject("attributes").getJSONArray("product.listPrice").getString(0);
+            String productUrl = "https://www.semarentrega.com.br" + records.optQuery("/0/attributes/product.route/0").toString();
+            String internalId = jsonInfo.optQuery("/attributes/product.repositoryId/0").toString();
+            String name = records.optQuery("/0/attributes/sku.displayName/0").toString();
+            String imgUrl = "https://www.semarentrega.com.br" + records.optQuery("/0/attributes/product.primaryFullImageURL/0").toString();
+            String Sprice = records.optQuery("/0/attributes/product.listPrice/0").toString();
             Double Dprice = Double.parseDouble(Sprice)*100;
             Integer price = Dprice.intValue();
             boolean isAvailable = isAvailable(internalId);
