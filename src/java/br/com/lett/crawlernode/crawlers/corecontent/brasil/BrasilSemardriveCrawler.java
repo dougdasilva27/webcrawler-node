@@ -39,7 +39,8 @@ public class BrasilSemardriveCrawler extends Crawler {
    public List<Product> extractInformation(Document document) throws Exception {
       String script = CrawlerUtils.scrapScriptFromHtml(document, "#CC-schema-org-server");
       JSONArray scriptJsonArray = CrawlerUtils.stringToJsonArray(script);
-      String productInternalId = scriptJsonArray.getJSONObject(0).getJSONArray("offers").getJSONObject(0).getJSONObject("itemOffered").getString("productID");
+     // String productInternalId = scriptJsonArray.getJSONObject(0).getJSONArray("offers").getJSONObject(0).getJSONObject("itemOffered").getString("productID");
+      String productInternalId  = scriptJsonArray.optQuery("/0/offers/0/itemOffered/productID").toString();
       List<Product> products = new ArrayList<>();
       String productData = captureData(productInternalId);
       JSONObject productDataJson = CrawlerUtils.stringToJson(productData);
@@ -54,7 +55,7 @@ public class BrasilSemardriveCrawler extends Crawler {
          .setName(productName)
          .setPrimaryImage(productPrimaryImage)
          .setDescription(productDescription)
-        .setOffers(scrapOffers(productDataJson, productInternalId))
+         .setOffers(scrapOffers(productDataJson, productInternalId))
          .build();
       products.add(product);
       return products;
@@ -79,17 +80,20 @@ public class BrasilSemardriveCrawler extends Crawler {
    }
    private Offers scrapOffers(JSONObject productDataJson, String productInternalId) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(productDataJson, productInternalId);
-      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
-      offers.add(new Offer.OfferBuilder()
-         .setIsBuybox(false)
-         .setPricing(pricing)
-         .setSellerFullName(SELLER_NAME)
-         .setIsMainRetailer(true)
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSales(sales)
-         .build()
-      );
+      Boolean stock = isAvailable(productInternalId);
+      if(stock == true){
+         Pricing pricing = scrapPricing(productDataJson, productInternalId);
+         List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
+         offers.add(new Offer.OfferBuilder()
+            .setIsBuybox(false)
+            .setPricing(pricing)
+            .setSellerFullName(SELLER_NAME)
+            .setIsMainRetailer(true)
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSales(sales)
+            .build()
+         );
+      }
       return offers;
    }
    private Pricing scrapPricing(JSONObject productDataJson, String id) throws MalformedPricingException {
@@ -123,9 +127,9 @@ public class BrasilSemardriveCrawler extends Crawler {
          .build();
       String response = new JavanetDataFetcher().post(session, request).getBody();
       JSONObject reponseJson = CrawlerUtils.stringToJson(response);
-      String stock = reponseJson.getJSONArray("items").getJSONObject(0).getJSONArray("locationInventoryInfo").getJSONObject(0).getString("availabilityStatusMsg");
-      boolean Bstock = stock == "inStock" ? true : false;
-      return  Bstock;
+      Object objStock = reponseJson.optQuery("/items/0/locationInventoryInfo/0/availabilityStatusMsg");
+      String stock = objStock.toString();
+      return stock.equals("inStock");
    }
 
    protected String captureData(String code){

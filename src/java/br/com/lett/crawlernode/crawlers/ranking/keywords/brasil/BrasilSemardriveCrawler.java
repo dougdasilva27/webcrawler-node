@@ -39,32 +39,37 @@ public class BrasilSemardriveCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       String response = getProductsList();
       JSONObject reponseJson = CrawlerUtils.stringToJson(response);
-      this.totalProducts= reponseJson.getJSONObject("resultsList").getInt("totalNumRecs");
-      JSONArray productsList = reponseJson.getJSONObject("resultsList").getJSONArray("records");
+      this.totalProducts = reponseJson.optJSONObject("resultsList").optInt("totalNumRecs");
+      if(totalProducts > 0){
+         JSONArray productsList = reponseJson.getJSONObject("resultsList").getJSONArray("records");
+         for (Object arrayOfArrays : productsList) {
+            JSONObject jsonInfo = (JSONObject) arrayOfArrays;
+            JSONArray records = jsonInfo.getJSONArray("records");
+            String productUrl = "https://www.semarentrega.com.br" + records.getJSONObject(0).getJSONObject("attributes").getJSONArray("product.route").getString(0);
+            String internalId = jsonInfo.getJSONObject("attributes").getJSONArray("product.repositoryId").getString(0);
+            String name = records.getJSONObject(0).getJSONObject("attributes").getJSONArray("sku.displayName").getString(0);
+            String imgUrl = "https://www.semarentrega.com.br" + records.getJSONObject(0).getJSONObject("attributes").getJSONArray("product.primaryFullImageURL").getString(0);
+            String Sprice = records.getJSONObject(0).getJSONObject("attributes").getJSONArray("product.listPrice").getString(0);
+            Double Dprice = Double.parseDouble(Sprice)*100;
+            Integer price = Dprice.intValue();
+            boolean isAvailable = isAvailable(internalId);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-      for (Object arrayOfArrays : productsList) {
-         JSONObject jsonInfo = (JSONObject) arrayOfArrays;
-         JSONArray records = jsonInfo.getJSONArray("records");
-         String productUrl = "https://www.semarentrega.com.br" + records.getJSONObject(0).getJSONObject("attributes").getJSONArray("product.route").getString(0);
-         String internalId = jsonInfo.getJSONObject("attributes").getJSONArray("product.repositoryId").getString(0);
-         String name = records.getJSONObject(0).getJSONObject("attributes").getJSONArray("sku.displayName").getString(0);
-         String imgUrl = "https://www.semarentrega.com.br" + records.getJSONObject(0).getJSONObject("attributes").getJSONArray("product.primaryFullImageURL").getString(0);
-         String Sprice = records.getJSONObject(0).getJSONObject("attributes").getJSONArray("product.listPrice").getString(0);
-         Double Dprice = Double.parseDouble(Sprice)*100;
-         Integer price = Dprice.intValue();
-         boolean isAvailable = isAvailable(internalId);
-         RankingProduct productRanking = RankingProductBuilder.create()
-            .setUrl(productUrl)
-            .setInternalId(internalId)
-            .setName(name)
-            .setImageUrl(imgUrl)
-            .setPriceInCents(price)
-            .setAvailability(isAvailable)
-            .build();
+            saveDataProduct(productRanking);
 
-         saveDataProduct(productRanking);
-
+         }
+      }else{
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
+
    }
    protected Boolean isAvailable(String code){
       String url = "https://www.semarentrega.com.br/ccstore/v1/inventories?fields=skuId,locationInventoryInfo,stockLevel";
@@ -82,10 +87,10 @@ public class BrasilSemardriveCrawler extends CrawlerRankingKeywords {
          .build();
       String response = new JavanetDataFetcher().post(session, request).getBody();
       JSONObject reponseJson = CrawlerUtils.stringToJson(response);
-      String stock = reponseJson.getJSONArray("items").getJSONObject(0).getJSONArray("locationInventoryInfo").getJSONObject(0).getString("availabilityStatusMsg");
-      boolean Bstock = stock == "inStock" ? true : false;
-      return  Bstock;
-      
+      Object objStock = reponseJson.optQuery("/items/0/locationInventoryInfo/0/availabilityStatusMsg");
+      String stock = objStock.toString();
+      return stock.equals("inStock");
+
    }
 
 }
