@@ -189,7 +189,7 @@ public class MexicoAmazonCrawler extends Crawler {
       return sellerId;
    }
 
-   public Pricing scrapMainPagePricing(Element doc) throws MalformedPricingException {
+   private Pricing scrapMainPagePricing(Element doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_ourprice", null, true, '.', session);
 
       if (spotlightPrice == null) {
