@@ -79,15 +79,7 @@ public class BrasilKanuiCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      Element totalElement = this.currentDoc.select("div.items-products.select-options-item span").first();
-
-      try {
-         if (totalElement != null)
-            this.totalProducts = Integer.parseInt(totalElement.text());
-      } catch (Exception e) {
-         this.logError(e.getMessage());
-      }
-
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "div.items-products.select-options-item span", true, 0);
       this.log("Total da busca: " + this.totalProducts);
    }
 }
