@@ -11,26 +11,20 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.*;
-
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.BankSlip;
-import models.pricing.CreditCard;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
-import models.pricing.Installments;
-import models.pricing.Pricing;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.*;
 
 /**
  * Date: 06/12/2018
@@ -195,18 +189,20 @@ public class MexicoAmazonCrawler extends Crawler {
       return sellerId;
    }
 
-   private Pricing scrapMainPagePricing(Element doc) throws MalformedPricingException {
+   public Pricing scrapMainPagePricing(Element doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_ourprice", null, true, '.', session);
 
       if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_dealprice, #priceblock_saleprice, #unifiedPrice_feature_div #conditionalPrice .a-color-price", null, false, ',', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_dealprice, #priceblock_saleprice, #unifiedPrice_feature_div #conditionalPrice .a-color-price", null, false, '.', session);
 
          if (spotlightPrice == null) {
-            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#soldByThirdParty span", null, false, ',', session);
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#soldByThirdParty span", null, false, '.', session);
          }
-
          if (spotlightPrice == null) {
-            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.a-price.a-text-price.a-size-medium span", null, false, '.', session);
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=price]", null, false, '.', session);
+         }
+         if (spotlightPrice == null) {
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price > span", null, false, '.', session);
          }
       }
 
@@ -214,9 +210,12 @@ public class MexicoAmazonCrawler extends Crawler {
       Double savings = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#dealprice_savings .priceBlockSavingsString",
          null, false, ',', session);
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#buyBoxInner .a-list-item span:nth-child(2n)", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#buyBoxInner .a-list-item span:nth-child(2n)", null, false, '.', session);
       if (savings != null) {
          priceFrom = spotlightPrice + savings;
+      }
+      if (priceFrom == null) {
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=listPrice]", null, false, ',', session);
       }
 
       return Pricing.PricingBuilder.create()
@@ -226,6 +225,7 @@ public class MexicoAmazonCrawler extends Crawler {
          .setBankSlip(BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
          .build();
    }
+
 
    private String scrapSellerName(Element oferta) {
       String name = "";
@@ -290,8 +290,11 @@ public class MexicoAmazonCrawler extends Crawler {
    private Pricing scrapSellersPagePricing(Element doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price span", null, false, '.', session);
       if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price .a-offscreen", null, false, ',', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price .a-offscreen", null, false, '.', session);
+      } else if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price-whole", null, false, '.', session);
       }
+
       CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
 
       return Pricing.PricingBuilder.create()

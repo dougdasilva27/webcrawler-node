@@ -177,7 +177,6 @@ public class AmazonScraperUtils {
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
-      //   .setProxy(GlobalConfigurations.proxies.getProxy(ProxyCollection.INFATICA_RESIDENTIAL_BR).get(0))
          .setFetcheroptions(FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
             .setForbiddenCssSelector("#captchacharacters").build())
