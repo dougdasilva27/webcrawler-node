@@ -50,7 +50,8 @@ public abstract class BistekCrawler extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(urlProduct)
-               .setInternalId(urlProduct)
+               .setInternalId(internalid)
+               .setInternalPid(internalPid)
                .setName(name)
                .setImageUrl(imgUrl)
                .setPriceInCents(price)
