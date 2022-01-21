@@ -211,12 +211,16 @@ public class MexicoAmazonCrawler extends Crawler {
          null, false, ',', session);
 
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#buyBoxInner .a-list-item span:nth-child(2n)", null, false, '.', session);
-      if (savings != null) {
+      if (savings != null && spotlightPrice != null) {
          priceFrom = spotlightPrice + savings;
       }
       if (priceFrom == null) {
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=listPrice]", null, false, ',', session);
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=listPrice]", null, false, '.', session);
       }
+      if (priceFrom == null) {
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-column.a-span12.a-text-left span .a-offscreen", null, false, '.', session);
+      }
+
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
