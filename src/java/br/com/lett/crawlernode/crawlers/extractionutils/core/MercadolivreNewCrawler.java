@@ -73,8 +73,7 @@ public class MercadolivreNewCrawler {
 
       if (mustAddProduct || mustAddProductUnavailable) {
 
-         JSONObject jsonInfo = selectJsonFromHtml(doc);
-         JSONObject initialState = jsonInfo != null ? jsonInfo.optJSONObject("initialState") : null;
+         JSONObject initialState =  selectJsonFromHtml(doc);
          JSONObject schema = initialState != null ? JSONUtils.getValueRecursive(initialState, "schema.0", JSONObject.class) : null;
          if (schema != null) {
             String internalPid = schema.optString("productID");
@@ -536,20 +535,20 @@ public class MercadolivreNewCrawler {
 
    private String getObjectSecondOption(String script) {
       String json = null;
-      Pattern pattern = Pattern.compile("\\{\"translations(.*)+false}");
+      Pattern pattern = Pattern.compile("initialState\":(.*)?,\"csrfToken\"");
       Matcher matcher = pattern.matcher(script);
       if (matcher.find()) {
-         json = matcher.group(0);
+         json = matcher.group(1);
       }
       return json;
    }
 
    private String getObject(String script) {
       String json = null;
-      Pattern pattern = Pattern.compile("\\{\"translations(.*)?shopModel\":\\{}}");
+      Pattern pattern = Pattern.compile("initialState\":(.*)?,\"site\"");
       Matcher matcher = pattern.matcher(script);
       if (matcher.find()) {
-         json = matcher.group(0);
+         json = matcher.group(1);
       }
       return json;
    }
