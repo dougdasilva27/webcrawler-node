@@ -218,7 +218,11 @@ public class MexicoAmazonCrawler extends Crawler {
          priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=listPrice]", null, false, '.', session);
       }
       if (priceFrom == null) {
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-column.a-span12.a-text-left span .a-offscreen", null, false, '.', session);
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "td.a-span12.a-color-secondary.a-size-base > span.a-price.a-text-price.a-size-base > span.a-offscreen", null, false, '.', session);
+      }
+      if (priceFrom == null){
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price.a-text-price .a-offscreen", null, false, '.', session);
+
       }
 
 
