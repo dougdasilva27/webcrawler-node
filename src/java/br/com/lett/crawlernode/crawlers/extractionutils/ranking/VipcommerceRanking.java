@@ -1,8 +1,11 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
@@ -20,22 +23,22 @@ public class VipcommerceRanking extends CrawlerRankingKeywords {
       super(session);
    }
 
-   protected String getDomain(){
+   protected String getDomain() {
       return session.getOptions().optString("domain");
    }
 
    protected String getLocateCode() {
-      return session.getOptions().optString("locate","1");
+      return session.getOptions().optString("locate", "1");
    }
 
    public String getToken() {
       String token = null;
 
-      String url = "https://api."+ DOMAIN +"/v1/auth/loja/login";
+      String url = "https://api." + DOMAIN + "/v1/auth/loja/login";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
-      headers.put("origin", "https://www."+ DOMAIN +"");
+      headers.put("origin", "https://www." + DOMAIN + "");
 
       JSONObject payload = new JSONObject()
          .put("domain", DOMAIN)
@@ -50,8 +53,7 @@ public class VipcommerceRanking extends CrawlerRankingKeywords {
    }
 
    public JSONObject crawlApi(String token) {
-
-      String url = "https://api."+ DOMAIN +"/v1/loja/buscas/produtos/filial/1/centro_distribuicao/"+LOCADE_CODE+"/termo/" + this.keywordEncoded + "?page=" + this.currentPage;
+      String url = "https://api." + DOMAIN + "/v1/loja/buscas/produtos/filial/1/centro_distribuicao/" + LOCADE_CODE + "/termo/" + this.keywordEncoded + "?page=" + this.currentPage;
 
       Map<String, String> headers = new HashMap<>();
       headers.put("authorization", token);
@@ -63,17 +65,11 @@ public class VipcommerceRanking extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
-
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 52;
-
       this.log("Página " + this.currentPage);
-
-
-      String url = "https://www."+ DOMAIN +"/produtos/buscas?q=" + this.keywordEncoded + "&page=" + this.currentPage;
-
+      String url = "https://www." + DOMAIN + "/produtos/buscas?q=" + this.keywordEncoded + "&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
-
       this.currentDoc = fetchDocument(url);
 
       String token = getToken();
@@ -83,27 +79,36 @@ public class VipcommerceRanking extends CrawlerRankingKeywords {
       JSONArray produtosArray = JSONUtils.getJSONArrayValue(produtoInfo, "produtos");
 
       if (produtosArray.length() >= 1) {
-
          for (Object e : produtosArray) {
-
             JSONObject product = (JSONObject) e;
-
             String internalPid = product.optString("id");
-
             String internalId = product.optString("produto_id");
-
             String urlProductIncomplete = product.optString("link");
-            String urlHost = "www."+ DOMAIN +"/produtos/detalhe/" + internalId + "/";
+            String urlHost = "www." + DOMAIN + "/produtos/detalhe/" + internalId + "/";
+            String productUrl = "";
+            String name = product.optString("descricao");
+            String imageUrl = CrawlerUtils.completeUrl(product.optString("imagem"), " https://", "s3.amazonaws.com/produtos.vipcommerce.com.br/250x250");
 
-            String urlProduct = "";
+            double pricedouble = product.optDouble("preco");
+            Integer price = !Double.isNaN(pricedouble) ? Math.toIntExact( Math.round(pricedouble * 100)) : null;
 
             if (urlProductIncomplete != null && urlHost != null) {
-                urlProduct = "https://" + urlHost + urlProductIncomplete;
+               productUrl = "https://" + urlHost + urlProductIncomplete;
             }
 
-            saveDataProduct(internalId, internalPid, urlProduct);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(price != null)
+               .setImageUrl(imageUrl)
+               .build();
+
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit) break;
 
          }
