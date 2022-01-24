@@ -35,7 +35,7 @@ public class ZedeliveryCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.ze.delivery";
    private static final String API_URL = "https://api.ze.delivery/public-api";
-   private static String SELLER_NAME = "";
+   private final String SELLER_NAME = getSellerName();
    private String visitorId;
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
@@ -43,8 +43,11 @@ public class ZedeliveryCrawler extends Crawler {
 
    public ZedeliveryCrawler(Session session) {
       super(session);
-      SELLER_NAME = session.getMarket().getName();
       config.setParser(Parser.HTML);
+   }
+
+   public String getSellerName(){
+      return session.getMarket().getName();
    }
 
    @Override
@@ -168,7 +171,7 @@ public class ZedeliveryCrawler extends Crawler {
 
       offers.add(new Offer.OfferBuilder()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(this.SELLER_NAME)
+         .setSellerFullName(SELLER_NAME)
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(true)
