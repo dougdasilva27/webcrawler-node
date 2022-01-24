@@ -35,7 +35,6 @@ public class ZedeliveryCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.ze.delivery";
    private static final String API_URL = "https://api.ze.delivery/public-api";
-   private final String SELLER_NAME = getSellerName();
    private String visitorId;
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
@@ -171,7 +170,7 @@ public class ZedeliveryCrawler extends Crawler {
 
       offers.add(new Offer.OfferBuilder()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_NAME)
+         .setSellerFullName(getSellerName())
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(true)
