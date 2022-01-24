@@ -1,11 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.models.RankingProduct;
-import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -20,7 +17,7 @@ public class BrasilHavanCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() throws MalformedProductException {
+   protected void extractProductsFromCurrentPage() {
 
       this.pageSize = 24;
 
@@ -42,28 +39,14 @@ public class BrasilHavanCrawler extends CrawlerRankingKeywords {
             if (o instanceof JSONObject) {
                JSONObject product = (JSONObject) o;
 
-               Object internalPidObject = product.optQuery("/skus/0/properties/details/idAddToCart");
-               String internalPid = internalPidObject != null ? internalPidObject.toString() : null;
+               String internalPid = product.optString("iId");
                String internalId = product.optString("id");
                String partUrl = product.optString("url");
                String productUrl = partUrl != null ? "https:" + partUrl : null;
-               String name = product.optString("name");
-               Object imageUrlObject = product.optQuery("/images/default").toString();
-               String imageUrl = imageUrlObject != null ? imageUrlObject.toString() : "";
-               Integer priceInCents = (int) Math.round(product.optDouble("price", 0d)  * 100);
-               boolean isAvailable = product.optString("status").equalsIgnoreCase("AVAILABLE");
 
-               RankingProduct productRanking = RankingProductBuilder.create()
-                  .setUrl(productUrl)
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setImageUrl(imageUrl)
-                  .setName(name)
-                  .setPriceInCents(priceInCents)
-                  .setAvailability(isAvailable)
-                  .build();
+               saveDataProduct(internalId, internalPid, productUrl);
 
-               saveDataProduct(productRanking);
+               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
                if (this.arrayProducts.size() == productsLimit) {
                   break;
                }
@@ -82,13 +65,10 @@ public class BrasilHavanCrawler extends CrawlerRankingKeywords {
       String url = "https://api.linximpulse.com/engage/search/v3/search?apiKey=havan&page=" + this.currentPage + "&resultsPerPage=36&terms=" + this.keywordEncoded + "&sortBy=relevance";
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("origin", "https://www.havan.com.br/");
-      headers.put("authority", "api.linximpulse.com");
-      headers.put("referer", "https://www.havan.com.br/");
+      headers.put("Origin", "https://www.havan.com.br/");
 
       Request request = Request.RequestBuilder.create()
          .setHeaders(headers)
-         .setSendUserAgent(true)
          .setUrl(url)
          .build();
 
