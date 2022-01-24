@@ -53,7 +53,7 @@ public class LocalDiscovery {
 
       List<TestRunnable> tests = TestUtils.poolTaskProcess(market, urls, TestType.CORE, maxProducts, corePoolSize);
 
-      int count = 1, countProducts = 0;
+      int count = 1, countProducts = 0, mismatchingId = 0, mismatchingPid = 0;
 
       for (TestRunnable test : tests) {
          for (Task task : test.tasks) {
@@ -73,9 +73,11 @@ public class LocalDiscovery {
                      if(productRanking != null){
                         if(productRanking.getInternalId() != null && !productRanking.getInternalId().equals(product.getInternalId())) {
                            System.out.println(RED_COLOR + "MISMATCHING internalId: Ranking > " + productRanking.getInternalId() + " - Core > " + product.getInternalId());
+                           mismatchingId++;
                         }
                         if(productRanking.getInteranlPid() != null && !productRanking.getInteranlPid().equals(product.getInternalPid())) {
                            System.out.println(RED_COLOR + "MISMATCHING internalPid: Ranking > " + productRanking.getInteranlPid() + " - Core > " + product.getInternalPid());
+                           mismatchingPid++;
                         }
                      }
                      System.out.println(RESET_COLOR + TestUtils.printProduct(product));
@@ -90,7 +92,8 @@ public class LocalDiscovery {
       CommonMethods.saveDataToAFile(errors, Test.pathWrite + "/log.json");
       System.out.println("Products ranking found: " + products.size());
       System.out.println(("Products core found: " + countProducts));
-
+      System.out.println(RED_COLOR + "MISMATCHING internalPid found: " + mismatchingPid);
+      System.out.println(RED_COLOR + "MISMATCHING internalId found: " + mismatchingId);
    }
 
 }
