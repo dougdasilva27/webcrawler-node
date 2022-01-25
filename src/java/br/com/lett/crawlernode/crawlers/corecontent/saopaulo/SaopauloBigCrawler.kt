@@ -27,6 +27,14 @@ class SaopauloBigCrawler(session: Session) : VTEXOldScraper(session) {
       return null
    }
 
+   override fun isMainRetailer(sellerName: String?): Boolean {
+      var seller = sellerName ?: ""
+      if(sellerName != null && sellerName.last() == '.') {
+         seller = sellerName.substring(0, sellerName.length - 1)
+      }
+      return super.isMainRetailer(seller)
+   }
+
    override fun scrapPidFromApi(doc: Document?): String? {
       var internalPid: String? = null
       val pattern = Pattern.compile("id\":\"(.[0-9]*)\",\"slug")
