@@ -101,7 +101,7 @@ abstract class MarcheCrawler(session: Session) : Crawler(session) {
          return products
       }
 
-      val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"input[name=\"product_id\"][value]", "value")
+      val internalId = scrapInternalId(doc)
 
       val name = CrawlerUtils.scrapStringSimpleInfo(doc,".product-info .product-name", false)
 
@@ -122,6 +122,17 @@ abstract class MarcheCrawler(session: Session) : Crawler(session) {
          .build())
 
       return products
+   }
+
+   private fun scrapInternalId(doc: Document): String? {
+      var internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"input[name=\"product_id\"][value]", "value")
+      if(internalId.isNullOrEmpty()){
+         val productJSON = JSONUtils.stringToJson(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-info > div[data-json]", "data-json"))
+         if(!productJSON.isEmpty){
+            internalId = productJSON.optString("product_id")
+         }
+      }
+      return internalId
    }
 
    fun isProductPage(doc: Document): Boolean {
