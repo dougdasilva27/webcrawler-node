@@ -1,13 +1,18 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,7 +44,7 @@ public class BrasilSephoraCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.log("Página " + this.currentPage);
 
       JSONObject json = crawlApi();
@@ -56,7 +61,20 @@ public class BrasilSephoraCrawler extends CrawlerRankingKeywords {
 
                String productUrl = url != null ? "https://www.sephora.com.br" + url : null;
 
-               saveDataProduct(null, internalPid, productUrl);
+               String name = product.optString("name");
+               String imgUrl = product.optJSONObject("images").optString("default");
+               Integer price = product.optInt("price");
+               boolean  isAvailable  = product.optString("status") == "AVAILABLE" ? true : false;
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalPid)
+                  .setName(name)
+                  .setImageUrl(imgUrl)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .build();
+
+               saveDataProduct(productRanking);
 
                //Didn’t put internalid because the product has variation, that is, two internalids
                this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
@@ -70,5 +88,7 @@ public class BrasilSephoraCrawler extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
+
+
 
 }
