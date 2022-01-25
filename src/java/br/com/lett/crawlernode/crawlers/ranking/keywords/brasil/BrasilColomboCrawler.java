@@ -43,7 +43,7 @@ public class BrasilColomboCrawler extends CrawlerRankingKeywords {
 
       if (!products.isEmpty()) {
          for (Element e : products) {
-            String internalPid = e.attr("id").split("-")[2];
+            String internalPid = crawlInternalPid(e.attr("id"));
             String urlProduct = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".nm-product-info", "href"), "https", "www.colombo.com");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".nm-product-name", true);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".nm-product-img", Collections.singletonList("src"), "https", "images.colombo.com.br");
@@ -78,7 +78,7 @@ public class BrasilColomboCrawler extends CrawlerRankingKeywords {
 
    private HashMap<String, String> crawlProductsPrices(Elements products) {
       HashMap<String, String> productsPrices = new HashMap<>();
-      List<String> productsIds = products.stream().map(e -> e.attr("id").split("-")[2]).collect(Collectors.toList());
+      List<String> productsIds = products.stream().map(e ->  crawlInternalPid(e.attr("id"))).collect(Collectors.toList());
       String productsIdsQuery = String.join(",", productsIds);
 
       Map<String, String> headers = new HashMap<>();
@@ -103,6 +103,19 @@ public class BrasilColomboCrawler extends CrawlerRankingKeywords {
       }
 
       return productsPrices;
+   }
+
+   private String crawlInternalPid(String text) {
+      String internalPid = "";
+
+      if(text != null && !text.isEmpty()) {
+         try {
+            internalPid = text.split("-")[2];
+         } catch(Exception e) {
+            internalPid = text.replaceAll("[^0-9]+", "");
+         }
+      }
+      return internalPid;
    }
 
    @Override
