@@ -1,10 +1,14 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.gson.JsonParser;
@@ -27,7 +31,7 @@ public class BrasilFarmadeliveryCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected void extractProductsFromCurrentPage() {
+  protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
     this.pageSize = 32;
     this.log("Página " + this.currentPage);
 
@@ -41,11 +45,23 @@ public class BrasilFarmadeliveryCrawler extends CrawlerRankingKeywords {
       }
 
       for (Object product : arraySkus) {
-        JSONObject jsonSku = (JSONObject) product;
-        String internalId = JSONUtils.getStringValue(jsonSku, "objectID");
-        String productUrl = JSONUtils.getStringValue(jsonSku, "url");
+         JSONObject jsonSku = (JSONObject) product;
+         String internalId = JSONUtils.getStringValue(jsonSku, "objectID");
+         String productUrl = JSONUtils.getStringValue(jsonSku, "url");
+         String imgUrl = JSONUtils.getStringValue(jsonSku, "image_url");
+         String name =  JSONUtils.getStringValue(jsonSku, "name");
+         Integer price = crawlPrice(jsonSku);
+         boolean isAvailable = JSONUtils.getIntegerValueFromJSON(jsonSku,"in_stock",0) >=1 ? true : false;
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setName(name)
+            .setImageUrl(imgUrl)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
 
-        saveDataProduct(internalId, null, productUrl);
+         saveDataProduct(productRanking);
 
         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
 
@@ -64,7 +80,17 @@ public class BrasilFarmadeliveryCrawler extends CrawlerRankingKeywords {
 
 
   }
-
+   private Integer crawlPrice(JSONObject product) {
+      Integer price;
+      try {
+         String priceStr = product.optQuery("/price/BRL/default").toString();
+         Double priceDouble = Double.parseDouble(priceStr)*100;
+         price = priceDouble.intValue();
+      } catch (NullPointerException e) {
+         price = 0;
+      }
+      return price;
+   }
   private void setTotalProducts(JSONObject search) {
     this.totalProducts = JSONUtils.getIntegerValueFromJSON(search, "nbHits", 0);
     this.log("Total: " + this.totalProducts);
