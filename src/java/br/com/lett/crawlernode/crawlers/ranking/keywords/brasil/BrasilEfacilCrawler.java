@@ -81,7 +81,7 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
    private Integer crawlPrice(Element e) {
      Integer price = 0;
       Element productScript = e.selectFirst("> script");
-      List<String> prices = CrawlerUtils.getPropertyFromJSONinScript(productScript.html(), "price");
+      List<String> prices = CrawlerUtils.getPropertyFromJSONInScript(productScript.html(), "price");
       if(!prices.isEmpty()) {
          price = CommonMethods.stringPriceToIntegerPrice(prices.get(0), '.', 0);
       }
@@ -90,8 +90,6 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
 
    @Override
   protected boolean hasNextPage() {
-    // se elemeno page obtiver algum resultado
-      // tem próxima página
     return this.arrayProducts.size() < this.totalProducts;
   }
 
@@ -110,9 +108,7 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
   }
 
   private String crawlInternalId(Element e) {
-
      return CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "catentry");
-
   }
 
   private String crawlInternalPid(Element e) {
@@ -131,7 +127,6 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
   }
 
   private String crawlProductUrl(Element e) throws UnsupportedEncodingException {
-
      String productUrl = e.select(".nm-product-img-container img").attr("alt");
      String[] separatedUrl = productUrl.split("/");
      String lastPart = null;
@@ -140,7 +135,5 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
      }
      String encodedPart = lastPart != null ? URLEncoder.encode(lastPart,"utf-8") : null;
      return "https://www.efacil.com.br/loja/produto/" + encodedPart;
-
   }
-
 }

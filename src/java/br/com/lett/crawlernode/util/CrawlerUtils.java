@@ -2317,16 +2317,17 @@ public class CrawlerUtils {
     * @return List<String>  with the matches
     */
 
-   public static List<String> getPropertyFromJSONinScript(String script, String key) {
+   public static List<String> getPropertyFromJSONInScript(String script, String key) {
       List<String> list = new ArrayList<>();
-      Pattern p = Pattern.compile(key + ":(.*|[\\s\\S]*)'"); // Regex for the value of the key
-      Matcher m = p.matcher(script);
+      if (script != null && key != null) {
+         Pattern p = Pattern.compile(key + ":(.*|[\\s\\S]*)'"); // Regex for the value of the key
+         Matcher m = p.matcher(script);
 
-      while(m.find()) {
-         list.add(m.group());
+         while (m.find()) {
+            list.add(m.group());
+         }
       }
       return list;
    }
-
 
 }
