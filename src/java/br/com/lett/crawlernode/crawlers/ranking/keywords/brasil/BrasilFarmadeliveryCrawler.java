@@ -50,9 +50,7 @@ public class BrasilFarmadeliveryCrawler extends CrawlerRankingKeywords {
          String productUrl = JSONUtils.getStringValue(jsonSku, "url");
          String imgUrl = JSONUtils.getStringValue(jsonSku, "image_url");
          String name =  JSONUtils.getStringValue(jsonSku, "name");
-         String strPrice = jsonSku.optQuery("/price/BRL/default").toString();
-         Double doublePrice =  (Double.parseDouble(strPrice)) *100;
-         Integer price =  doublePrice.intValue();
+         Integer price = crawlPrice(jsonSku);
          boolean isAvailable = JSONUtils.getIntegerValueFromJSON(jsonSku,"in_stock",0) >=1 ? true : false;
          RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(productUrl)
@@ -82,7 +80,17 @@ public class BrasilFarmadeliveryCrawler extends CrawlerRankingKeywords {
 
 
   }
-
+   private Integer crawlPrice(JSONObject product) {
+      Integer price;
+      try {
+         String priceStr = product.optQuery("/price/BRL/default").toString();
+         Double priceDouble = Double.parseDouble(priceStr)*100;
+         price = priceDouble.intValue();
+      } catch (NullPointerException e) {
+         price = 0;
+      }
+      return price;
+   }
   private void setTotalProducts(JSONObject search) {
     this.totalProducts = JSONUtils.getIntegerValueFromJSON(search, "nbHits", 0);
     this.log("Total: " + this.totalProducts);
