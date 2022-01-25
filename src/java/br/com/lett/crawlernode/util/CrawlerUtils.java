@@ -38,6 +38,7 @@ import java.net.URISyntaxException;
 import java.text.Normalizer;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
@@ -2309,5 +2310,24 @@ public class CrawlerUtils {
       return creditCards;
    }
 
+   /**
+    * Get a list of key-value string from a json that is inside a script tag
+    * @param script String of the script tag that has a json
+    * @param key the key to search
+    * @return List<String>  with the matches
+    */
+
+   public static List<String> getPropertyFromJSONInScript(String script, String key) {
+      List<String> list = new ArrayList<>();
+      if (script != null && key != null) {
+         Pattern p = Pattern.compile(key + ":(.*|[\\s\\S]*)'"); // Regex for the value of the key
+         Matcher m = p.matcher(script);
+
+         while (m.find()) {
+            list.add(m.group());
+         }
+      }
+      return list;
+   }
 
 }

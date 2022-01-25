@@ -1,13 +1,21 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
 
@@ -16,53 +24,50 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 48;
-
+  protected void extractProductsFromCurrentPage() throws MalformedProductException {
+    this.pageSize = 12;
     this.log("Página " + this.currentPage);
 
-    // monta a url com a keyword e a página
     String url = "https://busca.efacil.com.br/busca?q=" + this.keywordEncoded + "&page="
-        + this.currentPage + "&results_per_page=48";
+        + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    // chama função de pegar o html
     this.currentDoc = fetchDocument(url);
 
     Elements products = this.currentDoc.select(".nm-product-item");
-
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
     if (!products.isEmpty()) {
-      // se o total de busca não foi setado ainda, chama a função para setar
       if (this.totalProducts == 0) {
         setTotalProducts();
       }
 
       for (Element e : products) {
-
-        // InternalPid
         String internalPid = crawlInternalPid(e);
-
-        // InternalId
         String internalId = crawlInternalId(e);
-
-        // Url do produto
-         String productUrl = null;
+        String productUrl = null;
          try {
             productUrl = crawlProductUrl(e);
          } catch (UnsupportedEncodingException unsupportedEncodingException) {
             unsupportedEncodingException.printStackTrace();
          }
+         String name = CrawlerUtils.scrapStringSimpleInfo(e, ".nm-product-name", false);
+         String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".nm-product-img", Collections.singletonList("src"), "https", "efacil.com.br");
+         Integer price = crawlPrice(e);
+         boolean isAvailable = price != 0;
 
-         saveDataProduct(internalId, internalPid, productUrl);
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setImageUrl(imgUrl)
+            .setName(name)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + internalPid + " - Url: " + productUrl);
+         saveDataProduct(productRanking);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
-
       }
     } else {
       this.result = false;
@@ -73,16 +78,23 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
         + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  @Override
+   private Integer crawlPrice(Element e) {
+     Integer price = 0;
+      Element productScript = e.selectFirst("> script");
+      List<String> prices = CrawlerUtils.getPropertyFromJSONInScript(productScript.html(), "price");
+      if(!prices.isEmpty()) {
+         price = CommonMethods.stringPriceToIntegerPrice(prices.get(0), '.', 0);
+      }
+      return price;
+   }
+
+   @Override
   protected boolean hasNextPage() {
-    // se elemeno page obtiver algum resultado
-      // tem próxima página
     return this.arrayProducts.size() < this.totalProducts;
   }
 
   @Override
   protected void setTotalProducts() {
-
      String totalElement = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, ".neemu-total-products-container", true);
      int totalProducts = 0;
      if(totalElement != null){
@@ -96,9 +108,7 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
   }
 
   private String crawlInternalId(Element e) {
-
      return CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "catentry");
-
   }
 
   private String crawlInternalPid(Element e) {
@@ -117,7 +127,6 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
   }
 
   private String crawlProductUrl(Element e) throws UnsupportedEncodingException {
-
      String productUrl = e.select(".nm-product-img-container img").attr("alt");
      String[] separatedUrl = productUrl.split("/");
      String lastPart = null;
@@ -126,7 +135,5 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
      }
      String encodedPart = lastPart != null ? URLEncoder.encode(lastPart,"utf-8") : null;
      return "https://www.efacil.com.br/loja/produto/" + encodedPart;
-
   }
-
 }
