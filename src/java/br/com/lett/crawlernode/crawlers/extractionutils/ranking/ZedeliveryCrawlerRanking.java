@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -74,7 +73,7 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
 
 
       if (visitorId.isEmpty()) {
-          Logging.printLogError(logger, "FAILED TO GET VISITOR ID");
+         Logging.printLogError(logger, "FAILED TO GET VISITOR ID");
       }
 
    }
