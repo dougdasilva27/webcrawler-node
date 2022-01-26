@@ -1,20 +1,24 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import java.util.HashMap;
-import java.util.Map;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CrawlerUtils;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
 
@@ -26,42 +30,53 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private JSONObject validateUUID() {
+   private void validateUUID() {
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
+      int attemp = 0;
 
       String initPayload = "{\"" +
          "operationName\":\"setDeliveryOption\",\"" +
          "variables\":{\"" +
-            "deliveryOption\":{\"" +
-               "address\":{\"" +
-                  "latitude\":"+  session.getOptions().optString("latitude") + ",\"" +
-                  "longitude\":"+ session.getOptions().optString("longitude") +",\"" +
-                  "zipcode\":\""+session.getOptions().optString("zipCode") + "\",\"" +
-                  "street\":\""+session.getOptions().optString("street")+"\",\"" +
-                  "neighborhood\":\""+session.getOptions().optString("neighborhood")+"\",\"" +
-                   "city\":\""+session.getOptions().optString("city")+"\",\"" +
-                   "province\":\""+ session.getOptions().optString("province") +"\",\"" +
-                   "country\":\"BR\",\"" +
-                   "number\":\""+session.getOptions().optString("number")+"\"" +
-                "},\"" +
-         "deliveryMethod\":\"DELIVERY\",\"schedule\":\"NOW\"},\"forceOverrideProducts\":false},\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption: $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n          addressLine2\\n          referencePoint\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n            referencePoint\\n          }\\n        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
+         "deliveryOption\":{\"" +
+         "address\":{\"" +
+         "latitude\":" + session.getOptions().optString("latitude") + ",\"" +
+         "longitude\":" + session.getOptions().optString("longitude") + ",\"" +
+         "zipcode\":\"" + session.getOptions().optString("zipCode") + "\",\"" +
+         "street\":\"" + session.getOptions().optString("street") + "\",\"" +
+         "neighborhood\":\"" + session.getOptions().optString("neighborhood") + "\",\"" +
+         "city\":\"" + session.getOptions().optString("city") + "\",\"" +
+         "province\":\"" + session.getOptions().optString("province") + "\",\"" +
+         "country\":\"BR\",\"" +
+         "number\":\"" + session.getOptions().optString("number") + "\"" +
+         "},\"" +
+         "deliveryMethod\":\"DELIVERY\"," +
+         "\"schedule\":\"NOW\"}," +
+         "\"forceOverrideProducts\":false}," +
+         "\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption: $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n          addressLine2\\n          referencePoint\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n            referencePoint\\n          }\\n        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
 
-      Integer contentLength = initPayload.length();
-      headers.put("Content-Length", contentLength.toString());
-      
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
          .setPayload(initPayload)
          .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
 
-      Response response = new JsoupDataFetcher().post(session, request);
-      visitorId = response.getHeaders().get("x-visitorid");
-      if(visitorId == null || visitorId.isEmpty()) {
-         Logging.printLogError(logger, "FAILED TO GET VISITOR ID");
+      do {
+         Response response = new JsoupDataFetcher().post(session, request);
+         visitorId = response.getHeaders().get("x-visitorid");
+         attemp++;
+      } while (visitorId == null || visitorId.isEmpty() && attemp < 3);
+
+
+      if (visitorId.isEmpty()) {
+          Logging.printLogError(logger, "FAILED TO GET VISITOR ID");
       }
-      return CrawlerUtils.stringToJson(response.getBody());
+
    }
 
    protected JSONObject fetch() {
@@ -70,8 +85,9 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("x-visitorid", visitorId);
       headers.put("Content-Type", "application/json");
-      headers.put("Accept-Encoding","gzip, deflate, br");
-      headers.put("Connection","keep-alive");
+      headers.put("Accept", "*/*");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Connection", "keep-alive");
 
       String payload =
          "{\"operationName\":\"newSearch\",\"variables\":{\"searchTerm\":\"" + this.keywordWithoutAccents + "\",\"limit\":20},\"query\":\"query newSearch($searchTerm: String!, $limit: Int) {\\n  newSearch(searchTerm: $searchTerm) {\\n    items(limit: $limit) {\\n      id\\n      type\\n      displayName\\n      images\\n      applicableDiscount {\\n        presentedDiscountValue\\n        discountType\\n        finalValue\\n      }\\n      category {\\n        id\\n        displayName\\n      }\\n      brand {\\n        id\\n        displayName\\n      }\\n      price {\\n        min\\n        max\\n      }\\n    }\\n  }\\n}\\n\"}";
@@ -99,7 +115,7 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
       if (data != null) {
          JSONObject search = data.optJSONObject("newSearch");
          JSONArray items = search.optJSONArray("items");
-         if(!items.isEmpty()){
+         if (!items.isEmpty()) {
             for (Object item : items) {
                JSONObject product = (JSONObject) item;
 
