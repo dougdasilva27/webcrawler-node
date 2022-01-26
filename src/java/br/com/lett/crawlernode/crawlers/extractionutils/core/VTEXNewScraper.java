@@ -75,6 +75,10 @@ public abstract class VTEXNewScraper extends VTEXScraper {
          if (internalPid == null) {
             internalPid = scrapInternalpidThirdWay(runtimeJSON);
          }
+
+         if(internalPid == null) {
+            internalPid = scrapPidFromFromScript(doc);
+         }
       }
 
       return internalPid;
@@ -85,5 +89,10 @@ public abstract class VTEXNewScraper extends VTEXScraper {
       JSONObject params = route != null ? route.optJSONObject("params") : new JSONObject();
 
       return params.optString("id", null);
+   }
+
+   protected String scrapPidFromFromScript(Document doc) {
+      JSONObject jsonObject = CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", false, true);
+      return jsonObject.optString("productId");
    }
 }
