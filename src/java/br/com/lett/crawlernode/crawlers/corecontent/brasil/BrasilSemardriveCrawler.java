@@ -97,9 +97,15 @@ public class BrasilSemardriveCrawler extends Crawler {
    }
    private Pricing scrapPricing(JSONObject productDataJson, String id) throws MalformedPricingException {
 
-      Double price = JSONUtils.getDoubleValueFromJSON(productDataJson,"salePrice", true) ;
-      Double priceFrom = productDataJson.getJSONObject("listPrices").getDouble("10_default_price");
-      if(price == null){
+      Double price = JSONUtils.getDoubleValueFromJSON(productDataJson,"salePrice", true);
+      JSONObject priceFromJson = productDataJson.getJSONObject("listPrices");
+      Double priceFrom = priceFromJson.optDouble("10_default_price", 0.0);
+
+      if (priceFrom == 0.0) {
+         priceFrom = priceFromJson.optDouble("29_default_price", 0.0);
+      }
+
+      if (price == null){
          price = priceFrom;
          priceFrom = null;
       }
