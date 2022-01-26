@@ -67,7 +67,7 @@ public class BrasilSephoraCrawler extends CrawlerRankingKeywords {
                boolean  isAvailable  = product.optString("status") == "AVAILABLE" ? true : false;
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
-                  .setInternalId(internalPid)
+                  .setInternalPid(internalPid)
                   .setName(name)
                   .setImageUrl(imgUrl)
                   .setPriceInCents(price)
@@ -75,9 +75,6 @@ public class BrasilSephoraCrawler extends CrawlerRankingKeywords {
                   .build();
 
                saveDataProduct(productRanking);
-
-               //Didn’t put internalid because the product has variation, that is, two internalids
-               this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
             }
          }
