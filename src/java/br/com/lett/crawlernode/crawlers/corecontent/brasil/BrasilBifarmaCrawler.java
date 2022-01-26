@@ -35,10 +35,9 @@ public class BrasilBifarmaCrawler extends Crawler {
    }
 
    @Override
-   protected Object fetch() {
-      webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
-
-      return Jsoup.parse(webdriver.getCurrentPageSource());
+   public boolean shouldVisit() {
+      String href = this.session.getOriginalURL().toLowerCase();
+      return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
    }
 
    @Override
