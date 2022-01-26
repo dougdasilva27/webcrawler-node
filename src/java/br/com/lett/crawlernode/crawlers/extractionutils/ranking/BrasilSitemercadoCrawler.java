@@ -3,8 +3,11 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
@@ -28,7 +31,7 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       return session.getOptions().optString("url");
    }
 
-   protected String getApiUrl(){
+   protected String getApiUrl() {
       return "https://www.sitemercado.com.br/api/v1/b2c/";
    }
 
@@ -49,7 +52,7 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   public void extractProductsFromCurrentPage() {
+   public void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
       JSONObject search = crawlProductInfo();
 
@@ -64,11 +67,22 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
             String productUrl = crawlProductUrl(product);
             String internalPid = crawlInternalPid(product);
+            String name = product.optString("excerpt");
+            String imageUrl = CrawlerUtils.completeUrl(product.optString("imageFull"), "https", "");
+            int price = CommonMethods.doublePriceToIntegerPrice(JSONUtils.getValueRecursive(product, "prices.0.price", Double.class), 0);
+            boolean isAvailable = price != 0;
 
-            saveDataProduct(null, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(null)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-
+            saveDataProduct(productRanking);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -120,7 +134,7 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
    protected JSONObject crawlProductInfo() {
       String lojaUrl = CommonMethods.getLast(getHomePage().split("sitemercado.com.br"));
-      String loadUrl = API_URL+"page/store" + lojaUrl;
+      String loadUrl = API_URL + "page/store" + lojaUrl;
       String lojaId = "";
       String lojaRede = "";
 
@@ -143,13 +157,13 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
          JSONObject token = new JSONObject(header);
          lojaId = Integer.toString(JSONUtils.getIntegerValueFromJSON(token, "IdLoja", 0));
 
-         if(lojaId.equals("0")){
+         if (lojaId.equals("0")) {
             JSONObject body = new JSONObject(response.getBody());
-            lojaId =Integer.toString(JSONUtils.getValueRecursive(body,"sale.id",Integer.class));
-            lojaRede = Integer.toString(JSONUtils.getValueRecursive(body,"sale.idRede",Integer.class));
+            lojaId = Integer.toString(JSONUtils.getValueRecursive(body, "sale.id", Integer.class));
+            lojaRede = Integer.toString(JSONUtils.getValueRecursive(body, "sale.idRede", Integer.class));
 
-            token.put("IdLoja",lojaId);
-            token.put("IdRede",lojaRede);
+            token.put("IdLoja", lojaId);
+            token.put("IdRede", lojaRede);
          }
 
          headers.put("sm-token", token.toString());
