@@ -2,14 +2,19 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.cookie.Cookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
@@ -20,40 +25,37 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected Document fetchDocument(String url, List<Cookie> cookies) {
-      webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, session);
-      return Jsoup.parse(webdriver.getCurrentPageSource());
-   }
-
-
-   @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
 
-      // monta a url com a keyword e a página
       String url = "https://www.bifarma.com.br/busca_Loja.html?q="
          + this.keywordWithoutAccents.replace(" ", "+");
-      this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select("#gridProdutos .product");
 
-      // se obter 1 ou mais links de produtos e essa página tiver resultado
-      // faça:
       if (!products.isEmpty()) {
          for (Element e : products) {
-
-            // InternalPid
             String internalPid = crawlInternalPid(e);
-
-            // Url do produto
             String productUrl = crawlProductUrl(e);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e,".product_body .name", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product_image a img", Arrays.asList("src"), "https", "");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".product_price > div > strong", null, false, ',', session, 0);
 
-            saveDataProduct(internalPid, internalPid, productUrl);
+            boolean isAvailable = price != 0;
 
-            this.log("Position: " + this.position + " - InternalId: " + internalPid + " - InternalPid: "
-               + internalPid + " - Url: " + productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -94,7 +96,7 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
          productUrl = url.attr("content");
 
          if (!productUrl.contains("bifarma")) {
-            productUrl = "https://www.bifarma.com.br/" + productUrl;
+            productUrl = "https://www.bifarma.com.br" + productUrl;
          } else if (!productUrl.contains("http")) {
             productUrl = "https://" + productUrl;
          }
