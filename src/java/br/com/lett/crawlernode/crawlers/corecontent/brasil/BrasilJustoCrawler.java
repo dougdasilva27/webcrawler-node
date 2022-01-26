@@ -26,12 +26,14 @@ import java.util.Set;
 
 public class BrasilJustoCrawler extends Crawler {
    private static final String HOME_PAGE = "https://soujusto.com.br/";
-   private static final String POSTAL_CODE = "05113-020";
    private static final String SELLER_FULL_NAME = "Justo";
+   private final String POSTAL_CODE = getPostalCode();
 
    public BrasilJustoCrawler(Session session) {
       super(session);
    }
+
+   private String getPostalCode() { return session.getOptions().getString("postal_code"); }
 
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(), Card.DINERS.toString());
 

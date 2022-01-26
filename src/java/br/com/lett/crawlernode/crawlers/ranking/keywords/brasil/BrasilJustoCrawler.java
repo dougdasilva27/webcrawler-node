@@ -19,12 +19,14 @@ import java.util.Map;
 
 public class BrasilJustoCrawler extends CrawlerRankingKeywords {
    private final String HOME_PAGE = "https://soujusto.com.br";
-   private final String POSTAL_CODE = "05113-020";
+   private final String POSTAL_CODE = getPostalCode();
 
    public BrasilJustoCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
    }
+
+   private String getPostalCode() { return session.getOptions().getString("postal_code"); }
 
    @Override
    protected void processBeforeFetch() {
