@@ -50,7 +50,7 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
             boolean  isAvailable  = crawlStock(product);
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalPid)
+               .setInternalPid(internalPid)
                .setName(name)
                .setImageUrl(imgUrl)
                .setPriceInCents(price)
