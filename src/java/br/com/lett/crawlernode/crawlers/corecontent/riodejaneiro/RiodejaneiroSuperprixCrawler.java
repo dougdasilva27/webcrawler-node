@@ -11,7 +11,7 @@ import java.util.List;
 
 public class RiodejaneiroSuperprixCrawler extends VTEXOldScraper {
 
-   private static final String HOME_PAGE = "https://www.ipanema.superprix.com.br/";
+   private static final String HOME_PAGE = "https://www.superprix.com.br/";
 
    public RiodejaneiroSuperprixCrawler(Session session) {
       super(session);
