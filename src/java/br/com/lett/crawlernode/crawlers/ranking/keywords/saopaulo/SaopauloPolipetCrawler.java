@@ -2,6 +2,9 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import java.util.Arrays;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,18 +20,18 @@ public class SaopauloPolipetCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
-      // número de produtos por página do market
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
+      // Quantidade de produtos por página do market
       this.pageSize = 20;
 
       this.log("Página " + this.currentPage);
 
-      // monta a url com a keyword e a página
+      // Monta a url com a keyword e a página
       String url = "https://www.polipet.com.br/busca?busca=" + this.keywordEncoded + "&pagina=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
 
-      // chama função de pegar o html
+      // Chama a função a qual pega o html
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".fbits-item-lista-spot");
@@ -37,15 +40,26 @@ public class SaopauloPolipetCrawler extends CrawlerRankingKeywords {
          if (this.totalProducts == 0) {
             setTotalProducts();
          }
-
          for (Element e : products) {
             String internalid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id").split("-")[3];
-            String internalPid = internalid;
-            String productUrl = CrawlerUtils.scrapUrl(e, ".spotContent .spot-parte-um", Arrays.asList("href"), "https", HOME_PAGE);
+            String productUrl = CrawlerUtils.scrapUrl(e, ".spotContent .spot-parte-um", "href", "https:", HOME_PAGE);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".spotTitle", true);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spotImg > img", "data-original");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".fbits-valor", null, true, ',', session, 0);
+            boolean isAvailable = price != 0;
 
-            saveDataProduct(internalid, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalid)
+               .setInternalPid(null)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalid + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -57,9 +71,13 @@ public class SaopauloPolipetCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+
    }
 
-   @Override protected boolean hasNextPage() {
+
+   @Override
+   protected boolean hasNextPage() {
       return this.currentDoc.selectFirst(".fbits-paginacao ul .pg a") != null;
    }
 }
+
