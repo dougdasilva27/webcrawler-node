@@ -63,8 +63,9 @@ public class BrasilSephoraCrawler extends CrawlerRankingKeywords {
 
                String name = product.optString("name");
                String imgUrl = product.optJSONObject("images").optString("default");
-               Integer price = product.optInt("price");
-               boolean  isAvailable  = product.optString("status") == "AVAILABLE" ? true : false;
+               Integer price = getprice(product);
+
+               boolean  isAvailable  = product.optString("status").equals("AVAILABLE") ? true : false;
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
                   .setInternalPid(internalPid)
@@ -86,6 +87,10 @@ public class BrasilSephoraCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-
+   private Integer getprice(JSONObject product){
+      String priceStr = product.optQuery("/price").toString();
+      Double priceDouble = Double.parseDouble(priceStr)*100;
+      return  priceDouble.intValue();
+   }
 
 }
