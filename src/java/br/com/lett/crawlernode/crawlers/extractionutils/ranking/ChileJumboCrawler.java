@@ -86,8 +86,7 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY
+               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
                )
          )
          .build();
