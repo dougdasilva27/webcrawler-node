@@ -172,7 +172,7 @@ public class TestUtils {
       int secondaryImagesNumber = product.getSecondaryImages() != null ? product.getSecondaryImages().size() : 0;
       int categoriesNumber = (product.getCategory1() != null ? 1 : 0) + (product.getCategory2() != null ? 1 : 0) + (product.getCategory3() != null ? 1 : 0);
 
-      String status = product.getAvailable() ? "available" : product.getMarketplace().isEmpty() ? "not available" : "marketplace";
+      String status = product.getAvailable() ? "available" : (product.getMarketplace() != null && product.getMarketplace().isEmpty()) ? "not available" : "marketplace";
 
       sb.append("\tinternalId: " + product.getInternalId() + "\n");
       sb.append("\tinternalPid: " + product.getInternalPid() + "\n");
