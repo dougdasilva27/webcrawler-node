@@ -2,8 +2,11 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONObject;
@@ -14,6 +17,7 @@ import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,7 +66,7 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
 
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
       this.log("Página " + this.currentPage);
 
@@ -81,13 +85,24 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
 
          for (Element e : products) {
             String productUrl = crawlProductUrl(e);
-
             String internalId = CommonMethods.getLast(productUrl.split("/"));
+            String name = CrawlerUtils.scrapStringSimpleInfo(e,".blocoproduto__title", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".blocoproduto__image", Arrays.asList("data-src"), "https", "");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".blocoproduto__box span", null, false, ',', session, 0);
 
+            boolean isAvailable = price != 0;
 
-            saveDataProduct(internalId, null, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
