@@ -42,7 +42,7 @@ public class BrasilNetshoesCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapUrl(e, null, "href", "https:", "www.netshoes.com.br");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".item-card__description__product-name > span", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".item-card__images__image-link > img", "data-src");
-            int price = crawlPrice(productUrl);
+            int price = crawlPrice(internalPid);
             boolean isAvailable = price != 0;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -92,13 +92,17 @@ public class BrasilNetshoesCrawler extends CrawlerRankingKeywords {
       return e.attr("parent-sku");
    }
 
-   private int crawlPrice(String url) {
+   private int crawlPrice(String internalPid) {
       Request request = Request.RequestBuilder.create()
-         .setUrl(url)
+         .setUrl("https://www.netshoes.com.br/refactoring/tpl/frdmprcs/" + internalPid + "/lazy/b")
          .build();
-      Document doc = Jsoup.parse(dataFetcher.get(session,request).getBody());
+      Document doc = Jsoup.parse(dataFetcher.get(session, request).getBody());
 
-      Double productPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price.price-box > div > span > strong", null, true, ',', session);
-      return CommonMethods.doublePriceToIntegerPrice(productPrice, 0);
+      String productPrice = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".pr", "data-final-price");
+      int price = 0;
+      if (productPrice != null && !productPrice.isEmpty()) {
+         price = Integer.parseInt(productPrice);
+      }
+      return price;
    }
 }
