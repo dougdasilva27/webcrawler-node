@@ -77,7 +77,7 @@ public class SavegnagoRanking extends CrawlerRankingKeywords {
       JSONObject json = fetchJSONObject(url);
       JSONArray products = json.optJSONArray("products");
 
-      if (!products.isEmpty()) {
+      if (products != null && !products.isEmpty()) {
          if (totalProducts == 0) {
             setTotalProducts(json);
          }
