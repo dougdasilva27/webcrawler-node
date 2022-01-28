@@ -1,8 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.kafka.common.protocol.types.Field;
 import org.json.JSONArray;
@@ -21,7 +24,7 @@ public class Jumbocolombia extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       JSONObject apiJson = fetchProducts();
       JSONArray products = apiJson.optJSONArray("products");
       if (!products.isEmpty()) {
@@ -36,10 +39,22 @@ public class Jumbocolombia extends CrawlerRankingKeywords {
             String internalId = product.optString("id");
             url.append(product.optString("url"));
 
+            String name = product.optString("name");
+            String imgUrl = "https:" + getImage(product);
+            Integer price = product.optInt("price");
+            boolean  isAvailable  =  product.optString("status").equals("AVAILABLE") ? true : false;
 
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(url.toString())
+               .setInternalId(internalId)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            saveDataProduct(internalId, internalId, url.toString());
-            this.log("internalId - " + internalId + " internalPId - " + internalId + " url - " + url);
+            saveDataProduct(productRanking);
+
 
          }
 
@@ -50,6 +65,10 @@ public class Jumbocolombia extends CrawlerRankingKeywords {
       }
 
 
+   }
+
+   private String getImage(JSONObject product){
+      return  product.optJSONObject("images").optString("default");
    }
 
    private JSONObject fetchProducts() {
