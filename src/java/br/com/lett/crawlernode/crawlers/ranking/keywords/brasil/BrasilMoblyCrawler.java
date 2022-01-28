@@ -1,7 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
+
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -17,7 +22,7 @@ public class BrasilMoblyCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected void extractProductsFromCurrentPage() {
+  protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
     this.pageSize = 60;
 
     this.log("Página " + this.currentPage);
@@ -44,9 +49,23 @@ public class BrasilMoblyCrawler extends CrawlerRankingKeywords {
 
         String productUrl = scrapUrl(product);
 
-        saveDataProduct(null, internalPid, productUrl);
+         String name = product.optString("name");
+         String imgUrl = getImage(product);
+         String priceString = product.optString("finalPrice") ;
+         priceString =  priceString.replaceAll(",", "");
+         Integer price = Integer.parseInt(priceString);
+         boolean  isAvailable  =  product.optBoolean("stockAvailable");
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setImageUrl(imgUrl)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
+
+         saveDataProduct(productRanking);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
@@ -56,9 +75,19 @@ public class BrasilMoblyCrawler extends CrawlerRankingKeywords {
       this.result = false;
       this.log("Keyword sem resultado!");
     }
-
+     https://staticmobly.akamaized.net/r/222x222/r/222x222/p/Cimol--Mesa-de-Jantar-Retangular-Grace-Nature-e-Chumbo-130-cm-4166-964018-1.jpg
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
+
+   private String getImage(JSONObject product){
+      try {
+         return "htpps:" + product.optQuery("/productImage/optionTwo/main").toString() + ".jpg";
+      }
+      catch(NullPointerException e)
+      {
+         return "NullPointerException caught";
+      }
+   }
 
   private String scrapUrl(JSONObject product) {
     String url = null;
