@@ -113,6 +113,29 @@ public class B2WCrawler extends Crawler {
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
+            )
+         )
+         .build();
+
+      Request requestFetcher = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setSendUserAgent(false)
+         .setFetcheroptions(
+            FetcherOptions.FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .setForbiddenCssSelector("#px-captcha")
+               .build()
+         )
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
@@ -129,9 +152,8 @@ public class B2WCrawler extends Crawler {
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
 
-
          request.setHeaders(headers);
-         content = new FetcherDataFetcher().get(session, request).getBody();
+         content = new FetcherDataFetcher().get(session, requestFetcher).getBody();
       }
 
       return content;
