@@ -2,9 +2,14 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -29,7 +34,7 @@ public class MexicoSamsclubCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   public void extractProductsFromCurrentPage() {
+   public void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 20;
 
       this.log("Página " + this.currentPage);
@@ -51,11 +56,23 @@ public class MexicoSamsclubCrawler extends CrawlerRankingKeywords {
             if (product.has("attributes")) {
                JSONObject attributes = product.getJSONObject("attributes");
                String productUrl = crawlProductUrl(attributes);
-               String internalId = crawlInternalId(attributes);
+               String internalId = JSONUtils.getValueRecursive(attributes, "sku.repositoryId,0", ",", String.class, null);
+               String name = JSONUtils.getValueRecursive(attributes, "skuDisplayName,0", ",", String.class, null);
+               String imageUrl = CrawlerUtils.completeUrl(JSONUtils.getValueRecursive(attributes, "product.smallImage.url,0", ",", String.class, null), "https", "assets.sams.com.mx");
+               int price = CommonMethods.stringPriceToIntegerPrice(JSONUtils.getValueRecursive(attributes, "sku.finalPrice,0", ",", String.class, null), '.', 0);
+               boolean isAvailable = price != 0;
 
-               saveDataProduct(internalId, null, productUrl);
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setImageUrl(imageUrl)
+                  .build();
 
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+               saveDataProduct(productRanking);
+
             }
 
             if (this.arrayProducts.size() == productsLimit) {
@@ -76,19 +93,6 @@ public class MexicoSamsclubCrawler extends CrawlerRankingKeywords {
       this.log("Total da busca: " + this.totalProducts);
    }
 
-   private String crawlInternalId(JSONObject product) {
-      String internalId = null;
-
-      if (product.has("sku.repositoryId")) {
-         JSONArray ids = product.getJSONArray("sku.repositoryId");
-
-         if (ids.length() > 0) {
-            internalId = ids.get(0).toString();
-         }
-      }
-
-      return internalId;
-   }
 
    private String crawlProductUrl(JSONObject product) {
       String productUrl = null;
