@@ -89,6 +89,7 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
                .build()
          ).setProxyservice(
             Arrays.asList(
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
@@ -105,6 +106,7 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
+            ProxyCollection.INFATICA_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
