@@ -1,72 +1,35 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.LinxImpulseRanking;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
-public class BrasilDrogalCrawler extends CrawlerRankingKeywords {
+import java.io.UnsupportedEncodingException;
+
+public class BrasilDrogalCrawler extends LinxImpulseRanking {
+   protected String internalPid = "";
+   protected String internalId = "";
 
    public BrasilDrogalCrawler(Session session) {
       super(session);
    }
 
+   // Inverts internalPid and internalId
    @Override
-   protected void extractProductsFromCurrentPage() {
-      this.pageSize = 56;
+   protected String crawlInternalPid(JSONObject product) {
+      this.internalPid = super.crawlInternalPid(product);
+      this.internalId = super.crawlInternalId(product, this.internalPid);
 
-      this.log("Página " + this.currentPage);
-
-      String url = "https://www.drogal.com.br/" + this.keywordEncoded + "/?p=" + this.currentPage;
-      this.log("Link onde são feitos os crawlers: " + url);
-
-      this.currentDoc = fetchDocument(url);
-
-      Elements products = this.currentDoc.select(".list-products li > div");
-
-      if (!products.isEmpty()) {
-
-         for (Element e : products) {
-            String internalPid = crawlInternalPid(e);
-            String productUrl = crawlProductUrl(e);
-
-            saveDataProduct(null, internalPid, productUrl);
-
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
-            }
-
-         }
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
-      }
-
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+      return internalId;
    }
 
    @Override
-   protected boolean hasNextPage() {
-      return !this.currentDoc.select("a.view-more[data-direction=next]").isEmpty();
-   }
-
-   private String crawlInternalPid(Element e) {
-      return e.attr("data-sku");
-   }
-
-   private String crawlProductUrl(Element e) {
-      String productUrl = null;
-
-      Element url = e.select("a.link").first();
-      if (url != null) {
-         productUrl = url.attr("href");
-
-         if (!productUrl.contains("drogal")) {
-            productUrl = ("https://www.drogal.com.br/" + productUrl).replace("br//", "br/");
-         }
-      }
-
-      return productUrl;
+   protected String crawlInternalId(JSONObject product, String internalPid) {
+      return this.internalPid;
    }
 }
