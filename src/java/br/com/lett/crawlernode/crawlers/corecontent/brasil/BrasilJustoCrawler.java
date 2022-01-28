@@ -62,7 +62,10 @@ public class BrasilJustoCrawler extends Crawler {
 
          JSONObject contextSchema = CrawlerUtils.selectJsonFromHtml(doc, ".row.product.product-details > script", null, ";", true, true);
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".shopping-list__content", "data-id");
-         String internalId = !contextSchema.isEmpty() ? JSONUtils.getValueRecursive(contextSchema, "offers.0.sku", String.class, internalPid) : internalPid;
+         String internalId = internalPid;
+         if (contextSchema != null) {
+            internalId = !contextSchema.isEmpty() ? JSONUtils.getValueRecursive(contextSchema, "offers.0.sku", String.class, internalPid) : internalPid;
+         }
          String name = CrawlerUtils.scrapStringSimpleInfo(doc,".product-info__name", false);
          boolean isAvailable = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
@@ -117,8 +120,12 @@ public class BrasilJustoCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double[] prices = scrapPrices(doc);
-      Double priceFrom = prices[0];
-      Double spotlightPrice = prices[1];
+      Double priceFrom = null;
+      Double spotlightPrice = null;
+      if (prices.length >= 2) {
+         priceFrom = prices[0];
+         spotlightPrice = prices[1];
+      }
 
       if(spotlightPrice != null){
          CreditCards creditCards = scrapCreditCards(spotlightPrice);

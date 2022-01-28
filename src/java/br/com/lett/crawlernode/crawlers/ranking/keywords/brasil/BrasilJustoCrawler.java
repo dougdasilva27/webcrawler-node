@@ -53,7 +53,7 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
          JSONObject product = products.getJSONObject(i).optJSONObject("node");
          String urlPath = product != null ? product.optString("url") : null;
          String internalId = product != null ? product.optString("sku") : null;
-         String internalPid = urlPath != null ? urlPath.split("/").length > 0 ? urlPath.split("/")[urlPath.split("/").length - 1] : null : null;
+         String internalPid = scrapInternalPid(urlPath);
          String productUrl = HOME_PAGE + urlPath;
          String name = product != null ? product.optString("name") : null;;
          String imageUrl = product != null ? product.optJSONObject("thumbnail").optString("url") : null;
@@ -116,5 +116,17 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
       Response response = dataFetcher.post(session, request);
 
       return CrawlerUtils.stringToJson(response.getBody());
+   }
+
+   private String scrapInternalPid(String urlPath) {
+      String internalPid = null;
+
+      if (urlPath != null) {
+         if ( urlPath.split("/").length > 0) {
+            internalPid = urlPath.split("/")[urlPath.split("/").length - 1];
+         }
+      }
+
+      return internalPid;
    }
 }
