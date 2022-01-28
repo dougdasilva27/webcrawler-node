@@ -2330,4 +2330,20 @@ public class CrawlerUtils {
       return list;
    }
 
+   /**
+    * Get a list of eans from a table that has a structure like that: https://prnt.sc/26jlpny
+    * @param doc
+    * @param text the row text to search
+    * @return List<String>  with the matches
+    */
+   public static List<String> scrapEansFromTable(Element doc, String text) {
+      List<String> eans = new ArrayList<>();
+      List<Element> eanElements = doc.select("td:contains("+text+") ~ td");
+
+      if(!eanElements.isEmpty()) {
+         eanElements.forEach(eanElement -> eans.add(eanElement.text()));
+      }
+      return eans;
+   }
+
 }
