@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilMoblyCrawler extends CrawlerRankingKeywords {
 
@@ -51,9 +52,7 @@ public class BrasilMoblyCrawler extends CrawlerRankingKeywords {
 
          String name = product.optString("name");
          String imgUrl = getImage(product);
-         String priceString = product.optString("finalPrice") ;
-         priceString =  priceString.replaceAll(",", "");
-         Integer price = Integer.parseInt(priceString);
+         Integer price = CommonMethods.stringPriceToIntegerPrice(product.optString("finalPrice"), ',', 0);
          boolean  isAvailable  =  product.optBoolean("stockAvailable");
 
          RankingProduct productRanking = RankingProductBuilder.create()
@@ -81,8 +80,11 @@ public class BrasilMoblyCrawler extends CrawlerRankingKeywords {
 
    private String getImage(JSONObject product){
       try {
-         return "htpps:" + product.optQuery("/productImage/optionTwo/main").toString() + ".jpg";
+//         return "htpps:" + product.optQuery("/productImage/optionTwo/main").toString() + ".jpg";
+
+         return CrawlerUtils.completeUrl(product.optQuery("/productImage/optionTwo/main").toString(), "https", null);
       }
+
       catch(NullPointerException e)
       {
          return "NullPointerException caught";
