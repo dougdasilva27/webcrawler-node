@@ -66,10 +66,10 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          Request request = Request.RequestBuilder.create()
             .setUrl(session.getOriginalURL())
             .setProxyservice(Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR
             ))
             .setHeaders(headers)
             .build();

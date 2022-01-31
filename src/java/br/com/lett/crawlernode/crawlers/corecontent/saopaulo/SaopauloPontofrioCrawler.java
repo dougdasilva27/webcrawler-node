@@ -66,51 +66,27 @@ public class SaopauloPontofrioCrawler extends CNOVANewCrawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR
 
             )
          )
          .build();
 
-      Request requestFetcher = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create()
-            .mustUseMovingAverage(false)
-            .mustRetrieveStatistics(true)
-            .build())
-         .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
-
-            )
-         )
-         .build();
-
-
-      return alternativeFetch(request, requestFetcher);
+      return alternativeFetch(request);
    }
 
 
-   private Response alternativeFetch(Request request, Request requestFetcher) {
+   private Response alternativeFetch(Request request) {
       List<DataFetcher> httpClients = Arrays.asList(new JsoupDataFetcher(), new FetcherDataFetcher());
 
       Response response = null;
 
       for (DataFetcher localDataFetcher : httpClients) {
-         if (localDataFetcher instanceof FetcherDataFetcher) {
-            response = localDataFetcher.get(session, requestFetcher);
-         } else {
-            response = localDataFetcher.get(session, request);
-         }
+         response = localDataFetcher.get(session, request);
          if (checkResponse(response)) {
             return response;
          }
