@@ -47,7 +47,6 @@ public class BrasilNetshoesCrawler extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(null)
                .setInternalPid(internalPid)
                .setName(name)
                .setPriceInCents(price)
