@@ -1,9 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+
+import java.util.Collections;
 
 public class BrasilHomerefillCrawler extends CrawlerRankingKeywords {
 
@@ -14,27 +20,21 @@ public class BrasilHomerefillCrawler extends CrawlerRankingKeywords {
   private String redirectUrl;
 
   @Override
-  protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 20;
-
+  protected void extractProductsFromCurrentPage() throws MalformedProductException {
+    this.pageSize = 40;
     this.log("Página " + this.currentPage);
-
-    // monta a url com a keyword e a página
     String url = "https://www.homerefill.com.br/shopping/search?search=" + this.keywordEncoded;
 
     if (this.currentPage == 1) {
       this.currentDoc = fetchDocument(url);
-
       this.redirectUrl = session.getRedirectedToURL(url) != null ? session.getRedirectedToURL(url) : url;
     } else {
       this.currentDoc = fetchDocument(this.redirectUrl + "&page=" + this.currentPage);
     }
-
     this.log("Link onde são feitos os crawlers: " + this.redirectUrl + "&page=" + this.currentPage);
 
-    Elements products = this.currentDoc.select(".page-department .organism-product .column div[data-product-sku]");
-    Element emptySearch = this.currentDoc.select(".page-department__suggests").first();
+    Elements products = this.currentDoc.select(".organism-product div[data-product-sku]");
+    Element emptySearch = this.currentDoc.selectFirst(".page-department__suggests");
 
     if (!products.isEmpty() && emptySearch == null) {
       if (this.totalProducts == 0) {
@@ -42,24 +42,30 @@ public class BrasilHomerefillCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-
-        // InternalPid
         String internalPid = crawlInternalPid();
-
-        // InternalId
         String internalId = crawlInternalId(e);
-
-        // Url do produto
         String productUrl = crawlProductUrl(e);
 
-        saveDataProduct(internalId, internalPid, productUrl);
+         String name = CrawlerUtils.scrapStringSimpleInfo(e, "h3", true);
+         String imgUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".atom-product-image img", "src");
+         Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".molecule-new-product-card__price", null, false, ',', session, 0);
+         boolean isAvailable = price != 0;
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setImageUrl(imgUrl)
+            .setName(name)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
+
+         saveDataProduct(productRanking);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
-
       }
     } else {
       this.result = false;
