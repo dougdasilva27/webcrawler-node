@@ -61,8 +61,9 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
             String name = product.optString("artDes") + " " + product.optString("marDes");
 //
             String imgUrl = "https://www.lacomer.com.mx/superc/img_art/" + product.optString("artEan")+"_1.jpg";
-            Double priceDouble = product.getDouble("artPrlin")*100;
-            Integer price = priceDouble.intValue();
+
+            Integer price = getPrice(product);
+
             boolean  isAvailable  = price != 0;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -96,6 +97,15 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
       return this.arrayProducts.size() < this.totalProducts;
    }
 
+   protected Integer getPrice( JSONObject product){
+      try {
+         Double priceDouble = product.getDouble("artPrlin")*100;
+         return priceDouble.intValue();
+      } catch (NullPointerException e) {
+         return 0;
+      }
+
+   }
    protected void setTotalBusca(JSONObject search) {
       if (search.has("total")) {
 
