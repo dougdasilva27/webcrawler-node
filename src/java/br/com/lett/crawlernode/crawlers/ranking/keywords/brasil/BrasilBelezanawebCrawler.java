@@ -1,11 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+
+import java.util.Collections;
 
 public class BrasilBelezanawebCrawler extends CrawlerRankingKeywords {
 
@@ -14,7 +19,7 @@ public class BrasilBelezanawebCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 36;
 
       this.log("Página " + this.currentPage);
@@ -32,19 +37,29 @@ public class BrasilBelezanawebCrawler extends CrawlerRankingKeywords {
             setTotalProducts();
          }
          for (Element e : products) {
-
             JSONObject json = CrawlerUtils.stringToJson(e.attr("data-event"));
             String internalId = json.optString("sku", null);
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a.showcase-item-title", "href");
+            String name = json.optString("productName");
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".showcase-image", Collections.singletonList("data-src"), "https", "res.cloudinary.com");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price-value", null, false, ',', session, 0);
+            boolean isAvailable = price != 0;
 
-            saveDataProduct(internalId, null, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(null)
+               .setImageUrl(imgUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-                  + null + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
-
          }
       } else {
          this.result = false;
