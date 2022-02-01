@@ -34,9 +34,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * date: 27/03/2018
@@ -127,12 +125,12 @@ public class BrasilPetzCrawler extends Crawler {
          String name = crawlName(doc, nameVariation);
          String internalId = crawlInternalId(doc);
 
-         String description = crawlDescription(doc);
-         String primaryImage = crawlPrimaryImage(doc);
-         List<String> secondaryImages = crawlSecondaryImages(doc, primaryImage);
+         String description = CrawlerUtils.scrapSimpleDescription(doc,  Arrays.asList("#description", "#specifications"));
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".sp-wrap a", Collections.singletonList("href"),"https", "staticpetz.stoom.com.br");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".swiper-thumbnail-image", Collections.singletonList("src"), "https", "staticpetz.stoom.com.br", primaryImage);
          List<String> eans = crawlEans(doc);
          RatingsReviews ratingReviews = crawlRating(doc);
-         boolean available = doc.select(".is_available").first() != null;
+         boolean available = doc.selectFirst("#available-product") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          return ProductBuilder.create()
@@ -221,7 +219,7 @@ public class BrasilPetzCrawler extends Crawler {
    private String crawlInternalId(Document doc) {
       String internalId = null;
 
-      Element sku = doc.select(".prod-info .reset-padding").first();
+      Element sku = doc.select("#product-sku").first();
       if (sku != null) {
          internalId = sku.ownText().replace("\"", "").trim();
       }
@@ -256,39 +254,6 @@ public class BrasilPetzCrawler extends Crawler {
       return name.toString();
    }
 
-
-   private String crawlPrimaryImage(Document doc) {
-      String primaryImage = null;
-
-      Element image = doc.select(".sp-wrap a").first();
-
-      if (image != null) {
-         primaryImage = CrawlerUtils.sanitizeUrl(image, "href", "https:", "www.petz.com.br");
-      }
-
-      return primaryImage;
-   }
-
-   private List<String> crawlSecondaryImages(Document doc, String primaryImage) {
-      List<String> secondaryImages = new ArrayList<>();
-
-      Elements images = doc.select(".slick-list.draggable a");
-
-      for (Element e : images) {
-         String image = CrawlerUtils.sanitizeUrl(e, "href", "https:", "www.petz.com.br");
-
-         if (image != null && !image.contains("youtube") && !secondaryImages.contains(image)) {
-            if (!image.equals(primaryImage)) {
-               secondaryImages.add(image);
-            }
-         }
-
-      }
-
-
-      return secondaryImages;
-   }
-
    private CategoryCollection crawlCategories(Document document) {
       CategoryCollection categories = new CategoryCollection();
       Elements elementCategories = document.select("#breadcrumbList li[itemprop] a span");
@@ -299,25 +264,6 @@ public class BrasilPetzCrawler extends Crawler {
 
       return categories;
    }
-
-   private String crawlDescription(Document doc) {
-      StringBuilder description = new StringBuilder();
-
-      Element prodInfo = doc.selectFirst(".col-md-7.prod-info > div:not([class])");
-      if (prodInfo != null) {
-         description.append(prodInfo.html());
-      }
-
-      Elements elementsInformation = doc.select(".infos, #especificacoes");
-      for (Element e : elementsInformation) {
-         if (e.select(".depoimento, #depoimentos, .depoimentoTexto").isEmpty()) {
-            description.append(e.html());
-         }
-      }
-
-      return description.toString();
-   }
-
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
@@ -351,8 +297,8 @@ public class BrasilPetzCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".opt-box .de-riscado", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".opt-box .price-current", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".current-price-left", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       BankSlip bankTicket = BankSlipBuilder.create()
