@@ -93,6 +93,7 @@ public abstract class VTEXNewScraper extends VTEXScraper {
 
    protected String scrapPidFromFromScript(Document doc) {
       JSONObject jsonObject = CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", false, true);
-      return jsonObject.optString("productId");
+      String internalPid = jsonObject.optString("productId");
+      return internalPid.isEmpty() ? null : internalPid;
    }
 }
