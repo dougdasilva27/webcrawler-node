@@ -16,10 +16,10 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -49,14 +49,10 @@ public abstract class TottusCrawler extends Crawler {
 
          Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
 
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc,"h1.title",true)  + " " + CrawlerUtils.scrapStringSimpleInfo(doc,".subtitle-container",true);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.title", true) + " " + CrawlerUtils.scrapStringSimpleInfo(doc, ".subtitle-container", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".Breadcrumbs .link.small");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".GalleryImg", Collections.singletonList("src"), "http://",
-            homePage);
-         Elements secondaryImages = doc.select(".product-gallery-thumbnails-item img");
-         if (secondaryImages.first() != null) {
-            secondaryImages.remove(0);
-         }
+         String primaryImage = crawlImage(doc);
+         List<String> secondaryImages = crawlSecondaryImage(doc);
          String description = scrapDescription(doc);
          Offers offers = doc.selectFirst(".column-right-content .price.medium") != null ? scrapOffer(doc) : new Offers();
 
@@ -67,7 +63,7 @@ public abstract class TottusCrawler extends Crawler {
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages.eachAttr("src"))
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
             .build();
@@ -78,6 +74,32 @@ public abstract class TottusCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private String crawlImage(Document doc) {
+      String primary = null;
+      String image = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-gallery-mobile-thumbnails img", "src");
+
+      if (image != null) {
+         primary = image.replace("thumb", "large");
+      }
+
+      return CrawlerUtils.completeUrl(primary, "https", homePage);
+
+   }
+
+   private List<String> crawlSecondaryImage(Document doc) {
+      List<String> secondaryImagesList = new ArrayList<>();
+      Elements secondaryImages = doc.select(".product-gallery-thumbnails-item img");
+      for (Element e : secondaryImages) {
+         String image = e.attr("src");
+         if (image != null) {
+            secondaryImagesList.add(image.replace("thumb", "large"));
+
+         }
+      }
+      secondaryImagesList.remove(0);
+      return secondaryImagesList;
    }
 
    private String scrapDescription(Document doc) {
