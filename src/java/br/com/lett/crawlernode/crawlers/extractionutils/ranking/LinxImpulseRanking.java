@@ -73,7 +73,8 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
             String name = product.optString("name");
             String image = crawlImage(product);
             int priceInCents = crawlPrice(product);
-            boolean isAvailable = product.optString("status", "").equalsIgnoreCase("AVAILABLE");
+            boolean isAvailable = crawlAvailability(product);
+
 
             try {
                RankingProduct rankingProduct = RankingProductBuilder.create()
@@ -99,6 +100,10 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
          this.log("Keyword sem resultado!");
       }
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private boolean crawlAvailability(JSONObject product) {
+      return product.optString("status", "").equalsIgnoreCase("AVAILABLE");
    }
 
    protected String mountURL() {
