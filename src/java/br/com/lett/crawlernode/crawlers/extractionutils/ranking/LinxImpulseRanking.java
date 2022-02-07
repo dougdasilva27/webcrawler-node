@@ -102,7 +102,7 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private boolean crawlAvailability(JSONObject product) {
+   protected boolean crawlAvailability(JSONObject product) {
       return product.optString("status", "").equalsIgnoreCase("AVAILABLE");
    }
 
