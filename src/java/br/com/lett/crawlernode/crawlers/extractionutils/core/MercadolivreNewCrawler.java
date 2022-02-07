@@ -448,9 +448,13 @@ public class MercadolivreNewCrawler {
 
    private Double findSpotlightPrice(Element doc) {
       Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-tag meta", "content", false, '.', session);
+      if (price == null){
+         price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.andes-money-amount.ui-pdp-price__part.andes-money-amount--cents-superscript meta", "content", false, '.', session);
+      }
       if (price == null) {
          price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.ui-pdp-price span.price-tag-amount", null, false, ',', session);
       }
+
       return price;
    }
 
