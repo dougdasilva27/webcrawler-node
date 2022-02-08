@@ -65,7 +65,7 @@ public class BrasilPetzCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalPid = crawlInternalPid(doc);
          CategoryCollection categories = crawlCategories(doc);
-         Elements variations = doc.select(".opt_radio_variacao[data-urlvariacao]");
+         Elements variations = doc.select(".variacao-item[data-urlvariacao]");
 
          if (variations.size() > 1) {
             Logging.printLogInfo(logger, session, "Page with more than one product.");
@@ -161,22 +161,14 @@ public class BrasilPetzCrawler extends Crawler {
       return eans;
    }
 
-   /*******************************
-    * Product page identification *
-    *******************************/
-
    private boolean isProductPage(Document document) {
       return document.select(".prod-info").first() != null;
    }
 
-   /*******************
-    * General methods *
-    *******************/
-
    private String crawlNameVariation(Element e) {
       String nameVariation = null;
 
-      Element name = e.select("label > div").first();
+      Element name = e.selectFirst(".item-name");
       if (name != null) {
          nameVariation = name.ownText().replace("\"", "");
       }
@@ -297,8 +289,8 @@ public class BrasilPetzCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price", null, true, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".current-price-left", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-top-price .old-price", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-top-price .current-price-left", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       BankSlip bankTicket = BankSlipBuilder.create()
