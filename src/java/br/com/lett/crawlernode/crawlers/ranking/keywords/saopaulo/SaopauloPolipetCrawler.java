@@ -41,7 +41,7 @@ public class SaopauloPolipetCrawler extends CrawlerRankingKeywords {
             setTotalProducts();
          }
          for (Element e : products) {
-            String internalid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id").split("-")[3];
+            String internalId = scrapperInternalId(e);
             String productUrl = CrawlerUtils.scrapUrl(e, ".spotContent .spot-parte-um", "href", "https:", HOME_PAGE);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".spotTitle", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spotImg > img", "data-original");
@@ -50,8 +50,7 @@ public class SaopauloPolipetCrawler extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalid)
-               .setInternalPid(null)
+               .setInternalId(internalId)
                .setName(name)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
@@ -74,6 +73,16 @@ public class SaopauloPolipetCrawler extends CrawlerRankingKeywords {
 
    }
 
+   public String scrapperInternalId(Element e) {
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id");
+      if (internalId != null) {
+         String[] internalIdPositions = internalId.split("-");
+         if (internalId.length() > 3) {
+            return internalIdPositions[3];
+         }
+      }
+      return null;
+   }
 
    @Override
    protected boolean hasNextPage() {
