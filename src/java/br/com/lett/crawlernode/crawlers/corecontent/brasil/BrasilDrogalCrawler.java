@@ -26,6 +26,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author gabriel date: 2018-05-25
@@ -57,14 +58,14 @@ public class BrasilDrogalCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = crawlInternalId(doc);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#content_product [data-sku]", "data-sku");
-         String name = crawlName(doc);
+         String internalPid = crawlInternalPid(doc);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.name",  true);
          CategoryCollection categories = crawlCategories(doc);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".big-image a img", Arrays.asList("src"), "https", "io2.convertiez.com.br");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "#sly_carousel li:not(.active) a", Arrays.asList("big_img"), "https", "io2.convertiez.com.br", primaryImage);
-         String description = crawlDescription(doc);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".big-image img", List.of("data-src"), "https", "io.convertiez.com.br");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image li:not(.active) img", List.of("data-src"), "https", "io.convertiez.com.br", primaryImage);
+         String description = CrawlerUtils.scrapSimpleDescription(doc,  List.of(".container:contains(Descrição)", ".container:contains(Especificação)"));
          RatingsReviews ratingsReviews = scrapRatingAndReviews(doc, internalId);
-         boolean available = doc.selectFirst(".box-buttons .bt-big.bt-checkout") != null;
+         boolean available = doc.selectFirst("#content-product .purchase > button:contains(Comprar)") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
@@ -93,31 +94,25 @@ public class BrasilDrogalCrawler extends Crawler {
 
    }
 
-
-   /*******************************
-    * Product page identification *
-    *******************************/
-
-   private boolean isProductPage(Document doc) {
-      return doc.select(".code span[itemprop=sku]").first() != null;
+   private String crawlInternalPid(Document doc) {
+      List<Element> scripts = doc.select("script[type=text/javascript]").stream().filter(e -> e.html().contains("window.dataProduct")).collect(Collectors.toList());
+      if(!scripts.isEmpty()) {
+         String script = scripts.get(0).html();
+         try {
+            JSONObject productJSON = new JSONObject(CrawlerUtils.extractSpecificStringFromScript(script, "=", true, "", true));
+            return productJSON.optString("sku", null);
+         } catch (Exception e) {
+            e.printStackTrace();
+         }
+      }
+      return null;
    }
 
 
-   /**
-    * We extract internalId on script like this:
-    * <p>
-    * Key: productId
-    * <p>
-    * In that case below, internalId will be "kityenzahshleave"
-    * <p>
-    * ;var dataLayer=dataLayer||[];dataLayer.push({device:"d"})
-    * dataLayer.push({pageName:"product",productId:"kityenzahshleave",productName:"Kit Yenzah Sou+
-    * Cachos Shampoo Lowpoo 240ml + Leave In Suave
-    * 365ml",productPrice:"63.24",productDepartment:"CUIDADOS COM CABELOS",productCategory:"CUIDADOS
-    * COM CABELOS",productSubCategory:"KIT CABELOS",productBrand:"Yenzah"});
-    *
-    * @return
-    */
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".product-form") != null;
+   }
+
    private String crawlInternalId(Document document) {
       String internalId = null;
       JSONObject dataLayer = new JSONObject();
@@ -151,18 +146,6 @@ public class BrasilDrogalCrawler extends Crawler {
       return internalId;
    }
 
-   private String crawlName(Document document) {
-      String name = null;
-      Element nameElement = document.select("h1.name").first();
-
-      if (nameElement != null) {
-         name = nameElement.ownText().trim();
-      }
-
-      return name;
-   }
-
-
    private CategoryCollection crawlCategories(Document document) {
       CategoryCollection categories = new CategoryCollection();
       Elements elementCategories = document.select("#breadcrumb li:not(.home) > a");
@@ -178,26 +161,11 @@ public class BrasilDrogalCrawler extends Crawler {
       return categories;
    }
 
-   private String crawlDescription(Document document) {
-      StringBuilder description = new StringBuilder();
-      Element descriptionElement = document.select(".container .float > .center:not(.product) > .row").first();
-
-      if (descriptionElement != null) {
-         description.append(descriptionElement.html());
-      }
-
-      Element modal = document.select(".modal-content .modal-body").last();
-      if (modal != null) {
-         description.append(modal.html());
-      }
-
-      return description.toString();
-   }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = scrapSales(pricing, doc);
+      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -212,21 +180,15 @@ public class BrasilDrogalCrawler extends Crawler {
       return offers;
    }
 
-   private List<String> scrapSales(Pricing pricing, Document doc) {
-      List<String> sales = new ArrayList<>();
-      String sale = CrawlerUtils.calculateSales(pricing);
-      if (sale != null) {
-         sales.add(sale);
-      }
-
-      return sales;
-   }
-
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_off span", null, false, ',', session);
-      Double priceCard = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sale .sale_price", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .sale-price", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .unit-price", null, false, ',', session);
+      Double priceCard = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .get_card_price", null, false, ',', session);
+
+      if(Objects.equals(priceFrom, spotlightPrice)) priceFrom = null;
+
       CreditCards creditCards = scrapCreditCards(priceCard, doc);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-boleto.get_price_boleto", null, false, ',', session);
+
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
@@ -360,9 +322,6 @@ public class BrasilDrogalCrawler extends Crawler {
          .build();
    }
 
-   /**
-    * Number of ratings appear in html
-    */
    private Integer getTotalNumOfRatings(Document docRating) {
       int totalRating = 0;
       Element totalRatingElement = docRating.select("[itemprop=aggregateRating] [itemprop=reviewCount]").first();
