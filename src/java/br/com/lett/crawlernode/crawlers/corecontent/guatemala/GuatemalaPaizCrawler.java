@@ -72,18 +72,23 @@ public class GuatemalaPaizCrawler extends VTEXNewScraper {
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
+      try {
+         Pricing pricing = scrapPricing(doc);
 
-      offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName("paizgt")
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .build());
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName("paizgt")
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .build());
 
-      return offers;
+         return offers;
+      } catch(MalformedPricingException e) {
+         e.printStackTrace();
+         return offers;
+      }
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
