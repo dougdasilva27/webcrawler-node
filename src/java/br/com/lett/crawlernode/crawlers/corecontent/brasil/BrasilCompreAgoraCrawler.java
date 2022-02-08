@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -21,13 +22,15 @@ import models.pricing.CreditCards;
 import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 
 public class BrasilCompreAgoraCrawler extends Crawler {
-   protected Set<String> cards = Sets.newHashSet(Card.MASTERCARD.toString(), Card.VISA.toString(),  Card.AMEX.toString(), Card.DINERS.toString());
+   protected Set<String> cards = Sets.newHashSet(Card.MASTERCARD.toString(), Card.VISA.toString(), Card.AMEX.toString(), Card.DINERS.toString());
    private static final String SELLER_NAME = "Compre Agora";
 
    public BrasilCompreAgoraCrawler(Session session) {
@@ -53,20 +56,42 @@ public class BrasilCompreAgoraCrawler extends Crawler {
    public List<Product> extractInformation(Document document) throws Exception {
       super.extractInformation(document);
       List<Product> products = new ArrayList<>();
-      if(!isProductPage(document)) {
+      if (!isProductPage(document)) {
          Logging.printLogDebug(logger, session, "Not a product page" + session.getOriginalURL());
          return products;
       }
+      //roducts.add(extractProductFromHtml(document));
+      Elements variations = (Elements) document.select(".v-centered.owl-carousel.carousel-catalogo.carousel-nav .item");
+
+      if (!variations.isEmpty()) {
+
+         for (Element el : variations) {
+            products.add(extractProductFromHtml(document, el));
+         }
+      } else {
+         Element el = null;
+         products.add(extractProductFromHtml(document, el));
+      }
+      return products;
+   }
+
+
+   private Product extractProductFromHtml(Document document, Element el) throws OfferException, MalformedPricingException, MalformedProductException {
+
       // Get all product information
-      String productName = CrawlerUtils.scrapStringSimpleInfo(document,".product-title", false);
-      String productInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document,".product-ean", "data-ean");
-      String productInternalPid = productInternalId;
-      String productDescription = CrawlerUtils.scrapStringSimpleInfo(document,".tab-pane.fade.show.active.only-text", false);
+      String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".product-title", false);
+      String productInternalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".product-ean", "data-ean");
+      String productInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(el, ".item", "data-sku-id");;
+      String productDescription = CrawlerUtils.scrapStringSimpleInfo(document, ".tab-pane.fade.show.active.only-text", false);
       String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".carousel-imagens-mobile.owl-carousel img", Arrays.asList("src"), "", "");
-      List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(document,".carousel-imagens-mobile.owl-carousel img",Collections.singletonList("src"),"","", productPrimaryImage);
+      List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(document, ".carousel-imagens-mobile.owl-carousel img", Collections.singletonList("src"), "", "", productPrimaryImage);
+      boolean available = el.select(".sem-estoque").isEmpty();
+      String variationName =  CrawlerUtils.scrapStringSimpleInfo(el, ".caixa-com .val",false);
+      productName = productName + " " + variationName + " un";
+      Offers offers = available ? scrapOffers(document, productInternalId, el) : new Offers();
 
       ProductBuilder builder = ProductBuilder.create().setUrl(session.getOriginalURL());
-      Product product = ProductBuilder.create()
+      return ProductBuilder.create()
          .setUrl(session.getOriginalURL())
          .setInternalId(productInternalId)
          .setInternalPid(productInternalPid)
@@ -74,14 +99,14 @@ public class BrasilCompreAgoraCrawler extends Crawler {
          .setPrimaryImage(productPrimaryImage)
          .setSecondaryImages(productSecondaryImages)
          .setDescription(productDescription)
-         .setOffers(scrapOffers(document, productInternalId))
+         .setOffers(offers)
          .build();
-      products.add(product);
-      return products;
+
    }
-   private Offers scrapOffers(Document document, String productInternalId) throws MalformedPricingException, OfferException {
+
+   private Offers scrapOffers(Document document, String productInternalId, Element el) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(document, productInternalId);
+      Pricing pricing = scrapPricing(document, productInternalId, el);
       List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
       offers.add(new Offer.OfferBuilder()
          .setIsBuybox(false)
@@ -95,10 +120,19 @@ public class BrasilCompreAgoraCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document document, String id) throws MalformedPricingException {
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(document,".val.bestPrice", null, false, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, ".old-price .val", null, false,  ',', session );
+   private Pricing scrapPricing(Document document, String id, Element el) throws MalformedPricingException {
+      Double price;
+      Double priceFrom;
+      if (el == null){
+         price = CrawlerUtils.scrapDoublePriceFromHtml(document, ".val.bestPrice", null, false, ',', session);
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, ".old-price .val", null, false, ',', session);
+      }else{
+         price = CrawlerUtils.scrapDoublePriceFromHtml(el, ".item", "data-preco-por", true, ',', session);
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(el, ".item", "data-preco-de", true, ',', session);
+      }
+
       CreditCards creditCards = CrawlerUtils.scrapCreditCards(price, cards);
+
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(price)
          .setPriceFrom(priceFrom)
