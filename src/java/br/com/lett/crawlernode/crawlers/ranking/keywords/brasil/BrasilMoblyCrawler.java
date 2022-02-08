@@ -74,14 +74,12 @@ public class BrasilMoblyCrawler extends CrawlerRankingKeywords {
       this.result = false;
       this.log("Keyword sem resultado!");
     }
-     https://staticmobly.akamaized.net/r/222x222/r/222x222/p/Cimol--Mesa-de-Jantar-Retangular-Grace-Nature-e-Chumbo-130-cm-4166-964018-1.jpg
+
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
    private String getImage(JSONObject product){
       try {
-//         return "htpps:" + product.optQuery("/productImage/optionTwo/main").toString() + ".jpg";
-
          return CrawlerUtils.completeUrl(product.optQuery("/productImage/optionTwo/main").toString(), "https", null);
       }
 
