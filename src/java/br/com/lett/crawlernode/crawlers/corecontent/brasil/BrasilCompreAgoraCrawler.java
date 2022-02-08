@@ -60,7 +60,6 @@ public class BrasilCompreAgoraCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Not a product page" + session.getOriginalURL());
          return products;
       }
-      //roducts.add(extractProductFromHtml(document));
       Elements variations = (Elements) document.select(".v-centered.owl-carousel.carousel-catalogo.carousel-nav .item");
 
       if (!variations.isEmpty()) {
