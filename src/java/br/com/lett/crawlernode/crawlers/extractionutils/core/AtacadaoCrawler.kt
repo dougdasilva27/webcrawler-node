@@ -1,25 +1,21 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card
-import br.com.lett.crawlernode.core.models.CategoryCollection
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.crawlers.corecontent.belgium.BelgiumDelhaizeCrawler
 import br.com.lett.crawlernode.util.*
 import models.Offer
 import models.Offers
 import models.pricing.Pricing
 import org.apache.http.cookie.Cookie
-import org.json.JSONArray
-import org.json.JSONObject
 import org.jsoup.nodes.Document
 import java.util.*
-import kotlin.collections.HashMap
 
 /**
  * Date: 27/01/21
@@ -30,7 +26,7 @@ import kotlin.collections.HashMap
 abstract class AtacadaoCrawler (session: Session) : Crawler(session){
 
    init {
-       config.fetcher = FetchMode.FETCHER
+       config.fetcher = FetchMode.JSOUP
    }
    companion object {
       const val SELLER_NAME: String = "Atacadão"
@@ -53,6 +49,13 @@ abstract class AtacadaoCrawler (session: Session) : Crawler(session){
 
          val request = Request.RequestBuilder.create()
             .setUrl(url)
+            .setFollowRedirects(true)
+            .setSendUserAgent(true)
+            .setProxyservice(
+               Arrays.asList(
+                  ProxyCollection.BUY_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR
+               ))
             .build()
 
          val response = dataFetcher.get(session, request)
@@ -67,7 +70,6 @@ abstract class AtacadaoCrawler (session: Session) : Crawler(session){
 
          val headers = HashMap<String, String>()
          headers["Accept"] = "*/*"
-         headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36"
          headers["x-csrftoken"] = token
          headers["content-type"] = "application/x-www-form-urlencoded; charset=UTF-8"
          headers["Cookie"] = CommonMethods.cookiesToString(cookies)
@@ -78,7 +80,13 @@ abstract class AtacadaoCrawler (session: Session) : Crawler(session){
             .setUrl(url)
             .setPayload(payload)
             .setHeaders(headers)
-            .setFollowRedirects(false)
+            .setProxyservice(
+               Arrays.asList(
+                  ProxyCollection.BUY_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR
+               ))
+            .setFollowRedirects(true)
+            .setSendUserAgent(true)
             .build()
 
          dataFetcher.post(session, request)
@@ -100,12 +108,12 @@ abstract class AtacadaoCrawler (session: Session) : Crawler(session){
 
       val headers = HashMap<String, String>()
       headers["Accept"] = "*/*"
-      headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36"
       headers["Cookie"] = CommonMethods.cookiesToString(cookies)
 
       val request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
+         .setSendUserAgent(true)
          .build()
 
       val response = dataFetcher.get(session, request)
