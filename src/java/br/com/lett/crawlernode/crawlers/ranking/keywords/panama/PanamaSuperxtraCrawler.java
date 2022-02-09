@@ -3,12 +3,18 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.panama;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +52,7 @@ public class PanamaSuperxtraCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       pageSize = 100;
       JSONObject json = fetchAPI();
 
@@ -63,9 +69,22 @@ public class PanamaSuperxtraCrawler extends CrawlerRankingKeywords {
             String internalPid = product.optString("sku");
             String internalId = product.optString("id");
             String productUrl = "https://domicilio.superxtra.com/p/" + product.optString("slug");
+            String name = product.optString("name");
+            String imgUrl = crawlImage(product);
+            Integer price = crawlPrice(product);
+            boolean isAvailable = product.optInt("stock", 0) > 0;
 
-            saveDataProduct(internalId, internalPid, productUrl);
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setImageUrl(imgUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(productRanking);
             if (this.arrayProducts.size() == productsLimit)
                break;
          }
@@ -77,8 +96,28 @@ public class PanamaSuperxtraCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   private String crawlImage(JSONObject product) {
+      JSONArray images = product.optJSONArray("photosUrls");
+      if (images != null && !images.isEmpty()) {
+         return images.get(0).toString();
+      }
+      return null;
+   }
+
+   private Integer crawlPrice(JSONObject product) {
+      int price = 0;
+      Object priceObject = product.opt("price");
+      if (priceObject != null) {
+         Double priceDouble = CommonMethods.objectToDouble(priceObject);
+         if (priceDouble != null) {
+            price = CommonMethods.doublePriceToIntegerPrice(priceDouble, 0);
+         }
+      }
+      return price;
+   }
+
    @Override
    protected boolean hasNextPage() {
-      return  currentPage <= totalPages;
+      return currentPage <= totalPages;
    }
 }
