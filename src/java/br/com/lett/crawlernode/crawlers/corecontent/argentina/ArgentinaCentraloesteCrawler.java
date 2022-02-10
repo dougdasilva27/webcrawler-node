@@ -83,17 +83,22 @@ public class ArgentinaCentraloesteCrawler extends Crawler {
 
    private List<String> ImageCapture (JSONObject json, String productPrimaryImage) throws Exception {
       List<String> productSecondaryImagesList = new ArrayList<>();
-      JSONArray arrayImage = (JSONArray) json.optQuery("/[data-gallery-role=gallery-placeholder]/mage~1gallery~1gallery/data");
-      for (Object objImage : arrayImage){
+      try {
+         JSONArray arrayImage = (JSONArray) json.optQuery("/[data-gallery-role=gallery-placeholder]/mage~1gallery~1gallery/data");
+         for (Object objImage : arrayImage){
 
-         String obj = objImage.toString();
-         JSONObject jobj = JSONUtils.stringToJson(obj);
-         String newUrlImage = jobj.getString("img");
-         if(!newUrlImage.equals(productPrimaryImage)){
-            productSecondaryImagesList.add(newUrlImage);
+            String obj = objImage.toString();
+            JSONObject jobj = JSONUtils.stringToJson(obj);
+            String newUrlImage = jobj.getString("img");
+            if(!newUrlImage.equals(productPrimaryImage)){
+               productSecondaryImagesList.add(newUrlImage);
+            }
+
          }
-
+      }catch (NullPointerException n){
+         productSecondaryImagesList = null;
       }
+
       return productSecondaryImagesList;
    }
 
