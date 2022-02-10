@@ -14,6 +14,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
@@ -46,8 +47,8 @@ public class ArgentinaCentraloesteCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".price-box", "data-product-id");
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute.sku .value", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.page-title .base", false);
-         //hasn't categories or secondary images
          String primaryImage = JSONUtils.getValueRecursive(json, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data.0.img", String.class);
+         List<String> productSecondaryImages = ImageCapture(json, primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product.attribute.description .value"));
          String stock = CrawlerUtils.scrapStringSimpleInfo(doc, ".stock.available span", true);
          boolean available = stock != null && stock.contains("En stock");
@@ -61,6 +62,7 @@ public class ArgentinaCentraloesteCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(productSecondaryImages)
             .setEans(eans)
             .setDescription(description)
             .setOffers(offers)
@@ -78,6 +80,28 @@ public class ArgentinaCentraloesteCrawler extends Crawler {
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".product.attribute.sku") != null;
    }
+
+   private List<String> ImageCapture (JSONObject json, String productPrimaryImage) throws Exception {
+      List<String> productSecondaryImagesList = new ArrayList<>();
+      try {
+         JSONArray arrayImage = (JSONArray) json.optQuery("/[data-gallery-role=gallery-placeholder]/mage~1gallery~1gallery/data");
+         for (Object objImage : arrayImage){
+
+            String obj = objImage.toString();
+            JSONObject jobj = JSONUtils.stringToJson(obj);
+            String newUrlImage = jobj.getString("img");
+            if(!newUrlImage.equals(productPrimaryImage)){
+               productSecondaryImagesList.add(newUrlImage);
+            }
+
+         }
+      }catch (NullPointerException n){
+         productSecondaryImagesList = null;
+      }
+
+      return productSecondaryImagesList;
+   }
+
 
    protected List<String> scrapEan(Document doc) {
       List<String> eans = new ArrayList<>();
