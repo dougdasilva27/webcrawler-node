@@ -1,8 +1,11 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -26,12 +29,12 @@ public abstract class AbcsupermercadosCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private int fetchTotalProducts(){
+   private int fetchTotalProducts() {
 
       int totalProducts = 0;
 
       String url = "https://www.superabc.com.br/leite";
-      BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc="+getStoreId());
+      BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=" + getStoreId());
       cookie.setDomain("www.superabc.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
@@ -40,7 +43,7 @@ public abstract class AbcsupermercadosCrawler extends CrawlerRankingKeywords {
 
       Document response = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
-      if(response != null){
+      if (response != null) {
 
          totalProducts = CrawlerUtils.scrapIntegerFromHtml(response, ".resultado-busca-numero .value", true, 0);
       }
@@ -51,7 +54,7 @@ public abstract class AbcsupermercadosCrawler extends CrawlerRankingKeywords {
 
 
    @Override
-   protected void extractProductsFromCurrentPage(){
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
       this.pageSize = 20;
 
@@ -76,8 +79,23 @@ public abstract class AbcsupermercadosCrawler extends CrawlerRankingKeywords {
          for (Element e : products) {
             String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href"), "https", "www.comper.com.br");
             String internalId = e.attr("data-id");
-            saveDataProduct(internalId, null, productUrl);
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".prateleira__name", true);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".prateleira__image > img", "src");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".prateleira__best-price", null, true, ',', session, 0);
+            boolean isAvailable = price != 0;
+
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
+
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit)
                break;
          }
