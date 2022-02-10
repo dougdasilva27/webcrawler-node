@@ -2,6 +2,10 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
@@ -21,7 +25,7 @@ public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
 
    protected String loadUrl = getLoadUrl();
 
-   protected String getLoadUrl(){
+   protected String getLoadUrl() {
       return session.getOptions().optString("getLoadUrl");
    }
 
@@ -47,7 +51,7 @@ public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
 
 
    @Override
-   public void extractProductsFromCurrentPage() {
+   public void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 50;
 
       this.log("Página " + this.currentPage);
@@ -67,23 +71,47 @@ public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
             String productUrl = crawlProductUrl(product);
             String internalPid = crawlInternalPid(product);
             String internalId = crawlInternalId(product);
+            String name = product.optString("name");
+            String image = product.optString("image_thumbnail");
+            int price = crawlPrice(product);
+            boolean available = product.optBoolean("in_stock");
 
-            saveDataProduct(internalId, internalPid, productUrl);
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setImageUrl(image)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(available)
+               .build();
+
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
          }
-      } else if(currentPage!=1){
+      } else if (currentPage != 1) {
          this.result = false;
-      }else {
+      } else {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
+   }
+
+   protected int crawlPrice(JSONObject product) {
+      int priceInCents = 0;
+      Object price = product.opt("price");
+      if (price instanceof Double) {
+         priceInCents = (int) Math.round((Double) price * 100);
+      } else if (price instanceof Integer) {
+         priceInCents = (int) price * 100;
+      }
+      return priceInCents;
    }
 
    protected void setTotalProducts(JSONObject search) {
@@ -128,7 +156,7 @@ public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
    }
 
    private JSONObject crawlSearchApi() {
-      String url = "https://api.supermercadonow.com/search/v1/bulksearch?query=" + this.keywordWithoutAccents.replace(" ", "%20")+"&stores="+loadUrl+"&size="+this.pageSize+"&page="+this.currentPage;
+      String url = "https://api.supermercadonow.com/search/v1/bulksearch?query=" + this.keywordWithoutAccents.replace(" ", "%20") + "&stores=" + loadUrl + "&size=" + this.pageSize + "&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
 
