@@ -3,8 +3,11 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
@@ -23,7 +26,7 @@ public class BrasilIfood extends CrawlerRankingKeywords {
    protected String geolocation = session.getOptions().getString("geolocation");
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       String url = "https://marketplace.ifood.com.br/v2/search/catalog-items?" + geolocation + "&channel=IFOOD&term="
          + this.keywordEncoded + "&size=36&page=" + (this.currentPage - 1) + "&item_from_merchant_ids=" + storeId;
       JSONObject apiJson = fetch(url);
@@ -35,14 +38,25 @@ public class BrasilIfood extends CrawlerRankingKeywords {
             JSONObject product = (JSONObject) obj;
 
             if (!product.isEmpty()) {
-
                String internalId = product.optString("code");
                String internalPid = internalId;
                String productUrl = getUrl(product, internalId);
+               String imgUrl = crawlImage(product);
+               String name = product.optString("name");
+               int price = JSONUtils.getPriceInCents(product, "price");
+               boolean isAvailable = JSONUtils.getValueRecursive(product, "merchant.available", Boolean.class);
 
-               saveDataProduct(internalId, internalPid, productUrl);
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setImageUrl(imgUrl)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .build();
 
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+               saveDataProduct(productRanking);
                if (this.arrayProducts.size() == productsLimit)
                   break;
 
@@ -58,14 +72,17 @@ public class BrasilIfood extends CrawlerRankingKeywords {
 
    }
 
+   private String crawlImage(JSONObject product) {
+      String path = JSONUtils.getValueRecursive(product, "resources.0.fileName", String.class, "");
+      return "https://static-images.ifood.com.br/image/upload/t_high/pratos/" + path;
+   }
+
    private String getUrl(JSONObject itensObject, String internalId) {
       String slug = JSONUtils.getValueRecursive(itensObject, "merchant.slug", String.class);
-
       return CrawlerUtils.completeUrl(slug + "/" + storeId + "?item=" + internalId, "https", "www.ifood.com.br/delivery");
    }
 
    protected JSONObject fetch(String url) {
-
       Request request = RequestBuilder.create()
          .setUrl(url)
          .build();
