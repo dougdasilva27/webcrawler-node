@@ -107,14 +107,13 @@ public class MerconnectCrawler extends Crawler {
 
       if (Objects.nonNull(jsonSku) && !jsonSku.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
          String internalId = scrapInternalId(jsonSku);
          String internalPid = internalId;
          String name = scrapProductName(jsonSku);
          String primaryImage = scrapPrimaryImage(jsonSku);
-
          String ean = scrapEan(jsonSku);
          List<String> eans = new ArrayList<>();
+         String description = scrapDescription(jsonSku);
          eans.add(ean);
 
          Integer stock = scrapStock(jsonSku);
@@ -127,6 +126,7 @@ public class MerconnectCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setPrimaryImage(primaryImage)
+            .setDescription(description)
             .setStock(stock)
             .setEans(eans)
             .setOffers(offers)
@@ -140,6 +140,8 @@ public class MerconnectCrawler extends Crawler {
 
       return products;
    }
+
+   protected String scrapDescription(JSONObject jsonSku) { return jsonSku.optString("aditional_info"); }
 
    protected String scrapInternalId(JSONObject json) {
       return json.optString("id");
