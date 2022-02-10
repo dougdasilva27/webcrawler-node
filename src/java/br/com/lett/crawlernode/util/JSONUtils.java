@@ -282,4 +282,21 @@ public class JSONUtils {
 
       return list;
    }
+
+   /**
+    * This extracts a double or integer value and convert it to cents.
+    * @param product JSONObject where we can find the desired value .
+    * @param key String with the key that we want to extract.
+    * @return integer with the value in cents.
+    */
+   public static int getPriceInCents(JSONObject product, String key) {
+      int priceInCents = 0;
+      Object price = product.opt(key);
+      if (price instanceof Double) {
+         priceInCents = (int) Math.round((Double) price * 100);
+      } else if (price instanceof Integer) {
+         priceInCents = (int) price * 100;
+      }
+      return priceInCents;
+   }
 }
