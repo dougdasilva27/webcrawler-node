@@ -3,14 +3,21 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.peru;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PeruWongCrawler extends CrawlerRankingKeywords {
 
@@ -25,7 +32,7 @@ public class PeruWongCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 18;
       this.log("Página " + this.currentPage);
 
@@ -45,14 +52,25 @@ public class PeruWongCrawler extends CrawlerRankingKeywords {
             String internalId = crawlInternalId(e);
             String productPid = crawlProductPid(e);
             String productUrl = crawlProductUrl(e);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-item__image-link img", Collections.singletonList("src"), "https", "wongfood.vteximg.com.br");
+            String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item__name", "title");
+            Integer price = crawlPrice(e, 0);
+            boolean isAvailable = price != 0;
 
-            saveDataProduct(internalId, productPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(productPid)
+               .setImageUrl(imgUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-               + productPid + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit)
                break;
-
          }
       } else {
          this.result = false;
@@ -90,5 +108,25 @@ public class PeruWongCrawler extends CrawlerRankingKeywords {
 
    private String crawlProductUrl(Element e) {
       return e.attr("data-uri");
+   }
+
+   private Integer crawlPrice(Element e, Integer defaultValue) {
+      Integer priceInCents = defaultValue;
+      String priceStr = CrawlerUtils.scrapStringSimpleInfo(e, ".product-prices__value--best-price", false);
+
+      if (priceStr != null) {
+         String regex = "([0-9]+\\.[0-9]+)";
+         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+         Matcher matcher = pattern.matcher(priceStr);
+
+         if (matcher.find()) {
+            priceStr = matcher.group(0);
+            Double price = priceStr != null ? Double.parseDouble(priceStr)  : null;
+            price = price != null ? price * 100 : null;
+            priceInCents = price != null ?  price.intValue() : defaultValue;
+         }
+      }
+
+      return priceInCents;
    }
 }
