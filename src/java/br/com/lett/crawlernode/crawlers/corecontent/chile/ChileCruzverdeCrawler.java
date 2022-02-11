@@ -90,8 +90,8 @@ public class ChileCruzverdeCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prices .price .sales .value:not(.pr-2)", null, false, '.', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-original span", null, false, '.', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prices .price .sales .value:not(.pr-2)", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-original span", null, false, ',', session);
       if (spotlightPrice == null) {
          spotlightPrice = priceFrom;
          priceFrom = null;
