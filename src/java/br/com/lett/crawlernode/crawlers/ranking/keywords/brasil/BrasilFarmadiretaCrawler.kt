@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil
 
 import br.com.lett.crawlernode.core.fetcher.models.Request
+import br.com.lett.crawlernode.core.models.RankingProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CrawlerUtils
@@ -34,10 +35,22 @@ class BrasilFarmadiretaCrawler (session: Session) : CrawlerRankingKeywords(sessi
          for (product in products) {
             val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "h3.dgf-titulo>a", "idimpression")
             val productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "h3.dgf-titulo>a", "href")
+            val productName = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "h3.dgf-titulo>a", "title")
+            val productImage = CrawlerUtils.scrapSimplePrimaryImage(product, ".foto img", listOf("src"), "https", "farmadireta.com.br")
+            val price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".valor .por", null, true, ',', session, 0)
+            val isAvailable = CrawlerUtils.scrapStringSimpleInfo(product, ".btn-indisponivel-lista", true) == null
 
-            saveDataProduct(internalId, null, productUrl)
+            val productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(null)
+               .setImageUrl(productImage)
+               .setName(productName)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build()
 
-            log("Position: $position - InternalId: $internalId - InternalPid: $internalId - Url: $productUrl")
+            saveDataProduct(productRanking)
 
             if (arrayProducts.size == productsLimit) {
                break
