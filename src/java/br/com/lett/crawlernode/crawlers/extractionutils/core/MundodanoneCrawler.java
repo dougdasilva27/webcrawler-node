@@ -103,10 +103,10 @@ public class MundodanoneCrawler extends Crawler {
       super.extractInformation(json);
       List<Product> products = new ArrayList<>();
 
-      if (!json.isEmpty()) {
+      if (json != null && !json.isEmpty()) {
          JSONObject productJson = JSONUtils.getValueRecursive(json, "data.products.items.0", JSONObject.class);
 
-         if (!productJson.isEmpty()) {
+         if (productJson != null && !productJson.isEmpty()) {
 
             Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -140,9 +140,7 @@ public class MundodanoneCrawler extends Crawler {
    private Product extractProduct(JSONObject productJson, String internalPid) throws OfferException, MalformedPricingException, MalformedProductException {
       String internalId = productJson.optString("sku");
       String name = productJson.optString("name");
-      JSONArray imageJson = JSONUtils.getValueRecursive(productJson, "media_gallery_entries", JSONArray.class);
-      List<String> images = imageJson != null ? CrawlerUtils.scrapImagesListFromJSONArray(imageJson, "file", null, "https", "www.taqi.com.br", session) : null;
-      String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
+      String primaryImage = JSONUtils.getValueRecursive(productJson, "small_image.url", String.class);
       String stock = productJson.optString("stock_status");
       boolean available = stock != null ? !stock.contains("OUT_OF_STOCK") : null;
       String description = crawlDescription(productJson);
@@ -154,7 +152,6 @@ public class MundodanoneCrawler extends Crawler {
          .setInternalPid(internalPid)
          .setName(name)
          .setPrimaryImage(primaryImage)
-         .setSecondaryImages(images)
          .setDescription(description)
          .setRatingReviews(ratingsReviews)
          .setOffers(offers)
@@ -198,10 +195,16 @@ public class MundodanoneCrawler extends Crawler {
 
       Double average = getAverage(productJson);
 
+      //sometimes site have a review but haven't a average.
+      int review = productJson.optInt("review_count");
+      if (average == 0){
+         review = 0;
+      }
+
       ratingsReviews.setDate(session.getDate());
-      ratingsReviews.setTotalRating(productJson.optInt("review_count"));
+      ratingsReviews.setTotalRating(review);
       ratingsReviews.setAverageOverallRating(average);
-      ratingsReviews.setTotalWrittenReviews(productJson.optInt("review_count"));
+      ratingsReviews.setTotalWrittenReviews(review);
 
       return ratingsReviews;
 
@@ -210,7 +213,7 @@ public class MundodanoneCrawler extends Crawler {
 
    private Double getAverage(JSONObject productJson){
 
-      float averageInt = productJson.optInt("average_rating");
+      float averageInt = productJson.optInt("rating_summary");
 
       return (double) (averageInt * 5 / 100);
 

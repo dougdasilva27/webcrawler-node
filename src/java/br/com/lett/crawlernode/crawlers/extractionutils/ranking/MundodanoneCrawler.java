@@ -17,32 +17,10 @@ import java.util.Map;
 
 public class MundodanoneCrawler extends CrawlerRankingKeywords {
 
-
    public MundodanoneCrawler(Session session) {
       super(session);
    }
 
-   public JSONObject crawlApi() {
-
-      String apiUrl = "https://www.taqi.com.br/ccstoreui/v1/search?Nrpp=" + productsLimit
-         + "&totalResults=true&No=0&Ntt=" + this.keywordEncoded;
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36");
-      headers.put("Referer", session.getOriginalURL());
-      headers.put("content-type", "application/json; charset=UTF-8");
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(apiUrl)
-         .setHeaders(headers)
-         .build();
-      String content = this.dataFetcher
-         .get(session, request)
-         .getBody();
-
-      return CrawlerUtils.stringToJson(content);
-
-   }
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
@@ -58,14 +36,15 @@ public class MundodanoneCrawler extends CrawlerRankingKeywords {
          "&variables=%7B%22currentPage%22%3A" + this.currentPage +"%2C%22pageSize%22%3A12%2C%22filters%22%3A%7B%7D%2C%22inputText%22%3A%22" + this.keywordEncoded.replace(" ", "+") + "%22%2C%22sort%22%3A%7B%22relevance%22%3A%22DESC%22%7D%7D";
 
       JSONObject json = fetchJSONObject(url);
-      JSONObject resultsList = json.optJSONObject("products");
+      JSONObject resultsList = JSONUtils.getValueRecursive(json, "data.products", JSONObject.class);
       JSONArray productsArray = JSONUtils.getValueRecursive(resultsList, "items", JSONArray.class);
 
       if (productsArray != null && !productsArray.isEmpty()) {
+         setTotalProducts(resultsList);
          for (Object o : productsArray) {
             JSONObject product = (JSONObject) o;
                String internalPid = product.optString("id");
-               String productUrl = CrawlerUtils.completeUrl(product.optString("url_key"), "https", "www.mundodanone.com.br");
+               String productUrl = CrawlerUtils.completeUrl(product.optString("url_key") + ".html?page=1", "https", "www.mundodanone.com.br");
                String name = product.optString("name");
                String imageUrl = JSONUtils.getValueRecursive(product, "small_image.url", String.class);
                int price = crawlPrice(product);
