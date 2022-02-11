@@ -1,11 +1,16 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -16,16 +21,15 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.apache.kafka.clients.consumer.internals.Fetcher;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Date: 22/06/2018
@@ -45,6 +49,44 @@ public abstract class GpsfarmaCrawler extends Crawler {
    }
 
    protected abstract String getSellerFullName();
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      int regionId = session.getOptions().optInt("regionId");
+      int cityId = session.getOptions().optInt("cityId");
+
+      String payload = "{\n" +
+         "    \"location\": {\n" +
+         "        \"cityId\": "+cityId+",\n" +
+         "        \"regionId\": "+regionId+"\n" +
+         "    }\n" +
+         "}";
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("content-type", "application/json");
+      headers.put("authority", "gpsfarma.com");
+      headers.put("origin", "https://gpsfarma.com");
+      headers.put("Accept", "*/*");
+      headers.put("Host", "gpsfarma.com");
+      headers.put("content-length", payload.length() + "");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://gpsfarma.com/index.php/rest/V1/gpsfarma/geolocation/customer/location")
+         .setPayload(payload)
+         .setHeaders(headers)
+         .mustSendContentEncoding(false)
+         .build();
+
+      Response response = new FetcherDataFetcher().post(session, request);
+
+      response.getCookies().forEach(cookie -> {
+         BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
+         basicClientCookie.setDomain("gpsfarma.com");
+         basicClientCookie.setPath("/");
+         this.cookies.add(basicClientCookie);
+      });
+
+   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -128,7 +170,7 @@ public abstract class GpsfarmaCrawler extends Crawler {
    }
 
    private boolean crawlAvailability(Document doc) {
-      return !doc.select("div.box-tocart").isEmpty();
+      return !doc.select("div.box-tocart").isEmpty() && !doc.select("div.field.qty").isEmpty();
    }
 
    private List<String> crawlImages(Document doc) {
