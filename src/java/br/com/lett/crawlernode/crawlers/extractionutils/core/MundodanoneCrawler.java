@@ -88,7 +88,6 @@ public class MundodanoneCrawler extends Crawler {
    }
 
    private String getSlugFromUrl() {
-
       String slug = null;
       Pattern pattern = Pattern.compile("br\\/(.*)\\.html");
       Matcher matcher = pattern.matcher(session.getOriginalURL());
@@ -99,11 +98,6 @@ public class MundodanoneCrawler extends Crawler {
 
    }
 
-   private String getProductId() {
-      String[] url = session.getOriginalURL().split("/");
-      return url[url.length - 1].split("\\?")[0];
-   }
-
    @Override
    public List<Product> extractInformation(JSONObject json) throws Exception {
       super.extractInformation(json);
@@ -111,6 +105,7 @@ public class MundodanoneCrawler extends Crawler {
 
       if (!json.isEmpty()) {
          JSONObject productJson = JSONUtils.getValueRecursive(json, "data.products.items.0", JSONObject.class);
+
          if (!productJson.isEmpty()) {
 
             Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -134,10 +129,6 @@ public class MundodanoneCrawler extends Crawler {
 
             }
 
-
-            // Creating the product
-
-
          }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -145,7 +136,6 @@ public class MundodanoneCrawler extends Crawler {
 
       return products;
    }
-
 
    private Product extractProduct(JSONObject productJson, String internalPid) throws OfferException, MalformedPricingException, MalformedProductException {
       String internalId = productJson.optString("sku");
@@ -157,7 +147,7 @@ public class MundodanoneCrawler extends Crawler {
       boolean available = stock != null ? !stock.contains("OUT_OF_STOCK") : null;
       String description = crawlDescription(productJson);
       Offers offers = available ? scrapOffers(productJson) : new Offers();
-      RatingsReviews ratingsReviews = scrapRatingsReviews(internalId);
+      RatingsReviews ratingsReviews = scrapRatingsReviews(productJson);
       return ProductBuilder.create()
          .setUrl(session.getOriginalURL())
          .setInternalId(internalId)
@@ -206,48 +196,24 @@ public class MundodanoneCrawler extends Crawler {
 
       RatingsReviews ratingsReviews = new RatingsReviews();
 
-      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(data);
+      Double average = getAverage(productJson);
 
       ratingsReviews.setDate(session.getDate());
-      ratingsReviews.setTotalRating(data.length());
-      ratingsReviews.setAverageOverallRating(CrawlerUtils.extractRatingAverageFromAdvancedRatingReview(advancedRatingReview));
+      ratingsReviews.setTotalRating(productJson.optInt("review_count"));
+      ratingsReviews.setAverageOverallRating(average);
       ratingsReviews.setTotalWrittenReviews(productJson.optInt("review_count"));
-      ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
-
 
       return ratingsReviews;
 
-
    }
 
-   private AdvancedRatingReview scrapAdvancedRatingReview(JSONArray data) {
-      AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
-      int[] notas = {0, 0, 0, 0, 0};
-      for (Object o : data) {
-         JSONObject obj = (JSONObject) o;
 
+   private Double getAverage(JSONObject productJson){
 
-         switch (obj.optInt("nota")) {
-            case 1:
-               notas[0]++;
-            case 2:
-               notas[1]++;
-            case 3:
-               notas[2]++;
-            case 4:
-               notas[3]++;
-            case 5:
-               notas[4]++;
-         }
-      }
+      float averageInt = productJson.optInt("average_rating");
 
-      advancedRatingReview.setTotalStar1(notas[0]);
-      advancedRatingReview.setTotalStar2(notas[1]);
-      advancedRatingReview.setTotalStar3(notas[2]);
-      advancedRatingReview.setTotalStar4(notas[3]);
-      advancedRatingReview.setTotalStar5(notas[4]);
+      return (double) (averageInt * 5 / 100);
 
-      return advancedRatingReview;
    }
 
    private Offers scrapOffers(JSONObject productJson) throws OfferException, MalformedPricingException {
@@ -272,7 +238,7 @@ public class MundodanoneCrawler extends Crawler {
       List<String> sales = new ArrayList<>();
 
       JSONObject saleJson = JSONUtils.getValueRecursive(productJson, "price_tiers.0", JSONObject.class);
-      if (!saleJson.isEmpty()) {
+      if (saleJson != null) {
          Integer discount = JSONUtils.getValueRecursive(saleJson, "discount.percent_off", Integer.class);
          Integer quantity = saleJson.optInt("quantity");
          Double priceDiscount = JSONUtils.getValueRecursive(productJson, "final_price.value", Double.class);
