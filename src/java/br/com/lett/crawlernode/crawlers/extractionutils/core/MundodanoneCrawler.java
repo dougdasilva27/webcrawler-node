@@ -140,7 +140,7 @@ public class MundodanoneCrawler extends Crawler {
    private Product extractProduct(JSONObject productJson, String internalPid) throws OfferException, MalformedPricingException, MalformedProductException {
       String internalId = productJson.optString("sku");
       String name = productJson.optString("name");
-      String primaryImage = JSONUtils.getValueRecursive(productJson, "small_image.url", String.class);
+      String primaryImage = CrawlerUtils.completeUrl(JSONUtils.getValueRecursive(productJson, "media_gallery_entries.0.file", String.class), "https", "media.mundodanone.com.br/catalog/product");
       String stock = productJson.optString("stock_status");
       boolean available = stock != null ? !stock.contains("OUT_OF_STOCK") : null;
       String description = crawlDescription(productJson);
@@ -160,8 +160,8 @@ public class MundodanoneCrawler extends Crawler {
 
    private String crawlDescription(JSONObject productJson) {
       StringBuilder stringBuilder = new StringBuilder();
-      String description = productJson.optString("description");
-      String shortDescription = productJson.optString("short_description");
+      String description = JSONUtils.getValueRecursive(productJson, "description.html", String.class);
+      String shortDescription = JSONUtils.getValueRecursive(productJson, "short_description.html", String.class);
       String preparationMode = productJson.optString("custom_preparation_mode");
       String useCare = productJson.optString("custom_use_care");
       String ingredients = productJson.optString("custom_ingredients");
