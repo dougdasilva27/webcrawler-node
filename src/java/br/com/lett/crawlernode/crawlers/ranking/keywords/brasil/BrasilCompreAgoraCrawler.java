@@ -13,7 +13,10 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
    public BrasilCompreAgoraCrawler(Session session) {
@@ -76,11 +79,20 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
       try {
          for(Object object:  pricesJson){
             JSONObject obj = (JSONObject) object;
-            if (internalId.equals(obj.optString("productId"))){
-               price = obj.optJSONObject("skus").optInt("pricePerUnit");
-               return price;
-            }
+            JSONArray variations = obj.optJSONArray("sku_variations");
+            if(!variations.isEmpty()) {
+               List<JSONObject> matchedVariations = IntStream
+                  .range(0, variations.length())
+                  .mapToObj(variations::optJSONObject)
+                  .filter(variation -> variation.optString("sku").equals(internalId))
+                  .collect(Collectors.toList());
 
+               if(!matchedVariations.isEmpty()) {
+                  JSONObject matchedVariation = matchedVariations.get(0);
+                  price = matchedVariation.optInt("bestPrice");
+                  return price;
+               }
+            }
          }
 
       } catch (NullPointerException pointer) {
