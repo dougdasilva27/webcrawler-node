@@ -9,8 +9,10 @@ import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Element;
 
 import java.util.Collections;
+import java.util.List;
 
 public class BrasilMultinepCrawler extends CrawlerRankingKeywords {
 
@@ -74,9 +76,10 @@ public class BrasilMultinepCrawler extends CrawlerRankingKeywords {
 
    private String crawlProductName(int index) {
      String name = "";
+     List<Element> names = this.currentDoc.select(".catalog-content .product-name");
 
-     if (this.currentDoc.select(".catalog-content .product-name").size() > index) {
-       name = this.currentDoc.select(".catalog-content .product-name").get(index).text();
+     if (names.size() > index) {
+       name = names.get(index).text();
      }
 
      return name;
@@ -84,10 +87,7 @@ public class BrasilMultinepCrawler extends CrawlerRankingKeywords {
 
    private Integer crawlPrice(JSONObject product) {
      String priceString = product.optString("sellPrice");
-     int price = 0;
-     price = CommonMethods.stringPriceToIntegerPrice(priceString, '.', 0);
-
-     return price;
+     return CommonMethods.stringPriceToIntegerPrice(priceString, '.', 0);
    }
 
    protected void setTotalProducts(JSONObject search) {
