@@ -24,6 +24,7 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
    }
 
    private Integer price;
+   private String internalPid;
    private String internalId;
    private JSONArray pricesJson;
 
@@ -32,8 +33,7 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
       String url = mountURL();
       JSONObject data = fetchPage(url);
       JSONArray products = data.optJSONArray("products");
-
-
+      Integer position = 1;
 
       if (products != null && !products.isEmpty()) {
          String productIds = MountUrlid(products);
@@ -42,24 +42,31 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
          for (Object object : products) {
             JSONObject product = (JSONObject) object;
             String productUrl = crawlProductUrl(product);
-            String internalPid = crawlInternalPid(product);
-            internalId = crawlInternalId(product, internalPid);
+            internalPid = crawlInternalPid(product);
+
             String name = product.optString("name");
             String image = crawlImage(product);
-            int priceInCents = crawlPrice(product);
-            boolean isAvailable = crawlAvailability(product);
+            List<JSONObject> variations = crawlvariation(product);
             try {
-               RankingProduct rankingProduct = RankingProductBuilder.create()
-                  .setUrl(productUrl)
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setImageUrl(image)
-                  .setPriceInCents(priceInCents)
-                  .setAvailability(isAvailable)
-                  .build();
+               for(JSONObject obj: variations){
+                 int priceInCents = obj.optInt("bestPrice");
+                  boolean isAvailable = crawlAvailability(obj);
+                  internalId = crawlInternalId(obj, internalPid);
+                  RankingProduct rankingProduct = RankingProductBuilder.create()
+                     .setUrl(productUrl)
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setImageUrl(image)
+                     .setPosition(position)
+                     .setPriceInCents(priceInCents)
+                     .setAvailability(isAvailable)
+                     .build();
 
-               saveDataProduct(rankingProduct);
+                  saveDataProduct(rankingProduct);
+               }
+               position++;
+
             } catch (MalformedProductException e) {
                this.log(e.getMessage());
             }
@@ -74,37 +81,45 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   @Override
-   protected int crawlPrice(JSONObject product) {
+
+   protected List<JSONObject> crawlvariation(JSONObject product) {
       try {
          for(Object object:  pricesJson){
+
             JSONObject obj = (JSONObject) object;
             JSONArray variations = obj.optJSONArray("sku_variations");
-            if(!variations.isEmpty()) {
+            if(!variations.isEmpty() && internalPid.equals(obj.optString("productId"))) {
                List<JSONObject> matchedVariations = IntStream
                   .range(0, variations.length())
                   .mapToObj(variations::optJSONObject)
-                  .filter(variation -> variation.optString("sku").equals(internalId))
                   .collect(Collectors.toList());
-
                if(!matchedVariations.isEmpty()) {
-                  JSONObject matchedVariation = matchedVariations.get(0);
-                  price = matchedVariation.optInt("bestPrice");
-                  return price;
+                  return matchedVariations;
                }
+
             }
          }
 
       } catch (NullPointerException pointer) {
          price = 0;
       }
-      price = 0;
-      return price;
+      List<JSONObject> listVoid = null;
+      return listVoid;
    }
+
 
    @Override
    protected boolean crawlAvailability(JSONObject product) {
-      return price != 0;
+      return product.optBoolean("available");
+   }
+   @Override
+   protected String crawlInternalId(JSONObject product, String internalPid) {
+      try{
+         return product.optString("sku");
+      }catch (NullPointerException ex){
+         return "";
+      }
+
    }
 
    protected void fetchPrice(String id) {
