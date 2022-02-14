@@ -68,7 +68,7 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
                }
                position++;
 
-            } catch (MalformedProductException e) {
+            } catch (NullPointerException e) {
                this.log(e.getMessage());
             }
             if (this.arrayProducts.size() == productsLimit) {
@@ -103,6 +103,8 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
 
       } catch (NullPointerException pointer) {
          price = 0;
+         List<JSONObject> listVoid = null;
+         return listVoid;
       }
       List<JSONObject> listVoid = null;
       return listVoid;
@@ -111,7 +113,12 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
 
    @Override
    protected boolean crawlAvailability(JSONObject product) {
-      return product.optBoolean("available");
+      try {
+         return product.optBoolean("available");
+      }catch (NullPointerException ex){
+         return false;
+      }
+
    }
    @Override
    protected String crawlInternalId(JSONObject product, String internalPid) {
