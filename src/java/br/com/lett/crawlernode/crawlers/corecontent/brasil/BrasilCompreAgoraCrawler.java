@@ -80,13 +80,13 @@ public class BrasilCompreAgoraCrawler extends Crawler {
       // Get all product information
       String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".product-title", false);
       String productInternalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".product-ean", "data-ean");
-      String productInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(el, ".item", "data-sku-id");;
+      String productInternalId = ScrapId(el);
       String productDescription = CrawlerUtils.scrapStringSimpleInfo(document, ".tab-pane.fade.show.active.only-text", false);
       String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".carousel-imagens-mobile.owl-carousel img", Arrays.asList("src"), "", "");
       List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(document, ".carousel-imagens-mobile.owl-carousel img", Collections.singletonList("src"), "", "", productPrimaryImage);
-      boolean available = el.select(".sem-estoque").isEmpty();
-      String variationName =  CrawlerUtils.scrapStringSimpleInfo(el, ".caixa-com .val",false);
-      productName = productName + " " + variationName + " un";
+      boolean available = ScrapStock(el);
+      String variationName = ScrapName(el);
+      productName = variationName != null ? productName + " " + variationName + " un" : productName;
       Offers offers = available ? scrapOffers(document, productInternalId, el) : new Offers();
 
       ProductBuilder builder = ProductBuilder.create().setUrl(session.getOriginalURL());
@@ -101,6 +101,27 @@ public class BrasilCompreAgoraCrawler extends Crawler {
          .setOffers(offers)
          .build();
 
+   }
+   private String ScrapId(Element el){
+      try {
+         return CrawlerUtils.scrapStringSimpleInfoByAttribute(el, ".item", "data-sku-id");
+      }catch (NullPointerException ex){
+         return null;
+      }
+   }
+   private String ScrapName(Element el){
+     try {
+       return CrawlerUtils.scrapStringSimpleInfo(el, ".caixa-com .val",false);
+     }catch (NullPointerException ex){
+        return null;
+     }
+   }
+   private boolean ScrapStock(Element el){
+      try {
+         return el.select(".sem-estoque").isEmpty();
+      }catch (NullPointerException ex){
+         return false;
+      }
    }
 
    private Offers scrapOffers(Document document, String productInternalId, Element el) throws MalformedPricingException, OfferException {
