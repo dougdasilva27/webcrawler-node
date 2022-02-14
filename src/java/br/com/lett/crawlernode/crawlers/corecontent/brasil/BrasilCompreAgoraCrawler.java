@@ -80,7 +80,7 @@ public class BrasilCompreAgoraCrawler extends Crawler {
       // Get all product information
       String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".product-title", false);
       String productInternalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".product-ean", "data-ean");
-      String productInternalId = ScrapId(el);
+      String productInternalId = ScrapId(el, productInternalPid);
       String productDescription = CrawlerUtils.scrapStringSimpleInfo(document, ".tab-pane.fade.show.active.only-text", false);
       String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".carousel-imagens-mobile.owl-carousel img", Arrays.asList("src"), "", "");
       List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(document, ".carousel-imagens-mobile.owl-carousel img", Collections.singletonList("src"), "", "", productPrimaryImage);
@@ -89,7 +89,6 @@ public class BrasilCompreAgoraCrawler extends Crawler {
       productName = variationName != null ? productName + " " + variationName + " un" : productName;
       Offers offers = available ? scrapOffers(document, productInternalId, el) : new Offers();
 
-      ProductBuilder builder = ProductBuilder.create().setUrl(session.getOriginalURL());
       return ProductBuilder.create()
          .setUrl(session.getOriginalURL())
          .setInternalId(productInternalId)
@@ -102,11 +101,11 @@ public class BrasilCompreAgoraCrawler extends Crawler {
          .build();
 
    }
-   private String ScrapId(Element el){
+   private String ScrapId(Element el, String productInternalPid) {
       try {
          return CrawlerUtils.scrapStringSimpleInfoByAttribute(el, ".item", "data-sku-id");
       }catch (NullPointerException ex){
-         return null;
+         return productInternalPid;
       }
    }
    private String ScrapName(Element el){
