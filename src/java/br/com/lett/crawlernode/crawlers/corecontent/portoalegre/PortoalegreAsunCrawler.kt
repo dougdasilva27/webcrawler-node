@@ -40,7 +40,7 @@ class PortoalegreAsunCrawler constructor(session: Session?) : Crawler(session) {
          val cep = webdriver.driver.findElement(By.cssSelector(".form-group input"))
          cep.sendKeys("91740-001")
          webdriver.waitLoad(2000)
-         BrasilMartinsCrawler.waitForElement(webdriver.driver, ".form-group button")
+         waitForElement(webdriver.driver, ".form-group button")
          val login = webdriver.driver.findElement(By.cssSelector(".form-group button"))
          webdriver.clickOnElementViaJavascript(login)
          webdriver.waitLoad(2000)
