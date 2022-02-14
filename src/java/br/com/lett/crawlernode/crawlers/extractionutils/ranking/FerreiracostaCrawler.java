@@ -2,15 +2,20 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,12 +25,10 @@ public class FerreiracostaCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   public Document fetchDocument(String url){
-
-
+   public Document fetchDocument(String url) {
       String location = session.getOptions().optString("location");
 
-      Map<String,String> headers = new HashMap<>();
+      Map<String, String> headers = new HashMap<>();
       headers.put("cookie", "ASP.NET_SessionId=afdhrtmd1chvych4b1y1zqmv;" +
          " osVisitor=b44b973b-4257-4e0b-a2ca-47e37d439251;" +
          " osVisit=f29d817f-51ed-4082-8dd0-7ae9b309c837;" +
@@ -48,14 +51,13 @@ public class FerreiracostaCrawler extends CrawlerRankingKeywords {
          " RT=s=1631798388140&r=https%3A%2F%2Fwww.ferreiracosta.com%2FProduto%2F408846%2Flavadora-de-roupa-brastemp-12kg-branca-127v-bwk12abana");
 
       Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setCookies(this.cookies).build();
-      Response resp = this.dataFetcher.get(session,request);
+      Response resp = this.dataFetcher.get(session, request);
 
       return Jsoup.parse(resp.getBody());
-
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
 
       String url = "https://www.ferreiracosta.com/Pesquisa/" + this.keywordEncoded;
 
@@ -63,22 +65,32 @@ public class FerreiracostaCrawler extends CrawlerRankingKeywords {
       this.currentDoc = fetchDocument(url);
       Elements products = this.currentDoc.select(".busca__lista.column .product-view-card a");
 
-        if (!products.isEmpty()) {
+      if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
             setTotalProducts();
          }
          for (Element e : products) {
-
             String internalId = scrapInternalIdFromURL(e.attr("href"));
             String internalPid = internalId;
             String productUrl = "https://www.ferreiracosta.com" + e.attr("href");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".card-home-desk__title", false);
+            String imgUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".card-home-desk__image img", "src");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".card-home-desk__price", null, true, ',', session, 0);
+            boolean isAvailable = price != 0;
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setImageUrl(imgUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
             if (this.arrayProducts.size() == productsLimit)
                break;
-
          }
       } else {
          this.result = false;
@@ -92,7 +104,7 @@ public class FerreiracostaCrawler extends CrawlerRankingKeywords {
    protected void setTotalProducts() {
       Element totalSearchElement = this.currentDoc.selectFirst("p.toolbar-amount :last-child");
 
-      if(totalSearchElement != null) {
+      if (totalSearchElement != null) {
          this.totalProducts = Integer.parseInt(totalSearchElement.text());
       }
 
@@ -100,12 +112,12 @@ public class FerreiracostaCrawler extends CrawlerRankingKeywords {
    }
 
 
-   private String scrapInternalIdFromURL(String rawURL){
-     String internalId = "";
+   private String scrapInternalIdFromURL(String rawURL) {
+      String internalId = "";
 
-     internalId = CommonMethods.getLast(rawURL.split("/Produto/"));
-     internalId = internalId.split("/")[0];
+      internalId = CommonMethods.getLast(rawURL.split("/Produto/"));
+      internalId = internalId.split("/")[0];
 
-     return internalId;
+      return internalId;
    }
 }
