@@ -52,11 +52,12 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
                  int priceInCents = obj.optInt("bestPrice");
                   boolean isAvailable = crawlAvailability(obj);
                   internalId = crawlInternalId(obj, internalPid);
+                  String nameProduct = variationName(name);
                   RankingProduct rankingProduct = RankingProductBuilder.create()
                      .setUrl(productUrl)
                      .setInternalId(internalId)
                      .setInternalPid(internalPid)
-                     .setName(name)
+                     .setName(nameProduct)
                      .setImageUrl(image)
                      .setPosition(position)
                      .setPriceInCents(priceInCents)
@@ -120,6 +121,15 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
          return "";
       }
 
+   }
+   protected String variationName(String name){
+      try {
+         String[] idSplit = internalId.split("C");
+         return  name+ " caixa com " + idSplit[1];
+
+      }catch (ArrayIndexOutOfBoundsException ex){
+         return name;
+      }
    }
 
    protected void fetchPrice(String id) {
