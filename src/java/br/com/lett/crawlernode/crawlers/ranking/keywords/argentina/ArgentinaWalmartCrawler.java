@@ -100,6 +100,7 @@ public class ArgentinaWalmartCrawler extends CrawlerRankingKeywords {
 
    private int getPrice(JSONObject product) {
       String priceTxt = JSONUtils.getValueRecursive(product, "sales_channel_data.0.best_price", String.class);
+    //The price is already in cents format -> ex: "best_price":"8251"
       return Integer.parseInt(priceTxt);
 
    }
