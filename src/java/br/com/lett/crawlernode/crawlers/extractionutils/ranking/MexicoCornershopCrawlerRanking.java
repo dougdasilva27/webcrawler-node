@@ -84,7 +84,10 @@ public class MexicoCornershopCrawlerRanking extends CrawlerRankingKeywords {
    protected String crawlProductName(JSONObject product) {
       String name = product.optString("name");
       String brand = JSONUtils.getValueRecursive(product, "brand.name", String.class, "");
-      return brand + " - " + name;
+      if(!brand.isEmpty()) {
+         return brand + " - " + name;
+      }
+      return name;
    }
 
    @Override
