@@ -121,9 +121,7 @@ public class PeruWongCrawler extends CrawlerRankingKeywords {
 
          if (matcher.find()) {
             priceStr = matcher.group(0);
-            Double price = priceStr != null ? Double.parseDouble(priceStr)  : null;
-            price = price != null ? price * 100 : null;
-            priceInCents = price != null ?  price.intValue() : defaultValue;
+            priceInCents = CommonMethods.stringPriceToIntegerPrice(priceStr, '.', defaultValue);
          }
       }
 
