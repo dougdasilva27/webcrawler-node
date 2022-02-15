@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -9,16 +9,19 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MartinsKeywords extends CrawlerRankingKeywords {
 
    public MartinsKeywords(Session session) {
       super(session);
+      super.fetchMode = FetchMode.JSOUP;
    }
 
    protected String password = getPassword();
@@ -30,34 +33,6 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
 
    protected String getLogin() {
       return session.getOptions().optString("login");
-
-   }
-
-   @Override
-   protected void processBeforeFetch() {
-      try {
-         this.webdriver = DynamicDataFetcher
-            .fetchPageWebdriver("https://www.martinsatacado.com.br/login", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
-         this.webdriver.waitLoad(10000);
-
-         WebElement email = this.webdriver.driver.findElement(By.cssSelector("#js_username_login"));
-         email.sendKeys(login);
-         this.webdriver.waitLoad(2000);
-
-         WebElement cnpj = this.webdriver.driver.findElement(By.cssSelector("#jsSelectCNPJ"));
-         this.webdriver.clickOnElementViaJavascript(cnpj);
-         this.webdriver.waitLoad(2000);
-
-         WebElement pass = this.webdriver.driver.findElement(By.cssSelector("#j_password[required]"));
-         pass.sendKeys(password);
-         this.webdriver.waitLoad(2000);
-
-         WebElement login = this.webdriver.driver.findElement(By.cssSelector(".sectionButtons .btn-primary"));
-         this.webdriver.clickOnElementViaJavascript(login);
-         this.webdriver.waitLoad(2000);
-      } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-      }
    }
 
    @Override
@@ -68,9 +43,8 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       // monta a url com a keyword, page size e a página
       String url = "https://www.martinsatacado.com.br/busca/?text=/engage/search/v3/search?terms=" + this.keywordWithoutAccents.replace(" ", "%20") + "&resultsperpage=" + this.pageSize + "&saleschannel=default&page=" + this.currentPage;
 
-
       this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = fetchDocumentWithWebDriver(url);
+      this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".product[data-sku]");
 
@@ -113,6 +87,24 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
+   }
+
+   @Override
+   protected Document fetchDocument(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("content-type", "application/x-www-form-urlencoded");
+      headers.put("referer", url);
+      headers.put("authority", "www.martinsatacado.com.br");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      String payload = "j_username=" + login.replace("@", "%40") + "&j_password=" + password;
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.martinsatacado.com.br/j_spring_security_check")
+         .setPayload(payload)
+         .setHeaders(headers)
+         .build();
+
+      return Jsoup.parse(this.dataFetcher.post(session, request).getBody());
    }
 
    @Override
