@@ -45,8 +45,7 @@ public class BrasilMegamamuteCrawler extends CrawlerRankingKeywords {
             String urlProduct = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href");
             String completeUrl = CrawlerUtils.completeUrl(urlProduct, "https", "www.megamamute.com.br");
 
-
-            //Captura de dados
+            
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".name > a", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".variation-root > img", "data-src");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".sale-price > span", null, true, ',', session, 0);
