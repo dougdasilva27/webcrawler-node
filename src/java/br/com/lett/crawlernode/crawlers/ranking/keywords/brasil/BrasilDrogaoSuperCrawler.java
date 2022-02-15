@@ -51,7 +51,9 @@ public class BrasilDrogaoSuperCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
-
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
          }
       } else {
          this.result = false;
