@@ -342,7 +342,10 @@ public abstract class CrawlerRanking extends Task {
     */
    protected void saveDataProduct(RankingProduct product, boolean isUpdate) {
       this.position++;
-      product.setPosition(this.position);
+
+      if (product.getPosition() == 0) {
+         product.setPosition(this.position);
+      }
       product.setPageNumber(this.currentPage);
       product.setMarketId(session.getMarket().getId());
 

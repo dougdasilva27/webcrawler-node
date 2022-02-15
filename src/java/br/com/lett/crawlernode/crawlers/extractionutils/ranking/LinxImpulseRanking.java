@@ -15,7 +15,9 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Documentação oficial LinxImpulseAPI: (https://docs.linximpulse.com/v3-search/docs/search)
@@ -23,7 +25,7 @@ import java.util.Map;
 public class LinxImpulseRanking extends CrawlerRankingKeywords {
    protected String apiKey;
    protected String homePage;
-   protected String salesChannel = "";
+   protected List<String> salesChannel;
    protected String sortBy = "relevance";
    protected boolean showOnlyAvailable = false;
 
@@ -38,7 +40,13 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
       this.sortBy = options.optString("sortBy", "relevance");
       this.showOnlyAvailable = options.optBoolean("showOnlyAvailable", false);
       this.pageSize = options.optInt("resultsPerPage", 20);
-      this.salesChannel = options.optString("salesChannel", "");
+      Object salesChannelObject = options.opt("salesChannel");
+      if (salesChannelObject instanceof JSONArray) {
+         JSONArray salesChannelArray = (JSONArray) salesChannelObject;
+         this.salesChannel = salesChannelArray.toList().stream().map(Object::toString).collect(Collectors.toList());
+      } else if (salesChannelObject instanceof String) {
+         this.salesChannel = List.of(salesChannel.toString());
+      }
    }
 
    @Override
@@ -65,7 +73,8 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
             String name = product.optString("name");
             String image = crawlImage(product);
             int priceInCents = crawlPrice(product);
-            boolean isAvailable = product.optString("status", "").equalsIgnoreCase("AVAILABLE");
+            boolean isAvailable = crawlAvailability(product);
+
 
             try {
                RankingProduct rankingProduct = RankingProductBuilder.create()
@@ -93,6 +102,10 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   protected boolean crawlAvailability(JSONObject product) {
+      return product.optString("status", "").equalsIgnoreCase("AVAILABLE");
+   }
+
    protected String mountURL() {
       URIBuilder uriBuilder = new URIBuilder()
          .setScheme("https")
@@ -106,7 +119,7 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
          .addParameter("showOnlyAvailable", String.valueOf(this.showOnlyAvailable));
 
       if (!this.salesChannel.isEmpty()) {
-         uriBuilder.addParameter("salesChannel", this.salesChannel);
+         salesChannel.forEach(channel -> uriBuilder.addParameter("salesChannel", channel));
       }
 
       return uriBuilder.toString();
