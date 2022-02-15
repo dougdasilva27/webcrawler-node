@@ -98,7 +98,7 @@ public class BrasilBuscapeCrawler extends Crawler {
 
       JSONObject dataJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
 
-      JSONObject productGeneral = JSONUtils.getValueRecursive(dataJson, "props.pageProps.page.product", JSONObject.class);
+      JSONObject productGeneral = JSONUtils.getValueRecursive(dataJson, "props.initialReduxState.products.product", JSONObject.class);
 
       if (productGeneral == null) {
          return products;
