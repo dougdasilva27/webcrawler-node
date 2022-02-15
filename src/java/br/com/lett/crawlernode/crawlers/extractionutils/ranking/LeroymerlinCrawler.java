@@ -133,6 +133,7 @@ public class LeroymerlinCrawler extends CrawlerRankingKeywords {
       if (priceData instanceof JSONObject) {
          JSONObject priceObject = (JSONObject) priceData;
          Double integers = JSONUtils.getDoubleValueFromJSON(priceObject, "integers", false);
+         if(integers == null) integers = 0.0;
          String decimals = priceObject.optString("decimals", "0");
          price = (int) (Math.round(integers * 100) + Integer.parseInt(decimals));
       }
