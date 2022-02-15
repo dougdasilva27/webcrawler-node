@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -37,27 +38,17 @@ public class BrasilExtrabomCrawler extends Crawler {
    @Override
    protected Response fetchResponse() {
 
-      try {
-         Thread.sleep(5000);
-      } catch (InterruptedException e) {
-         e.printStackTrace();
-      }
-
       String url = session.getOriginalURL() + "?Id_seller=" + sellerId;
 
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "LettDigital/1.0");
-
-      Request request = null;
-      try {
-         request = Request.RequestBuilder.create()
-            .setUrl(url)
-            .setHeaders(headers)
-            .setProxy(getFixedIp())
-            .build();
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
+      Request request = Request.RequestBuilder.create().setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+         .build();
 
       return this.dataFetcher.get(session, request);
    }
@@ -70,13 +61,11 @@ public class BrasilExtrabomCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-
          String[] internalIdArray = CrawlerUtils.scrapStringSimpleInfo(doc, ".dados-produto .cod", true).split(":");
          if (internalIdArray.length > 1) {
             String internalId = internalIdArray[1].replace(" ", "");
             String internalPid = internalId;
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nome-produto", true);
-
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb.breadcrumb-section a");
             String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".descricao"));
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".detalhe-produto__img", Arrays.asList("src"), "https:",
@@ -167,9 +156,7 @@ public class BrasilExtrabomCrawler extends Crawler {
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
-
    }
-
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
@@ -190,17 +177,6 @@ public class BrasilExtrabomCrawler extends Crawler {
       }
 
       return creditCards;
-   }
-
-   public LettProxy getFixedIp() throws IOException {
-
-      LettProxy lettProxy = new LettProxy();
-      lettProxy.setSource("fixed_ip");
-      lettProxy.setPort(3144);
-      lettProxy.setAddress("haproxy.lett.global");
-      lettProxy.setLocation("brazil");
-
-      return lettProxy;
    }
 
 }

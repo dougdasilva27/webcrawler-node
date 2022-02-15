@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
@@ -11,6 +12,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,28 +30,19 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "LettDigital/1.0");
 
-      Request request = null;
-      try {
-         request = Request.RequestBuilder.create()
-            .setUrl(url)
-            .setHeaders(headers)
-            .setProxy(getFixedIp())
-            .build();
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
+      Request request = Request.RequestBuilder.create().setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+         .build();
 
       return Jsoup.parse(dataFetcher.get(session, request).getBody());
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
-
-      try {
-         Thread.sleep(3000);
-      } catch (InterruptedException e) {
-         e.printStackTrace();
-      }
 
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
@@ -88,7 +81,6 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
                break;
             }
          }
-
       } else {
          this.result = false;
          this.log("Keyword sem resultado!");
@@ -96,7 +88,6 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
          + this.arrayProducts.size() + " produtos crawleados");
-
    }
 
    @Override
@@ -106,14 +97,4 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
       return selector != null && selector.contains("»");
    }
 
-   public LettProxy getFixedIp() throws IOException {
-
-      LettProxy lettProxy = new LettProxy();
-      lettProxy.setSource("fixed_ip");
-      lettProxy.setPort(3144);
-      lettProxy.setAddress("haproxy.lett.global");
-      lettProxy.setLocation("brazil");
-
-      return lettProxy;
-   }
 }
