@@ -33,8 +33,7 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create().setUrl(url)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
          .build();
 
