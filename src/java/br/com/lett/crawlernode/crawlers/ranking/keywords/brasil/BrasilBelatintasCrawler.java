@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,7 +20,7 @@ public class BrasilBelatintasCrawler extends CrawlerRankingKeywords {
    private static final String HOST = "www.belatintas.com.br";
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
@@ -35,7 +38,21 @@ public class BrasilBelatintasCrawler extends CrawlerRankingKeywords {
             String internalId = scrapId(e);
             String productUrl = CrawlerUtils.scrapUrl(e, ".spotContent > a", "href", "https", HOST);
 
-            saveDataProduct(internalId, null, productUrl);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".spotTitle", true);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".imagem-primaria", "data-original");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".fbits-valor", null, true, ',', session, 0);
+            boolean isAvailable = price != 0;
+
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
+
+            saveDataProduct(productRanking);
 
             this.log(
                   "Position: " + this.position +
