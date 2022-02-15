@@ -80,12 +80,12 @@ public class BrasilCompreAgoraCrawler extends Crawler {
       // Get all product information
       String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".product-title", false);
       String productInternalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".product-ean", "data-ean");
-      String productInternalId = ScrapId(el, productInternalPid);
+      String productInternalId = scrapId(el, productInternalPid);
       String productDescription = CrawlerUtils.scrapStringSimpleInfo(document, ".tab-pane.fade.show.active.only-text", false);
       String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".carousel-imagens-mobile.owl-carousel img", Arrays.asList("src"), "", "");
       List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(document, ".carousel-imagens-mobile.owl-carousel img", Collections.singletonList("src"), "", "", productPrimaryImage);
-      boolean available = ScrapStock(el);
-      String variationName = ScrapName(el);
+      boolean available = scrapStock(el);
+      String variationName = scrapName(el);
       productName = variationName != null ? productName + " " + variationName + " un" : productName;
       Offers offers = available ? scrapOffers(document, productInternalId, el) : new Offers();
 
@@ -101,21 +101,21 @@ public class BrasilCompreAgoraCrawler extends Crawler {
          .build();
 
    }
-   private String ScrapId(Element el, String productInternalPid) {
+   private String scrapId(Element el, String productInternalPid) {
       try {
          return CrawlerUtils.scrapStringSimpleInfoByAttribute(el, ".item", "data-sku-id");
       }catch (NullPointerException ex){
          return productInternalPid;
       }
    }
-   private String ScrapName(Element el){
+   private String scrapName(Element el){
      try {
        return CrawlerUtils.scrapStringSimpleInfo(el, ".caixa-com .val",false);
      }catch (NullPointerException ex){
         return null;
      }
    }
-   private boolean ScrapStock(Element el){
+   private boolean scrapStock(Element el){
       try {
          return el.select(".sem-estoque").isEmpty();
       }catch (NullPointerException ex){

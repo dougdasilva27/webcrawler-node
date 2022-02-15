@@ -36,7 +36,7 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
       Integer position = 1;
 
       if (products != null && !products.isEmpty()) {
-         String productIds = MountUrlid(products);
+         String productIds = mountUrlid(products);
          fetchPrice(productIds);
          this.totalProducts = data.optInt("size");
          for (Object object : products) {
@@ -155,7 +155,7 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
    }
 
 
-   protected String MountUrlid(JSONArray products){
+   protected String mountUrlid(JSONArray products){
       String url="";
       for (Object object : products) {
          JSONObject product = (JSONObject) object;
