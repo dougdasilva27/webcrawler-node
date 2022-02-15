@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -11,6 +13,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.yaml.snakeyaml.util.UriEncoder;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -32,7 +35,7 @@ public class BrasilDrogaoSuperCrawler extends CrawlerRankingKeywords {
             setTotalProducts();
          }
          for (Element e : products) {
-            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".foto a ", "href");
+            String productUrl = scrapInternalUrl(e);
             String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".foto a ", "title");
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".produto", Arrays.asList("src"), "", "");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".precoPor ", null, false, ',', session, 0);
@@ -60,6 +63,11 @@ public class BrasilDrogaoSuperCrawler extends CrawlerRankingKeywords {
       String stringJson = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".itemGtm >input", "value");
       JSONObject json = CrawlerUtils.stringToJson(stringJson);
       return json.optString("id");
+   }
+   private String scrapInternalUrl(Element e) {
+      String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".foto a ", "href");
+      url= UriEncoder.encode(url);
+      return url;
    }
    private boolean scrapAvailable(Element e) {
       String available= CrawlerUtils.scrapStringSimpleInfo(e,".esgotado", false);
