@@ -454,10 +454,18 @@ public class MercadolivreNewCrawler {
       if (price == null) {
          price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.ui-pdp-price span.price-tag-amount", null, false, ',', session);
       }
+      if (price == null) { // for when called to scrap price on a sellers page
+         price = scrapPricingFromSellersPage(doc);
+      }
 
       return price;
    }
 
+   private Double scrapPricingFromSellersPage(Element doc) {
+      Integer priceFraction = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__fraction", false, 0);
+      Integer priceCents = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__cents", false, 0);
+      return priceFraction + (double) priceCents / 100;
+   }
 
    private CreditCards scrapCreditCards(Element doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
