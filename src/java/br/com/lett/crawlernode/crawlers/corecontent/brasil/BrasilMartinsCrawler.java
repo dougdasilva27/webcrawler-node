@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -19,17 +18,10 @@ import models.RatingsReviews;
 import models.pricing.*;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class BrasilMartinsCrawler extends Crawler {
@@ -70,11 +62,14 @@ public class BrasilMartinsCrawler extends Crawler {
       headers.put("authority", "www.martinsatacado.com.br");
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
 
-      String payload = "j_username=" + login.replace("@","%40") + "&j_password=" + password;
+      String payload = "j_username=" + login.replace("@", "%40") + "&j_password=" + password;
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.martinsatacado.com.br/j_spring_security_check")
          .setPayload(payload)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
          .setHeaders(headers)
          .build();
 
