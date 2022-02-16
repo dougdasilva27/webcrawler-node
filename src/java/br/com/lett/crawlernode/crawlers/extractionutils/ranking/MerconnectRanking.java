@@ -2,8 +2,11 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -11,6 +14,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
@@ -94,7 +98,7 @@ public class MerconnectRanking extends CrawlerRankingKeywords {
    }
 
    @Override
-   public void extractProductsFromCurrentPage() {
+   public void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.log("Página " + this.currentPage);
 
       JSONObject jsonResp = fetch();
@@ -105,8 +109,24 @@ public class MerconnectRanking extends CrawlerRankingKeywords {
          JSONObject product = (JSONObject) ((JSONObject) obj).optQuery("/items/0");
          String internalId = retrieveInternalId(product);
          String productUrl = retrieveUrl(product);
-         saveDataProduct(internalId, null, productUrl);
-         this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + productUrl);
+         String name = scrapName(product);
+         String imgUrl = scrapImg(product);
+         Integer price = scrapPrice(product);
+         boolean isAvailable = scrapAvailable(product);
+
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setName(name)
+            .setImageUrl(imgUrl)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
+
+         saveDataProduct(productRanking);
+         if (this.arrayProducts.size() == productsLimit) {
+            break;
+         }
       }
    }
 
@@ -121,6 +141,38 @@ public class MerconnectRanking extends CrawlerRankingKeywords {
 
    protected String retrieveInternalId(JSONObject product) {
       return product.optString("id");
+   }
+   private String scrapName(JSONObject prod){
+      try {
+         return prod.optString("short_description");
+      }catch (NullPointerException e){
+         return "";
+      }
+   }
+   private String scrapImg(JSONObject prod){
+      try {
+         return prod.optString("image");
+      }catch (NullPointerException e){
+         return "";
+      }
+   }
+   private Integer scrapPrice(JSONObject prod){
+      try {
+         Double price = prod.optDouble("price") * 100;
+         return price.intValue();
+
+
+      }catch (NullPointerException e){
+         return 0;
+      }
+   }
+
+   private boolean scrapAvailable(JSONObject prod){
+      try {
+         return prod.optInt("stock") > 0 ;
+      }catch (NullPointerException e){
+         return false;
+      }
    }
 
    @Override
