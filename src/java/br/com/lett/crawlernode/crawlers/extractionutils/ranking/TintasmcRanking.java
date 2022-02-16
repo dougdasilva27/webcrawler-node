@@ -1,14 +1,18 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,9 +64,32 @@ public abstract class TintasmcRanking extends CrawlerRankingKeywords {
       }
       return internalId;
    }
+   private String scrapName(JSONObject prod){
+      try {
+         return prod.optString("name");
+      }catch (NullPointerException e){
+         return "";
+      }
+   }
+   private String scrapImg(JSONObject prod){
+      try {
+         return prod.optString("image");
+      }catch (NullPointerException e){
+         return "";
+      }
+   }
+   private Integer scrapPrice(JSONObject prod){
+      try {
+         Double priceDouble = prod.optJSONArray("stores").optJSONObject(0).optDouble("price") * 100;
+
+         return  priceDouble.intValue();
+      }catch (NullPointerException e){
+         return 0;
+      }
+   }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 12;
 
       JSONArray products = fetch();
@@ -73,16 +100,24 @@ public abstract class TintasmcRanking extends CrawlerRankingKeywords {
 
             String internalId = scrapInternalId(prod);
             String productUrl = "https://loja.tintasmc.com.br/produtos/" + prod.optString("slug");
+            String name = scrapName(prod);
+            String imgUrl = scrapImg(prod);
+            Integer price = scrapPrice(prod);
+            boolean isAvailable = price!=0;
 
-            saveDataProduct(internalId, null, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position +
-               " - InternalId: " + internalId +
-               " - InternalPid: " + null +
-               " - Url: " + productUrl);
-
-            if (this.arrayProducts.size() == productsLimit)
+            saveDataProduct(productRanking);
+            if (this.arrayProducts.size() == productsLimit) {
                break;
+            }
          }
       }
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
