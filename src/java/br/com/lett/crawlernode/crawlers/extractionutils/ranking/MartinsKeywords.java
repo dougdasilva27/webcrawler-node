@@ -105,7 +105,8 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY))
          .setHeaders(headers)
          .build();
 

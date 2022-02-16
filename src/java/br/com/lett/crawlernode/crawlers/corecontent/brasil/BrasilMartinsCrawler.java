@@ -69,7 +69,8 @@ public class BrasilMartinsCrawler extends Crawler {
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY))
          .setHeaders(headers)
          .build();
 
@@ -88,7 +89,8 @@ public class BrasilMartinsCrawler extends Crawler {
          List<String> variations = scrapVariations(doc);
 
          if (!variations.isEmpty()) {
-            for (String variation : variations) {
+            for (int i = 0; i < variations.size(); i++) {
+               String variation = i == 0 ? "" : variations.get(i);
                products.add(extractProductFromHtml(doc, variation));
             }
          } else {
