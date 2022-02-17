@@ -47,15 +47,12 @@ public class TottusCrawler extends CrawlerRankingKeywords {
          for (Object e : results) {
 
             JSONObject skuInfo = (JSONObject) e;
-
             String internalId = skuInfo.optString("sku");
             String productUrl = CrawlerUtils.completeUrl(skuInfo.optString("key"), "https://", homePage) + "/p/";
-
             String name = scrapName(skuInfo);
             String imgUrl = scrapImg(skuInfo);
             Integer price = scrapPrice(skuInfo);
             boolean isAvailable = scrapAvailable(skuInfo);
-
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalId(internalId)
@@ -79,35 +76,42 @@ public class TottusCrawler extends CrawlerRankingKeywords {
    }
 
    private String scrapName(JSONObject prod){
-      try {
-         return prod.optString("name") + " " + prod.optJSONObject("attributes").optString("marca") + " " +  prod.optJSONObject("attributes").optString("formato");
-      }catch (NullPointerException e){
-         return "";
-      }
+         String name = prod.optString("name");
+         StringBuilder fullName = new StringBuilder();
+         if(name != null && !name.isEmpty()){
+            fullName.append(name);
+            String marca = prod.optJSONObject("attributes").optString("marca");
+            String format = prod.optJSONObject("attributes").optString("formato");
+            if(marca != null && !marca.isEmpty()){
+               fullName.append(" ");
+               fullName.append(marca);
+            }
+            if(format != null && !format.isEmpty()) {
+               fullName.append(" ");
+               fullName.append(format);
+            }
+            return fullName.toString();
+         }else{
+           return  null;
+         }
+
+
    }
    private String scrapImg(JSONObject prod){
-      try {
          return prod.optJSONArray("images").optString(0);
-      }catch (NullPointerException e){
-         return "";
-      }
    }
    private Integer scrapPrice(JSONObject prod){
-      try {
-         return prod.optJSONObject("prices").optInt("currentPrice");
-
-
-      }catch (NullPointerException e){
-         return 0;
+      Integer price = prod.optJSONObject("prices").optInt("cmrPrice");
+      if (price == 0 ){
+         price = prod.optJSONObject("prices").optInt("currentPrice");
       }
+
+      return price;
    }
 
    private boolean scrapAvailable(JSONObject prod){
-      try {
+
          return prod.optJSONObject("attributes").optString("estado").equals("activo") ;
-      }catch (NullPointerException e){
-         return false;
-      }
    }
    @Override
    protected void setTotalProducts() {
