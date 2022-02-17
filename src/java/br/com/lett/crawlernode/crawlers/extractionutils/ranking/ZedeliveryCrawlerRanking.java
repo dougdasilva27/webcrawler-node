@@ -94,6 +94,11 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
          .setPayload(payload)
          .setCookies(cookies)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .setHeaders(headers)
          .setSendUserAgent(false)
          .build();
