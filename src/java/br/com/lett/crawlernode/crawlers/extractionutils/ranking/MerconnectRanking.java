@@ -143,36 +143,25 @@ public class MerconnectRanking extends CrawlerRankingKeywords {
       return product.optString("id");
    }
    private String scrapName(JSONObject prod){
-      try {
          return prod.optString("short_description");
-      }catch (NullPointerException e){
-         return "";
-      }
    }
    private String scrapImg(JSONObject prod){
-      try {
+
          return prod.optString("image");
-      }catch (NullPointerException e){
-         return "";
-      }
    }
    private Integer scrapPrice(JSONObject prod){
       try {
-         Double price = prod.optDouble("price") * 100;
-         return price.intValue();
-
-
+         //usei o try por que o optdouble retorna um NAN que se eu tentar fazer o calculo vai quebrar a função
+         Double price = prod.optDouble("price");
+         Integer priceInCents = (int) Math.round(100 * price);
+         return priceInCents;
       }catch (NullPointerException e){
          return 0;
       }
    }
 
    private boolean scrapAvailable(JSONObject prod){
-      try {
          return prod.optInt("stock") > 0 ;
-      }catch (NullPointerException e){
-         return false;
-      }
    }
 
    @Override
