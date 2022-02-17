@@ -189,9 +189,9 @@ public class CarrefourCrawler extends VTEXNewScraper {
       if (productJson.has("productName")) {
          return productJson.optString("productName");
       } else if (jsonSku.has("nameComplete")) {
-         return jsonSku.get("nameComplete").toString();
+         return jsonSku.optString("nameComplete");
       } else if (jsonSku.has("name")) {
-         return jsonSku.get("name").toString();
+         return jsonSku.optString("name");
       } else {
          return null;
       }
