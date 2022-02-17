@@ -1,11 +1,16 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
 
 
 public class TottusCrawler extends CrawlerRankingKeywords {
@@ -18,7 +23,7 @@ public class TottusCrawler extends CrawlerRankingKeywords {
 
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 15;
       this.log("Página " + this.currentPage);
 
@@ -42,13 +47,22 @@ public class TottusCrawler extends CrawlerRankingKeywords {
          for (Object e : results) {
 
             JSONObject skuInfo = (JSONObject) e;
-
             String internalId = skuInfo.optString("sku");
             String productUrl = CrawlerUtils.completeUrl(skuInfo.optString("key"), "https://", homePage) + "/p/";
+            String name = scrapName(skuInfo);
+            String imgUrl = scrapImg(skuInfo);
+            Integer price = scrapPrice(skuInfo);
+            boolean isAvailable = scrapAvailable(skuInfo);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            saveDataProduct(internalId, null, productUrl);
-
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -59,6 +73,47 @@ public class TottusCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String scrapName(JSONObject prod) {
+      String name = prod.optString("name");
+      String marca = JSONUtils.getValueRecursive(prod, "attributes.marca", String.class);
+      String format = JSONUtils.getValueRecursive(prod, "attributes.formato", String.class);
+      StringBuilder fullName = new StringBuilder();
+      if (name != null && !name.isEmpty()) {
+         fullName.append(name);
+      }
+      if (marca != null && !marca.isEmpty()) {
+         fullName.append(" ");
+         fullName.append(marca);
+      }
+      if (format != null && !format.isEmpty()) {
+         fullName.append(" ");
+         fullName.append(format);
+      }
+      return fullName.toString();
+
+   }
+
+   private String scrapImg(JSONObject prod) {
+      return prod.optJSONArray("images").optString(0);
+   }
+
+   private Integer scrapPrice(JSONObject prod) {
+      Integer price = JSONUtils.getValueRecursive(prod, "prices.cmrPrice", Integer.class, 0);
+
+      if (price == 0) {
+         price = JSONUtils.getValueRecursive(prod, "prices.currentPrice", Integer.class);
+
+      }
+
+      return price;
+   }
+
+   private boolean scrapAvailable(JSONObject prod) {
+      String state = JSONUtils.getValueRecursive(prod, "attributes.estado", String.class);
+
+      return state != null && state.equals("activo");
    }
 
    @Override
