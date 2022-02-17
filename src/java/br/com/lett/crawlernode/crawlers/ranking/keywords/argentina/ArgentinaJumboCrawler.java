@@ -10,8 +10,6 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.Arrays;
-
 public class ArgentinaJumboCrawler extends CrawlerRankingKeywords {
 
    public ArgentinaJumboCrawler(Session session) {
@@ -81,18 +79,4 @@ public class ArgentinaJumboCrawler extends CrawlerRankingKeywords {
       }
    }
 
-   private String crawlInternalPid(Element e) {
-      return e.attr("data-id");
-   }
-
-   private String crawlProductUrl(Element e) {
-      String productUrl = null;
-      Element urlElement = e.selectFirst(".product-item__name a");
-
-      if (urlElement != null) {
-         productUrl = CrawlerUtils.sanitizeUrl(urlElement, Arrays.asList("href"), "https:", "www.jumbo.com.ar");
-      }
-
-      return productUrl;
-   }
 }
