@@ -66,7 +66,7 @@ public abstract class TintasmcRanking extends CrawlerRankingKeywords {
    }
    private String scrapName(JSONObject prod){
       try {
-         return prod.optString("name");
+         return prod.optString("fullname");
       }catch (NullPointerException e){
          return "";
       }
@@ -80,9 +80,9 @@ public abstract class TintasmcRanking extends CrawlerRankingKeywords {
    }
    private Integer scrapPrice(JSONObject prod){
       try {
-         Double priceDouble = prod.optJSONArray("stores").optJSONObject(0).optDouble("price") * 100;
-
-         return  priceDouble.intValue();
+         Double priceDouble = prod.optJSONArray("stores").optJSONObject(0).optDouble("price");
+         Integer priceInCents = (int) Math.round(100 * priceDouble);
+         return  priceInCents;
       }catch (NullPointerException e){
          return 0;
       }
