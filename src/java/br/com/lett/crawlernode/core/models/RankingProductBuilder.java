@@ -122,13 +122,14 @@ public class RankingProductBuilder {
       return product;
    }
 
+
    private void check() throws MalformedProductException {
       if (this.url == null || this.url.isEmpty()) {
-         throw new MalformedProductException("Product url can't be null");
+         throw new MalformedProductException("Product url can't be null or empty");
       }
 
-      if (this.name == null) {
-         throw new MalformedProductException("Product name can't be null");
+      if (this.name == null || this.name.isEmpty()) {
+         throw new MalformedProductException("Product name can't be null or empty");
       }
 
       if (this.isAvailable && this.priceInCents == 0) {
