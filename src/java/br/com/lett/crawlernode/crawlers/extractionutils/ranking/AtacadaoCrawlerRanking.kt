@@ -1,22 +1,20 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.Request
+import br.com.lett.crawlernode.core.models.RankingProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CommonMethods
+import br.com.lett.crawlernode.util.CrawlerUtils
 import br.com.lett.crawlernode.util.JSONUtils
 import br.com.lett.crawlernode.util.toJson
 import org.apache.http.cookie.Cookie
 import org.json.JSONObject
 
-/**
- * Date: 28/01/21
- *
- * @author Fellype Layunne
- *
- */
+
 abstract class AtacadaoCrawlerRanking(session: Session) : CrawlerRankingKeywords(session) {
 
    init {
@@ -51,7 +49,13 @@ abstract class AtacadaoCrawlerRanking(session: Session) : CrawlerRankingKeywords
 
       val request = Request.RequestBuilder.create()
          .setUrl(url)
-         .setHeaders(headers)
+         .setProxyservice(
+            listOf(
+               ProxyCollection.BUY,
+               ProxyCollection.LUMINATI_SERVER_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR
+            )
+         ).setHeaders(headers)
          .build()
 
       val response = dataFetcher.get(session, request)
@@ -74,13 +78,23 @@ abstract class AtacadaoCrawlerRanking(session: Session) : CrawlerRankingKeywords
 
          if (product is JSONObject) {
             val internalId = product.optString("pk", null)
+            val productUrl = CrawlerUtils.completeUrl(product.optString("url"), "https", "www.atacadao.com.br");
+            val name = product.optString("full_display")
+            val imageUrl = getImage(product)
+            val price = getPrice(product)
+            val isAvailable = price != 0
 
-            val productUrlPath = product.optString("url")
+            val productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build()
 
-            val productUrl = "https://www.atacadao.com.br$productUrlPath"
+            saveDataProduct(productRanking)
 
-            saveDataProduct(internalId, internalId, productUrl)
-            log("Position: $position - InternalId: $internalId - InternalPid: $internalId - Url: $productUrl")
             if (arrayProducts.size == productsLimit) {
                break
             }
@@ -93,6 +107,22 @@ abstract class AtacadaoCrawlerRanking(session: Session) : CrawlerRankingKeywords
 
    private fun getKeyword(): String {
       return keywordWithoutAccents.replace(" ", "%20")
+   }
+
+   private fun getPrice(product: JSONObject): Int? {
+      val price = product.optQuery("/price/price")
+      if (price != null) {
+         return CommonMethods.stringPriceToIntegerPrice(price as String?, ',', 0)
+      }
+      return null
+   }
+
+   private fun getImage(product: JSONObject): String? {
+      val imageUrl = product.optQuery("/photo_url/0")
+      if (imageUrl != null) {
+         return imageUrl as String?
+      }
+      return null
    }
 
 }
