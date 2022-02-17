@@ -45,7 +45,7 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
          JSONArray salesChannelArray = (JSONArray) salesChannelObject;
          this.salesChannel = salesChannelArray.toList().stream().map(Object::toString).collect(Collectors.toList());
       } else if (salesChannelObject instanceof String) {
-         this.salesChannel = List.of(salesChannel.toString());
+         this.salesChannel = List.of(salesChannelObject.toString());
       }
    }
 
