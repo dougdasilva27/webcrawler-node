@@ -1,10 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+
+import java.util.Collections;
 
 public class MexicoHebCrawler extends CrawlerRankingKeywords {
 
@@ -15,7 +20,7 @@ public class MexicoHebCrawler extends CrawlerRankingKeywords {
    private String categoryUrl;
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 56;
       this.log("Página " + this.currentPage);
 
@@ -27,7 +32,7 @@ public class MexicoHebCrawler extends CrawlerRankingKeywords {
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".products-grid .item .product-item-info > a[data-product_id]");
+      Elements products = this.currentDoc.select(".products-grid .item .product-item-info");
 
       if (this.currentPage == 1) {
          String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
@@ -43,12 +48,24 @@ public class MexicoHebCrawler extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String internalPid = e.attr("data-product_id");
-            String productUrl = CrawlerUtils.completeUrl(e.attr("href"), "https", "www.heb.com.mx");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,  "> a", "data-product_id");
+            String productUrl = CrawlerUtils.scrapUrl(e, "> a", Collections.singletonList("href"), "https", "heb.com.mx");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-name", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image-photo", Collections.singletonList("src"), "https", "heb.com.mx");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "[data-price-type=finalPrice]", null, false, '.', session, 0);
+            boolean isAvailable = price != 0;
 
-            saveDataProduct(null, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(null)
+               .setInternalPid(internalPid)
+               .setImageUrl(imgUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
             if (this.arrayProducts.size() == productsLimit)
                break;
 
