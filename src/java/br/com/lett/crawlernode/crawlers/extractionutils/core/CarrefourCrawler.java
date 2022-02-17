@@ -185,6 +185,19 @@ public class CarrefourCrawler extends VTEXNewScraper {
    }
 
    @Override
+   protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
+      if (productJson.has("productName")) {
+         return productJson.optString("productName");
+      } else if (jsonSku.has("nameComplete")) {
+         return jsonSku.optString("nameComplete");
+      } else if (jsonSku.has("name")) {
+         return jsonSku.optString("name");
+      } else {
+         return null;
+      }
+   }
+
+   @Override
    protected Offers scrapOffer(Document doc, JSONObject jsonSku, String internalId, String internalPid) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
