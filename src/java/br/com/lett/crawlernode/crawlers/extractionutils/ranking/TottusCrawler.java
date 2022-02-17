@@ -75,48 +75,47 @@ public class TottusCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private String scrapName(JSONObject prod){
-         String name = prod.optString("name");
-         StringBuilder fullName = new StringBuilder();
-         if(name != null && !name.isEmpty()){
-            fullName.append(name);
-            String marca = prod.optJSONObject("attributes").optString("marca");
-            String format = prod.optJSONObject("attributes").optString("formato");
-            if(marca != null && !marca.isEmpty()){
-               fullName.append(" ");
-               fullName.append(marca);
-            }
-            if(format != null && !format.isEmpty()) {
-               fullName.append(" ");
-               fullName.append(format);
-            }
-            return fullName.toString();
-         }else{
-           return  null;
+   private String scrapName(JSONObject prod) {
+      String name = prod.optString("name");
+      String marca = JSONUtils.getValueRecursive(prod, "attributes.marca", String.class);
+      String format = JSONUtils.getValueRecursive(prod, "attributes.formato", String.class);
+      StringBuilder fullName = new StringBuilder();
+      if (name != null && !name.isEmpty()) {
+         fullName.append(name);
+      }
+      if (marca != null && !marca.isEmpty()) {
+         fullName.append(" ");
+         fullName.append(marca);
+      }
+      if (format != null && !format.isEmpty()) {
+         fullName.append(" ");
+         fullName.append(format);
+      }
+      return fullName.toString();
+
+      }
+      private String scrapImg (JSONObject prod){
+         return prod.optJSONArray("images").optString(0);
+      }
+      private Integer scrapPrice (JSONObject prod){
+         Integer price = JSONUtils.getValueRecursive(prod, "prices.cmrPrice", Integer.class, 0);
+
+         if (price == 0) {
+            price =  JSONUtils.getValueRecursive(prod, "prices.currentPrice", Integer.class);
+
          }
 
-
-   }
-   private String scrapImg(JSONObject prod){
-         return prod.optJSONArray("images").optString(0);
-   }
-   private Integer scrapPrice(JSONObject prod){
-      Integer price = prod.optJSONObject("prices").optInt("cmrPrice");
-      if (price == 0 ){
-         price = prod.optJSONObject("prices").optInt("currentPrice");
+         return price;
       }
 
-      return price;
-   }
+      private boolean scrapAvailable (JSONObject prod){
 
-   private boolean scrapAvailable(JSONObject prod){
+         return JSONUtils.getValueRecursive(prod, "attributes.estado", String.class).equals("activo");
+      }
+      @Override
+      protected void setTotalProducts () {
+         this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".searchQuery span", true, 0);
+         this.log("Total da busca: " + this.totalProducts);
+      }
 
-         return prod.optJSONObject("attributes").optString("estado").equals("activo") ;
    }
-   @Override
-   protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".searchQuery span", true, 0);
-      this.log("Total da busca: " + this.totalProducts);
-   }
-
-}
