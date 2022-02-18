@@ -94,7 +94,7 @@ public class BrasilSempreemcasaCrawler extends Crawler {
          }
 
          //Capturing the unit price if it's in the page
-         if(!variations.isEmpty()){
+         if(variations.isEmpty()){
             String internalId = internalPid + "-1";
             String variationName = name + " - unidade";
             Offers offer = scrapUnitOffer(json);
