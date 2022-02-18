@@ -101,8 +101,6 @@ public class SavegnagoCrawler extends Crawler {
          int stock = json.optInt("availableQuantity");
          Offers offers = available ? scrapOffers(json) : new Offers();
 
-         RatingsReviews ratings = scrapRating(internalPid);
-
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalPid)
@@ -113,7 +111,6 @@ public class SavegnagoCrawler extends Crawler {
             .setSecondaryImages(images)
             .setDescription(description)
             .setStock(stock)
-            .setRatingReviews(ratings)
             .build();
 
          products.add(product);
@@ -198,25 +195,4 @@ public class SavegnagoCrawler extends Crawler {
 
       return creditCards;
    }
-
-   protected RatingsReviews scrapRating(String internalPid) {
-      RatingsReviews reviews = new RatingsReviews();
-
-      YourreviewsRatingCrawler yrRC = new YourreviewsRatingCrawler(session, cookies, logger, "d23c4a07-61d5-43d3-97da-32c0680a32b8", dataFetcher);
-      Document docRating = yrRC.crawlPageRatingsFromYourViews(internalPid, "d23c4a07-61d5-43d3-97da-32c0680a32b8", dataFetcher);
-      Integer totalNumOfEvaluations = yrRC.getTotalNumOfRatingsFromYourViews(docRating);
-      Double avgRating = yrRC.getTotalAvgRatingFromYourViews(docRating);
-
-      AdvancedRatingReview adRating = yrRC.getTotalStarsFromEachValue(internalPid);
-
-      reviews.setTotalRating(totalNumOfEvaluations);
-      reviews.setAverageOverallRating(avgRating);
-      reviews.setTotalWrittenReviews(totalNumOfEvaluations);
-      reviews.setAdvancedRatingReview(adRating);
-      reviews.setDate(session.getDate());
-
-      return reviews;
-   }
-
-
 }
