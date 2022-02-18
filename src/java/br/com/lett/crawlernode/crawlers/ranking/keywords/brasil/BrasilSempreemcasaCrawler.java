@@ -29,6 +29,8 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
       longi = session.getOptions().optString("longitude");
    }
 
+   String pack;
+
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 24;
@@ -52,10 +54,10 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
             String internalPid = product.optString("id");
             String productUrl = "https://sempreemcasa.com.br/produtos/" + product.optString("slug") + "?latitude=" + lat + "&longitude=" + longi;
 
-            String name = product.optString("name");
+
             String imgUrl = product.optString("image");
             Integer price = scrapPrice(product);
-
+            String name = product.optString("name") + " " + pack + " unidades";
             boolean isAvailable = price != 0;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -104,6 +106,8 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
          String stock = JSONUtils.getValueRecursive(obj, "stock", String.class, "");
          if (stock.equals("IN_STOCK")) {
             Double price = JSONUtils.getValueRecursive(obj, "current_price", Double.class, 0.0);
+            Integer packInteger = JSONUtils.getValueRecursive(obj, "quantity", Integer.class, 0);
+            pack = packInteger.toString();
             Integer priceInCents = (int) Math.round(100 * price);
             return priceInCents;
          }
