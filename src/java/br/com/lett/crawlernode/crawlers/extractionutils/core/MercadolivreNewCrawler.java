@@ -73,7 +73,7 @@ public class MercadolivreNewCrawler {
 
       if (mustAddProduct || mustAddProductUnavailable) {
 
-         JSONObject initialState =  selectJsonFromHtml(doc);
+         JSONObject initialState = selectJsonFromHtml(doc);
          JSONObject schema = initialState != null ? JSONUtils.getValueRecursive(initialState, "schema.0", JSONObject.class) : null;
          if (schema != null) {
             String internalPid = schema.optString("productID");
@@ -189,7 +189,7 @@ public class MercadolivreNewCrawler {
 
       Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-reviews__rating__summary__label", true, 0);
       Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ui-pdp-reviews__rating__summary__average", null, true, '.', session);
-      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(internalId);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
 
       ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -201,30 +201,29 @@ public class MercadolivreNewCrawler {
       return ratingReviews;
    }
 
-   private AdvancedRatingReview scrapAdvancedRatingReview(String internalId) {
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
       Integer star1 = 0;
       Integer star2 = 0;
       Integer star3 = 0;
       Integer star4 = 0;
       Integer star5 = 0;
 
-      Document docRating = acessHtmlWithAdvanedRating(internalId);
-      Elements reviews = docRating.select(".reviews-rating .review-rating-row.is-rated");
+      Elements reviews = doc.select(".ui-vpp-rating li");
 
       for (Element review : reviews) {
 
-         Element elementStarNumber = review.selectFirst(".review-rating-label");
+         Element elementStarNumber = review.selectFirst(".ui-vpp-rating__level__text");
 
          if (elementStarNumber != null) {
             String stringStarNumber = elementStarNumber.text().replaceAll("[^0-9]", "").trim();
-            Integer numberOfStars = !stringStarNumber.isEmpty() ? Integer.parseInt(stringStarNumber) : 0;
+            int numberOfStars = !stringStarNumber.isEmpty() ? Integer.parseInt(stringStarNumber) : 0;
 
-            Element elementVoteNumber = review.selectFirst(".review-rating-total");
+            Element elementVoteNumber = review.selectFirst(".ui-vpp-rating__level__value");
 
             if (elementVoteNumber != null) {
 
                String vN = elementVoteNumber.text().replaceAll("[^0-9]", "").trim();
-               Integer numberOfVotes = !vN.isEmpty() ? Integer.parseInt(vN) : 0;
+               int numberOfVotes = !vN.isEmpty() ? Integer.parseInt(vN) : 0;
 
                switch (numberOfStars) {
                   case 5:
@@ -256,26 +255,6 @@ public class MercadolivreNewCrawler {
          .totalStar4(star4)
          .totalStar5(star5)
          .build();
-   }
-
-   private Document acessHtmlWithAdvanedRating(String internalId) {
-      StringBuilder url = new StringBuilder();
-      url.append("https://produto.mercadolivre.com.br/noindex/catalog/reviews/")
-         .append(internalId)
-         .append("?noIndex=true")
-         .append("&contextual=true")
-         .append("&access=view_all")
-         .append("&quantity=1");
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36");
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
-
-      Request request = RequestBuilder.create().setUrl(url.toString()).build();
-      String response = dataFetcher.get(session, request).getBody().trim();
-
-      return Jsoup.parse(response);
-
    }
 
    public String scrapSeller(Document doc) {
@@ -448,7 +427,7 @@ public class MercadolivreNewCrawler {
 
    private Double findSpotlightPrice(Element doc) {
       Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-tag meta", "content", false, '.', session);
-      if (price == null){
+      if (price == null) {
          price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.andes-money-amount.ui-pdp-price__part.andes-money-amount--cents-superscript meta", "content", false, '.', session);
       }
       if (price == null) {
