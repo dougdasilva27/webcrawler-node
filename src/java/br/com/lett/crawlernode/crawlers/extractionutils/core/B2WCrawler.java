@@ -687,8 +687,7 @@ public class B2WCrawler extends Crawler {
 
       boolean alreadyCapturedHtmlSlide = false;
 
-     Element datasheet = doc.selectFirst("[class*=\"info-drawer__Description\"]");
-
+      Element datasheet = doc.selectFirst("#info-section");
       if (datasheet != null) {
          Element iframe = datasheet.selectFirst("iframe");
 
