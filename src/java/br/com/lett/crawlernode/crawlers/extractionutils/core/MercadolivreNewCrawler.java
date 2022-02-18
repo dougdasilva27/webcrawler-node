@@ -79,7 +79,7 @@ public class MercadolivreNewCrawler {
             String internalPid = schema.optString("productID");
             String internalId;
             Element variationElement = doc.selectFirst("input[name='variation']");
-            if (variationElement != null && !doc.select(".ui-pdp-variations .ui-pdp-variations__picker:not(.ui-pdp-variations__picker-single) a").isEmpty() || !doc.select(".andes-dropdown__popover ul li").isEmpty()) {
+            if (variationElement != null && (!doc.select(".ui-pdp-variations .ui-pdp-variations__picker:not(.ui-pdp-variations__picker-single) a").isEmpty() || !doc.select(".andes-dropdown__popover ul li").isEmpty())) {
                internalId = internalPid + '_' + variationElement.attr("value");
             } else {
                internalId = schema.optString("sku");
