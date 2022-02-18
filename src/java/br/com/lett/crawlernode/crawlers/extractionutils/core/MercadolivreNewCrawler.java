@@ -23,6 +23,7 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -66,7 +67,7 @@ public class MercadolivreNewCrawler {
       Product product = null;
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      boolean availableToBuy = !doc.select(".andes-button--filled, .andes-button__content").isEmpty();
+      boolean availableToBuy = isAvailable(doc);
       Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
       boolean mustAddProductUnavailable = !availableToBuy && checkIfMustScrapProductUnavailable(doc);
       boolean mustAddProduct = availableToBuy && checkIfMustScrapProduct(offers);
@@ -116,6 +117,18 @@ public class MercadolivreNewCrawler {
       return product;
    }
 
+   private boolean isAvailable(Document doc) {
+      boolean availableToBuy = !doc.select(".andes-button--filled, .andes-button__content").isEmpty();
+
+      String unavailable = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-shipping-message__text", true);
+
+      if (unavailable != null && unavailable.contains("indisponível")){
+         availableToBuy = false;
+      }
+
+      return availableToBuy;
+   }
+
    private String scrapName(Document doc) {
       String productName = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.ui-pdp-title", true);
       StringBuilder name = new StringBuilder();
@@ -134,8 +147,6 @@ public class MercadolivreNewCrawler {
          name.append(" ").append(CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-dropdown-selector__item--label", true));
 
       }
-
-
       return name.toString();
    }
 
@@ -287,10 +298,9 @@ public class MercadolivreNewCrawler {
 
 
       if (sellersVariations == null) {
-         isMainRetailer = mainSellerNameLower.equalsIgnoreCase(sellerFullName);
+         isMainRetailer = checkIsMainRetalerToOneSeller(sellerFullName);
       } else {
          isMainRetailer = isMainRetaler(sellerFullName);
-
       }
 
       if (sellerFullName != null && !sellerFullName.isEmpty()) {
@@ -299,7 +309,7 @@ public class MercadolivreNewCrawler {
 
          offers.add(OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(sellerFullName)
+            .setSellerFullName(isMainRetailer ? mainSellerNameLower : sellerFullName)
             .setMainPagePosition(1)
             .setIsBuybox(false)
             .setIsMainRetailer(isMainRetailer)
@@ -318,12 +328,27 @@ public class MercadolivreNewCrawler {
 
    private boolean isMainRetaler(String sellerFullName) {
       boolean isMainRetailer = false;
+      sellerFullName = StringUtils.stripAccents(sellerFullName);
 
       for (String sellerName : sellersVariations) {
+         sellerName = StringUtils.stripAccents(sellerName);
          if (sellerName.equalsIgnoreCase(sellerFullName)) {
             isMainRetailer = true;
          }
       }
+      return isMainRetailer;
+   }
+
+   private boolean checkIsMainRetalerToOneSeller(String sellerFullName) {
+      boolean isMainRetailer = false;
+      if (sellerFullName != null) {
+         String mainSellerNameLowerWithoutAccents = StringUtils.stripAccents(mainSellerNameLower);
+         sellerFullName = StringUtils.stripAccents(sellerFullName);
+         if (mainSellerNameLowerWithoutAccents.equalsIgnoreCase(sellerFullName) || sellerFullName.contains(mainSellerNameLowerWithoutAccents)) {
+            isMainRetailer = true;
+         }
+      }
+
       return isMainRetailer;
    }
 
@@ -355,18 +380,18 @@ public class MercadolivreNewCrawler {
                      Offer offerMainPage = offers.getSellerByName(sellerName);
                      offerMainPage.setSellersPagePosition(sellersPagePosition);
                      offerMainPage.setIsBuybox(true);
-
                      mainOfferFound = true;
+
                   } else {
                      Pricing pricing = scrapPricing(e);
                      List<String> sales = scrapSales(e);
-
+                     boolean isMainRetaler = checkIsMainRetalerToOneSeller(sellerName);
                      offers.add(OfferBuilder.create()
                         .setUseSlugNameAsInternalSellerId(true)
-                        .setSellerFullName(sellerName)
+                        .setSellerFullName(isMainRetaler ? mainSellerNameLower : sellerName)
                         .setSellersPagePosition(sellersPagePosition)
                         .setIsBuybox(true)
-                        .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerName))
+                        .setIsMainRetailer(isMainRetaler)
                         .setPricing(pricing)
                         .setSales(sales)
                         .build());
