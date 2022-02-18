@@ -548,15 +548,19 @@ public class CommonMethods {
    }
 
    public static Integer stringPriceToIntegerPrice(String priceStr, char decimalSeparator, Integer defaultValue) {
-      Double price = null;
+      Double price;
+      Integer priceFinal = null;
 
-      if(decimalSeparator == '.'){
-         price = MathUtils.parseDoubleWithDot(priceStr);
-      }else {
-         price = MathUtils.parseDoubleWithComma(priceStr);
+      if (priceStr != null && !priceStr.isEmpty()) {
+         if (decimalSeparator == '.') {
+            price = MathUtils.parseDoubleWithDot(priceStr);
+         } else {
+            price = MathUtils.parseDoubleWithComma(priceStr);
+         }
+         priceFinal = doublePriceToIntegerPrice(price, defaultValue);
       }
 
-      return doublePriceToIntegerPrice(price, defaultValue);
+      return priceFinal;
    }
 
    //convert camelcase to normal text
