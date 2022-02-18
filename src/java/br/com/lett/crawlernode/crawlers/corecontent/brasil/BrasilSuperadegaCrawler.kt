@@ -33,12 +33,11 @@ class BrasilSuperadegaCrawler(session: Session) : VTEXOldScraper(session) {
 
       val yr = YourreviewsRatingCrawler(session, cookies, Crawler.logger, STORE_KEY, dataFetcher)
       val docRating = yr.crawlPageRatingsFromYourViews(internalId, STORE_KEY, dataFetcher)
-      val totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating)
 
       ratingReviews.advancedRatingReview = getTotalStarsFromEachValue(internalId, yr)
       ratingReviews.averageOverallRating = getTotalAvgRatingFromYourViews(docRating)
-      ratingReviews.totalWrittenReviews = totalNumOfEvaluations
-      ratingReviews.setTotalRating(totalNumOfEvaluations)
+      ratingReviews.totalWrittenReviews = starsCount
+      ratingReviews.setTotalRating(starsCount)
       return ratingReviews
    }
 
@@ -77,25 +76,21 @@ class BrasilSuperadegaCrawler(session: Session) : VTEXOldScraper(session) {
          for (element in reviews) {
             val stars = element.select(".fa-star")
             starsCount++
+            starsSum += stars.size
             if (stars.size == 1) {
                star1++;
-               starsSum += 1;
             }
             if (stars.size == 2) {
                star2++
-               starsSum += 2
             }
             if (stars.size == 3) {
                star3++
-               starsSum += 3
             }
             if (stars.size == 4) {
                star4++
-               starsSum += 4
             }
             if (stars.size == 5) {
                star5++
-               starsSum += 5
             }
          }
       } while (hasNextPage(docRating, currentPage))
