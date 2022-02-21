@@ -81,9 +81,11 @@ public class BrasilDivvinoCrawler extends Crawler {
           totalReviews = MathUtils.parseInt(total);
        }
 
-       ratingsReviews.setDate(session.getDate());
-       ratingsReviews.setTotalRating(totalReviews);
-       ratingsReviews.setAverageOverallRating(average);
+       if  (totalReviews != null && totalReviews!=0 && average != null && average!=0) {
+          ratingsReviews.setDate(session.getDate());
+          ratingsReviews.setTotalRating(totalReviews);
+          ratingsReviews.setAverageOverallRating(average);
+       }
 
       return ratingsReviews;
    }
