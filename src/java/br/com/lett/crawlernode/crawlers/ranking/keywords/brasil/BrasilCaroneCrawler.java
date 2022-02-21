@@ -2,8 +2,11 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -11,6 +14,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -57,7 +61,7 @@ public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 48;
       this.log("Página " + this.currentPage);
 
@@ -74,14 +78,22 @@ public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
          for (Element e : products) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".add-to-list a", "data-id");
             String productUrl = CrawlerUtils.scrapUrl(e, ".product-image a", Arrays.asList("href"), "https:", HOME_PAGE);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-name", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image img", Collections.singletonList("src"), "https", "carone.com.br");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".special-price .price", null, false, ',', session, 0);
+            boolean isAvailable = price != 0;
 
-            saveDataProduct(internalId, null, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(null)
+               .setImageUrl(imgUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log(
-               "Position: " + this.position +
-                  " - InternalId: " + internalId +
-                  " - InternalPid: " + null +
-                  " - Url: " + productUrl);
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
