@@ -68,6 +68,7 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
+               .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
                .setImageUrl(imgUrl)
@@ -77,8 +78,6 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productRanking);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-                  + internalPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }

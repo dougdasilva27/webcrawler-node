@@ -127,6 +127,7 @@ public class Vipcommerce extends Crawler {
             boolean availeble = productInfo.optBoolean("disponivel");
             Integer stock = JSONUtils.getIntegerValueFromJSON(productInfo, "quantidade_maxima", null);
             Offers offers = availeble ? scrapOffers(offersInfo, productInfo) : new Offers();
+            String description = jsonData.optString("informacoes");
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -135,6 +136,7 @@ public class Vipcommerce extends Crawler {
                .setName(name)
                .setPrimaryImage(primaryImage)
                .setStock(stock)
+               .setDescription(description)
                .setOffers(offers)
                .build();
 

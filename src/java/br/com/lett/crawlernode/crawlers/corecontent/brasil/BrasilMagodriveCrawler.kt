@@ -11,12 +11,6 @@ import models.Offers
 import models.pricing.Pricing
 import org.jsoup.nodes.Document
 
-/**
- * Date: 15/09/20
- *
- * @author Fellype Layunne
- *
- */
 class BrasilMagodriveCrawler(session: Session) : Crawler(session) {
 
    companion object {
@@ -36,7 +30,7 @@ class BrasilMagodriveCrawler(session: Session) : Crawler(session) {
 
       val internalId = doc.selectFirst(".wd-content input[name=SkuID]")?.attr("value")
 
-      val description = doc.selectFirst(".description.full")?.html()
+      val description = CrawlerUtils.scrapSimpleDescription(doc, listOf(".wd-descriptions-text", ".additional p"))
 
       val categories = CrawlerUtils.crawlCategories(doc, ".wd-browsing-breadcrumbs li:not(.first):not(.last)")
 
