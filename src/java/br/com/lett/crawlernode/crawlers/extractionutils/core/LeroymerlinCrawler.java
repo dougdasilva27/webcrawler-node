@@ -45,7 +45,7 @@ public class LeroymerlinCrawler extends Crawler {
    public LeroymerlinCrawler(Session session) {
       super(session);
       region = getRegion();
-      config.setFetcher(FetchMode.JAVANET);
+      config.setFetcher(FetchMode.APACHE);
    }
 
    protected String getRegion() {
