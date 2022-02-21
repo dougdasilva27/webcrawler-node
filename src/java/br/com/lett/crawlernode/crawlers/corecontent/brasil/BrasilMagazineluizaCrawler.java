@@ -489,7 +489,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       return CrawlerUtils.scrapDoublePriceFromHtml(doc, ".interaction-client__rating-info > span", null, true, ',', session);
    }
 
-   //https://www.magazineluiza.com.br/cerveja-brahma-chopp-lager-pilsen-12-unidades-350ml/p/226721600/me/bbid/
    private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
       Integer star1 = 0;
       Integer star2 = 0;
