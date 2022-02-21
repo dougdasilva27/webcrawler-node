@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewImpl;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -14,7 +16,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-public class BrasilEletrumCrawler extends VTEXOldScraper {
+public class BrasilEletrumCrawler extends VTEXNewScraper {
 
    private static final String HOME_PAGE = "https://www.eletrum.com.br/";
    private static final String MAIN_SELLER_NAME = "Eletrum";
