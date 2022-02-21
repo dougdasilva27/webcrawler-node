@@ -549,7 +549,6 @@ public class CommonMethods {
 
    public static Integer stringPriceToIntegerPrice(String priceStr, char decimalSeparator, Integer defaultValue) {
       Double price;
-      Integer priceFinal = null;
 
       if (priceStr != null && !priceStr.isEmpty()) {
          if (decimalSeparator == '.') {
@@ -557,10 +556,10 @@ public class CommonMethods {
          } else {
             price = MathUtils.parseDoubleWithComma(priceStr);
          }
-         priceFinal = doublePriceToIntegerPrice(price, defaultValue);
+         return doublePriceToIntegerPrice(price, defaultValue);
       }
 
-      return priceFinal;
+      return defaultValue;
    }
 
    //convert camelcase to normal text
