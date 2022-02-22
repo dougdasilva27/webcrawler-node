@@ -53,7 +53,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".small a", true);
          String primaryImage = fixUrlImage(doc, internalId);
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".dots-preview .swiper-slide img", Collections.singletonList("src"), "https", "www.farmaciasnissei.com.br", primaryImage);
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(" .d-flex.mt-4 .text-border-bottom-amarelo", "div .row div .mt-1"));
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".card #tabCollapse-descricao", "div .row div .mt-1"));
 
          JSONObject json = accesAPIOffers(internalId);
          Offers offers = scrapOffers(json);
