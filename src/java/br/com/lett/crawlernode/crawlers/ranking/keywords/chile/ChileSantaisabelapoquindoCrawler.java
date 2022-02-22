@@ -94,7 +94,7 @@ public class ChileSantaisabelapoquindoCrawler extends CrawlerRankingKeywords {
                .setForbiddenCssSelector("#px-captcha")
                .build()
          ).setProxyservice(
-            Arrays.asList( ProxyCollection.INFATICA_RESIDENTIAL_BR,
+            Arrays.asList(
                ProxyCollection.BUY_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR
             )

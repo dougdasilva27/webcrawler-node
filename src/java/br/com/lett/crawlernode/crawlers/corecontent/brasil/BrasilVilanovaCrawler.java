@@ -1,17 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
@@ -27,12 +15,20 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.prices.Prices;
+import org.apache.http.HttpHeaders;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.util.*;
 
 /**
  * Date: 09/07/2019
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class BrasilVilanovaCrawler extends Crawler {
 
@@ -57,14 +53,13 @@ public class BrasilVilanovaCrawler extends Crawler {
       headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
 
       Request requestHome = RequestBuilder.create()
-            .setUrl(HOME_PAGE)
-            .setHeaders(headers)
-            .setProxyservice(
-                  Arrays.asList(
-                        ProxyCollection.BONANZA,
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR
-                  ))
-            .build();
+         .setUrl(HOME_PAGE)
+         .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BONANZA
+            ))
+         .build();
       Response response = this.dataFetcher.get(session, requestHome);
       this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, "www.vilanova.com.br", "/", cookies, session, new HashMap<>(), dataFetcher);
       this.proxy = response.getProxyUsed();
@@ -80,12 +75,12 @@ public class BrasilVilanovaCrawler extends Crawler {
       headers.put("X-Requested-With", "XMLHttpRequest");
 
       Request request = RequestBuilder.create()
-            .setUrl(LOGIN_URL)
-            .setPayload(payload.toString())
-            .setCookies(this.cookies)
-            .setHeaders(headers)
-            .setProxy(this.proxy)
-            .build();
+         .setUrl(LOGIN_URL)
+         .setPayload(payload.toString())
+         .setCookies(this.cookies)
+         .setHeaders(headers)
+         .setProxy(this.proxy)
+         .build();
 
       Response loginResponse = this.dataFetcher.post(session, request);
       List<Cookie> cookiesResponse = loginResponse.getCookies();
@@ -104,10 +99,10 @@ public class BrasilVilanovaCrawler extends Crawler {
       headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
 
       Request request = RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setCookies(this.cookies)
-            .setProxy(this.proxy)
-            .build();
+         .setUrl(session.getOriginalURL())
+         .setCookies(this.cookies)
+         .setProxy(this.proxy)
+         .build();
 
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
@@ -128,10 +123,10 @@ public class BrasilVilanovaCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#Breadcrumbs li a", true);
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#info-abas-mobile"));
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-produto #elevateImg", Arrays.asList("data-zoom-image", "href", "src"),
-               "https", IMAGES_HOST);
+            "https", IMAGES_HOST);
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#imagem-produto #elevateImg", Arrays.asList("data-zoom-image", "href",
                "src"),
-               "https", IMAGES_HOST, primaryImage);
+            "https", IMAGES_HOST, primaryImage);
 
          JSONArray productsArray = productJson.optJSONArray("productSKUList");
          for (Object obj : productsArray) {
@@ -142,21 +137,21 @@ public class BrasilVilanovaCrawler extends Crawler {
             Float price = JSONUtils.getFloatValueFromJSON(skuJson, "price", true);
 
             Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrice(price)
-                  .setPrices(new Prices())
-                  .setAvailable(false)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setEans(eans)
-                  .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPrice(price)
+               .setPrices(new Prices())
+               .setAvailable(false)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setEans(eans)
+               .build();
 
             products.add(product);
          }

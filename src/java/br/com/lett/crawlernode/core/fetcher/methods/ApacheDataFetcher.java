@@ -154,12 +154,10 @@ public class ApacheDataFetcher implements DataFetcher {
                   .setSSLHostnameVerifier(hostNameVerifier)
                   .setDefaultSocketConfig(socketConfig);
 
-            if (randProxy != null && !randProxy.getSource().contains("infatica")) {
+            if (randProxy != null) {
                HttpHost proxy = new HttpHost(randProxy.getAddress(), randProxy.getPort());
                RequestConfig requestConfig = FetchUtilities.getRequestConfig(proxy, request.isFollowRedirects(), session);
                http.setDefaultRequestConfig(requestConfig);
-            } else {
-               setProxyInfatica(randProxy);
             }
 
             CloseableHttpClient httpclient = http.build();
@@ -302,16 +300,6 @@ public class ApacheDataFetcher implements DataFetcher {
 
       response.setRequests(requests);
       return response;
-   }
-
-   private void setProxyInfatica(LettProxy randProxy) {
-      if (randProxy != null) {
-         System.setProperty("http.proxyhost", randProxy.getAddress());
-         System.setProperty("http.proxyport", String.valueOf(randProxy.getPort()));
-         System.setProperty("http.proxyPass", randProxy.getPass());
-         System.setProperty("http.proxyUser", randProxy.getUser());
-      }
-
    }
 
    @Override

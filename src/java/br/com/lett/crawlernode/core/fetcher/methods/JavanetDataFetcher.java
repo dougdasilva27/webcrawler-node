@@ -1,26 +1,5 @@
 package br.com.lett.crawlernode.core.fetcher.methods;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSession;
-import org.apache.http.cookie.Cookie;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
@@ -30,12 +9,28 @@ import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
-import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import org.apache.http.cookie.Cookie;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class JavanetDataFetcher implements DataFetcher {
 
@@ -51,18 +46,8 @@ public class JavanetDataFetcher implements DataFetcher {
       int attempt = 1;
 
       long requestsStartTime = System.currentTimeMillis();
-      List<String> proxiesTemp = request.getProxyServices() != null ? new ArrayList<>(request.getProxyServices()) : new ArrayList<>();
-      List<String> proxies = new ArrayList<>();
+      List<String> proxies = request.getProxyServices() != null ? new ArrayList<>(request.getProxyServices()) : new ArrayList<>();
 
-      if (proxies != null && (session instanceof EqiCrawlerSession || session instanceof EqiRankingDiscoverKeywordsSession)) {
-         for (String proxy : proxiesTemp) {
-            proxies.add(proxy.toLowerCase().contains("infatica") ? ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI : proxy);
-         }
-      } else if (proxies != null) {
-         for (String proxy : proxiesTemp) {
-            proxies.add(proxy.toLowerCase().contains("infatica") ? ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY : proxy);
-         }
-      }
 
       while (attempt < 4 && (response.getBody() == null || response.getBody().isEmpty())) {
          long requestStartTime = System.currentTimeMillis();
@@ -77,11 +62,11 @@ public class JavanetDataFetcher implements DataFetcher {
 
             Map<String, String> headers = request.getHeaders();
             String randUserAgent =
-                  headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
+               headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
             String requestHash = FetchUtilities.generateRequestHash(session);
 
-            if(request.getCookies() != null && !request.getCookies().isEmpty()){
-               headers.put("cookie",CommonMethods.cookiesToString(request.getCookies()));
+            if (request.getCookies() != null && !request.getCookies().isEmpty()) {
+               headers.put("cookie", CommonMethods.cookiesToString(request.getCookies()));
             }
 
             String content = "";
@@ -137,20 +122,20 @@ public class JavanetDataFetcher implements DataFetcher {
             Map<String, String> responseHeaders = FetchUtilities.headersJavaNetToMap(connection.getHeaderFields());
 
             response = new ResponseBuilder()
-                  .setBody(content)
-                  .setProxyused(!proxySelected.isEmpty() ? proxySelected.get(0) : null)
-                  .setRedirecturl(connection.getURL().toString())
-                  .setHeaders(responseHeaders)
-                  .setCookies(FetchUtilities.getCookiesFromHeadersJavaNet(connection.getHeaderFields()))
-                  .setLastStatusCode(connection.getResponseCode())
-                  .build();
+               .setBody(content)
+               .setProxyused(!proxySelected.isEmpty() ? proxySelected.get(0) : null)
+               .setRedirecturl(connection.getURL().toString())
+               .setHeaders(responseHeaders)
+               .setCookies(FetchUtilities.getCookiesFromHeadersJavaNet(connection.getHeaderFields()))
+               .setLastStatusCode(connection.getResponseCode())
+               .build();
 
             requestStats.setHasPassedValidation(true);
             requests.add(requestStats);
             session.addRedirection(request.getUrl(), connection.getURL().toString());
 
             FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, FetchUtilities.GET_REQUEST, randUserAgent, session,
-                  connection.getResponseCode(), requestHash);
+               connection.getResponseCode(), requestHash);
          } catch (Exception e) {
             Logging.printLogDebug(logger, session, "Attempt " + attempt + " -> Error performing GET request. Error: " + e.getMessage());
             if (session instanceof TestCrawlerSession) {
@@ -163,9 +148,9 @@ public class JavanetDataFetcher implements DataFetcher {
       }
 
       JSONObject apacheMetadata = new JSONObject().put("req_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_attempts_number", attempt)
-            .put("req_type", "url_request")
-            .put("req_lib", "javanet");
+         .put("req_attempts_number", attempt)
+         .put("req_type", "url_request")
+         .put("req_lib", "javanet");
 
       Logging.logInfo(logger, session, apacheMetadata, "JAVANET REQUESTS INFO");
 
@@ -176,7 +161,7 @@ public class JavanetDataFetcher implements DataFetcher {
 
    /**
     * Utility method to serialize cookies list into a header string
-    * 
+    *
     * @param cookies
     * @return
     */
@@ -209,7 +194,7 @@ public class JavanetDataFetcher implements DataFetcher {
 
             Map<String, String> headers = request.getHeaders();
             String randUserAgent =
-                  headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
+               headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
             String requestHash = FetchUtilities.generateRequestHash(session);
 
             String content = "";
@@ -263,7 +248,7 @@ public class JavanetDataFetcher implements DataFetcher {
             requests.add(requestStats);
 
             FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, FetchUtilities.GET_REQUEST, randUserAgent, session,
-                  connection.getResponseCode(), requestHash);
+               connection.getResponseCode(), requestHash);
          } catch (Exception e) {
             Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing POST request. Error: " + e.getMessage());
             if (session instanceof TestCrawlerSession) {
@@ -355,13 +340,13 @@ public class JavanetDataFetcher implements DataFetcher {
          Map<String, String> responseHeaders = FetchUtilities.headersJavaNetToMap(connection.getHeaderFields());
 
          response = new ResponseBuilder()
-               .setBody(content)
-               .setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null)
-               .setRedirecturl(connection.getURL().toString())
-               .setHeaders(responseHeaders)
-               .setCookies(FetchUtilities.getCookiesFromHeadersJavaNet(connection.getHeaderFields()))
-               .setLastStatusCode(connection.getResponseCode())
-               .build();
+            .setBody(content)
+            .setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null)
+            .setRedirecturl(connection.getURL().toString())
+            .setHeaders(responseHeaders)
+            .setCookies(FetchUtilities.getCookiesFromHeadersJavaNet(connection.getHeaderFields()))
+            .setLastStatusCode(connection.getResponseCode())
+            .build();
 
          requestStats.setHasPassedValidation(true);
          requests.add(requestStats);
@@ -376,8 +361,8 @@ public class JavanetDataFetcher implements DataFetcher {
       }
 
       JSONObject apacheMetadata = new JSONObject()
-            .put("req_javanet_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_javanet_attempts_number", 1);
+         .put("req_javanet_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+         .put("req_javanet_attempts_number", 1);
 
       Logging.logInfo(logger, session, apacheMetadata, "JAVANET REQUEST DELETE INFO");
 
