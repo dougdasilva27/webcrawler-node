@@ -91,8 +91,8 @@ public class BrasilCaroneCrawler extends Crawler {
          String internalPid = data != null ? data.optString("sku") : null;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".i-breadcrumb li:not(.home):not(.product)");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image", Arrays.asList("src"), "https:",
-            "www.carone.com.br/");
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image", Arrays.asList("src"), "https:", "www.carone.com.br/");
+         List<String> secondaryImages =  CrawlerUtils.scrapSecondaryImages(doc,".cloud-zoom-gallery img", Arrays.asList("src"),"", "", primaryImage);
          boolean available = !doc.select(".add-to-box .add-to-cart").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
@@ -104,6 +104,7 @@ public class BrasilCaroneCrawler extends Crawler {
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setOffers(offers)
             .build();
 
