@@ -34,7 +34,7 @@ public class BrasilGimbaCrawler extends CrawlerRankingKeywords {
 
       if (!products.isEmpty()) {
          for (Element e : products) {
-            String internalId = crawlInternalId(e);
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".card-product-thumbnail > a", "data-product-click");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".card-product-name", true);
             String urlProduct = crawlProductUrl(e, internalId, name);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".card-product-thumbnail img", Collections.singletonList("src"), "https", "imagens.gimba.com.br");
@@ -44,7 +44,7 @@ public class BrasilGimbaCrawler extends CrawlerRankingKeywords {
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(urlProduct)
                .setInternalId(internalId)
-               .setInternalPid(null)
+               .setInternalPid(internalId)
                .setImageUrl(imgUrl)
                .setName(name)
                .setPriceInCents(price)
@@ -66,7 +66,7 @@ public class BrasilGimbaCrawler extends CrawlerRankingKeywords {
    }
 
    private String crawlProductUrl(Element e, String internalId, String name) {
-      String url = CrawlerUtils.scrapUrl(e, ".card-product-content > a", "href", "https", "www.gimba.com.br");
+      String url = CrawlerUtils.scrapUrl(e, ".card-product-thumbnail > a", "href", "https", "www.gimba.com.br");
       if(url == null || url.isEmpty()) {
          String slugifiedName = CommonMethods.toSlug(name);
          return "https://www.gimba.com.br/" + slugifiedName +"/" + "?PID=" + internalId;
