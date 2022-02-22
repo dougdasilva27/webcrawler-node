@@ -67,7 +67,6 @@ public class BrasilIfood extends Crawler {
                .build()
          ).setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.BUY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR
             )

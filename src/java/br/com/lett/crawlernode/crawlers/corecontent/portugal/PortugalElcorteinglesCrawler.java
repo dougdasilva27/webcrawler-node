@@ -69,7 +69,6 @@ public class PortugalElcorteinglesCrawler extends Crawler {
                .build())
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_ES,
                ProxyCollection.BUY
             )
