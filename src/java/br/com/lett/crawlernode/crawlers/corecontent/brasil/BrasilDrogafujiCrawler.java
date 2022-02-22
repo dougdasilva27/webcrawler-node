@@ -65,7 +65,6 @@ public class BrasilDrogafujiCrawler extends Crawler {
       List<String> secondaryImages = crawlSecondaryImages(doc);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".productDescription .productDescription"));
       Integer stock = null;
-      Marketplace marketplace = crawlMarketplace();
 
       // Creating the product
       Product product = ProductBuilder.create()
@@ -79,7 +78,6 @@ public class BrasilDrogafujiCrawler extends Crawler {
          .setDescription(description)
          .setStock(stock)
          .setOffers(offers)
-         .setMarketplace(marketplace)
          .build();
 
       products.add(product);
@@ -185,44 +183,6 @@ public class BrasilDrogafujiCrawler extends Crawler {
       return sales;
    }
 
-  private Float crawlPrice(Document document, String internalId) {
-    Float price = null;
-
-    String priceText = null;
-    Element salePriceElement = document.select("#product-price-" + internalId).first();
-
-    if (salePriceElement != null) {
-      priceText = salePriceElement.text();
-      price = MathUtils.parseFloatWithComma(priceText);
-    }
-
-    return price;
-  }
-
-  private Marketplace crawlMarketplace() {
-    return new Marketplace();
-  }
-
-
-  private String crawlPrimaryImage(Document doc) {
-    String primaryImage = null;
-    Element elementPrimaryImage = doc.select(".product-img-box > a").first();
-
-    if (elementPrimaryImage == null) {
-      elementPrimaryImage = doc.select(".product-img-box > img").first();
-    }
-
-    if (elementPrimaryImage != null) {
-      primaryImage = elementPrimaryImage.attr("href").trim();
-
-      if (primaryImage.isEmpty()) {
-        primaryImage = elementPrimaryImage.attr("src").trim();
-      }
-    }
-
-    return primaryImage;
-  }
-
   /**
    * In the time when this crawler was made, this market hasn't secondary Images
    * 
@@ -262,72 +222,7 @@ public class BrasilDrogafujiCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document doc) {
-    StringBuilder description = new StringBuilder();
-
-    Element elementDescription = doc.select(".box-collateral.box-description").first();
-
-    if (elementDescription != null) {
-      description.append(elementDescription.html());
-    }
-
-    Element elementAditional = doc.select(".box-collateral.box-additional").first();
-
-    if (elementAditional != null) {
-      description.append(elementAditional.html());
-    }
-
-    return description.toString();
-  }
-
   private boolean crawlAvailability(Document doc) {
     return doc.select(".skuBestPrice").first() != null;
   }
-
-  /**
-   * 
-   * @param doc
-   * @param price
-   * @return
-   */
-  private Prices crawlPrices(Float price, Document doc) {
-    Prices prices = new Prices();
-
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(price);
-
-      Element priceFrom = doc.select(".old-price span[id]").first();
-      if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
-      }
-
-      Elements installmentsElement = doc.select("#parcelamento table tr");
-
-      for (Element e : installmentsElement) {
-        Elements values = e.select("td");
-
-        if (values.size() > 1) {
-          String textInstallment = values.get(0).ownText().replaceAll("[^0-9]", "").trim();
-          Integer installment = !textInstallment.isEmpty() ? Integer.parseInt(textInstallment) : 1;
-
-          String textValue = values.get(1).ownText().replaceAll("[^0-9,]", "").replaceAll(",", ".").trim();
-          Float value = !textValue.isEmpty() ? Float.parseFloat(textValue) : null;
-
-          if (value != null) {
-            installmentPriceMap.put(installment, value);
-          }
-        }
-      }
-
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-    }
-
-    return prices;
-  }
-
 }
