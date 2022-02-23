@@ -54,7 +54,7 @@ class VTEXOldNewImpl(session: Session) : VTEXOldScraper(session) {
             var wineDescription = arrayOf<String>()
 
             for (item in descriptionKeys) {
-               var keyValue = productJson?.getJSONArray(item.toString())//JSONUtils.getJSONArrayValue(productJson, item.toString())
+               var keyValue = productJson?.getJSONArray(item.toString())
                wineDescription = wineDescription.plus(item.toString() + ": " + keyValue?.getString(0))
             }
             return wineDescription.joinToString(",")
