@@ -72,10 +72,11 @@ public class BrasilMartinsCrawler extends Crawler {
          .setUrl("https://www.martinsatacado.com.br/j_spring_security_check")
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
-           ))
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY))
+
          .setHeaders(headers)
          .build();
 
@@ -92,10 +93,10 @@ public class BrasilMartinsCrawler extends Crawler {
             .setUrl("https://www.martinsatacado.com.br/j_spring_security_check")
             .setPayload(payload)
             .setProxyservice(Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_SERVER_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY))
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
+            ))
             .setHeaders(headers)
             .build();
          response = this.dataFetcher.post(session, requestNextTry);
