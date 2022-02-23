@@ -2,9 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -80,8 +77,8 @@ public class BrasilMartinsCrawler extends Crawler {
          .setHeaders(headers)
          .build();
 
-     Response response = this.dataFetcher.post(session, request);
-     int statusCode = response.getLastStatusCode();
+      Response response = this.dataFetcher.post(session, request);
+      int statusCode = response.getLastStatusCode();
 
       if (statusCode == 0) {
          try {
