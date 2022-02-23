@@ -125,7 +125,7 @@ public class Vipcommerce extends Crawler {
             String name = JSONUtils.getStringValue(productInfo, "descricao");
             String primaryImage = CrawlerUtils.completeUrl(JSONUtils.getStringValue(productInfo, "imagem"), " https://", "s3.amazonaws.com/produtos.vipcommerce.com.br/250x250");
             String description = jsonData.optString("informacoes");
-            if (description.equals("-")) {
+            if (description != null && description.equals("-")) {
                description = null;
             }
             boolean availeble = productInfo.optBoolean("disponivel");
