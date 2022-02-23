@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONObject;
@@ -10,6 +13,7 @@ import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Collections;
 
 public class BrasilThebeautyboxCrawler extends CrawlerRankingKeywords {
 
@@ -18,7 +22,7 @@ public class BrasilThebeautyboxCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 36;
       this.log("Página " + this.currentPage);
 
@@ -34,19 +38,28 @@ public class BrasilThebeautyboxCrawler extends CrawlerRankingKeywords {
          }
          for (Element e : products) {
 
-            JSONObject data = JSONUtils.stringToJson(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".showcase-item a", "data-event"));
+            JSONObject data = JSONUtils.stringToJson(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".showcase-item.js-event-search", "data-event"));
 
             String internalId = data != null ? data.optString("sku") : null;
+
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".showcase-item a", "href");
 
-            saveDataProduct(internalId, null, productUrl);
+            String name = data.optString("productName");
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".showcase-item-image img", Collections.singletonList("data-src"), "", "");
+            Double priceDouble = data.optDouble("price");
+            Integer price =  (int) Math.round(100 * priceDouble);;
+            Boolean isAvailable = price > 0;
 
-            this.log(
-               "Position: " + this.position +
-                  " - InternalId: " + internalId +
-                  " - InternalPid: " + null +
-                  " - Url: " + productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
+            saveDataProduct(productRanking);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
