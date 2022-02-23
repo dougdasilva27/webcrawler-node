@@ -2,12 +2,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -25,13 +21,7 @@ import org.jsoup.nodes.Document;
 
 import java.util.*;
 
-/**
- * Date: 08/06/2018
- *
- * @author Gabriel Dornelas
- */
 public class BrasilDrogarianisseiCrawler extends Crawler {
-
    private static final String HOME_PAGE = "https://www.farmaciasnissei.com.br/";
 
    public BrasilDrogarianisseiCrawler(Session session) {
@@ -58,12 +48,12 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-produto_id]", "data-produto_id");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".mt-3 h4", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".small a", true);
          String primaryImage = fixUrlImage(doc, internalId);
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(" .d-flex.mt-4 .text-border-bottom-amarelo", "div .row div .mt-1"));
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".dots-preview .swiper-slide img", Collections.singletonList("src"), "https", "www.farmaciasnissei.com.br", primaryImage);
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".card #tabCollapse-descricao", "div .row div .mt-1"));
 
          JSONObject json = accesAPIOffers(internalId);
          Offers offers = scrapOffers(json);
@@ -74,10 +64,9 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
             .setInternalId(internalId)
             .setInternalPid(internalId)
             .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
+            .setCategories(categories)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
             .setRatingReviews(ratingsReviews)

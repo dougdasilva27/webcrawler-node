@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -8,6 +11,8 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+
+import java.io.UnsupportedEncodingException;
 
 public class ChileSalcobrandCrawler extends CrawlerRankingKeywords {
 
@@ -34,7 +39,7 @@ public class ChileSalcobrandCrawler extends CrawlerRankingKeywords {
    }
 
   @Override
-  protected void extractProductsFromCurrentPage() {
+  protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
     this.log("Página " + this.currentPage);
 
     this.pageSize = 24;
@@ -58,10 +63,21 @@ public class ChileSalcobrandCrawler extends CrawlerRankingKeywords {
         String internalId = product.optString("sku");
         String internalPid = product.optString("id");
         String productUrl = crawlProductUrl(product, internalId);
+        String name = product.optString("name");
+        String imgUrl = product.optString("catalog_image_url");
+        Integer price = product.optInt("normal_price");
+        Boolean isAvailable = product.optBoolean("has_stock");
 
-        saveDataProduct(internalId, internalPid, productUrl);
+        RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setName(name)
+            .setImageUrl(imgUrl)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+         saveDataProduct(productRanking);
         if (this.arrayProducts.size() == productsLimit)
           break;
 

@@ -56,7 +56,7 @@ public class GPACrawler extends Crawler {
    public GPACrawler(Session session) {
       super(session);
       inferFields();
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override

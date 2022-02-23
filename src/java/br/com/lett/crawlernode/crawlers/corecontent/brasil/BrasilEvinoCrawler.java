@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -23,6 +24,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class BrasilEvinoCrawler extends Crawler {
 
@@ -48,6 +52,7 @@ public class BrasilEvinoCrawler extends Crawler {
 
          String name = crawlName(productBiggyJson);
          String primaryImage = crawlPrimaryImage(productBiggyJson);
+         List<String> secondaryImages = crawlSecondaryImages(doc, primaryImage);
          CategoryCollection categories = crawlCategories(productBiggyJson);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".Product__details"));
          String internalPid = crawlInternalPid(productBiggyJson);
@@ -61,10 +66,19 @@ public class BrasilEvinoCrawler extends Crawler {
             Offers offers = available ? scrapOffers(productBiggyJson) : new Offers();
 
             // Creating the product
-            Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-                 .setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description).setOffers(offers)
-                  .setStock(stock).setEans(null).build();
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategories(categories)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setOffers(offers)
+               .setStock(stock)
+               .setEans(null)
+               .build();
 
             products.add(product);
          }
@@ -75,15 +89,52 @@ public class BrasilEvinoCrawler extends Crawler {
       return products;
    }
 
-   private JSONObject getScriptJson(Document doc){
+   private List<String> crawlSecondaryImages(Document doc, String primaryImage) {
+      List<String> secondaryImages = new ArrayList<>();
+      Elements scripts = doc.select("script");
+
+      for (Element e : scripts) {
+         String json = e.outerHtml();
+
+         if ((json.contains("__PRELOADED_STATE__") || json.contains("__INITIAL_STATE__")) && json.contains("}")) {
+            String regex = "extralarge\":\"(.+?),\"type\":\"";
+            Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+            Matcher matcher = pattern.matcher(json);
+
+            while (matcher.find()) secondaryImages.add(matcher.group(1));
+            break;
+         }
+      }
+
+      List<String> imagesUrl = new ArrayList<>();
+      for (String image : secondaryImages) {
+         String imageUrl = extractUrl(image);
+         if (!imageUrl.equals(primaryImage)) imagesUrl.add(imageUrl);
+      }
+
+      return imagesUrl.stream().distinct().collect(Collectors.toList());
+   }
+
+   private String extractUrl(String image) {
+      String urlRegex = "(http|ftp|https):\\/\\/([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:\\/~+#-]*[\\w@?^=%&\\/~+#-])";
+      Pattern pattern = Pattern.compile(urlRegex);
+      Matcher matcher = pattern.matcher(image);
+
+      if (matcher.find()) {
+         return matcher.group(0).replaceAll(".jpg", ".png");
+      }
+      return image;
+   }
+
+   private JSONObject getScriptJson(Document doc) {
       JSONObject jsonObject = new JSONObject();
       Elements scripts = doc.select("script[type=\"text/javascript\"]");
-      for (Element e : scripts){
+      for (Element e : scripts) {
          String script = e.html();
 
-         if (script.contains("var TC = ")){
+         if (script.contains("var TC = ")) {
             String[] withoutToken = script.split("var TC = ");
-            if (withoutToken.length > 0){
+            if (withoutToken.length > 0) {
                jsonObject = CrawlerUtils.stringToJson(withoutToken[1].split("if")[0]);
             }
          }
