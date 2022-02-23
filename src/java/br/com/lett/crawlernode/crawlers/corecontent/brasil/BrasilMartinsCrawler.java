@@ -77,7 +77,6 @@ public class BrasilMartinsCrawler extends Crawler {
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
            ))
          .setHeaders(headers)
-         .setSendUserAgent(false)
          .build();
 
      Response response = this.dataFetcher.post(session, request);
