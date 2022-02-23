@@ -22,6 +22,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class BrasilMartinsCrawler extends Crawler {
@@ -68,13 +69,36 @@ public class BrasilMartinsCrawler extends Crawler {
          .setUrl("https://www.martinsatacado.com.br/j_spring_security_check")
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY))
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY))
+
          .setHeaders(headers)
          .build();
 
-      return this.dataFetcher.post(session, request);
+      Response response = this.dataFetcher.post(session, request);
+      int statusCode = response.getLastStatusCode();
+
+      if (statusCode == 0) {
+         try {
+            TimeUnit.SECONDS.sleep(2);
+         } catch (InterruptedException e) {
+            e.printStackTrace();
+         }
+         Request requestNextTry = Request.RequestBuilder.create()
+            .setUrl("https://www.martinsatacado.com.br/j_spring_security_check")
+            .setPayload(payload)
+            .setProxyservice(Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
+            ))
+            .setHeaders(headers)
+            .build();
+         response = this.dataFetcher.post(session, requestNextTry);
+      }
+      return response;
    }
 
    @Override
