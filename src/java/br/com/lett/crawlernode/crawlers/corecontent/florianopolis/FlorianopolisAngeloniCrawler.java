@@ -100,13 +100,11 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 
       Pricing pricing = scrapPricing(docPrice);
 
-      String sellerfullname = session.getMarket().getFullName();
-
       List<String> sales = Collections.singletonList(docPrice.select(".selo-expandido").text());
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(sellerfullname)
+         .setSellerFullName("Angeloni")
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(true)
