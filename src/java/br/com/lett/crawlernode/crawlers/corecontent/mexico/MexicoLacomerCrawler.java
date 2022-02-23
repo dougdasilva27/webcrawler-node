@@ -50,7 +50,7 @@ public class MexicoLacomerCrawler extends Crawler {
 
    public MexicoLacomerCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.JSOUP);
+      config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
