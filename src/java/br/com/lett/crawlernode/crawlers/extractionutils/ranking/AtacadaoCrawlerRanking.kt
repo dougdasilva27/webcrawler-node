@@ -21,31 +21,16 @@ abstract class AtacadaoCrawlerRanking(session: Session) : CrawlerRankingKeywords
       fetchMode = FetchMode.FETCHER
    }
 
-   abstract fun getCityId(): String
-
-   private fun getCookies(dataFetcher: DataFetcher, session: Session): List<Cookie> {
-      return br.com.lett.crawlernode.crawlers.extractionutils.core.AtacadaoCrawler.getCookies(dataFetcher, session)
-   }
-
-   private fun setLocation(cityId: String, dataFetcher: DataFetcher, session: Session, cookies: List<Cookie>) {
-      return br.com.lett.crawlernode.crawlers.extractionutils.core.AtacadaoCrawler.setLocation(cityId, dataFetcher, session, cookies)
-   }
-
-   override fun processBeforeFetch() {
-
-      this.cookies = getCookies(this.dataFetcher, this.session)
-
-      setLocation(getCityId(), this.dataFetcher, this.session, this.cookies)
-   }
+   abstract fun setCookies(): List<Cookie>
 
    private fun fetchProducts(): JSONObject {
 
+      setCookies()
       val url = "https://www.atacadao.com.br/catalogo/search/?q=${getKeyword()}&page=${currentPage}&order_by=-relevance"
-
       val headers = HashMap<String, String>()
       headers["Accept"] = "*/*"
       headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36"
-      headers["Cookie"] = CommonMethods.cookiesToString(cookies)
+      headers["cookie"] = CommonMethods.cookiesToString(cookies)
 
       val request = Request.RequestBuilder.create()
          .setUrl(url)
