@@ -193,15 +193,17 @@ public class BrasilDrogalCrawler extends Crawler {
 
       if (response.has("results")) {
          JSONArray results = response.optJSONArray("results");
-         IntStream.range(0, results.length()).forEach(i -> {
-            JSONObject result = results.optJSONObject(i);
-            if (!result.isNull("seal")) {
-               Object sale = result.optQuery("/seal/title");
-               if (sale instanceof String) {
-                  sales.add(sale.toString());
+         if (results != null) {
+            IntStream.range(0, results.length()).forEach(i -> {
+               JSONObject result = results.optJSONObject(i);
+               if (!result.isNull("seal")) {
+                  Object sale = result.optQuery("/seal/title");
+                  if (sale instanceof String) {
+                     sales.add(sale.toString());
+                  }
                }
-            }
-         });
+            });
+         }
       }
       return sales;
    }
