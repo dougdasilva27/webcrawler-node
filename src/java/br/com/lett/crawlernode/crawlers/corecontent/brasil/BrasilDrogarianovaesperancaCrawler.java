@@ -133,7 +133,7 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
+      List<String> sales = scrapSales(doc, pricing);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -146,6 +146,17 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
          .build());
 
       return offers;
+   }
+
+   private List<String> scrapSales(Document doc, Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
+
+      String buyPromotion = CrawlerUtils.scrapStringSimpleInfo(doc, ".BtComprarProdutoPromocao", false);
+      if(buyPromotion != null && !buyPromotion.isEmpty()) {
+         sales.add(buyPromotion);
+      }
+      return sales;
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
