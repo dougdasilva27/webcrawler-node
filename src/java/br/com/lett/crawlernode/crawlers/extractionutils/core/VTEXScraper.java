@@ -20,6 +20,7 @@ import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -29,6 +30,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public abstract class VTEXScraper extends Crawler {
 
@@ -134,13 +136,27 @@ public abstract class VTEXScraper extends Crawler {
    protected abstract String scrapPidFromApi(Document doc);
 
    protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
+      String name = null;
       if (jsonSku.has("nameComplete")) {
-         return jsonSku.get("nameComplete").toString();
+         name = jsonSku.optString("nameComplete");
       } else if (jsonSku.has("name")) {
-         return jsonSku.get("name").toString();
-      } else {
-         return null;
+         name = jsonSku.optString("name");
       }
+
+      if (name != null && !name.isEmpty() && productJson.has("brand")) {
+         String brand = productJson.optString("brand");
+         if (brand != null && !brand.isEmpty() && !checkIfNameHasBrand(brand, name)){
+            name = name + " " + brand;
+         }
+      }
+
+      return name;
+   }
+
+   private boolean checkIfNameHasBrand(String brand, String name) {
+         String brandStripAccents = StringUtils.stripAccents(brand);
+         String nameStripAccents = StringUtils.stripAccents(name);
+         return nameStripAccents.toLowerCase(Locale.ROOT).contains(brandStripAccents.toLowerCase(Locale.ROOT));
    }
 
    protected CategoryCollection scrapCategories(JSONObject product) {
