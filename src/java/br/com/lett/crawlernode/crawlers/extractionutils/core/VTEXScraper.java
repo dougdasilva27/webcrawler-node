@@ -20,6 +20,7 @@ import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -144,12 +145,18 @@ public abstract class VTEXScraper extends Crawler {
 
       if (name != null && !name.isEmpty() && productJson.has("brand")) {
          String brand = productJson.optString("brand");
-         if (brand != null && !brand.isEmpty() && !name.toLowerCase(Locale.ROOT).contains(brand.toLowerCase(Locale.ROOT))){
-            name = name + " - " + brand;
+         if (brand != null && !brand.isEmpty() && checkIfNameHaveBrand(brand, name)){
+            name = name + " " + brand;
          }
       }
 
       return name;
+   }
+
+   private boolean checkIfNameHaveBrand(String brand, String name) {
+         String brandStripAccents = StringUtils.stripAccents(brand);
+         String nameStripAccents = StringUtils.stripAccents(name);
+         return !nameStripAccents.toLowerCase(Locale.ROOT).contains(brandStripAccents.toLowerCase(Locale.ROOT));
    }
 
    protected CategoryCollection scrapCategories(JSONObject product) {
