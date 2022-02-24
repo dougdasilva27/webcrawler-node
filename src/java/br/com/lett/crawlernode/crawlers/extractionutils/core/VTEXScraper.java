@@ -145,7 +145,7 @@ public abstract class VTEXScraper extends Crawler {
 
       if (name != null && !name.isEmpty() && productJson.has("brand")) {
          String brand = productJson.optString("brand");
-         if (brand != null && !brand.isEmpty() && checkIfNameHaveBrand(brand, name)){
+         if (brand != null && !brand.isEmpty() && !checkIfNameHasBrand(brand, name)){
             name = name + " " + brand;
          }
       }
@@ -153,10 +153,10 @@ public abstract class VTEXScraper extends Crawler {
       return name;
    }
 
-   private boolean checkIfNameHaveBrand(String brand, String name) {
+   private boolean checkIfNameHasBrand(String brand, String name) {
          String brandStripAccents = StringUtils.stripAccents(brand);
          String nameStripAccents = StringUtils.stripAccents(name);
-         return !nameStripAccents.toLowerCase(Locale.ROOT).contains(brandStripAccents.toLowerCase(Locale.ROOT));
+         return nameStripAccents.toLowerCase(Locale.ROOT).contains(brandStripAccents.toLowerCase(Locale.ROOT));
    }
 
    protected CategoryCollection scrapCategories(JSONObject product) {
