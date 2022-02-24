@@ -27,10 +27,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public abstract class VTEXScraper extends Crawler {
 
@@ -281,7 +278,9 @@ public abstract class VTEXScraper extends Crawler {
    }
 
    protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid, Pricing pricing) {
-      return new ArrayList<>();
+      List<String> sales = new ArrayList<>();
+      if(pricing != null) sales.add(CrawlerUtils.calculateSales(pricing));
+      return sales;
    }
 
    protected boolean isMainRetailer(String sellerName) {
