@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -50,6 +51,12 @@ public class BrasilSempreemcasaCrawler extends Crawler {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
+            )
+         )
          .build();
 
       Response response = this.dataFetcher.get(session, request);
