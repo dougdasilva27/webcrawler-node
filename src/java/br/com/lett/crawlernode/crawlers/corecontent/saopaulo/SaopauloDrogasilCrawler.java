@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
@@ -149,7 +151,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
       Offers offers = new Offers();
       try {
          Pricing pricing = scrapPricing(data);
-         List<String> sales = new ArrayList<>();
+         List<String> sales = scrapSales(pricing, data);
 
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
@@ -168,9 +170,32 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
    }
 
+   private List<String> scrapSales(Pricing pricing, JSONObject data) {
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
+
+      Object salesQuantity = data.optQuery("/price_aux/lmpm_qty");
+      Object salesPrice = data.optQuery("/price_aux/lmpm_value_to");
+
+      if (salesQuantity instanceof Integer && salesPrice != null) {
+         int quantity = (int) salesQuantity;
+         Double price = CommonMethods.objectToDouble(salesPrice);
+         if (quantity > 1 && price != null) {
+            sales.add("Leve " + quantity + " unidades por R$ " + price + " cada");
+         }
+      }
+
+      return sales;
+   }
+
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
-      Double spotlightPrice = JSONUtils.getValueRecursive(data, "price_aux.value_to", Double.class);
-      Double priceFrom = JSONUtils.getValueRecursive(data, "price_aux.value_from", Double.class);
+      Object spotlightPriceObject = data.optQuery("/price_aux/value_to");
+      Object priceFromObject = data.optQuery("/price_aux/value_from");
+
+      Double spotlightPrice = CommonMethods.objectToDouble(spotlightPriceObject);
+      Double priceFrom = CommonMethods.objectToDouble(priceFromObject);
+
+      if (Objects.equals(priceFrom, spotlightPrice)) priceFrom = null;
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
