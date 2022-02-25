@@ -1,16 +1,14 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.MathUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public abstract class FalabellaCrawler extends CrawlerRankingKeywords {
 
@@ -23,7 +21,7 @@ public abstract class FalabellaCrawler extends CrawlerRankingKeywords {
    protected abstract String getHomePage();
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 48;
 
       this.log("Página " + this.currentPage);
@@ -41,13 +39,25 @@ public abstract class FalabellaCrawler extends CrawlerRankingKeywords {
          }
          for (Element e : products) {
 
-            String internalId = scarpInternalId(e);
-            String internalPId = internalId;
+            String internalId = scrapInternalId(e);
             String productUrl = crawlProductUrl(e);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".pod-details span b", false);
+            String imageUrl = crawlProductImageUrl(e);
+            Integer price = scrapPrice(e);
+            boolean isAvailable = price != null;
 
-            saveDataProduct(internalId, internalPId, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalId)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPId + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -61,34 +71,49 @@ public abstract class FalabellaCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   protected String scarpInternalId(Element e){
-      String value = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"div[id*=testId-pod-]","id");
-      return CommonMethods .getLast(value.split("-"));
+   protected String scrapInternalId(Element e) {
+      String value = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[id*=testId-pod-]", "id");
+      return CommonMethods.getLast(value.split("-"));
    }
 
    @Override
    protected void setTotalProducts() {
-      String result = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, "#search_numResults", true);
+      String result = CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc, "#search_numResults", "data-results");
 
-      String total = getTotal(result);
-
-      this.totalProducts = total != null ? Integer.parseInt(total) : 0;
+      this.totalProducts = result != null ? Integer.parseInt(result) : 0;
       this.log("Total da busca: " + this.totalProducts);
    }
 
 
-   private String getTotal(String result) {
-      String total = null;
-      Pattern pattern = Pattern.compile("\\de([0-9]*)\\resultados");
-      Matcher matcher = pattern.matcher(result);
-      if (matcher.find()) {
-         total = matcher.group(1);
+   private Integer scrapPrice(Element e) {
+      Integer price;
+      // price is in pesos, like: 1,500, so is necessary multiple to 100 and if have "." dont
+      String priceStr = CrawlerUtils.scrapStringSimpleInfo(e, ".cmr-icon-container span", true);
+      if (priceStr != null && (priceStr.contains(",") || !priceStr.contains("."))) {
+         price = CommonMethods.stringPriceToIntegerPrice(priceStr, '.', null);
+
+      } else {
+         price = CrawlerUtils.scrapIntegerFromHtml(e, ".cmr-icon-container span", true, null);
+
       }
-      return total;
+
+      return price;
    }
 
    private String crawlProductUrl(Element e) {
-      return  CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".pod-head a","href");
+      String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".pod-head a", "href");
+      if (url == null) {
+         url = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".section-head a", "href");
+      }
+      return url;
+   }
+
+   private String crawlProductImageUrl(Element e) {
+      String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".pod-head div > a img", "src");
+      if (imageUrl == null) {
+         imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".section-head a", "href");
+      }
+      return imageUrl;
    }
 
 }
