@@ -18,6 +18,7 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -27,6 +28,7 @@ import org.jsoup.select.Elements;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author gabriel date: 2018-05-25
@@ -59,14 +61,14 @@ public class BrasilDrogalCrawler extends Crawler {
 
          String internalId = crawlInternalId(doc);
          String internalPid = crawlInternalPid(doc);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.name",  true);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.name", true);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".big-image img", List.of("data-src"), "https", "io.convertiez.com.br");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image li:not(.active) img", List.of("data-src"), "https", "io.convertiez.com.br", primaryImage);
-         String description = CrawlerUtils.scrapSimpleDescription(doc,  List.of(".container:contains(Descrição)", ".container:contains(Especificação)"));
+         String description = CrawlerUtils.scrapSimpleDescription(doc, List.of(".container:contains(Descrição)", ".container:contains(Especificação)"));
          RatingsReviews ratingsReviews = scrapRatingAndReviews(doc, internalId);
          boolean available = doc.selectFirst("#content-product .purchase > button:contains(Comprar)") != null;
-         Offers offers = available ? scrapOffers(doc) : new Offers();
+         Offers offers = available ? scrapOffers(doc, internalPid) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -96,7 +98,7 @@ public class BrasilDrogalCrawler extends Crawler {
 
    private String crawlInternalPid(Document doc) {
       List<Element> scripts = doc.select("script[type=text/javascript]").stream().filter(e -> e.html().contains("window.dataProduct")).collect(Collectors.toList());
-      if(!scripts.isEmpty()) {
+      if (!scripts.isEmpty()) {
          String script = scripts.get(0).html();
          try {
             JSONObject productJSON = new JSONObject(CrawlerUtils.extractSpecificStringFromScript(script, "=", true, "", true));
@@ -162,10 +164,10 @@ public class BrasilDrogalCrawler extends Crawler {
    }
 
 
-   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+   private Offers scrapOffers(Document doc, String internalPid) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
+      List<String> sales = scrapSales(pricing, internalPid);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -180,12 +182,38 @@ public class BrasilDrogalCrawler extends Crawler {
       return offers;
    }
 
+   private List<String> scrapSales(Pricing pricing, String internalPid) {
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
+
+      String url = HOME_PAGE + "api/1.0/public/offers/search/?skus=" + internalPid;
+
+      Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      JSONObject response = CrawlerUtils.stringToJSONObject(this.dataFetcher.get(session, request).getBody());
+
+      if (response.has("results")) {
+         JSONArray results = response.optJSONArray("results");
+         if (results != null) {
+            IntStream.range(0, results.length()).forEach(i -> {
+               JSONObject result = results.optJSONObject(i);
+               if (!result.isNull("seal")) {
+                  Object sale = result.optQuery("/seal/title");
+                  if (sale instanceof String) {
+                     sales.add(sale.toString());
+                  }
+               }
+            });
+         }
+      }
+      return sales;
+   }
+
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .sale-price", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .unit-price", null, false, ',', session);
       Double priceCard = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .get_card_price", null, false, ',', session);
 
-      if(Objects.equals(priceFrom, spotlightPrice)) priceFrom = null;
+      if (Objects.equals(priceFrom, spotlightPrice)) priceFrom = null;
 
       CreditCards creditCards = scrapCreditCards(priceCard, doc);
 
