@@ -86,15 +86,16 @@ public abstract class FalabellaCrawler extends CrawlerRankingKeywords {
 
 
    private Integer scrapPrice(Element e) {
-      Integer price;
-      // price is in pesos, like: 1,500, so is necessary multiple to 100 and if have "." dont
+      Integer price = null;
+      // price is in pesos, like: 1,500, 749 and 1.649.900
       String priceStr = CrawlerUtils.scrapStringSimpleInfo(e, ".cmr-icon-container span", true);
-      if (priceStr != null && (priceStr.contains(",") || !priceStr.contains("."))) {
-         price = CommonMethods.stringPriceToIntegerPrice(priceStr, '.', null);
+      if (priceStr != null) {
+         if (priceStr.contains(",") || !priceStr.contains(".")) {
+            price = CommonMethods.stringPriceToIntegerPrice(priceStr, '.', null);
+         } else {
+            price = Integer.valueOf(priceStr.replaceAll("[^0-9]", "").trim());
 
-      } else {
-         price = CrawlerUtils.scrapIntegerFromHtml(e, ".cmr-icon-container span", true, null);
-
+         }
       }
 
       return price;
