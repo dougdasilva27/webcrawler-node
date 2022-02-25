@@ -40,9 +40,9 @@ public class ColombiaAlkostoCrawler extends CrawlerRankingKeywords {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "h2.product__information--name > a.js-product-click-datalayer", "data-id");
             String productUrl = CrawlerUtils.scrapUrl(e, "h2.product__information--name > a.js-product-click-datalayer", Collections.singletonList("href"), "https", HOME_PAGE);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "h2.product__information--name > a.js-product-click-datalayer", true);
-            Integer price = crawlPrice(e, 0);
+            Integer price = crawlPrice(e);
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "div.product__image__container > img", Arrays.asList("data-src"), "https", "www.alkosto.com");
-            boolean isAvailable = price != 0;
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -85,9 +85,9 @@ public class ColombiaAlkostoCrawler extends CrawlerRankingKeywords {
       return false;
    }
 
-   private Integer crawlPrice(Element e, Integer value){
+   private Integer crawlPrice(Element e){
       String priceStr = CrawlerUtils.scrapStringSimpleInfo(e, "span.price", true);
-      Integer priceInCents = value;
+      Integer priceInCents = 0;
 
       if (priceStr != null) {
          final String regex = "[0-9]+\\.[0-9]++";
@@ -96,7 +96,7 @@ public class ColombiaAlkostoCrawler extends CrawlerRankingKeywords {
 
          if (matcher.find()) {
             priceStr = matcher.group(0);
-            priceInCents = CommonMethods.stringPriceToIntegerPrice(priceStr, '.', value);
+            priceInCents = CommonMethods.stringPriceToIntegerPrice(priceStr, '.', 0);
          }
       }
       return priceInCents;
