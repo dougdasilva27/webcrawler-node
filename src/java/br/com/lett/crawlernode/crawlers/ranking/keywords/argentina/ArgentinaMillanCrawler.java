@@ -35,8 +35,8 @@ public class ArgentinaMillanCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-title a", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-title a", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".card-img-top.product__card-img a img", "data-src");
-            int price = CrawlerUtils.scrapIntegerFromHtml(e, ".product-price-and-shipping.text-center .price", true, 0);
-            boolean isAvailable = price != 0;
+            Integer price = CrawlerUtils.scrapIntegerFromHtml(e, ".product-price-and-shipping.text-center .price", true, null);
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
