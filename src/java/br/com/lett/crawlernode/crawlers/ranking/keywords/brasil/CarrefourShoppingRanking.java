@@ -27,7 +27,7 @@ public class CarrefourShoppingRanking extends CrawlerRankingKeywords {
 
    private static final String HOME_PAGE = "https://www.carrefour.com.br";
    private static final String OPERATION_NAME = "productSearchV3";
-   private static final String SHA256 = "e1d5228ca8b18d1f83b777d849747a7f55c9597f670f20c8557d2b0428bf6be7";
+   private static final String SHA256 = "6869499be99f20964918e2fe0d1166fdf6c006b1766085db9e5a6bc7c4b957e5";
    private static final String SENDER = "vtex.store-resources@0.x";
    private static final String PROVIDER = "vtex.search-graphql@0.x";
 
