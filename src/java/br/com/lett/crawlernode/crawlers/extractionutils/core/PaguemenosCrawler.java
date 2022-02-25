@@ -174,8 +174,8 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    }
 
    private boolean shouldShowPriceFrom(JSONObject productJson) {
-      JSONArray showPriceFrom =  productJson.optJSONArray("ApresentarPrecoDePor");
-      if(showPriceFrom != null && showPriceFrom.length() > 0) {
+      JSONArray showPriceFrom = productJson.optJSONArray("ApresentarPrecoDePor");
+      if (showPriceFrom != null && showPriceFrom.length() > 0) {
          return (showPriceFrom.getString(0).equals("Sim"));
       }
       return true;
@@ -222,7 +222,28 @@ public class PaguemenosCrawler extends VTEXNewScraper {
             }
          }
       }
-         return offers;
+      return offers;
+   }
+
+   @Override
+   protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid, Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+      if (pricing != null) sales.add(CrawlerUtils.calculateSales(pricing));
+
+      String kitSales = CrawlerUtils.scrapStringSimpleInfo(doc, ".paguemenos-product-details-medicamento-controlado-1-x-containerTexto", false);
+
+      if (kitSales != null && !kitSales.isEmpty()) sales.add(kitSales);
+
+      Object teasers = offerJson.optQuery("/commertialOffer/Teasers");
+
+      if (teasers instanceof JSONArray) {
+         Object teaser = ((JSONArray) teasers).optQuery("/0/<Name>k__BackingField");
+         if (teaser instanceof String) {
+            sales.add((String) teaser);
+         }
+      }
+
+      return sales;
    }
 
    private Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson, boolean showPriceFrom) throws MalformedPricingException {
@@ -237,7 +258,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
          priceFrom = null;
       }
 
-      if(!showPriceFrom) priceFrom = null;
+      if (!showPriceFrom) priceFrom = null;
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
