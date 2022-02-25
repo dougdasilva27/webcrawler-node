@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -44,6 +45,11 @@ public class PeruMifarmaCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY)
+         )
          .build();
 
       Response apiResponse = this.dataFetcher.get(session, request);
