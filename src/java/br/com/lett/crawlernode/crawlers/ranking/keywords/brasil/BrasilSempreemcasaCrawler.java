@@ -1,9 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -94,7 +96,14 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
          .setCookies(cookies)
          .setUrl(url)
          .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
+            )
+         )
          .build();
+
       Response response = new JsoupDataFetcher().get(session, request);
 
       return CrawlerUtils.stringToJson(response.getBody());
