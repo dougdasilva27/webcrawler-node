@@ -41,7 +41,7 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
    String market = session.getOptions().optString("market");
 
    private JSONObject getInfoFromAPI(){
-      String url = "https://www.pedidosya.com.ar/mobile/v3/catalogues/298755/search?max=50&offset=0&partnerId="+storeId+"&query=" +this.keywordWithoutAccents+  "&sort=default";
+      String url = "https://www.pedidosya.com.ar/mobile/v3/catalogues/298755/search?max=50&offset=0&partnerId="+storeId+"&query=" + this.keywordWithoutAccents.replaceAll(" ", "%20")+  "&sort=default";
       Map<String,String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
@@ -88,7 +88,6 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
-            log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             if (arrayProducts.size() == productsLimit) {
                break;
             }
