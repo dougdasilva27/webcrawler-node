@@ -122,7 +122,7 @@ public class MercadolivreNewCrawler {
 
       String unavailable = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-shipping-message__text", true);
 
-      if (unavailable != null && unavailable.contains("indisponível")){
+      if (unavailable != null && unavailable.contains("indisponível")) {
          availableToBuy = false;
       }
 
@@ -307,9 +307,12 @@ public class MercadolivreNewCrawler {
          Pricing pricing = scrapPricing(doc);
          List<String> sales = scrapSales(doc);
 
+         String currentSeller = sellerFullName;
+         if (isMainRetailer && !mainSellerNameLower.isEmpty()) currentSeller = mainSellerNameLower;
+
          offers.add(OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(isMainRetailer ? mainSellerNameLower : sellerFullName)
+            .setSellerFullName(currentSeller)
             .setMainPagePosition(1)
             .setIsBuybox(false)
             .setIsMainRetailer(isMainRetailer)
