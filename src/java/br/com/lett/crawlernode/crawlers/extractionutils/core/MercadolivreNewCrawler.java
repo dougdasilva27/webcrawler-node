@@ -389,9 +389,11 @@ public class MercadolivreNewCrawler {
                      Pricing pricing = scrapPricing(e);
                      List<String> sales = scrapSales(e);
                      boolean isMainRetaler = checkIsMainRetalerToOneSeller(sellerName);
+                     String currentSeller = sellerName;
+                     if (isMainRetaler && !mainSellerNameLower.isEmpty()) currentSeller = mainSellerNameLower;
                      offers.add(OfferBuilder.create()
                         .setUseSlugNameAsInternalSellerId(true)
-                        .setSellerFullName(isMainRetaler ? mainSellerNameLower : sellerName)
+                        .setSellerFullName(currentSeller)
                         .setSellersPagePosition(sellersPagePosition)
                         .setIsBuybox(true)
                         .setIsMainRetailer(isMainRetaler)
@@ -411,6 +413,7 @@ public class MercadolivreNewCrawler {
          if (offers.isEmpty()) {
             Pricing pricing = scrapPricing(doc);
             List<String> sales = scrapSales(doc);
+
             offers.add(OfferBuilder.create()
                .setUseSlugNameAsInternalSellerId(true)
                .setSellerFullName(mainSellerNameLower)
