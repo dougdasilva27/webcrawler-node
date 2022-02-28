@@ -16,12 +16,12 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.apache.commons.lang.WordUtils;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilDivvinoCrawler extends Crawler {
 
@@ -40,11 +40,11 @@ public class BrasilDivvinoCrawler extends Crawler {
 
       if (internalId != null) {
 
-         String name = CrawlerUtils.scrapStringSimpleInfo(document, ".product_title", true);
+         String name = scrapName(document);
          CategoryCollection categories = CrawlerUtils.crawlCategories(document, ".breadcrumbs_wrapper ul li", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".img_product_container a img", Collections.singletonList("src"), "https:", "statics.divvino.com.br");
 
-         String description = CrawlerUtils.scrapSimpleDescription(document, Collections.singletonList(".kit_desc.text_justify "));
+         String description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList(".div_caracteristicas"));
          boolean available = document.select("#backInStockForm").isEmpty();
          Offers offers = available ? scrapOffers(document) : new Offers();
 
@@ -65,6 +65,28 @@ public class BrasilDivvinoCrawler extends Crawler {
       return products;
    }
 
+   private String scrapName(Document document) {
+      String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".product_title", true);
+      String containerSize = CrawlerUtils.scrapStringSimpleInfo(document, ".product_detail_container .subtitle", true);
+      StringBuilder sizeBuilder = new StringBuilder();
+
+      if (containerSize != null) {
+         Pattern pattern = Pattern.compile("(\\d+,?\\d*\\s?)(ml|L|g|gr|mg|Kg)");
+         Matcher matcher = pattern.matcher(containerSize);
+         if (matcher.find()) {
+            sizeBuilder.append(matcher.group(1));
+            sizeBuilder.append(matcher.group(2));
+         }
+      }
+
+      String sanitizedSize = sizeBuilder.toString().trim();
+
+      if (productName != null && !sanitizedSize.isEmpty() && !productName.toLowerCase().contains(sanitizedSize.toLowerCase())) {
+         return WordUtils.capitalizeFully(productName) + " " + sanitizedSize;
+      }
+      return WordUtils.capitalizeFully(productName);
+   }
+
    private RatingsReviews scrapRatingReviews(Document document) {
 
       RatingsReviews ratingsReviews = new RatingsReviews();
@@ -72,20 +94,20 @@ public class BrasilDivvinoCrawler extends Crawler {
       Double average = null;
       Integer totalReviews = null;
 
-      String review = CrawlerUtils.scrapStringSimpleInfo(document,"#headerComment > div.row div.row p",true);
+      String review = CrawlerUtils.scrapStringSimpleInfo(document, "#headerComment > div.row div.row p", true);
       String[] array = review != null ? review.split("/") : new String[0];
 
-       if(array.length>1){
-          average = MathUtils.parseDoubleWithDot(array[0]);
-          String total = CommonMethods.substring(array[1],"(",")",true);
-          totalReviews = MathUtils.parseInt(total);
-       }
+      if (array.length > 1) {
+         average = MathUtils.parseDoubleWithDot(array[0]);
+         String total = CommonMethods.substring(array[1], "(", ")", true);
+         totalReviews = MathUtils.parseInt(total);
+      }
 
-       if  (totalReviews != null && totalReviews!=0 && average != null && average!=0) {
-          ratingsReviews.setDate(session.getDate());
-          ratingsReviews.setTotalRating(totalReviews);
-          ratingsReviews.setAverageOverallRating(average);
-       }
+      if (totalReviews != null && totalReviews != 0 && average != null && average != 0) {
+         ratingsReviews.setDate(session.getDate());
+         ratingsReviews.setTotalRating(totalReviews);
+         ratingsReviews.setAverageOverallRating(average);
+      }
 
       return ratingsReviews;
    }
@@ -109,7 +131,6 @@ public class BrasilDivvinoCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document document) throws MalformedPricingException {
-
 
 
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, "#loadProductPrice  .product_price_new", "content", false, '.', session);
