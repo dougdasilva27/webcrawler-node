@@ -31,7 +31,6 @@ public abstract class ComperCrawler extends VTEXNewScraper {
 
    public ComperCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
@@ -41,17 +40,16 @@ public abstract class ComperCrawler extends VTEXNewScraper {
    }
 
    @Override
-   protected Object fetch(){
+   public void handleCookiesBeforeFetch() {
       BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=" + getStoreId());
       cookie.setDomain("www.comper.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
 
-      Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(this.cookies)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY)).build();
-      String response = dataFetcher.get(session, request).getBody();
-
-      return Jsoup.parse(response);
+      BasicClientCookie cookie2 = new BasicClientCookie("nav_id", session.getOptions().optString("nav_id","bde25fd2-81a2-45ca-955d-1f3162b195c5"));
+      cookie2.setDomain("www.comper.com.br");
+      cookie2.setPath("/");
+      this.cookies.add(cookie2);
    }
 
    @Override
@@ -68,7 +66,6 @@ public abstract class ComperCrawler extends VTEXNewScraper {
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
       return super.crawlProductApi(internalPid, "&sc=" + storeId);
    }
-
 
    @Override
    protected String scrapDescription(Document doc, JSONObject productJson) {
