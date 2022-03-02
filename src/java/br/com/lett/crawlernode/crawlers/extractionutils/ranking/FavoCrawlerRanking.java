@@ -1,9 +1,11 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -17,6 +19,7 @@ import java.util.Map;
 public class FavoCrawlerRanking extends CrawlerRankingKeywords {
    public FavoCrawlerRanking(Session session) {
       super(session);
+      super.fetchMode = FetchMode.FETCHER;
    }
 
    private final String STORE = getStore();
@@ -77,7 +80,7 @@ public class FavoCrawlerRanking extends CrawlerRankingKeywords {
    }
 
    private JSONObject fetchProductsFromApi() {
-      String url = "https://customer-bff.favoapp.com.br/products/textsearch?tienda=" + this.STORE + "&pag=" + this.currentPage + "&filter=" + this.keywordEncoded.replaceAll(" ", "%20");
+      String url = "https://customer-bff.favoapp.com.br/products/textsearch?tienda=" + this.STORE + "&pag=" + this.currentPage + "&filter=" + this.keywordWithoutAccents.replaceAll(" ", "%20");
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
       headers.put("x-origin-id", this.ORIGIN_ID);
@@ -86,20 +89,12 @@ public class FavoCrawlerRanking extends CrawlerRankingKeywords {
       return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
    }
 
-   private String scrapImageUrl(JSONObject product) {
+   private String scrapImageUrl(JSONObject productJson) {
       String image = null;
-      JSONObject images = product.optJSONObject("images");
+      JSONObject images = productJson.optJSONObject("imagen");
 
       if (images != null) {
-         if (images.has("size-1024")) {
-            image = images.optString("size-1024");
-         } else if (images.has("size-960")) {
-            image = images.optString("size-960");
-         } else if (images.has("size-480")) {
-            image = images.optString("size-480");
-         } else if (images.has("size-150")) {
-            image = images.optString("size-150");
-         }
+         image = images.optString("size-480");
       }
 
       return image;
@@ -109,5 +104,10 @@ public class FavoCrawlerRanking extends CrawlerRankingKeywords {
       String searchURL = "https://" + this.ORIGIN_ID + ".mercadofavo.com/" + this.STORE + "?search=";
       String slug = product.optString("slug");
       return searchURL + slug;
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      return true;
    }
 }

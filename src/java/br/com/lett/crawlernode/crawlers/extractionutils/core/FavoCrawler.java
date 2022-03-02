@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -24,9 +26,10 @@ public class FavoCrawler extends Crawler {
    public FavoCrawler(Session session) {
       super(session);
       super.config.setParser(Parser.JSON);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
-   private static final String SELLER_FULL_NAME = "Favo Deelsa";
+   private static final String SELLER_FULL_NAME = "Favo Market Deelsa";
    private static final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
    private final String STORE = getStore();
    private final String ORIGIN_ID = getOriginId();
@@ -82,7 +85,8 @@ public class FavoCrawler extends Crawler {
          String primaryImage = scrapImage(productJson);
          String description = productJson.optString("descripcion");
          CategoryCollection categories = scrapCategories(productJson);
-         boolean available = productJson.optInt("stock", 0) > 0;
+         int stock = productJson.optInt("stock", 0);
+         boolean available = stock > 0;
          Offers offers = available ? scrapOffers(productJson) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -94,6 +98,7 @@ public class FavoCrawler extends Crawler {
             .setCategories(categories)
             .setDescription(description)
             .setOffers(offers)
+            .setStock(0)
             .build();
 
          products.add(product);
@@ -106,18 +111,10 @@ public class FavoCrawler extends Crawler {
 
    private String scrapImage(JSONObject productJson) {
       String image = null;
-      JSONObject images = productJson.optJSONObject("images");
+      JSONObject images = productJson.optJSONObject("imagen");
 
       if (images != null) {
-         if (images.has("size-1024")) {
-            image = images.optString("size-1024");
-         } else if (images.has("size-960")) {
-            image = images.optString("size-960");
-         } else if (images.has("size-480")) {
-            image = images.optString("size-480");
-         } else if (images.has("size-150")) {
-            image = images.optString("size-150");
-         }
+         image = images.optString("size-480");
       }
 
       return image;
@@ -146,7 +143,7 @@ public class FavoCrawler extends Crawler {
       Double priceFrom = JSONUtils.getDoubleValueFromJSON(product, "precio_super", false);
       CreditCards creditCards = CrawlerUtils.scrapCreditCards(spotlightPrice, cards);
 
-      if (spotlightPrice.equals(priceFrom)) {
+      if (spotlightPrice.equals(priceFrom) || priceFrom == 0d) {
          priceFrom = null;
       }
 
