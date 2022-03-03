@@ -103,7 +103,7 @@ public class SaopauloMamboCrawler extends Crawler {
 
          Offers offers = available ? scrapOffers(json) : new Offers();
          String description = crawlDescription(json);
-         RatingsReviews ratingReviews = CrawlerUtils.scrapRatingReviewsFromYourViews(internalPid, "80c6264f-5023-4c73-918b-c1713a3d9dc7", ".yv-span.yv-align-left", ".yv-star-reviews strong", ".yv-paging.yv-hasresults:not(:last-child)", ".yv-star-reviews-content", ".fa.fa-star", this.dataFetcher, session, logger, cookies);
+         RatingsReviews ratingReviews = CrawlerUtils.scrapRatingReviewsFromYourViews(internalPid, "80c6264f-5023-4c73-918b-c1713a3d9dc7", ".yv-span.yv-align-left", ".yv-star-reviews strong", ".yv-bootstrap.yv-main .yv-footer-paging .yv-paging span", ".yv-star-reviews-content", ".fa.fa-star", this.dataFetcher, session, logger, cookies);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -223,7 +223,7 @@ public class SaopauloMamboCrawler extends Crawler {
          JSONObject jsonSku = arraySkus.getJSONObject(0);
 
          spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonSku, "salesPrice", false);
-         System.out.println(spotlightPrice);
+
          if (spotlightPrice != null) {
             priceFrom = JSONUtils.getDoubleValueFromJSON(jsonSku, "listPrice", false);
          } else {
@@ -265,10 +265,5 @@ public class SaopauloMamboCrawler extends Crawler {
       return creditCards;
    }
 
-   private RatingsReviews scrapRating(JSONObject json) {
-      RatingsReviews ratingsReviews = new RatingsReviews();
-
-      return ratingsReviews;
-   }
 
 }
