@@ -1,10 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+
+import java.util.Collections;
 
 public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
 
@@ -15,20 +21,17 @@ public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
    private static final String HOME_PAGE = "https://www.petlove.com.br/";
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 20;
 
       this.log("Página " + this.currentPage);
 
-      // monta a url com a keyword e a página
       String url = "https://www.petlove.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select("#shelf-loop .catalog-info-product > a:first-of-type");
-
-
+      Elements products = this.currentDoc.select("#shelf-loop .catalog-list-item");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -38,10 +41,22 @@ public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
          for (Element e : products) {
             String internalId = scrapInternalId(e);
             String productUrl = crawlProductUrl(e);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-name", true);
+            String imgUrl = scrapImage(e);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".catalog-list-price:not(.catalog-list-price-subscription)", null, true, ',', session, 0);
+            boolean isAvailable = price != 0;
 
-            saveDataProduct(internalId, internalId, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(null)
+               .setImageUrl(imgUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -53,6 +68,16 @@ public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String scrapImage(Element e) {
+      String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".catalog-list-image img", Collections.singletonList("src"), "https", "petlove.com.br");
+
+      if(image != null && !image.isEmpty()) {
+         image = image.replace("/small/", "/large/");
+      }
+
+      return image;
    }
 
    @Override
@@ -82,18 +107,26 @@ public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
    }
 
    private String crawlProductUrl(Element e) {
-      String productUrl = e.attr("href");
+      Element url = e.selectFirst(".catalog-info-product > a");
+      if (url != null) {
+         String productUrl = url.attr("href");
 
-      if (!productUrl.contains("petlove.com")) {
-         productUrl = (HOME_PAGE + productUrl).replace("br//", "br/");
+         if (!productUrl.contains("petlove.com")) {
+            productUrl = (HOME_PAGE + productUrl).replace("br//", "br/");
+         }
+
+         return productUrl;
       }
-
-      return productUrl;
+      return null;
    }
 
 
-   private String scrapInternalId (Element e){
-      String productURL = e.attr("href");
-      return CommonMethods.getLast(productURL.split("sku="));
+   private String scrapInternalId(Element e) {
+      Element url = e.selectFirst(".catalog-info-product > a");
+      if (url != null) {
+         String productURL = url.attr("href");
+         return CommonMethods.getLast(productURL.split("sku="));
+      }
+      return null;
    }
 }
