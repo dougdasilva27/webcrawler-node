@@ -17,6 +17,7 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -102,6 +103,7 @@ public class SaopauloMamboCrawler extends Crawler {
 
          Offers offers = available ? scrapOffers(json) : new Offers();
          String description = crawlDescription(json);
+         RatingsReviews ratingReviews = CrawlerUtils.scrapRatingReviewsFromYourViews(internalPid, "80c6264f-5023-4c73-918b-c1713a3d9dc7", ".yv-span.yv-align-left", ".yv-star-reviews strong", ".yv-paging.yv-hasresults:not(:last-child)", ".yv-star-reviews-content", ".fa.fa-star", this.dataFetcher, session, logger, cookies);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -109,6 +111,7 @@ public class SaopauloMamboCrawler extends Crawler {
             .setInternalId(internalPid)
             .setInternalPid(internalPid)
             .setName(name)
+            .setRatingReviews(ratingReviews)
             .setOffers(offers)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
@@ -261,4 +264,11 @@ public class SaopauloMamboCrawler extends Crawler {
 
       return creditCards;
    }
+
+   private RatingsReviews scrapRating(JSONObject json) {
+      RatingsReviews ratingsReviews = new RatingsReviews();
+
+      return ratingsReviews;
+   }
+
 }
