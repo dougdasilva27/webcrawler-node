@@ -2146,7 +2146,7 @@ public class CrawlerUtils {
       Element rating = docRating.selectFirst(cssSelector);
 
       if (rating != null) {
-         String avgText = rating.ownText().replaceAll("[^0-9]", "").trim();
+         String avgText = rating.ownText();
          if (!avgText.isEmpty()) {
             avgRating = Double.parseDouble(avgText);
 
