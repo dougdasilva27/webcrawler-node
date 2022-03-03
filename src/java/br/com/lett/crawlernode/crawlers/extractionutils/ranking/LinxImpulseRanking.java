@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Documentação oficial LinxImpulseAPI: (https://docs.linximpulse.com/v3-search/docs/search)
@@ -161,8 +163,10 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
       }
 
       if(salesChannel != null && !salesChannel.isEmpty()) {
-         if(internalId.startsWith(salesChannel + "_")) {
-            internalId = internalId.replaceAll(salesChannel + "_", "");
+         String finalInternalId = internalId;
+         String matchChannel = salesChannel.stream().filter(channel -> finalInternalId.startsWith(channel + "_")).findFirst().orElse(null);
+         if(matchChannel != null && !matchChannel.isEmpty()) {
+            internalId = internalId.replaceAll(matchChannel + "_", "");
          }
       }
 
