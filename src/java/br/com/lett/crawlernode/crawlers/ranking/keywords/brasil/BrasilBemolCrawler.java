@@ -42,8 +42,8 @@ public class BrasilBemolCrawler extends CrawlerRankingKeywords {
 
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".item-description > h3 > a", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".variation-root> img", "data-src");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".priceContainer > div > strong > span", null, true, ',', session, 0);
-            boolean isAvailable = price != 0;
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".priceContainer > div > strong > span", null, true, ',', session, null);
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
