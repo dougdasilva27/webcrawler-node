@@ -42,8 +42,8 @@ public class BrasilMarabrazCrawler extends CrawlerRankingKeywords {
 
          String name = CrawlerUtils.scrapStringSimpleInfo(e, ".nm-product-info > h2 > a", true);
          String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".nm-product-img-container > a > img", "src");
-         Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".nm-price-container > span", null, true, ',', session, 0);
-         boolean isAvailable = price != 0;
+         Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".nm-price-container > span", null, true, ',', session, null);
+         boolean isAvailable = price != null;
 
          RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(productUrl)
