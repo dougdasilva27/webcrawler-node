@@ -43,8 +43,8 @@ public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
             String productUrl = crawlProductUrl(e);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-name", true);
             String imgUrl = scrapImage(e);
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".catalog-list-price:not(.catalog-list-price-subscription)", null, true, ',', session, 0);
-            boolean isAvailable = price != 0;
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".catalog-list-price:not(.catalog-list-price-subscription)", null, true, ',', session, null);
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
