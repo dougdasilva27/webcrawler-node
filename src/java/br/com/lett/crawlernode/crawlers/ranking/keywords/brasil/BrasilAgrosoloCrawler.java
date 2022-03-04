@@ -36,7 +36,7 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id").replace("produto-spot-item-", "");
+            String internalPid = setPid(e);
             String productUrl = CrawlerUtils.scrapUrl(e, ".spot div.spotContent > a", "href", "https", HOME_PAGE);
 
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".fbits-spot-conteudo > .spot-parte-dois > .spotTitle", true);
@@ -46,7 +46,7 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalPid)
+               .setInternalPid(internalPid)
                .setName(name)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
@@ -54,12 +54,6 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
-
-            this.log(
-               "Position: " + this.position +
-                  " - InternalId: " + internalPid +
-                  " - InternalPid: " + null +
-                  " - Url: " + productUrl);
 
             if (this.arrayProducts.size() == productsLimit)
                break;
@@ -79,5 +73,15 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
    protected void setTotalProducts() {
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "span.fbits-qtd-produtos-pagina", null, null, false, true, 0);
       this.log("Total da busca: " + this.totalProducts);
+   }
+
+   private String setPid(Element e) {
+      String verifyPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id");
+      if (verifyPid != null && !verifyPid.isEmpty()) {
+         verifyPid = verifyPid.replace("produto-spot-item-", "");
+      }
+
+      return verifyPid;
+
    }
 }
