@@ -1,17 +1,24 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.MathUtils;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends CrawlerRankingKeywords {
 
@@ -40,7 +47,7 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       // número de produtos por página do market
       this.pageSize = 20;
 
@@ -57,8 +64,22 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
          for (Element e : products) {
             String productUrl = crawlProductUrl(e);
             String internalId = crawlInternalId(productUrl);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "div.titulo_puntos a", true);
+            Integer price = crawlPrice(e);
+            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "div.producto > div > div > a > img", Arrays.asList("src"), "https", "d1on8qs0xdu5jz.cloudfront.net");
+            boolean isAvailable = price != null;
 
-            saveDataProduct(internalId, null, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(null)
+               .setImageUrl(imageUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(productRanking);
 
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
@@ -103,5 +124,14 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
       String productUrl = CrawlerUtils.completeUrl(url,"https:","supermercado.laanonimaonline.com");
 
       return productUrl;
+   }
+
+   private Integer crawlPrice(Element e) {
+      String priceStr = CrawlerUtils.scrapStringSimpleInfo(e, ".precio.semibold", true);
+      String priceDecimal = CrawlerUtils.scrapStringSimpleInfo(e, ".decimales", true);
+      String priceComplete = priceStr + priceDecimal;
+      Double price = MathUtils.parseDoubleWithComma(priceComplete);
+
+      return price != null ? (int) Math.round(price * 100) : null;
    }
 }
