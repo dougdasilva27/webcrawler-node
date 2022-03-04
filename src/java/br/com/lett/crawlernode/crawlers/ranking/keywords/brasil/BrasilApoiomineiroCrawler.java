@@ -39,8 +39,8 @@ public class BrasilApoiomineiroCrawler extends CrawlerRankingKeywords {
 
          String name = CrawlerUtils.scrapStringSimpleInfo(e, ".limit-defined > h3 > a.espiar-btn", true);
          String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".qd-sil-wrapper > a.espiar-btn.qd_sil_img_wrapper.qd-sil-on > img.qd-sil-image.qd-sil-image-loaded", "src");
-         Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".product-box-price__best-price", null, true, ',', session, 0);
-         boolean isAvailable = price != 0;
+         Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".product-box-price__best-price", null, true, ',', session, null);
+         boolean isAvailable = price != null;
 
          RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(productUrl)
