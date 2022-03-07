@@ -152,7 +152,11 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-shop .price-box .special-price .price", null, true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price span[id]", null, true, ',', session);
+      if(spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-shop .price-box .regular-price .price", null, true, ',', session);
+      }
+
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-shop .price-box .old-price span[id]", null, true, ',', session);
       Double bankSlipPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".pagamento .boleto > span", null, true, ',', session);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create().setFinalPrice(bankSlipPrice).build();
       CreditCards creditCards = CrawlerUtils.scrapCreditCards(spotlightPrice, cards);
