@@ -1,13 +1,13 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ArgentinaMillanCrawler extends CrawlerRankingKeywords {
 
@@ -16,7 +16,7 @@ public class ArgentinaMillanCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 12;
       this.log("Página " + this.currentPage);
 
@@ -32,11 +32,25 @@ public class ArgentinaMillanCrawler extends CrawlerRankingKeywords {
 
          for (Element e : products) {
             String internalPid = e.attr("data-id-product");
-            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.card-img-top.product__card-img > a", "href");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-title a", "href");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-title a", true);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".card-img-top.product__card-img a img", "data-src");
+            Integer price = CrawlerUtils.scrapIntegerFromHtml(e, ".product-price-and-shipping.text-center .price", true, null);
+            boolean isAvailable = price != null;
 
-            saveDataProduct(null, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(null)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
+
+
             if (this.arrayProducts.size() == productsLimit) break;
          }
       } else {
@@ -59,7 +73,7 @@ public class ArgentinaMillanCrawler extends CrawlerRankingKeywords {
       if (totalElement != null) {
          String[] splittedStr = totalElement.html().split(" ");
 
-         if(splittedStr.length > 0){
+         if (splittedStr.length > 0) {
             this.totalProducts = Integer.parseInt(splittedStr[3]);
          }
 
