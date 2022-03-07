@@ -208,26 +208,12 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
 
    private double calculatePriceSquareMeter(Document doc) {
       double spotilightPrice = 0D;
-      Double boxPriceSquareMeter;
-
-      String squareMeter = scrapPriceBoxFromDescription(doc);
-
-      if (!squareMeter.isEmpty()) {
-
-
-         if (squareMeter.contains(",")) {
-            boxPriceSquareMeter = MathUtils.parseDoubleWithComma(squareMeter);
-
-         } else {
-            boxPriceSquareMeter = MathUtils.parseDoubleWithDot(squareMeter);
-         }
-
-         Double boxPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precosDiv .precoPor", null, true, ',', session);
-
-         if (boxPrice != null && boxPriceSquareMeter != null) {
-            spotilightPrice = MathUtils.normalizeTwoDecimalPlaces(boxPrice / boxPriceSquareMeter);
-            double fivePerCent = 0.05 * spotilightPrice;
-            spotilightPrice = spotilightPrice - fivePerCent;
+      Double squareMeter = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#spanPrecoCalculadoComponente", null, false, ',', session);
+      if (squareMeter != null) {
+         Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
+         if (price != null) {
+            Double meter = squareMeter / price;
+            return price / meter;
          }
       } else {
 // Is necessary because some products not have square meter in description on any place
@@ -238,27 +224,6 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       }
 
       return spotilightPrice;
-   }
-
-
-   private String scrapPriceBoxFromDescription(Document doc) {
-
-      String priceBox = "";
-
-      Elements elements = doc.select("#conteudo-0 .paddingbox ul li");
-      if (elements.isEmpty()) {
-         elements = doc.select(".paddingbox p");
-      }
-
-      for (Element e : elements) {
-         String element = e.toString().toLowerCase().replace(" ", "");
-         if (!element.isEmpty() && element.contains("m2/caixa:") || element.contains("m2porcaixa:") || element.contains("m²porcaixa") || element.contains("m²/caixa") || element.contains("caixa")) {
-            priceBox = CommonMethods.getLast(e.text().split(":"));
-
-            break;
-         }
-      }
-      return priceBox;
    }
 
    private Document getDocWithWebDriver() {
