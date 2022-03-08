@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.panama;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -44,16 +45,21 @@ public class PanamaSuperxtraCrawler extends Crawler {
       headers.put("origin", "https://domicilio.superxtra.com");
       headers.put("accept-encoding", "gzip, deflate, br");
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36");
+      headers.put("referer", session.getOriginalURL());
 
       String productSlug = CommonMethods.getLast(session.getOriginalURL().split("/"));
-      String payload = "{\"variables\":{\"storeId\":\"70\",\"filter\":{\"sku\":{\"eq\":\"" + productSlug + "\"}}},\"query\":\"query( $pagination: paginationInput $search: SearchInput $storeId: ID! $categoryId: ID $onlyThisCategory: Boolean $filter: ProductsFilterInput $orderBy: productsSortInput ) { getProducts( pagination: $pagination search: $search storeId: $storeId categoryId: $categoryId onlyThisCategory: $onlyThisCategory filter: $filter orderBy: $orderBy ) { redirectTo products { id name photosUrls sku unit price specialPrice promotion { description type isActive conditions __typename } stock nutritionalDetails clickMultiplier subQty subUnit maxQty minQty specialMaxQty ean boost showSubUnit isActive slug categories { id name __typename } __typename } paginator { pages page __typename } __typename } } \"}";
-
+      String payload = "{\"operationName\":\"GetProducts\",\"variables\":{\"storeId\":\"70\",\"filter\":{\"sku\":{\"eq\":\"desinfectante-en-aerosol-oust-400-ml-aroma-frescura-campestre-7501032923662\"}},\"variants\":false},\"query\":\"query GetProducts($pagination: paginationInput, $search: SearchInput, $storeId: ID!, $categoryId: ID, $onlyThisCategory: Boolean, $filter: ProductsFilterInput, $orderBy: productsSortInput, $variants: Boolean) {\\n  getProducts(pagination: $pagination, search: $search, storeId: $storeId, categoryId: $categoryId, onlyThisCategory: $onlyThisCategory, filter: $filter, orderBy: $orderBy, variants: $variants) {\\n    redirectTo\\n    products {\\n      id\\n      description\\n      name\\n      photosUrls\\n      sku\\n      unit\\n      price\\n      specialPrice\\n      promotion {\\n        description\\n        type\\n        isActive\\n        conditions\\n        __typename\\n      }\\n      variants {\\n        selectors\\n        productModifications\\n        __typename\\n      }\\n      stock\\n      nutritionalDetails\\n      clickMultiplier\\n      subQty\\n      subUnit\\n      maxQty\\n      minQty\\n      specialMaxQty\\n      ean\\n      boost\\n      showSubUnit\\n      isActive\\n      slug\\n      categories {\\n        id\\n        name\\n        __typename\\n      }\\n      formats {\\n        format\\n        equivalence\\n        unitEquivalence\\n        __typename\\n      }\\n      __typename\\n    }\\n    paginator {\\n      pages\\n      page\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\"}";
       String url = "https://deadpool.instaleap.io/api/v2";
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setPayload(payload)
          .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            ))
          .setCookies(cookies)
          .build();
 
@@ -106,7 +112,7 @@ public class PanamaSuperxtraCrawler extends Crawler {
 
       JSONArray categoriesArray = json.optJSONArray("categories");
 
-      if(categoriesArray != null){
+      if (categoriesArray != null) {
          for (Object o : categoriesArray) {
             JSONObject category = (JSONObject) o;
             categories.add(category.optString("name"));
@@ -121,7 +127,7 @@ public class PanamaSuperxtraCrawler extends Crawler {
 
       JSONArray imagesArray = json.optJSONArray("photosUrls");
 
-      if(imagesArray != null){
+      if (imagesArray != null) {
          imagesArray.forEach(x -> images.add(x.toString()));
       }
 
