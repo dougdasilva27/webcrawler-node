@@ -505,20 +505,17 @@ public class Processor {
          }
 
          if (shouldSend) {
-            String discordTemplate = ("*{0}*\n" +
-                  ":shopping_bags: **{1}**\n" +
-                  ":moneybag: ~~{2}~~ **{3}** (-{4}%) [ℹ️](http://localhost?processed:{5}/session:{6}/)\n" +
-                  ":link: {7}");
-            DecimalFormat priceFormat = new DecimalFormat("#,##0.00");
-            String msg = MessageFormat.format(discordTemplate, quote,
-                  newProcessedProduct.getOriginalName(),
-                  priceFormat.format(previousProcessedProduct.getPrice()),
-                  priceFormat.format(newProcessedProduct.getPrice()),
-                  MathUtils.normalizeTwoDecimalPlaces(discount),
-                  String.valueOf(newProcessedProduct.getId()),
-                  session.getSessionId(),
-                  newProcessedProduct.getUrl());
-            DiscordMessages.reportPriceChanges(session, msg, author, avatar);
+
+
+            DiscordMessages.reportPriceChanges(session,
+               author,
+               avatar,
+               quote,
+               discount,
+               previousProcessedProduct.getPrice(),
+               newProcessedProduct.getPrice(),
+               newProcessedProduct.getOriginalName(),
+               newProcessedProduct.getUrl());
          }
       }
    }
