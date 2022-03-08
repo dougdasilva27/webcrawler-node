@@ -42,6 +42,7 @@ abstract public class SupersjCrawler extends Crawler {
 
       try {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
+         webdriver.waitLoad(20000);
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
       } catch (Exception e) {
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
@@ -53,16 +54,13 @@ abstract public class SupersjCrawler extends Crawler {
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
-//      super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-text-dt", false);
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-cdg a", false);
-         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a.product-img img", "src");
-
-         boolean available = doc.selectFirst("button.loja-btn-cor-primaria-light") != null;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "[class=\"text-dark text-center mb-2 ng-star-inserted\"]", true);
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-dt-view div.product-cdg a", false);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-dt-view div.imagem img", Arrays.asList("src"), "https", "");
+         boolean available = doc.selectFirst("input.mais-btn") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -105,12 +103,11 @@ abstract public class SupersjCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "h2.product-price-promocao", null, true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "h2.product-price-small span", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-dt-view h2.product-price-promocao", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-dt-view h2.product-price-small", null, true, ',', session);
 
       if(spotlightPrice == null){
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "h2.product-price-car", null, true, ',', session);
-         priceFrom = null;
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-dt-view h2.product-price", null, true, ',', session);         priceFrom = null;
       }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
