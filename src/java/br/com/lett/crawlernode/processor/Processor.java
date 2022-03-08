@@ -515,7 +515,8 @@ public class Processor {
                previousProcessedProduct.getPrice(),
                newProcessedProduct.getPrice(),
                newProcessedProduct.getOriginalName(),
-               newProcessedProduct.getUrl());
+               newProcessedProduct.getUrl(),
+               newProcessedProduct.getPic());
          }
       }
    }

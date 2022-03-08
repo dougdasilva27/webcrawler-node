@@ -37,7 +37,7 @@ public class DiscordMessages {
    }
 
 
-   public static void reportPriceChanges(Session session, String author, String avatar, String quote, float discount, Float previousPrice, Float newPrice, String originalName, String url) {
+   public static void reportPriceChanges(Session session, String author, String avatar, String quote, float discount, Float previousPrice, Float newPrice, String originalName, String url, String imageUrl) {
 
       try {
 
@@ -64,6 +64,7 @@ public class DiscordMessages {
          embedBuilder.setDescription(msgDescription.toString());
          WebhookEmbed.EmbedAuthor authorEmbed = new WebhookEmbed.EmbedAuthor(session.getMarket().getFullName(),null, null);
          embedBuilder.setAuthor(authorEmbed);
+         embedBuilder.setThumbnailUrl(imageUrl);
 
 
          WebhookMessageBuilder MessageBuilder = new WebhookMessageBuilder();
