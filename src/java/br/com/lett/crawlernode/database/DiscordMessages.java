@@ -67,15 +67,14 @@ public class DiscordMessages {
          embedBuilder.setThumbnailUrl(imageUrl);
 
 
-         WebhookMessageBuilder MessageBuilder = new WebhookMessageBuilder();
-         MessageBuilder.setUsername(author);
-         MessageBuilder.setAvatarUrl(avatar);
-         MessageBuilder.setContent(msg.toString());
-         MessageBuilder.addEmbeds(embedBuilder.build());
-         DISCORD_CLIENT.send(MessageBuilder.build());
+         WebhookMessageBuilder messageBuilder = new WebhookMessageBuilder();
+         messageBuilder.setUsername(author);
+         messageBuilder.setAvatarUrl(avatar);
+         messageBuilder.setContent(msg.toString());
+         messageBuilder.addEmbeds(embedBuilder.build());
+         DISCORD_CLIENT.send(messageBuilder.build());
       } catch (Exception ex) {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(ex));
       }
-
    }
 }
