@@ -255,7 +255,7 @@ public abstract class VTEXScraper extends Crawler {
                   boolean isBuyBox = sellers.length() > 1;
                   boolean isMainRetailer = isMainRetailer(sellerFullName);
 
-                  Pricing pricing = scrapPricing(doc, internalId, commertialOffer, discounts);
+                  Pricing pricing = scrapPricing(doc, internalId, commertialOffer, discounts, jsonSku);
                   List<String> sales = isDefaultSeller ? scrapSales(doc, offerJson, internalId, internalPid, pricing) : new ArrayList<>();
 
                   offers.add(OfferBuilder.create()
@@ -287,9 +287,36 @@ public abstract class VTEXScraper extends Crawler {
       return mainSellersNames.stream().anyMatch(seller -> seller.toLowerCase().startsWith(sellerName.toLowerCase()));
    }
 
+   @Deprecated
    protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson) throws MalformedPricingException {
       Double principalPrice = comertial.optDouble("Price");
       Double priceFrom = comertial.optDouble("ListPrice");
+
+      CreditCards creditCards = scrapCreditCards(comertial, discountsJson, true);
+      BankSlip bankSlip = scrapBankSlip(principalPrice, comertial, discountsJson, true);
+
+      Double spotlightPrice = scrapSpotlightPrice(doc, internalId, principalPrice, comertial, discountsJson);
+      if (priceFrom != null && spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
+         priceFrom = null;
+      }
+
+      return PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson, JSONObject jsonSku) throws MalformedPricingException {
+      Double principalPrice = comertial.optDouble("Price");
+      Double priceFrom = comertial.optDouble("ListPrice");
+
+      if(jsonSku.optString("measurementUnit").equals("kg")) {
+         Double unitMultiplier = jsonSku.optDouble("unitMultiplier");
+         principalPrice = Math.floor((principalPrice * unitMultiplier) * 100) / 100.0;
+         if(priceFrom != null) priceFrom = Math.floor((priceFrom * unitMultiplier) * 100) / 100.0;
+      }
 
       CreditCards creditCards = scrapCreditCards(comertial, discountsJson, true);
       BankSlip bankSlip = scrapBankSlip(principalPrice, comertial, discountsJson, true);
