@@ -177,7 +177,6 @@ public class BauruConfiancaCrawler extends CrawlerRankingKeywords {
      return productAvailability;
   }
 
-
    protected void setTotalProducts(JSONObject catalog) {
       Integer totalProducts = JSONUtils.getValueRecursive(catalog, "results/totalNumRecs", "/", Integer.class, 0);
       this.totalProducts = totalProducts != null ? totalProducts : 0;

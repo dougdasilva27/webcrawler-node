@@ -52,17 +52,7 @@ public class BauruConfiancaCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
-
-  @Override
-  public void handleCookiesBeforeFetch() {
-    Logging.printLogDebug(logger, session, "Adding cookie...");
-
-    BasicClientCookie cookie = new BasicClientCookie("current_website", "bauru");
-    cookie.setDomain("www.confianca.com.br");
-    cookie.setPath("/");
-    this.cookies.add(cookie);
-  }
-
+  
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
