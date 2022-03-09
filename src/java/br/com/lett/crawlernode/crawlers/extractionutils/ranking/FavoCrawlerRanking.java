@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
@@ -13,13 +14,14 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 public class FavoCrawlerRanking extends CrawlerRankingKeywords {
    public FavoCrawlerRanking(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.JSOUP;
    }
 
    private final String STORE = getStore();
@@ -84,9 +86,21 @@ public class FavoCrawlerRanking extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
       headers.put("x-origin-id", this.ORIGIN_ID);
+      headers.put("referer", "https://" + STORE + ".mercadofavo.com/");
+      headers.put("origin", "https://" + STORE + ".mercadofavo.com/");
+      headers.put("accept", "application/json, text/plain, */*");
 
-      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build();
-      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
+         .setHeaders(headers)
+         .build();
+      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody())
+         ;
    }
 
    private String scrapImageUrl(JSONObject productJson) {
@@ -101,9 +115,9 @@ public class FavoCrawlerRanking extends CrawlerRankingKeywords {
    }
 
    private String scrapUrl(JSONObject product) {
-      String searchURL = "https://" + this.ORIGIN_ID + ".mercadofavo.com/" + this.STORE + "?search=";
+      String productURL = "https://" + this.ORIGIN_ID + ".mercadofavo.com/" + this.STORE + "/product/";
       String slug = product.optString("slug");
-      return searchURL + slug;
+      return productURL + slug;
    }
 
    @Override
