@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -20,6 +19,8 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -79,6 +80,8 @@ public class FavoCrawler extends Crawler {
       } else {
          productSlug = CommonMethods.getLast(session.getOriginalURL().split("/"));
       }
+
+      productSlug = URLEncoder.encode(productSlug, StandardCharsets.UTF_8);
 
       return "https://customer-bff.favoapp.com.br/products/by_slug?product_slug=" + productSlug + "&store=" + STORE;
    }
