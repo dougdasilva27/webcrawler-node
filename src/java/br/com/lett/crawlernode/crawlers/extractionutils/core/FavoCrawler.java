@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -19,7 +18,6 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
-import org.yaml.snakeyaml.util.UriEncoder;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
