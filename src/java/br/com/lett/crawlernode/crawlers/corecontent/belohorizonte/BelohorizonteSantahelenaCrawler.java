@@ -123,10 +123,10 @@ public class BelohorizonteSantahelenaCrawler extends Crawler {
 
    private Map<String, Double> getPrice(Document doc) {
       Map<String, Double> prices = new HashMap<>();
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price ins bdi", null, false, ',', session);
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price del bdi", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".summary ins bdi span[class*=woocommerce-Price]", null, false, ',', session);
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".summary del bdi span[class*=woocommerce-Price]", null, true, ',', session);
       if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price .woocommerce-Price-amount  bdi", null, true, ',', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".summary bdi span[class*=woocommerce-Price]", null, true, ',', session);
          price = null;
       }
       prices.put("spotlightPrice", spotlightPrice);
