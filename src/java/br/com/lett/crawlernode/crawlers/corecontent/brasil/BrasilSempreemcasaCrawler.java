@@ -53,6 +53,7 @@ public class BrasilSempreemcasaCrawler extends Crawler {
          .setUrl(url)
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.BUY_HAPROXY,
                ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
             )
@@ -100,11 +101,11 @@ public class BrasilSempreemcasaCrawler extends Crawler {
             products.add(product);
          }
 
-         //Capturing the unit price if it's in the page
-         if(variations.isEmpty()){
+         //Capturing the unit price
+         if (!variations.isEmpty()){
             String internalId = internalPid + "-1";
             String variationName = name + " - unidade";
-            Offers offer = scrapUnitOffer(json);
+            Offers offer = scrapUnitOffer(variations);
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -182,12 +183,14 @@ public class BrasilSempreemcasaCrawler extends Crawler {
       return creditCards;
    }
 
-   private Offers scrapUnitOffer(JSONObject json) throws OfferException, MalformedPricingException {
+   private Offers scrapUnitOffer(JSONArray json) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       List<String> sales = new ArrayList<>();
+      JSONObject variations = (JSONObject) json.get(0);
 
-      Double spotlightPrice = JSONUtils.getValueRecursive(json, "packs.0.current_unity_price", Double.class);
+      Double spotlightPrice = variations.optDouble("current_unit_price");
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
       Pricing pricing = Pricing.PricingBuilder.create()
          .setPriceFrom(null)
          .setSpotlightPrice(spotlightPrice)
