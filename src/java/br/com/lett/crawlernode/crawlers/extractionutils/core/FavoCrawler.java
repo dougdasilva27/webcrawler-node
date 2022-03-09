@@ -19,7 +19,10 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
+import org.yaml.snakeyaml.util.UriEncoder;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -79,6 +82,8 @@ public class FavoCrawler extends Crawler {
       } else {
          productSlug = CommonMethods.getLast(session.getOriginalURL().split("/"));
       }
+
+      productSlug = URLEncoder.encode(productSlug, StandardCharsets.UTF_8);
 
       return "https://customer-bff.favoapp.com.br/products/by_slug?product_slug=" + productSlug + "&store=" + STORE;
    }
