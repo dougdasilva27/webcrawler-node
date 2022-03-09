@@ -53,9 +53,8 @@ public class BrasilSempreemcasaCrawler extends Crawler {
          .setUrl(url)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
+               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
             )
          )
          .build();
