@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 public class CrawlerUtils {
@@ -1651,8 +1652,28 @@ public class CrawlerUtils {
       return primaryImage;
    }
 
+   public static List<String> scrapSecondaryImagesMagentoList(JSONArray images, String primaryImage) {
+      JSONArray secondaryImages = scrapSecondaryImagesArrayMagento(images, primaryImage);
+      if (secondaryImages.length() > 0) {
+         return secondaryImages.toList().stream().map(Objects::toString).collect(Collectors.toList());
+      }
+      else{
+         return null;
+      }
+   }
+
+   @Deprecated
    public static String scrapSecondaryImagesMagento(JSONArray images, String primaryImage) {
-      String secondaryImages = null;
+      JSONArray secondaryImages = scrapSecondaryImagesArrayMagento(images, primaryImage);
+      if(secondaryImages.length() > 0){
+         return secondaryImages.toString();
+      }
+      else{
+         return null;
+      }
+   }
+
+   private static JSONArray scrapSecondaryImagesArrayMagento(JSONArray images, String primaryImage) {
       JSONArray secondaryImagesArray = new JSONArray();
 
       for (int i = 0; i < images.length(); i++) {
@@ -1675,11 +1696,8 @@ public class CrawlerUtils {
          }
       }
 
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
 
-      return secondaryImages;
+      return secondaryImagesArray;
    }
 
    public static String scrapImagesMagento(JSONArray images, Boolean isPrimary) {
