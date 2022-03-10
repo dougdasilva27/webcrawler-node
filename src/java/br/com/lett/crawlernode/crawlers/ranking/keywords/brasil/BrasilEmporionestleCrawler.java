@@ -50,7 +50,6 @@ public class BrasilEmporionestleCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productRanking);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -64,12 +63,6 @@ public class BrasilEmporionestleCrawler extends CrawlerRankingKeywords {
 
    }
 
-   @Override
-   protected boolean hasNextPage() {
-      if (this.totalProducts == 0 && this.currentPage == 1) return true;
-
-      return this.totalProducts > 0 && this.currentPage * this.pageSize < this.totalProducts;
-   }
 
    @Override
    protected void setTotalProducts() {
