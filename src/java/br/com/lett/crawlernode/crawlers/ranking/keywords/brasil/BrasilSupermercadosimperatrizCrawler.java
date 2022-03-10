@@ -34,7 +34,7 @@ public class BrasilSupermercadosimperatrizCrawler extends CrawlerRankingKeywords
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
-      String url = getPageUrl();
+      String url = "https://www.supermercadosimperatriz.com.br/" + this.keywordEncoded + "?page=" + currentPage;
       this.log("Link onde são feitos os crawlers:  " + url);
       this.currentDoc = fetchDocument(url);
 
@@ -44,12 +44,12 @@ public class BrasilSupermercadosimperatrizCrawler extends CrawlerRankingKeywords
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
-            String internalId = crawlInternalId(e);
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".shelf__product-item", "data-product-id");;
             String productUrl = CrawlerUtils.scrapUrl(e, ".product-item__info > h3 > a", "href", "https:", "www.supermercadosimperatriz.com.br");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".shelf__product-item > .product-item__info > .product-item__title > a", false);
             String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-item__img >div > noscript > img", Collections.singletonList("src"), "https", "www.supermercadosimperatriz.com.br");
-            Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".product-item__info > .product-item__price > .product-item__best-price", null, false, ',', session, 0);
-            boolean available = priceInCents != 0;
+            Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".product-item__info > .product-item__price > .product-item__best-price", null, false, ',', session, null);
+            boolean available = priceInCents != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -67,21 +67,9 @@ public class BrasilSupermercadosimperatrizCrawler extends CrawlerRankingKeywords
 
    }
 
-   private String getPageUrl() {
-      return "https://www.supermercadosimperatriz.com.br/" + this.keywordEncoded + "?page=" + currentPage;
-   }
-
    @Override
    protected boolean hasNextPage() {
       return true;
-   }
-
-   private String crawlInternalId(Element e) {
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".shelf__product-item", "data-product-id");
-      if (internalId != null) {
-         return internalId;
-      }
-      return null;
    }
 
 }
