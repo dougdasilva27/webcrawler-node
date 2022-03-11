@@ -1,7 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -20,7 +21,8 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
-import org.jsoup.Jsoup;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -36,7 +38,6 @@ public class ColombiaAlkostoCrawler extends Crawler {
 
    public ColombiaAlkostoCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
       super.config.setParser(Parser.HTML);
    }
 
@@ -44,9 +45,9 @@ public class ColombiaAlkostoCrawler extends Crawler {
    @Override
    protected Response fetchResponse() {
 
-      Request request = Request.RequestBuilder.create().setProxyservice(Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY))
+      Request request = Request.RequestBuilder.create().setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY, ProxyCollection.BUY_HAPROXY))
          .setUrl(session.getOriginalURL()).build();
-     return dataFetcher.get(session, request);
+      return dataFetcher.get(session, request);
 
 
    }
@@ -69,7 +70,7 @@ public class ColombiaAlkostoCrawler extends Crawler {
          String description = crawlDescription(doc);
 
          //The availability is defined by location. Without setting the location we cannot find the availability.
-         boolean available = doc.selectFirst("span.product-price-pickup")!=null;
+         boolean available = doc.selectFirst("span.product-price-pickup") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
          RatingsReviews ratingReviews = scrapRating(doc, internalId);
          List<String> eans = new ArrayList<>();
@@ -189,22 +190,58 @@ public class ColombiaAlkostoCrawler extends Crawler {
    }
 
    private RatingsReviews scrapRating(Document doc, String internalPid) {
-      String url = "https://staticw2.yotpo.com/batch/" + fetchAppKey(doc) + "/" + internalPid;
+      String appKey = fetchAppKey(doc);
+      String url = "https://staticw2.yotpo.com/batch/app_key/" + appKey + "/domain_key/" + internalPid + "/widget/main_widget";
 
       YotpoRatingReviewCrawler yotpo = new YotpoRatingReviewCrawler(session, cookies, logger);
-      Document apiDoc = yotpo.extractRatingsFromYotpo(fetchAppKey(doc), dataFetcher, getPayload(internalPid), url);
+      Document apiDoc = extractRatingsFromYotpo(appKey, dataFetcher, internalPid, url);
 
       return yotpo.scrapRatingYotpo(apiDoc);
-   }
-
-   private String getPayload(String internalPid) {
-      return "[{\"method\":\"main_widget\",\"params\":{\"pid\":\"" + internalPid + "\",\"order_metadata_fields\":{},\"index\":0,\"element_id\":\"1\"}}," +
-         "{\"method\":\"bottomline\",\"params\":{\"pid\":\"" + internalPid + "\",\"link\":\""
-         + this.session.getOriginalURL() + "\",\"skip_average_score\":false,\"main_widget_pid\":\"" + internalPid + "\",\"index\":1,\"element_id\":2}}]";
    }
 
 
    private String fetchAppKey(Document doc) {
       return CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#yotpoTotalReviews", "data-appkey");
    }
+
+   public Document extractRatingsFromYotpo(String appKey, DataFetcher dataFetcher, String internalPid, String url) {
+      Document doc = new Document("");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY, ProxyCollection.BUY_HAPROXY))
+         .setPayload("methods=%5B%7B%22method%22%3A%22main_widget%22%2C%22params%22%3A%7B%22pid%22%3A%22" + internalPid + "%22%2C%22order_metadata_fields%22%3A%7B%7D%2C%22widget_product_id%22%3A%22" + internalPid + "%22%7D%7D%5D&app_key=" + appKey + "&is_mobile=false&widget_version=2022-01-23_10-47-18").build();
+      String response = new FetcherDataFetcher().post(session, request).getBody();
+
+      JSONArray arr = CrawlerUtils.stringToJsonArray(response);
+
+      doc = new Document("");
+
+      for (Object o : arr) {
+         JSONObject json = (JSONObject) o;
+
+         String responseHtml = json.has("result") ? json.getString("result") : null;
+
+         doc.append(responseHtml);
+      }
+
+      return doc;
+   }
+
+//   public RatingsReviews scrapRatingYotpo(Document apiDoc) {
+//      RatingsReviews ratingReviews = new RatingsReviews();
+//      ratingReviews.setDate(session.getDate());
+//
+//      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(apiDoc, "a.text-m", true, 0);
+//      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(apiDoc, ".yotpo-bottomline .sr-only", null, true, '.', session);
+//      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingsReviewsYotpo(apiDoc);
+//
+//      ratingReviews.setTotalRating(totalNumOfEvaluations);
+//      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+//      ratingReviews.setAverageOverallRating(avgRating);
+//      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+//
+//      return ratingReviews;
+//   }
+
 }
