@@ -13,23 +13,17 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-
-import java.util.*;
-
 import models.Offer;
 import models.Offers;
-import models.pricing.BankSlip;
-import models.pricing.CreditCard;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
-import models.pricing.Installments;
-import models.pricing.Pricing;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.*;
 
 public class BrasilCaroneCrawler extends Crawler {
 
@@ -90,9 +84,10 @@ public class BrasilCaroneCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-essential [name='product'][value]", "value");
          String internalPid = data != null ? data.optString("sku") : null;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-shop .product-description"));
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".i-breadcrumb li:not(.home):not(.product)");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image", Arrays.asList("src"), "https:", "www.carone.com.br/");
-         List<String> secondaryImages =  CrawlerUtils.scrapSecondaryImages(doc,".cloud-zoom-gallery img", Arrays.asList("src"),"", "", primaryImage);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".cloud-zoom-gallery img", Arrays.asList("src"), "", "", primaryImage);
          boolean available = !doc.select(".add-to-box .add-to-cart").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
@@ -103,6 +98,7 @@ public class BrasilCaroneCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setCategories(categories)
+            .setDescription(description)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setOffers(offers)
