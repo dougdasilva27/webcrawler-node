@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -28,8 +29,6 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
    }
 
    List<String> proxies = Arrays.asList(
-      ProxyCollection.BONANZA,
-      ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
@@ -52,18 +51,22 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
          .setProxyservice(proxies)
          .setSendUserAgent(true)
          .build();
-      String resp = new FetcherDataFetcher().get(session, request).getBody();
-      if (resp.contains("blockScript")) {
-         resp = new JsoupDataFetcher().get(session, request).getBody();
+      Response resp = new FetcherDataFetcher().get(session, request);
+      if (!resp.isSuccess()){
+         resp = new JsoupDataFetcher().get(session, request);
       }
-      return CrawlerUtils.stringToJson(resp);
+      return CrawlerUtils.stringToJson(resp.getBody());
    }
 
    @Override
    protected void processBeforeFetch() {
       Request request = Request.RequestBuilder.create().setUrl("https://www.pedidosya.com.ar").setProxyservice(
          proxies).build();
-      this.cookies = this.dataFetcher.get(session, request).getCookies();
+      Response response = this.dataFetcher.get(session, request);
+      if (!response.isSuccess()){
+         response = new JsoupDataFetcher().get(session, request);
+      }
+      this.cookies = response.getCookies();
    }
 
    @Override
@@ -74,7 +77,7 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
       JSONObject json = getInfoFromAPI();
       JSONArray data = json.optJSONArray("data");
 
-      if (!data.isEmpty()) {
+      if (data != null && !data.isEmpty()) {
 
          for (Object o : data) {
             JSONObject productInfo = (JSONObject) o;
