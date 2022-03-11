@@ -28,8 +28,8 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
    }
 
    List<String> proxies = Arrays.asList(
-//      ProxyCollection.BONANZA,
-//      ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+      ProxyCollection.BONANZA,
+      ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
