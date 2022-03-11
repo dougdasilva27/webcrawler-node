@@ -2,11 +2,11 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 import org.json.JSONException;
@@ -17,7 +17,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -50,14 +49,19 @@ public class BrasilEpocacosmeticosCrawler extends VTEXOldScraper {
    @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject apiJson) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "393", logger);
-      return trustVox.extractRatingAndReviewsForVtex(doc, dataFetcher).getRatingReviews(internalId);
+      JSONObject json = crawlSkuJsonVTEX(doc, session);
+      String id = json.optString("productId");
+      if (id != null){
+         return trustVox.extractRatingAndReviews(id, doc, dataFetcher);
+      }
+      return null;
    }
 
 
    @Override
-   public  JSONObject crawlSkuJsonVTEX(Document document, Session session) {
+   public JSONObject crawlSkuJsonVTEX(Document document, Session session) {
       Elements scriptTags = document.getElementsByTag("script");
-      String scriptVariableName = "vtex.events.addData(";
+      String scriptVariableName = "var skuJson_1 = ";
       JSONObject skuJson = new JSONObject();
       String skuJsonString = null;
 
