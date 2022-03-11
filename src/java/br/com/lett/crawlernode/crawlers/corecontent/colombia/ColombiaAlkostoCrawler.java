@@ -211,9 +211,14 @@ public class ColombiaAlkostoCrawler extends Crawler {
          .setUrl(url)
          .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY, ProxyCollection.BUY_HAPROXY))
          .setPayload("methods=%5B%7B%22method%22%3A%22main_widget%22%2C%22params%22%3A%7B%22pid%22%3A%22" + internalPid + "%22%2C%22order_metadata_fields%22%3A%7B%7D%2C%22widget_product_id%22%3A%22" + internalPid + "%22%7D%7D%5D&app_key=" + appKey + "&is_mobile=false&widget_version=2022-01-23_10-47-18").build();
-      String response = new FetcherDataFetcher().post(session, request).getBody();
+     // String content = new FetcherDataFetcher().post(session, request).getBody();
+     Response response = new FetcherDataFetcher().post(session, request);
+     int code = response.getLastStatusCode();
+      if (code == 601){
+         response = this.dataFetcher.post(session, request);
+      }
 
-      JSONArray arr = CrawlerUtils.stringToJsonArray(response);
+      JSONArray arr = CrawlerUtils.stringToJsonArray(response.getBody());
 
       doc = new Document("");
 
