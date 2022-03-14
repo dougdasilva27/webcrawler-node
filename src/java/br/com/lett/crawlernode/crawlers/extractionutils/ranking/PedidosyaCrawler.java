@@ -40,7 +40,7 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
    String market = session.getOptions().optString("market");
 
    private JSONObject getInfoFromAPI() {
-      String url = " https://www.pedidosya.com.ar/mobile/v3/catalogues/153971/search?max=50&offset=0&partnerId=" + storeId + "&query=" + this.keywordEncoded + "&sort=default";
+      String url = " https://www.pedidosya.com.ar/mobile/v3/catalogues/298755/search?max=50&offset=0&partnerId=" + storeId + "&query=" + this.keywordEncoded + "&sort=default";
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("authority", "www.pedidosya.com.ar");
