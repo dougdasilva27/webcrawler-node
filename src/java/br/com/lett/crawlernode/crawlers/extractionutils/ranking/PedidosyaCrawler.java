@@ -38,9 +38,10 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
    String type = session.getOptions().optString("type");
    String city = session.getOptions().optString("city");
    String market = session.getOptions().optString("market");
+   String catalogues = session.getOptions().optString("catalogues");
 
    private JSONObject getInfoFromAPI() {
-      String url = " https://www.pedidosya.com.ar/mobile/v3/catalogues/153971/search?max=50&offset=0&partnerId=" + storeId + "&query=" + this.keywordEncoded + "&sort=default";
+      String url = " https://www.pedidosya.com.ar/mobile/v3/catalogues/" + catalogues + "/search?max=50&offset=0&partnerId=" + storeId + "&query=" + this.keywordEncoded + "&sort=default";
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("authority", "www.pedidosya.com.ar");
@@ -52,7 +53,7 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
          .setSendUserAgent(true)
          .build();
       Response resp = new FetcherDataFetcher().get(session, request);
-      if (!resp.isSuccess()){
+      if (!resp.isSuccess()) {
          resp = new JsoupDataFetcher().get(session, request);
       }
       return CrawlerUtils.stringToJson(resp.getBody());
@@ -63,7 +64,7 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create().setUrl("https://www.pedidosya.com.ar").setProxyservice(
          proxies).build();
       Response response = this.dataFetcher.get(session, request);
-      if (!response.isSuccess()){
+      if (!response.isSuccess()) {
          response = new JsoupDataFetcher().get(session, request);
       }
       this.cookies = response.getCookies();

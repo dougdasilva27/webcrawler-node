@@ -65,6 +65,7 @@ public class PedidosyaCrawler extends Crawler {
       headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
       headers.put("authority", "www.pedidosya.com.ar");
       headers.put("accept", "application/json, text/plain, */*");
+      headers.put("referer", session.getOriginalURL());
 
       Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setProxyservice(
          proxies).build();
