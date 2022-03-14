@@ -97,9 +97,9 @@ public class BrasilEvinoCrawler extends Crawler {
 
    private List<String> crawlSecondaryImages(Document doc, String primaryImage) {
       List<String> secondaryImages = new ArrayList<>();
-      Element hasImageSecondary = doc.selectFirst(".GalleryNavigation__itemWrapper");
+      boolean hasImageSecondary = !doc.select(".GalleryNavigation__itemWrapper").isEmpty();
 
-      if (hasImageSecondary != null) {
+      if (hasImageSecondary) {
          Elements scripts = doc.select("script");
 
          for (Element e : scripts) {
