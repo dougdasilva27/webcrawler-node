@@ -73,15 +73,8 @@ public class BrasilDrogalCrawler extends LinxImpulseRanking {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private String crawlInternalPid(Element e) {
-      return e.attr("data-sku");
-   }
    private String crawlInternalPidAlt(Element e){
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".item-product", "data-sku");
-         if (internalId != null) {
-            return internalId;
-         }
-         return null;
+      return CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".item-product", "data-sku");
    }
 
    private RankingProduct createRankingProductFromData(Object object) throws MalformedProductException {
@@ -105,7 +98,7 @@ public class BrasilDrogalCrawler extends LinxImpulseRanking {
          .build();
    }
 
-   //todo
+
    private RankingProduct createRankingProductFromHtml(Element e) throws MalformedProductException {
       String productUrl = CrawlerUtils.scrapUrl(e, ".title a", "href", "https:", "www.drogal.com.br");
       String internalPid = crawlInternalPidAlt(e);
