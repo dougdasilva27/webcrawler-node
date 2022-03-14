@@ -41,12 +41,14 @@ public class CostaricaAutomercadoCrawler extends Crawler {
       String internalId = getProductId();
       String API = "https://automercado.azure-api.net/prod-front/product/detail";
 
-      String payload = "{\"productid\":\"" + internalId + "\"}";
+      String payload = "{\"productid\":\"" + internalId + "\", \"includeSpecialProducts\": true}";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json;charset=UTF-8");
       headers.put("Authorization", AUTH_TOKEN);
       headers.put("Platform", "WEB");
+      headers.put("Referer", "https://www.automercado.cr/");
+      headers.put("Connection", "keep-alive");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(API)
@@ -54,9 +56,16 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          .setHeaders(headers)
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(true).build())
          .mustSendContentEncoding(false)
+         .setSendUserAgent(true)
          .build();
 
-      String content = this.dataFetcher.post(session, request).getBody();
+      String content = "{}";
+      int tries = 0;
+
+      while (content.equals("{}") && tries < 3) {
+         content = this.dataFetcher.post(session, request).getBody();
+         tries++;
+      }
 
       return CrawlerUtils.stringToJson(content);
    }
