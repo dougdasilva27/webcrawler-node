@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -97,28 +98,34 @@ public class BrasilEvinoCrawler extends Crawler {
 
    private List<String> crawlSecondaryImages(Document doc, String primaryImage) {
       List<String> secondaryImages = new ArrayList<>();
-      Elements scripts = doc.select("script");
+      Element hasImageSecondary = doc.selectFirst(".GalleryNavigation__itemWrapper");
 
-      for (Element e : scripts) {
-         String json = e.outerHtml();
+      if (hasImageSecondary != null) {
+         Elements scripts = doc.select("script");
 
-         if ((json.contains("__PRELOADED_STATE__") || json.contains("__INITIAL_STATE__")) && json.contains("}")) {
-            String regex = "extralarge\":\"(.+?),\"type\":\"";
-            Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-            Matcher matcher = pattern.matcher(json);
+         for (Element e : scripts) {
+            String json = e.outerHtml();
 
-            while (matcher.find()) secondaryImages.add(matcher.group(1));
-            break;
+            if ((json.contains("__PRELOADED_STATE__") || json.contains("__INITIAL_STATE__")) && json.contains("}")) {
+               String regex = "extralarge\":\"(.+?),\"type\":\"";
+               Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+               Matcher matcher = pattern.matcher(json);
+
+               while (matcher.find()) secondaryImages.add(matcher.group(1));
+               break;
+            }
          }
+
+         List<String> imagesUrl = new ArrayList<>();
+         for (String image : secondaryImages) {
+            String imageUrl = extractUrl(image);
+            if (!imageUrl.equals(primaryImage)) imagesUrl.add(imageUrl);
+         }
+
+         return imagesUrl.stream().distinct().collect(Collectors.toList());
       }
 
-      List<String> imagesUrl = new ArrayList<>();
-      for (String image : secondaryImages) {
-         String imageUrl = extractUrl(image);
-         if (!imageUrl.equals(primaryImage)) imagesUrl.add(imageUrl);
-      }
-
-      return imagesUrl.stream().distinct().collect(Collectors.toList());
+      return null;
    }
 
    private String extractUrl(String image) {
