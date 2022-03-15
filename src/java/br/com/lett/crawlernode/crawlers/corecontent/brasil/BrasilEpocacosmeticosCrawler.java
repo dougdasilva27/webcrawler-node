@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
@@ -40,7 +41,7 @@ public class BrasilEpocacosmeticosCrawler extends VTEXNewScraper {
 
    @Override
    protected List<String> getMainSellersNames() {
-      return Arrays.asList(MAIN_SELLER_NAME_LOWER);
+      return List.of(MAIN_SELLER_NAME_LOWER);
    }
 
    @Override
@@ -49,9 +50,9 @@ public class BrasilEpocacosmeticosCrawler extends VTEXNewScraper {
       JSONObject json = crawlSkuJsonVTEX(doc, session);
       String id = json.optString("productId");
       if (id != null) {
-         return trustVox.extractRatingAndReviews(id, doc, dataFetcher);
+         return trustVox.extractRatingAndReviews(id, doc, new FetcherDataFetcher());
       } else {
-         return new TrustvoxRatingCrawler(session, "393", null).extractRatingAndReviews(internalPid, doc, this.dataFetcher);
+         return new TrustvoxRatingCrawler(session, "393", null).extractRatingAndReviews(internalPid, doc, new FetcherDataFetcher());
       }
    }
 
