@@ -1,12 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 import org.json.JSONException;
@@ -20,14 +18,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class BrasilEpocacosmeticosCrawler extends VTEXOldScraper {
+public class BrasilEpocacosmeticosCrawler extends VTEXNewScraper {
 
    private static final String HOME_PAGE = "https://www.epocacosmeticos.com.br/";
    private static final String MAIN_SELLER_NAME_LOWER = "época cosméticos";
 
    public BrasilEpocacosmeticosCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
@@ -51,14 +48,13 @@ public class BrasilEpocacosmeticosCrawler extends VTEXOldScraper {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "393", logger);
       JSONObject json = crawlSkuJsonVTEX(doc, session);
       String id = json.optString("productId");
-      if (id != null){
+      if (id != null) {
          return trustVox.extractRatingAndReviews(id, doc, dataFetcher);
+      } else {
+         return new TrustvoxRatingCrawler(session, "393", null).extractRatingAndReviews(internalPid, doc, this.dataFetcher);
       }
-      return null;
    }
 
-
-   @Override
    public JSONObject crawlSkuJsonVTEX(Document document, Session session) {
       Elements scriptTags = document.getElementsByTag("script");
       String scriptVariableName = "var skuJson_1 = ";
@@ -80,7 +76,7 @@ public class BrasilEpocacosmeticosCrawler extends VTEXOldScraper {
             skuJson = new JSONObject(skuJsonString);
 
          } catch (JSONException e) {
-            Logging.printLogWarn(logger, session, "Error creating JSONObject from var skuJson_0");
+            Logging.printLogWarn(logger, session, "Error creating JSONObject from var skuJson_1");
             Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
          }
       }
