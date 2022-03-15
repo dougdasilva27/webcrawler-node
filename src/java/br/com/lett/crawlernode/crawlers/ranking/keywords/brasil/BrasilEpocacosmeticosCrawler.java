@@ -111,10 +111,15 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
       JSONObject searchApi = new JSONObject();
       String url = "https://recs.richrelevance.com/rrserver/api/find/v1/c85912f892c73e30?lang=pt" + "&query=" + this.keywordEncoded
             + "&log=true&userId=&placement=search_page.find" + "&start=" + this.arrayProducts.size() + "&rows=32";
+
+
       this.log("Link onde são feitos os crawlers: " + url);
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
+      headers.put("Accept", "application/json, text/javascript, */*; q=0.01");
+      headers.put("Host", "recs.richrelevance.com");
+      headers.put("Referer", "https://www.epocacosmeticos.com.br/");
 
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
       JSONObject json = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
