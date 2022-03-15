@@ -118,7 +118,7 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
       headers.put("Referer", "https://www.epocacosmeticos.com.br/");
       headers.put("Origin", "https://www.epocacosmeticos.com.br/");
 
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setSendUserAgent(false).build();
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setSendUserAgent(false).build();
       JSONObject json = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
       if (json.has("placements")) {
