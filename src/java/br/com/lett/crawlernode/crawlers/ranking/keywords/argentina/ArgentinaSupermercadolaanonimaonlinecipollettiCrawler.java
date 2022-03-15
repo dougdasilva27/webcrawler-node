@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -11,12 +14,12 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,18 +35,22 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
    }
 
    @Override
-   protected void processBeforeFetch() {
-      // Criando cookie da cidade CABA
-      BasicClientCookie cookie = new BasicClientCookie("laanonimasucursalnombre", "CIPOLLETTI");
-      cookie.setDomain("www.laanonimaonline.com");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
+   protected Document fetchDocument(String url, List<Cookie> cookies) {
+      this.currentDoc = new Document(url);
 
-      // Criando cookie da regiao sao nicolas
-      BasicClientCookie cookie2 = new BasicClientCookie("laanonimasucursal", "22");
-      cookie2.setDomain("www.laanonimaonline.com");
-      cookie2.setPath("/");
-      this.cookies.add(cookie2);
+      if (this.currentPage == 1) {
+         this.session.setOriginalURL(url);
+      }
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("cookie", " laanonimasucursalnombre=CIPOLLETTI; laanonimasucursal=22");
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .build();
+      Response response = new ApacheDataFetcher().get(session, request);
+
+      return Jsoup.parse(response.getBody());
    }
 
    @Override
