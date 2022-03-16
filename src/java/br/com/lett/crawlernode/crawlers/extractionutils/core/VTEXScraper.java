@@ -571,9 +571,7 @@ public abstract class VTEXScraper extends Crawler {
          .build();
    }
 
-   protected  RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku){
-      return null;
-   }
+   protected abstract RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku);
 
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
       JSONObject productApi = new JSONObject();
