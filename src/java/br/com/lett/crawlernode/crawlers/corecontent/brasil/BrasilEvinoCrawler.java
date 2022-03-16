@@ -40,6 +40,7 @@ public class BrasilEvinoCrawler extends Crawler {
 
    public BrasilEvinoCrawler(Session session) {
       super(session);
+      //  super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
@@ -147,7 +148,8 @@ public class BrasilEvinoCrawler extends Crawler {
          if (script.contains("var TC = ")) {
             String[] withoutToken = script.split("var TC = ");
             if (withoutToken.length > 0) {
-               jsonObject = CrawlerUtils.stringToJson(withoutToken[1].split("if")[0]);
+               String a = withoutToken[1].split(" if \\(window.canPushDataLayer")[0];
+               jsonObject = CrawlerUtils.stringToJson(withoutToken[1].split(" if \\(window.canPushDataLayer")[0]);
             }
          }
       }
