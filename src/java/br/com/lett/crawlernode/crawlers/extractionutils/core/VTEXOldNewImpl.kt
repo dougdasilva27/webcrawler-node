@@ -10,7 +10,7 @@ import org.json.JSONObject
 import org.jsoup.nodes.Document
 import java.io.UnsupportedEncodingException
 
-class VTEXOldNewImpl(session: Session) : VTEXOldScraper(session) {
+open class VTEXOldNewImpl(session: Session) : VTEXOldScraper(session) {
    override fun handleCookiesBeforeFetch() {
       session.options?.optJSONObject("cookies")?.toMap()
          ?.forEach { (key: String?, value: Any) -> cookies.add(BasicClientCookie(key, value.toString())) }
