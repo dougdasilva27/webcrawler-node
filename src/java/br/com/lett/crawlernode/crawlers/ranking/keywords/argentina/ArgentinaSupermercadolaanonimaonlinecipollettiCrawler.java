@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -159,7 +160,7 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
          .setSendUserAgent(true)
          .setPayload(sb.toString())
          .build();
-      Response response = new JsoupDataFetcher().get(session, request);
+      Response response = new FetcherDataFetcher().post(session, request);
       JSONArray array = JSONUtils.stringToJsonArray(response.getBody());
       Map<String, Integer> productStock = new HashMap<>();
       for (Object obj : array) {
