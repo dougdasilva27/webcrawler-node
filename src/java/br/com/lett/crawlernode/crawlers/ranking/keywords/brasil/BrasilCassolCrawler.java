@@ -36,7 +36,7 @@ public class BrasilCassolCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      String url = HOME_PAGE + this.keywordEncoded + "?_q=suvinil&map=ft&page=" + this.currentPage;
+      String url = HOME_PAGE + this.keywordEncoded + "?_q=" + this.keywordEncoded + "&map=ft&page=" + this.currentPage;
       this.doc = fetchDocument(url);
       String currentDoc = fetchProduct();
       JSONObject obj = JSONUtils.stringToJson(currentDoc);
