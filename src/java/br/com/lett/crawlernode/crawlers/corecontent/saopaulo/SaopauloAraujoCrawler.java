@@ -40,7 +40,8 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
       }
 
       description = decodeHtml(description);
-
+      description = description.replaceAll("\\<.*?\\>", "");
+      description = description.replaceAll("\"", "");
       return description;
    }
 
