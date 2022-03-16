@@ -7,8 +7,11 @@ import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -33,7 +36,7 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
    protected static final String HOST = br.com.lett.crawlernode.crawlers.extractionutils.core.ChileJumboCrawler.HOST;
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
 
       this.pageSize = 40;
@@ -51,8 +54,22 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
             JSONObject product = (JSONObject) o;
             String internalPid = product.optString("productReference", null);
             String productUrl = crawlProductUrl(product);
+            String productName = product.optString("productName");
+            JSONObject item = (JSONObject) product.query("$.items[0]");
+            Integer price = (Integer) item.query("$.sellers.0.commertialOffer.Price");
+            String imageUrl = (String) item.query("$.images.0.imageUrl");
 
-            saveDataProduct(null, internalPid, productUrl);
+
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalPid(internalPid)
+               .setName(productName)
+               .setPriceInCents(price)
+               .setAvailability(price != null)
+               .setImageUrl(imageUrl)
+               .build();
+
+            saveDataProduct(productRanking);
 
             this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit)
