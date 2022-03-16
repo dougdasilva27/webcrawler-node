@@ -43,7 +43,7 @@ public class BrasilNutricaototalCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item-photo", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-name", false);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image-photo", Collections.singletonList("src"), "https", "nutricaototal.com.br");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "span[data-price-type=finalPrice]", null, false, ',', session, 0);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "span[data-price-type=finalPrice]", null, false, ',', session, null);
             boolean isAvailable = e.selectFirst("div.stock.unavailable") == null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
