@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -11,17 +12,18 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.MathUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends CrawlerRankingKeywords {
 
@@ -68,31 +70,41 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
 
       if (!products.isEmpty()) {
 
+         List<String> internalPids = new ArrayList<>();
+         Map<String, Integer> productStock = new HashMap<>();
+
          for (Element e : products) {
-            String productUrl = crawlProductUrl(e);
-            String internalId = crawlInternalId(productUrl);
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, "div.titulo_puntos a", true);
-            Integer price = crawlPrice(e);
-            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "div.producto > div > div > a > img", Arrays.asList("src"), "https", "d1on8qs0xdu5jz.cloudfront.net");
-            boolean isAvailable = price != null;
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"input[name*=sku_item_imetrics]", "value");
+            internalPids.add(internalPid);
+         }
+         productStock = getStock(internalPids);
 
-            RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(productUrl)
-               .setInternalId(internalId)
-               .setInternalPid(null)
-               .setImageUrl(imageUrl)
-               .setName(name)
-               .setPriceInCents(price)
-               .setAvailability(isAvailable)
-               .build();
+         for (Element e : products) {
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"input[name*=sku_item_imetrics]", "value");
+            if(productStock.get(internalPid)!=null && productStock.get(internalPid) >= 0) {
+               String internalId = crawlInternalId(e);
+               String productUrl = crawlProductUrl(e);
+               String name = CrawlerUtils.scrapStringSimpleInfo(e, "div.titulo_puntos a", true);
+               Integer price = crawlPrice(e);
+               String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "div.producto img", Arrays.asList("data-src"), "https", "supermercado.laanonimaonline.com");
+               boolean isAvailable = productStock.get(internalId) > 0;
 
-            saveDataProduct(productRanking);
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setImageUrl(imageUrl)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
+               saveDataProduct(productRanking);
+
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
             }
-
          }
       } else {
          this.result = false;
@@ -107,22 +119,8 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
       return true;
    }
 
-   private String crawlInternalId(String url) {
-      String internalId = null;
-
-      if (url.contains("art_")) {
-         internalId = CommonMethods.getLast(url.split("art_"));
-
-         if (internalId.contains("?")) {
-            internalId = internalId.split("\\?")[0];
-         }
-
-         if (internalId.contains("/")) {
-            internalId = internalId.split("\\/")[0];
-         }
-      }
-
-      return internalId;
+   private String crawlInternalId(Element document) {
+      return CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "input[name*=id_item_imetrics]", "value");
    }
 
    private String crawlProductUrl(Element e) {
@@ -140,5 +138,37 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
       Double price = MathUtils.parseDoubleWithComma(priceComplete);
 
       return price != null ? (int) Math.round(price * 100) : null;
+   }
+
+   protected Map<String, Integer> getStock(List<String> internalPids) {
+
+      StringBuilder sb = new StringBuilder();
+      for (String s : internalPids) {
+         if (sb.length() > 0) {
+            sb.append("&");
+         }
+         sb.append("datos%5B%5D=");
+         sb.append(s);
+      }
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://supermercado.laanonimaonline.com/paginas/controlStockListados.php")
+         .setHeaders(headers)
+         .setSendUserAgent(true)
+         .setPayload(sb.toString())
+         .build();
+      Response response = new JsoupDataFetcher().get(session, request);
+      JSONArray array = JSONUtils.stringToJsonArray(response.getBody());
+      Map<String, Integer> productStock = new HashMap<>();
+      for (Object obj : array) {
+         JSONObject jsonObject = (JSONObject) obj;
+         String codigo = jsonObject.optString("codigo");
+         Integer stock = jsonObject.optInt("stock");
+         productStock.put(codigo, stock);
+      }
+
+      return productStock;
    }
 }
