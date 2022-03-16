@@ -108,12 +108,11 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
    private String crawlName(Element e) {
       String scrapName = CrawlerUtils.scrapStringSimpleInfo(e, ".carousel__inner > a > table > tbody > tr > td > div.name-produto", false);
-      if(scrapName != null){
-         return scrapName;
-      }else {
+      if(scrapName == null){
          scrapName = CrawlerUtils.scrapStringSimpleInfo(e, ".carousel__box__dados > a > table > tbody > tr > td", false);
-         return scrapName;
       }
+      return scrapName;
+
    }
 
 }
