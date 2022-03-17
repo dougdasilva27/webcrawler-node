@@ -88,7 +88,7 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
                String name = CrawlerUtils.scrapStringSimpleInfo(e, "div.titulo_puntos a", true);
                Integer price = crawlPrice(e);
                String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "div.producto img", Arrays.asList("data-src"), "https", "supermercado.laanonimaonline.com");
-               boolean isAvailable = productStock.get(internalId) > 0;
+               boolean isAvailable = productStock.get(internalPid) > 0;
 
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
