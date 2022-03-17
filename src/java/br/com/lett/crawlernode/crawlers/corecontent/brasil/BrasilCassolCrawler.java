@@ -73,7 +73,6 @@ public class BrasilCassolCrawler extends VTEXNewScraper {
                      discount = paymentDiscount.optDouble("discount");
                      bankSlipPrice = MathUtils.normalizeTwoDecimalPlaces(bankSlipPrice - (bankSlipPrice * discount));
                   }
-
                   break;
                }
             }
@@ -89,39 +88,6 @@ public class BrasilCassolCrawler extends VTEXNewScraper {
          .setOnPageDiscount(discount)
          .build();
    }
-   
-   protected CreditCards scrapCreditCardsCassol(JSONObject comertial) throws MalformedPricingException {
-      CreditCards creditCards = new CreditCards();
-      Installments installments = new Installments();
-
-      JSONArray cardsArray = comertial.optJSONArray("Installments");
-      if (cardsArray != null) {
-         for (Object o : cardsArray) {
-            JSONObject cardJson = (JSONObject) o;
-
-            Integer installmentNumber = cardJson.optInt("NumberOfInstallments");
-            Double value = cardJson.optDouble("Value");
-            Double interest = cardJson.optDouble("InterestRate");
-            if (installments.getInstallmentPrice(1) != null && installments.getInstallmentPrice(1).equals(value)) {
-               break;
-            }
-            installments.add(setInstallment(installmentNumber, value, interest, null, null));
-         }
-
-         for (String card : cards) {
-            creditCards.add(CreditCard.CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
-
-         }
-      }
-
-      return creditCards;
-
-   }
-
    @Override
    protected String scrapDescription(Document doc, JSONObject productJson) {
       StringBuilder description = new StringBuilder();
