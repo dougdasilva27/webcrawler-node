@@ -40,7 +40,6 @@ public class BrasilEvinoCrawler extends Crawler {
 
    public BrasilEvinoCrawler(Session session) {
       super(session);
-      //  super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
@@ -125,7 +124,7 @@ public class BrasilEvinoCrawler extends Crawler {
          return imagesUrl.stream().distinct().collect(Collectors.toList());
       }
 
-      return null;
+      return secondaryImages;
    }
 
    private String extractUrl(String image) {
@@ -287,7 +286,7 @@ public class BrasilEvinoCrawler extends Crawler {
 
          ratingsReviews.setTotalRating(aggregationRating.optInt("recommendedBy"));
          ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
-         ratingsReviews.setAverageOverallRating(aggregationRating.optDouble("ratingValue"));
+         ratingsReviews.setAverageOverallRating(aggregationRating.optDouble("ratingValue", 0d));
       }
       return ratingsReviews;
    }
@@ -297,14 +296,17 @@ public class BrasilEvinoCrawler extends Crawler {
 
       JSONObject reviewValue = reviews.optJSONObject("ratingComposition");
 
+      if (reviewValue != null) {
+         return new AdvancedRatingReview.Builder()
+            .totalStar1(reviewValue.optInt("1"))
+            .totalStar2(reviewValue.optInt("2"))
+            .totalStar3(reviewValue.optInt("3"))
+            .totalStar4(reviewValue.optInt("4"))
+            .totalStar5(reviewValue.optInt("5"))
+            .build();
+      }
 
-      return new AdvancedRatingReview.Builder()
-         .totalStar1(reviewValue.optInt("1"))
-         .totalStar2(reviewValue.optInt("2"))
-         .totalStar3(reviewValue.optInt("3"))
-         .totalStar4(reviewValue.optInt("4"))
-         .totalStar5(reviewValue.optInt("5"))
-         .build();
+      return new AdvancedRatingReview();
    }
 
 
