@@ -67,12 +67,11 @@ public class BrasilTumeleroCrawler extends VTEXScraper {
 
    @Override
    protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson) throws MalformedPricingException {
-      Double principalPrice = comertial.optDouble("Price");
+      Double spotlightPrice = comertial.optDouble("Price");
       Double priceFrom = comertial.optDouble("ListPrice");
 
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(principalPrice, 0d);
 
-      Double spotlightPrice = scrapSpotlightPrice(doc, internalId, principalPrice, comertial, discountsJson);
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, 0d);
       if (spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
          priceFrom = null;
       }
