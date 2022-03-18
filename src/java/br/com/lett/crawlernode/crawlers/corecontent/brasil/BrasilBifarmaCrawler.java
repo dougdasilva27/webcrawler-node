@@ -51,7 +51,7 @@ public class BrasilBifarmaCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_content h1", false);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".slider_clip .slide .thumb img",
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".slider-product .slider_clip .slides .slide_image img",
             Collections.singletonList("src"), "https:", "cdn-bifarma3.stoom.com.br", primaryImage);
          String description = crawlDescription(doc, internalId);
          boolean available = doc.selectFirst(".btn.click.product_btn") != null;

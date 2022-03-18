@@ -104,9 +104,9 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          .setUrl("https://www.martinsatacado.com.br/j_spring_security_check")
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY))
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .setHeaders(headers)
          .build();
 

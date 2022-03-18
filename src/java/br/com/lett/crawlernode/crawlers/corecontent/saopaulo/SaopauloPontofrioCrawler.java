@@ -69,9 +69,7 @@ public class SaopauloPontofrioCrawler extends CNOVANewCrawler {
                ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR
-
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
             )
          )
          .build();

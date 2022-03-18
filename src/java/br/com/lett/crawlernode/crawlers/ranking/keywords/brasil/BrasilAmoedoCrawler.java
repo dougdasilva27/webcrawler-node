@@ -1,9 +1,18 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+
+import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilAmoedoCrawler extends CrawlerRankingKeywords {
   
@@ -12,7 +21,7 @@ public class BrasilAmoedoCrawler extends CrawlerRankingKeywords {
   }
   
   @Override
-  protected void extractProductsFromCurrentPage() {
+  protected void extractProductsFromCurrentPage() throws MalformedProductException {
     this.pageSize = 24;
     
     this.log("Página " + this.currentPage);
@@ -39,8 +48,22 @@ public class BrasilAmoedoCrawler extends CrawlerRankingKeywords {
         String internalId = crawlInternalId(e);
         
         String urlProduct = crawlProductUrl(e);
-        
-        saveDataProduct(internalId, null, urlProduct);
+        String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-link", true);
+        Integer price = crawlPrice(e, 0);
+        String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image-photo", Arrays.asList("src"), "https", "www.amoedo.com.br");
+        boolean isAvailable = price != 0;
+
+        RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(urlProduct)
+            .setInternalId(internalId)
+            .setInternalPid(null)
+            .setImageUrl(imageUrl)
+            .setName(name)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
+
+         saveDataProduct(productRanking);
         
         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
         if (this.arrayProducts.size() == productsLimit)
@@ -94,6 +117,24 @@ public class BrasilAmoedoCrawler extends CrawlerRankingKeywords {
     }
     
     return urlProduct;
+  }
+
+  private Integer crawlPrice(Element e, Integer value){
+     String priceStr = CrawlerUtils.scrapStringSimpleInfo(e, "span.price", true);
+     Integer priceInCents = value;
+
+     if (priceStr != null) {
+        final String regex = "[0-9]+\\,[0-9]+";
+        final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+        final Matcher matcher = pattern.matcher(priceStr);
+
+        if (matcher.find()) {
+           priceStr = matcher.group(0);
+           priceInCents = CommonMethods.stringPriceToIntegerPrice(priceStr, ',', value);
+
+        }
+     }
+     return priceInCents;
   }
   
 }

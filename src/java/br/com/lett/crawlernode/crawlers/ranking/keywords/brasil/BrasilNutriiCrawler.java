@@ -1,11 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
 
 public class BrasilNutriiCrawler extends CrawlerRankingKeywords {
 
@@ -14,7 +19,7 @@ public class BrasilNutriiCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
 
       this.log("Página " + this.currentPage);
 
@@ -34,12 +39,24 @@ public class BrasilNutriiCrawler extends CrawlerRankingKeywords {
                JSONObject product = (JSONObject) obj;
 
                String internalId = JSONUtils.getStringValue(product, "sku");
-
                String productUrl = "https://www.nutrii.com.br" + JSONUtils.getStringValue(product, "url");
+               String name = product.optString("name");
+               String imgUrl = product.optString("image");
+               String priceString = JSONUtils.getStringValue(product, "specialPrice");
+               priceString = priceString.replaceAll("[^0-9]", "");
+               Integer price = Integer.parseInt(priceString);
+               Boolean isAvailable = price > 0;
 
-               saveDataProduct(internalId, internalId, productUrl);
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setName(name)
+                  .setImageUrl(imgUrl)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .build();
 
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl);
+               saveDataProduct(productRanking);
                if (this.arrayProducts.size() == productsLimit) {
                   break;
                }

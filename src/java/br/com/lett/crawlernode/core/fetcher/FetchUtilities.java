@@ -169,10 +169,6 @@ public class FetchUtilities {
       while (proxies.isEmpty() && attemptTemp <= maxAttempts) {
          serviceName = getProxyService(attemptTemp, session);
 
-         if ((session instanceof EqiCrawlerSession || session instanceof EqiRankingDiscoverKeywordsSession) && serviceName.equals(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY)) {
-            serviceName = ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI;
-         }
-
          if (serviceName != null) {
             if (GlobalConfigurations.proxies != null) {
                proxies = GlobalConfigurations.proxies.getProxy(serviceName);

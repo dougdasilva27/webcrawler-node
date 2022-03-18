@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -15,11 +16,8 @@ import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 
 import models.AdvancedRatingReview;
 import models.Offer;
@@ -131,15 +129,15 @@ public class BrasilLojastaqiCrawler extends Crawler {
 
    private RatingsReviews scrapRatingsReviews(String internalId) {
 
-      Map<String,String> headers = new HashMap<>();
-      headers.put("content-type","application/json; charset=UTF-8");
+      Map<String, String> headers = new HashMap<>();
+      headers.put("content-type", "application/json; charset=UTF-8");
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.taqi.com.br/ccstorex/custom/v1/hervalApiCalls/getData")
-         .setPayload("{\"url\":\"/Produtos/"+ internalId +"/avaliacoes\",\"data\":{},\"method\":\"GET\"}")
+         .setPayload("{\"url\":\"/Produtos/" + internalId + "/avaliacoes\",\"data\":{},\"method\":\"GET\"}")
          .setHeaders(headers)
          .build();
-      Response response = new JsoupDataFetcher().post(session,request);
+      Response response = new JsoupDataFetcher().post(session, request);
       JSONArray data = JSONUtils.stringToJsonArray(response.getBody());
 
       RatingsReviews ratingsReviews = new RatingsReviews();
@@ -153,7 +151,6 @@ public class BrasilLojastaqiCrawler extends Crawler {
       ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
 
 
-
       return ratingsReviews;
 
 
@@ -161,12 +158,12 @@ public class BrasilLojastaqiCrawler extends Crawler {
 
    private AdvancedRatingReview scrapAdvancedRatingReview(JSONArray data) {
       AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
-      int[] notas = {0,0,0,0,0};
+      int[] notas = {0, 0, 0, 0, 0};
       for (Object o : data) {
          JSONObject obj = (JSONObject) o;
 
 
-         switch (obj.optInt("nota")){
+         switch (obj.optInt("nota")) {
             case 1:
                notas[0]++;
             case 2:
@@ -180,11 +177,11 @@ public class BrasilLojastaqiCrawler extends Crawler {
          }
       }
 
-      advancedRatingReview.setTotalStar1( notas[0]);
-      advancedRatingReview.setTotalStar2( notas[1]);
-      advancedRatingReview.setTotalStar3( notas[2]);
-      advancedRatingReview.setTotalStar4( notas[3]);
-      advancedRatingReview.setTotalStar5( notas[4]);
+      advancedRatingReview.setTotalStar1(notas[0]);
+      advancedRatingReview.setTotalStar2(notas[1]);
+      advancedRatingReview.setTotalStar3(notas[2]);
+      advancedRatingReview.setTotalStar4(notas[3]);
+      advancedRatingReview.setTotalStar5(notas[4]);
 
       return advancedRatingReview;
    }
@@ -233,8 +230,14 @@ public class BrasilLojastaqiCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl(API)
          .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY)
+         )
          .setPayload(payload)
          .build();
+
       String content = new JsoupDataFetcher()
          .post(session, request)
          .getBody();

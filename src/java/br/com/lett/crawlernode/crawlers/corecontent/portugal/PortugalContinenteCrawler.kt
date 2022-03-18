@@ -37,7 +37,6 @@ class PortugalContinenteCrawler(session: Session) : Crawler(session) {
       val request = RequestBuilder.create()
          .setHeaders(headers)
          .setUrl(session.originalURL)
-         .setProxyservice(listOf(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY))
          .build()
       val response = ApacheDataFetcher().get(session, request)
 

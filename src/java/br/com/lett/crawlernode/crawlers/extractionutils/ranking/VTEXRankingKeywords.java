@@ -70,7 +70,6 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
                .mustRetrieveStatistics(true)
                .build())
          .setProxyservice(Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.LUMINATI_SERVER_BR))
          .build();

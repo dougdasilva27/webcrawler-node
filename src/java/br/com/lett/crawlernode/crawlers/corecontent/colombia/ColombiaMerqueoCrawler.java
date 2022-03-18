@@ -222,13 +222,23 @@ public class ColombiaMerqueoCrawler extends Crawler {
     */
    private List<String> scrapSlugs(String originalURL) {
       List<String> slugs = new ArrayList<>();
-      String slugString = CommonMethods.getLast(originalURL.split("bogota/"));
+      String slugString = getSlug(originalURL);
       String[] slug = slugString.contains("/") ? slugString.split("/") : null;
 
       if (slug != null) {
          Collections.addAll(slugs, slug);
       }
       return slugs;
+   }
+
+   private String getSlug(String originalURL) {
+      String slugString = CommonMethods.getLast(originalURL.split("bogota/"));
+
+      if (slugString.contains("?")) {
+         slugString = slugString.split("\\?")[0];
+      }
+
+      return slugString;
    }
 
    private boolean isProductPage(JSONObject data) {

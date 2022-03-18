@@ -38,7 +38,6 @@ public class TottusCrawler extends CrawlerRankingKeywords {
       JSONObject products = pageProps.optJSONObject("products");
       JSONArray results = products.optJSONArray("results");
 
-
       if (!results.isEmpty()) {
          if (this.totalProducts == 0) {
             setTotalProducts();
@@ -100,13 +99,14 @@ public class TottusCrawler extends CrawlerRankingKeywords {
    }
 
    private Integer scrapPrice(JSONObject prod) {
-      Integer price = JSONUtils.getValueRecursive(prod, "prices.cmrPrice", Integer.class, 0);
-
-      if (price == 0) {
-         price = JSONUtils.getValueRecursive(prod, "prices.currentPrice", Integer.class);
-
+      Double priceDouble = JSONUtils.getValueRecursive(prod, "prices.cmrPrice", Double.class, 0.0);
+      if (priceDouble == 0.0) {
+         priceDouble = JSONUtils.getValueRecursive(prod, "prices.currentPrice", Double.class, 0.0);
+         if(priceDouble == 0.0) {
+            return JSONUtils.getValueRecursive(prod, "prices.currentPrice", Integer.class, 0);
+         }
       }
-
+      Integer price = (int) Math.round(100 * priceDouble);
       return price;
    }
 

@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.panama;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -14,6 +16,7 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,15 +38,21 @@ public class PanamaSuperxtraCrawler extends CrawlerRankingKeywords {
       headers.put("origin", "https://domicilio.superxtra.com");
       headers.put("accept-encoding", "gzip, deflate, br");
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
+      headers.put("referer", "https://domicilio.superxtra.com/search?name=" + this.keywordEncoded);
 
-      String payload = "{\"variables\":{\"pagination\":{\"pageSize\":100,\"currentPage\":" + this.currentPage + "},\"search\":{\"text\":\"" + this.keywordEncoded + "\",\"language\":\"ES\"},\"storeId\":\"22\"},\"query\":\"query ($pagination: paginationInput, $search: SearchInput, $storeId: ID!, $categoryId: ID, $onlyThisCategory: Boolean, $filter: ProductsFilterInput, $orderBy: productsSortInput) {  getProducts(pagination: $pagination, search: $search, storeId: $storeId, categoryId: $categoryId, onlyThisCategory: $onlyThisCategory, filter: $filter, orderBy: $orderBy) {    redirectTo    products {      id      name      photosUrls      sku      unit      price      specialPrice      promotion {        description        type        isActive        conditions        __typename      }      stock      nutritionalDetails      clickMultiplier      subQty      subUnit      maxQty      minQty      specialMaxQty      ean      boost      showSubUnit      isActive      slug      categories {        id        name        __typename      }      __typename    }    paginator {      pages      page      __typename    }    __typename  }}\"}";
-
+      String payload = "{\"operationName\":\"GetProducts\",\"variables\":{\"pagination\":{\"pageSize\":100,\"currentPage\":1},\"search\":{\"text\":\"" + this.keywordEncoded + "\",\"language\":\"ES\"},\"storeId\":\"70\",\"orderBy\":{},\"variants\":false,\"filter\":{\"brands\":null,\"categories\":null}},\"query\":\"query GetProducts($pagination: paginationInput, $search: SearchInput, $storeId: ID!, $categoryId: ID, $onlyThisCategory: Boolean, $filter: ProductsFilterInput, $orderBy: productsSortInput, $variants: Boolean) {\\n  getProducts(pagination: $pagination, search: $search, storeId: $storeId, categoryId: $categoryId, onlyThisCategory: $onlyThisCategory, filter: $filter, orderBy: $orderBy, variants: $variants) {\\n    redirectTo\\n    products {\\n      id\\n      description\\n      name\\n      photosUrls\\n      sku\\n      unit\\n      price\\n      specialPrice\\n      promotion {\\n        description\\n        type\\n        isActive\\n        conditions\\n        __typename\\n      }\\n      variants {\\n        selectors\\n        productModifications\\n        __typename\\n      }\\n      stock\\n      nutritionalDetails\\n      clickMultiplier\\n      subQty\\n      subUnit\\n      maxQty\\n      minQty\\n      specialMaxQty\\n      ean\\n      boost\\n      showSubUnit\\n      isActive\\n      slug\\n      categories {\\n        id\\n        name\\n        __typename\\n      }\\n      formats {\\n        format\\n        equivalence\\n        unitEquivalence\\n        __typename\\n      }\\n      __typename\\n    }\\n    paginator {\\n      pages\\n      page\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\"}";
       String url = "https://deadpool.instaleap.io/api/v2";
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setPayload(payload)
          .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY
+            )
+         )
          .setCookies(cookies)
          .build();
 

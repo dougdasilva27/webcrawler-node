@@ -2,13 +2,17 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -74,7 +78,7 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
 
       this.log("Página " + this.currentPage);
 
@@ -99,10 +103,24 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
 
                   String urlProduct = urlProduct(product, internalPid);
 
+                  String imgUrl = product.optString("image");
+                  Double priceDouble =  product.optDouble("price");
+                  Integer priceInCents = (int) Math.round(100 * priceDouble);
+                  String name = product.optString("description");
+                  boolean isAvailable = product.optInt("stock")>0;
 
-                  saveDataProduct(internalId, internalPid, urlProduct);
+                  RankingProduct productRanking = RankingProductBuilder.create()
+                     .setUrl(urlProduct)
+                     .setInternalPid(internalPid)
+                     .setInternalId(internalId)
+                     .setName(name)
+                     .setImageUrl(imgUrl)
+                     .setPriceInCents(priceInCents)
+                     .setAvailability(isAvailable)
+                     .build();
 
-                  this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+                  saveDataProduct(productRanking);
+
                   if (this.arrayProducts.size() == productsLimit) {
                      break;
                   }

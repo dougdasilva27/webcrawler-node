@@ -122,7 +122,7 @@ public class MercadolivreNewCrawler {
 
       String unavailable = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-shipping-message__text", true);
 
-      if (unavailable != null && unavailable.contains("indisponível")){
+      if (unavailable != null && unavailable.contains("indisponível")) {
          availableToBuy = false;
       }
 
@@ -307,9 +307,12 @@ public class MercadolivreNewCrawler {
          Pricing pricing = scrapPricing(doc);
          List<String> sales = scrapSales(doc);
 
+         String currentSeller = sellerFullName;
+         if (isMainRetailer && !mainSellerNameLower.isEmpty()) currentSeller = mainSellerNameLower;
+
          offers.add(OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(isMainRetailer ? mainSellerNameLower : sellerFullName)
+            .setSellerFullName(currentSeller)
             .setMainPagePosition(1)
             .setIsBuybox(false)
             .setIsMainRetailer(isMainRetailer)
@@ -386,9 +389,11 @@ public class MercadolivreNewCrawler {
                      Pricing pricing = scrapPricing(e);
                      List<String> sales = scrapSales(e);
                      boolean isMainRetaler = checkIsMainRetalerToOneSeller(sellerName);
+                     String currentSeller = sellerName;
+                     if (isMainRetaler && !mainSellerNameLower.isEmpty()) currentSeller = mainSellerNameLower;
                      offers.add(OfferBuilder.create()
                         .setUseSlugNameAsInternalSellerId(true)
-                        .setSellerFullName(isMainRetaler ? mainSellerNameLower : sellerName)
+                        .setSellerFullName(currentSeller)
                         .setSellersPagePosition(sellersPagePosition)
                         .setIsBuybox(true)
                         .setIsMainRetailer(isMainRetaler)
@@ -408,6 +413,7 @@ public class MercadolivreNewCrawler {
          if (offers.isEmpty()) {
             Pricing pricing = scrapPricing(doc);
             List<String> sales = scrapSales(doc);
+
             offers.add(OfferBuilder.create()
                .setUseSlugNameAsInternalSellerId(true)
                .setSellerFullName(mainSellerNameLower)

@@ -9,12 +9,16 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.AdvancedRatingReview;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -85,7 +89,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
@@ -159,5 +162,29 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          .build();
    }
 
+   @Override
+   protected String crawlDescription(JSONObject apolloJson, Document doc, String internalPid) {
+      Elements el = doc.select(".src__Container-sc-162vcai-0.kHvlHH");
+      StringBuilder description = new StringBuilder();
 
+      for (Element e : el) {
+         String subtitle = CrawlerUtils.scrapStringSimpleInfo(e, ".title__TitleUI-sc-1eypgxa-1.cZeqMA", true);
+         if (checkIsDescription(subtitle)) {
+            description.append(e);
+         }
+      }
+
+      return description.toString();
+   }
+
+
+   private boolean checkIsDescription(String subtitle) {
+      String subtitleLowerWithoutAccents = "";
+      if (subtitle != null) {
+          subtitleLowerWithoutAccents = StringUtils.stripAccents(subtitle);
+      }
+
+      return subtitleLowerWithoutAccents.toLowerCase(Locale.ROOT).contains("ficha") || subtitleLowerWithoutAccents.toLowerCase(Locale.ROOT).contains("informacoes");
+
+   }
 }

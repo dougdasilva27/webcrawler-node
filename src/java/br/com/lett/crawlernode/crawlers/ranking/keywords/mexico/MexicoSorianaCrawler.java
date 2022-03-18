@@ -19,7 +19,7 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
 
    public MexicoSorianaCrawler(Session session) {
       super(session);
-      fetchMode = FetchMode.FETCHER;
+      fetchMode = FetchMode.APACHE;
    }
 
    @Override
@@ -51,7 +51,7 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
 
       this.log("Página " + this.currentPage);
       String keyword = this.keywordEncoded.replace(" ","+");
-
+                     //https://www.soriana.com/buscar?q=vino&cid=&search-button=&cref=0&view=grid
       String url = "https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Search-UpdateGrid?q=" + keyword + "&pmin=0.01&start=" + (this.currentPage - 1) * 12 + "&sz=12&selectedUrl=https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Search-UpdateGrid?q=" + keyword + "&pmin=0%2e01&start=" + (this.currentPage - 1) * 12 + "&sz=12";
       this.log("Link onde são feitos os crawlers: " + url);
 

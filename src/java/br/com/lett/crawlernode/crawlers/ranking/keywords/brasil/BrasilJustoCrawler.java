@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -48,7 +49,7 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
          this.totalProducts = apiResp.optInt("total");
       }
 
-      JSONArray products = (JSONArray) apiResp.optQuery("/products/edges");
+      JSONArray products = JSONUtils.getValueRecursive(apiResp, "products/edges", "/", JSONArray.class, new JSONArray());
       for (int i = 0; i < products.length(); i++) {
          JSONObject product = products.getJSONObject(i).optJSONObject("node");
          String urlPath = product != null ? product.optString("url") : null;
@@ -72,6 +73,10 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
             .build();
 
          saveDataProduct(productRanking);
+         if (this.arrayProducts.size() == productsLimit) {
+            break;
+         }
+
       }
 
    }

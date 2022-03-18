@@ -119,7 +119,7 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
       Request request = RequestBuilder.create()
          .setCookies(cookies)
          .setUrl(url)
-         .setFollowRedirects(false)
+         .setFollowRedirects(true)
          .build();
 
       Response response = dataFetcher.get(session, request);

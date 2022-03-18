@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.costarica;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
@@ -24,35 +26,46 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CostaricaAutomercadoCrawler extends Crawler {
-
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString());
-
-   private static final String SELLER_NAME = "automercado";
 
    public CostaricaAutomercadoCrawler(Session session) {
       super(session);
       config.setFetcher(FetchMode.FETCHER);
    }
 
+   private static final String SELLER_NAME = "automercado";
+   private final String AUTH_TOKEN = session.getOptions().optString("authToken");
+
    @Override
    protected JSONObject fetch() {
       String internalId = getProductId();
-      String API = "https://www.automercado.cr/prod-front/product/detail";
+      String API = "https://automercado.azure-api.net/prod-front/product/detail";
 
-      String payload = "{\"productid\":\"" + internalId + "\"}";
+      String payload = "{\"productid\":\"" + internalId + "\", \"includeSpecialProducts\": true}";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json;charset=UTF-8");
-      headers.put("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlVTVUFSSU8gSU5WSVRBRE8iLCJzdWIiOiJjNjY5MDc0MS01Mjk2LWViMTEtYjFhYy0wMDBkM2EzNzY4MGIiLCJlbWFpbCI6Imludml0YWRvQGF1dG9tZXJjYWRvLmJpeiIsImlhdCI6MTYyNjM1ODQ3OX0.sR8zc4wIdfITf8WvKR26wPz8M79Xn_I4UKd-VXJXD9o");
+      headers.put("Authorization", AUTH_TOKEN);
+      headers.put("Platform", "WEB");
+      headers.put("Referer", "https://www.automercado.cr/");
+      headers.put("Connection", "keep-alive");
+
       Request request = Request.RequestBuilder.create()
          .setUrl(API)
          .setPayload(payload)
          .setHeaders(headers)
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(true).build())
          .mustSendContentEncoding(false)
+         .setSendUserAgent(true)
          .build();
-      String content = this.dataFetcher
-         .post(session, request)
-         .getBody();
+
+      String content = "{}";
+      int tries = 0;
+
+      while (content.equals("{}") && tries < 3) {
+         content = this.dataFetcher.post(session, request).getBody();
+         tries++;
+      }
 
       return CrawlerUtils.stringToJson(content);
    }
@@ -64,7 +77,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
       if (matcher.find()) {
          internalId = matcher.group(1);
       }
-      if (internalId == null){
+      if (internalId == null) {
          return CommonMethods.getLast(session.getOriginalURL().split("id/"));
       }
       return internalId;

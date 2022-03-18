@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -17,6 +16,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
@@ -85,7 +85,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
             break;
          }
       }
-      while(isBlockedPage(doc));
+      while (isBlockedPage(doc));
 
       return doc;
    }
@@ -469,8 +469,10 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       RatingsReviews ratingReviews = new RatingsReviews();
 
       ratingReviews.setDate(session.getDate());
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
 
       ratingReviews.setTotalRating(getTotalReviewCount(doc));
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
       ratingReviews.setAverageOverallRating(getAverageOverallRating(doc));
 
 
@@ -486,4 +488,67 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
       return CrawlerUtils.scrapDoublePriceFromHtml(doc, ".interaction-client__rating-info > span", null, true, ',', session);
    }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select(".wrapper-reviews .wrapper-review__comment");
+
+      for (Element review : reviews) {
+
+         if (review != null) {
+
+            int numberOfStars = getNumberStar(review);
+
+            switch (numberOfStars) {
+               case 5:
+                  star5++;
+                  break;
+               case 4:
+                  star4++;
+                  break;
+               case 3:
+                  star3++;
+                  break;
+               case 2:
+                  star2++;
+                  break;
+               case 1:
+                  star1++;
+                  break;
+               default:
+                  break;
+            }
+
+         }
+      }
+
+      return new AdvancedRatingReview.Builder()
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
+   }
+
+
+   private int getNumberStar(Element e) {
+      int star = 0;
+      Elements elements = e.select(".rating-percent__full .rating-percent__full-star");
+      for (Element el : elements) {
+         String width = CrawlerUtils.scrapStringSimpleInfoByAttribute(el, null, "style");
+         if (width != null && width.contains("20%")) {
+            star++;
+         }
+      }
+      return star;
+
+   }
+
+
 }

@@ -2,7 +2,10 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -12,8 +15,6 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,9 +28,7 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.FETCHER;
    }
 
-   List<String> proxies =  Arrays.asList(
-      ProxyCollection.BONANZA,
-      ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+   List<String> proxies = Arrays.asList(
       ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
@@ -39,22 +38,36 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
    String type = session.getOptions().optString("type");
    String city = session.getOptions().optString("city");
    String market = session.getOptions().optString("market");
+   String catalogues = session.getOptions().optString("catalogues");
 
-   private JSONObject getInfoFromAPI(){
-      String url = "https://www.pedidosya.com.ar/mobile/v3/catalogues/298755/search?max=50&offset=0&partnerId="+storeId+"&query=" +this.keywordWithoutAccents+  "&sort=default";
-      Map<String,String> headers = new HashMap<>();
+   private JSONObject getInfoFromAPI() {
+      String url = " https://www.pedidosya.com.ar/mobile/v3/catalogues/" + catalogues + "/search?max=50&offset=0&partnerId=" + storeId + "&query=" + this.keywordEncoded + "&sort=default";
+      Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
+      headers.put("authority", "www.pedidosya.com.ar");
       headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
-      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setProxyservice(proxies).build();
-      String resp = this.dataFetcher.get(session,request).getBody();
-      return CrawlerUtils.stringToJson(resp);
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(proxies)
+         .setSendUserAgent(true)
+         .build();
+      Response resp = new FetcherDataFetcher().get(session, request);
+      if (!resp.isSuccess()) {
+         resp = new JsoupDataFetcher().get(session, request);
+      }
+      return CrawlerUtils.stringToJson(resp.getBody());
    }
 
    @Override
    protected void processBeforeFetch() {
       Request request = Request.RequestBuilder.create().setUrl("https://www.pedidosya.com.ar").setProxyservice(
          proxies).build();
-      this.cookies = this.dataFetcher.get(session,request).getCookies();
+      Response response = this.dataFetcher.get(session, request);
+      if (!response.isSuccess()) {
+         response = new JsoupDataFetcher().get(session, request);
+      }
+      this.cookies = response.getCookies();
    }
 
    @Override
@@ -65,14 +78,14 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
       JSONObject json = getInfoFromAPI();
       JSONArray data = json.optJSONArray("data");
 
-      if (!data.isEmpty()) {
+      if (data != null && !data.isEmpty()) {
 
          for (Object o : data) {
             JSONObject productInfo = (JSONObject) o;
 
             String internalId = productInfo.optString("id");
             String internalPid = internalId;
-            String productUrl = " https://www.pedidosya.com.ar/" + type + "/" + city + "/" + market +"-menu?p=" + internalId;
+            String productUrl = " https://www.pedidosya.com.ar/" + type + "/" + city + "/" + market + "-menu?p=" + internalId;
             String name = productInfo.optString("name");
             int price = productInfo.optInt("price");
             boolean isAvailable = price != 0;
@@ -88,7 +101,6 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
-            log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             if (arrayProducts.size() == productsLimit) {
                break;
             }

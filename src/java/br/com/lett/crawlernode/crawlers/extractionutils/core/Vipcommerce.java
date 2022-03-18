@@ -40,20 +40,20 @@ public class Vipcommerce extends Crawler {
       super(session);
    }
 
-   protected String getHomePage(){
+   protected String getHomePage() {
       return session.getOptions().optString("homePage");
    }
 
-   protected String getSellerFullName(){
+   protected String getSellerFullName() {
       return session.getOptions().optString("sellerFullname");
    }
 
-   protected String getDomain(){
+   protected String getDomain() {
       return session.getOptions().optString("domain");
    }
 
    protected String getLocateCode() {
-      return session.getOptions().optString("locate","1");
+      return session.getOptions().optString("locate", "1");
    }
 
 
@@ -124,10 +124,11 @@ public class Vipcommerce extends Crawler {
             String internalPid = JSONUtils.getStringValue(productInfo, "id");
             String name = JSONUtils.getStringValue(productInfo, "descricao");
             String primaryImage = CrawlerUtils.completeUrl(JSONUtils.getStringValue(productInfo, "imagem"), " https://", "s3.amazonaws.com/produtos.vipcommerce.com.br/250x250");
-            boolean availeble = productInfo.optBoolean("disponivel");
+            List<String> secondaryImages = scrapSecondaryImage(jsonData, primaryImage);
+            boolean available = productInfo.optBoolean("disponivel");
             Integer stock = JSONUtils.getIntegerValueFromJSON(productInfo, "quantidade_maxima", null);
-            Offers offers = availeble ? scrapOffers(offersInfo, productInfo) : new Offers();
-            String description = jsonData.optString("informacoes");
+            Offers offers = available ? scrapOffers(offersInfo, productInfo) : new Offers();
+            String description = scrapDescription(jsonData);
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -135,6 +136,7 @@ public class Vipcommerce extends Crawler {
                .setInternalPid(internalPid)
                .setName(name)
                .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
                .setStock(stock)
                .setDescription(description)
                .setOffers(offers)
@@ -168,6 +170,29 @@ public class Vipcommerce extends Crawler {
          .build());
 
       return offers;
+   }
+
+   private List<String> scrapSecondaryImage(JSONObject jsonData, String primaryImage) {
+      List<String> secondaryImages = new ArrayList<>();
+      JSONUtils.getJSONArrayValue(jsonData, "imagens").forEach(
+         image -> {
+            if (image instanceof JSONObject) {
+               JSONObject json = (JSONObject) image;
+               String secondaryImage = CrawlerUtils.completeUrl(json.optString("filename"), " https://", "s3.amazonaws.com/produtos.vipcommerce.com.br/250x250");
+               if (secondaryImage != null && !secondaryImage.equals(primaryImage)) secondaryImages.add(secondaryImage);
+            }
+         });
+
+      return secondaryImages;
+   }
+
+   private String scrapDescription(JSONObject jsonData) {
+      String description = jsonData.optString("informacoes");
+      if (description != null && description.equals("-")) {
+         description = "";
+      }
+
+      return description;
    }
 
    private Pricing scrapPricing(JSONObject OffersInfo, JSONObject productInfo) throws MalformedPricingException {

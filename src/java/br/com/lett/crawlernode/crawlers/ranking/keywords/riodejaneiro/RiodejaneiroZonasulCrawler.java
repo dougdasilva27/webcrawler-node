@@ -78,8 +78,8 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
             String internalPid = CommonMethods.getLast(productUrl.split("-")).replace("/p", "");
             String name = CrawlerUtils.scrapStringSimpleInfo(product, ".vtex-product-summary-2-x-productBrand.vtex-product-summary-2-x-brandName.t-body", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".dib.relative.vtex-product-summary-2-x-imageContainer.vtex-product-summary-2-x-imageStackContainer img", "src");
-            int price = CrawlerUtils.scrapIntegerFromHtml(product, ".vtex-difference__por", true, 0);
-            boolean isAvailable = price != 0;
+            Integer price = CrawlerUtils.scrapIntegerFromHtml(product, ".vtex-difference__por", true, null);
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -92,8 +92,6 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
-
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;

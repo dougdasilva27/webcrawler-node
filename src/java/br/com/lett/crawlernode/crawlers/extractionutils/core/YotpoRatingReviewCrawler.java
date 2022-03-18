@@ -76,6 +76,9 @@ public class YotpoRatingReviewCrawler {
       ratingReviews.setDate(session.getDate());
 
       Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(apiDoc, "a.text-m", true, 0);
+      if (totalNumOfEvaluations == 0){
+         totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(apiDoc, ".nav-tab-sum.yotpo-reviews-nav-tab-sum", true, 0);
+      }
       Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(apiDoc, ".yotpo-bottomline .sr-only", null, true, '.', session);
       AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingsReviewsYotpo(apiDoc);
 

@@ -12,16 +12,17 @@ import java.util.*;
 
 public class AngeloniSuperUtils  {
    private static final String HOME_PAGE = "www.angeloni.com.br";
-   private static final String USER_CONFIRM_COOKIE = "f39c001644e53eaf330491f914127251";
-   private static final String USER_ID_COOKIE = "1333925147";
 
 
    public static List<Cookie> fetchLocationCookies(Session session, DataFetcher dataFetcher) {
-      BasicClientCookie userConfirm = new BasicClientCookie("DYN_USER_CONFIRM", USER_CONFIRM_COOKIE);
+      String DYN_USER_CONFIRM = session.getOptions().optString("DYN_USER_CONFIRM");
+      String DYN_USER_ID = session.getOptions().optString("DYN_USER_ID");
+
+      BasicClientCookie userConfirm = new BasicClientCookie("DYN_USER_CONFIRM", DYN_USER_CONFIRM);
       userConfirm.setDomain(HOME_PAGE);
       userConfirm.setPath("/");
 
-      BasicClientCookie userID = new BasicClientCookie("DYN_USER_ID", USER_ID_COOKIE);
+      BasicClientCookie userID = new BasicClientCookie("DYN_USER_ID", DYN_USER_ID);
       userID.setDomain(HOME_PAGE);
       userID.setPath("/");
 
