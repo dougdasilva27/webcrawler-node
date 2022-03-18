@@ -28,7 +28,6 @@ public class BrasilCasaDaBebidaCrawler extends Crawler {
 
    public BrasilCasaDaBebidaCrawler(Session session) {
       super(session);
-//      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
@@ -41,6 +40,7 @@ public class BrasilCasaDaBebidaCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "[id=product-id]", false);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info h2 [itemprop=name]", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img[itemprop=\"image\"]", Arrays.asList("src"), "https", "");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".produto-images-caroussel-mobile div img", Collections.singletonList("src"), "https", "casadabebida.com.br/", primaryImage);
          boolean available = doc.selectFirst("button.add-cart") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".produto-descricao", false);
@@ -53,6 +53,7 @@ public class BrasilCasaDaBebidaCrawler extends Crawler {
             .setName(name)
             .setOffers(offers)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .build();
 
