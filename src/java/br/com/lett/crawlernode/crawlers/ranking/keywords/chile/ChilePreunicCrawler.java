@@ -65,7 +65,7 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
       this.log("Link onde são feitos os crawlers: " + url);
       JSONObject json = fetchJSONObject(url);
 
-      JSONArray products = JSONUtils.getValueRecursive(json, "results.0.hits", JSONArray.class, new JSONArray() );
+      JSONArray products = JSONUtils.getValueRecursive(json, "results.0.hits", JSONArray.class);
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
