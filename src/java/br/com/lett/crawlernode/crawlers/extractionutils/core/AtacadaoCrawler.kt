@@ -23,11 +23,12 @@ import java.util.*
  * @author Fellype Layunne
  *
  */
-abstract class AtacadaoCrawler (session: Session) : Crawler(session){
+abstract class AtacadaoCrawler(session: Session) : Crawler(session) {
 
    init {
-       config.fetcher = FetchMode.JSOUP
+      config.fetcher = FetchMode.JSOUP
    }
+
    companion object {
       const val SELLER_NAME: String = "Atacadão"
 
@@ -55,7 +56,8 @@ abstract class AtacadaoCrawler (session: Session) : Crawler(session){
                Arrays.asList(
                   ProxyCollection.BUY_HAPROXY,
                   ProxyCollection.NETNUT_RESIDENTIAL_BR
-               ))
+               )
+            )
             .build()
 
          val response = dataFetcher.get(session, request)
@@ -84,12 +86,14 @@ abstract class AtacadaoCrawler (session: Session) : Crawler(session){
                Arrays.asList(
                   ProxyCollection.BUY_HAPROXY,
                   ProxyCollection.NETNUT_RESIDENTIAL_BR
-               ))
+               )
+            )
             .setFollowRedirects(true)
             .setSendUserAgent(true)
             .build()
 
          dataFetcher.post(session, request)
+
       }
    }
 
@@ -113,6 +117,12 @@ abstract class AtacadaoCrawler (session: Session) : Crawler(session){
       val request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR
+            )
+         )
          .setSendUserAgent(true)
          .build()
 
@@ -143,7 +153,7 @@ abstract class AtacadaoCrawler (session: Session) : Crawler(session){
 
       val offers = scrapOffers(doc, internalId)
 
-         val product = ProductBuilder()
+      val product = ProductBuilder()
          .setUrl(session.originalURL)
          .setInternalId(internalId)
          .setInternalPid(internalId)
