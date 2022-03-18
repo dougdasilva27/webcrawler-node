@@ -1,23 +1,30 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.config.Config;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ChilePreunicCrawler extends CrawlerRankingKeywords {
 
    public ChilePreunicCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.JSOUP;
+
    }
 
    @Override
@@ -31,18 +38,20 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
 
       String jsonParams = "query=" + this.keywordEncoded.replace(" ", "%20") + "&hitsPerPage=20&maxValuesPerFacet=500&page=" + (this.currentPage - 1) + "&facetingAfterDistinct=true&filters=(state%3A%22active%22%20OR%20state%3A%22discontinue%22)&facets=%5B%22normal_price%22%2C%22brand%22%2C%22has_promotions%22%2C%22sku%22%2C%22has_sbpay_promotions%22%2C%22categories.lvl0%22%2C%22categories.lvl0%22%5D&tagFilters=";
 
+
       String payload = "{\"requests\":[{\"indexName\":\"PreunicVariants_production\",\"params\":\"" + jsonParams + "\"}]}";
 
       Request request = Request.RequestBuilder.create()
          .setHeaders(headers)
          .setPayload(payload)
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .setUrl(url)
          .build();
 
       //For some reason, passing the data fetcher in the constructor was not working. The only way that I managed to do this request was instantiating here, using Jsoup.
       //With apache data fetcher all the requests return 415 (unsupported media type)
       //With fetcher data fetcher, we have this: "message":"unrecognized Content-Encoding: gzip","status":415
-      Response response = new JsoupDataFetcher().post(session, request);
+      Response response = this.dataFetcher.post(session, request);
 
       return JSONUtils.stringToJson(response.getBody());
    }
@@ -56,7 +65,7 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
       this.log("Link onde são feitos os crawlers: " + url);
       JSONObject json = fetchJSONObject(url);
 
-      JSONArray products = JSONUtils.getValueRecursive(json, "results.0.hits", JSONArray.class);
+      JSONArray products = JSONUtils.getValueRecursive(json, "results.0.hits", JSONArray.class, new JSONArray() );
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
