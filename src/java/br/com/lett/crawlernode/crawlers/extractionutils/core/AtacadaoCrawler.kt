@@ -17,13 +17,7 @@ import org.apache.http.cookie.Cookie
 import org.jsoup.nodes.Document
 import java.util.*
 
-/**
- * Date: 27/01/21
- *
- * @author Fellype Layunne
- *
- */
-abstract class AtacadaoCrawler(session: Session) : Crawler(session) {
+class AtacadaoCrawler(session: Session) : Crawler(session) {
 
    init {
       config.fetcher = FetchMode.JSOUP
@@ -83,9 +77,10 @@ abstract class AtacadaoCrawler(session: Session) : Crawler(session) {
             .setPayload(payload)
             .setHeaders(headers)
             .setProxyservice(
-               Arrays.asList(
+               listOf(
                   ProxyCollection.BUY_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR
+                  ProxyCollection.LUMINATI_SERVER_BR,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
                )
             )
             .setFollowRedirects(true)
@@ -97,19 +92,16 @@ abstract class AtacadaoCrawler(session: Session) : Crawler(session) {
       }
    }
 
-   abstract fun getCityId(): String
-
    override fun handleCookiesBeforeFetch() {
 
       this.cookies = getCookies(this.dataFetcher, this.session)
 
-      setLocation(getCityId(), this.dataFetcher, this.session, this.cookies)
+      setLocation(session.options.optString("city_id"), this.dataFetcher, this.session, this.cookies)
    }
 
    override fun fetch(): Document {
 
       val url = session.originalURL
-
       val headers = HashMap<String, String>()
       headers["Accept"] = "*/*"
       headers["Cookie"] = CommonMethods.cookiesToString(cookies)
@@ -120,7 +112,8 @@ abstract class AtacadaoCrawler(session: Session) : Crawler(session) {
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
             )
          )
          .setSendUserAgent(true)
