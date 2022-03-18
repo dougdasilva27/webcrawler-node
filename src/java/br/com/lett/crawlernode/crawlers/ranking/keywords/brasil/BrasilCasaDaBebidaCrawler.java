@@ -9,6 +9,9 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.Arrays;
+import java.util.Collections;
+
 public class BrasilCasaDaBebidaCrawler extends CrawlerRankingKeywords {
    protected Integer PRODUCTS_PER_PAGE = 20;
    private static final String HOME_PAGE = "https://www.casadabebida.com.br";
@@ -37,8 +40,7 @@ public class BrasilCasaDaBebidaCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".float-left", "href");
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"[name=\"productIds[]\"]", "value");
             String name = CrawlerUtils.scrapStringSimpleInfo(e,".product-thumb-info a", false);
-            String imgUrlPath = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "picture img", "data-src");
-            String imgUrl = HOME_PAGE.concat(imgUrlPath);
+            String img = CrawlerUtils.scrapSimplePrimaryImage(e, "picture img", Collections.singletonList("data-src"), "https", "www.casadabebida.com.br");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price span:nth-child(2)", null, false, ',', session, 0);
 
             boolean isAvailable = price != 0;
@@ -47,7 +49,7 @@ public class BrasilCasaDaBebidaCrawler extends CrawlerRankingKeywords {
                .setUrl(productUrl)
                .setInternalId(internalId)
                .setName(name)
-               .setImageUrl(imgUrl)
+               .setImageUrl(img)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
                .build();
