@@ -32,9 +32,10 @@ public class BrasilLojasredeCrawler extends VTEXNewScraper {
 
    @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
+      String  YourreviewsId = "9c0aa0e9-37a2-4b03-93d7-41c964268161";
       RatingsReviews ratingReviews = new RatingsReviews();
-      YourreviewsRatingCrawler rating = new YourreviewsRatingCrawler(session, cookies, logger, "9c0aa0e9-37a2-4b03-93d7-41c964268161", dataFetcher);
-      Document docRating = rating.crawlPageRatingsFromYourViews(internalPid, "9c0aa0e9-37a2-4b03-93d7-41c964268161", dataFetcher);
+      YourreviewsRatingCrawler rating = new YourreviewsRatingCrawler(session, cookies, logger, YourreviewsId, dataFetcher);
+      Document docRating = rating.crawlPageRatingsFromYourViews(internalPid, YourreviewsId, dataFetcher);
 
       Integer totalNumOfEvaluations = rating.getTotalNumOfRatingsFromYourViews(docRating);
       Double avgRating = rating.getTotalAvgRatingFromYourViews(docRating);
