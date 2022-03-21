@@ -92,7 +92,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
          List<String> eans = crawlEan(doc);
          RatingsReviews ratingReviews = crawRating(doc);
 
-         boolean available = doc.selectFirst("a.btn-esgotado") == null;
+         boolean available = doc.selectFirst("p.alert-stock") == null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
