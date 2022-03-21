@@ -17,17 +17,12 @@ import org.apache.http.cookie.Cookie
 import org.jsoup.nodes.Document
 import java.util.*
 
-/**
- * Date: 27/01/21
- *
- * @author Fellype Layunne
- *
- */
-abstract class AtacadaoCrawler (session: Session) : Crawler(session){
+class AtacadaoCrawler(session: Session) : Crawler(session) {
 
    init {
-       config.fetcher = FetchMode.JSOUP
+      config.fetcher = FetchMode.JSOUP
    }
+
    companion object {
       const val SELLER_NAME: String = "Atacadão"
 
@@ -55,7 +50,8 @@ abstract class AtacadaoCrawler (session: Session) : Crawler(session){
                Arrays.asList(
                   ProxyCollection.BUY_HAPROXY,
                   ProxyCollection.NETNUT_RESIDENTIAL_BR
-               ))
+               )
+            )
             .build()
 
          val response = dataFetcher.get(session, request)
@@ -81,31 +77,31 @@ abstract class AtacadaoCrawler (session: Session) : Crawler(session){
             .setPayload(payload)
             .setHeaders(headers)
             .setProxyservice(
-               Arrays.asList(
+               listOf(
                   ProxyCollection.BUY_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR
-               ))
+                  ProxyCollection.LUMINATI_SERVER_BR,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+               )
+            )
             .setFollowRedirects(true)
             .setSendUserAgent(true)
             .build()
 
          dataFetcher.post(session, request)
+
       }
    }
-
-   abstract fun getCityId(): String
 
    override fun handleCookiesBeforeFetch() {
 
       this.cookies = getCookies(this.dataFetcher, this.session)
 
-      setLocation(getCityId(), this.dataFetcher, this.session, this.cookies)
+      setLocation(session.options.optString("city_id"), this.dataFetcher, this.session, this.cookies)
    }
 
    override fun fetch(): Document {
 
       val url = session.originalURL
-
       val headers = HashMap<String, String>()
       headers["Accept"] = "*/*"
       headers["Cookie"] = CommonMethods.cookiesToString(cookies)
@@ -113,6 +109,13 @@ abstract class AtacadaoCrawler (session: Session) : Crawler(session){
       val request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
+            )
+         )
          .setSendUserAgent(true)
          .build()
 
@@ -143,7 +146,7 @@ abstract class AtacadaoCrawler (session: Session) : Crawler(session){
 
       val offers = scrapOffers(doc, internalId)
 
-         val product = ProductBuilder()
+      val product = ProductBuilder()
          .setUrl(session.originalURL)
          .setInternalId(internalId)
          .setInternalPid(internalId)
