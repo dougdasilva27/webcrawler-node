@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -39,8 +38,8 @@ public class BrasilCasaDaBebidaCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "[id=product-id]", false);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info h2 [itemprop=name]", false);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img[itemprop=\"image\"]", Arrays.asList("src"), "https", "");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".produto-images-caroussel-mobile div img", Collections.singletonList("src"), "https", "casadabebida.com.br/", primaryImage);
+         List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".produto-images-caroussel-mobile div img", Collections.singletonList("src"), "https", "casadabebida.com.br/", "");
+         String primaryImage = images != null ? images.remove(0) : null;
          boolean available = doc.selectFirst("button.add-cart") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".produto-descricao", false);
@@ -53,7 +52,7 @@ public class BrasilCasaDaBebidaCrawler extends Crawler {
             .setName(name)
             .setOffers(offers)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
+            .setSecondaryImages(images)
             .setDescription(description)
             .build();
 
