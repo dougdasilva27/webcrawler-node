@@ -71,7 +71,7 @@ public class BrasilFarmaciaindianaCrawler extends Crawler {
 
          String internalPid = vtexUtil.crawlInternalPid(skuJson);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li:not(:first-child) a");
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescription", "#caracteristicas"));
+         String description = scrapDescription(doc);
          JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
          RatingsReviews ratingReviews = scrapRating(internalPid, null, doc, null);
 
@@ -142,6 +142,21 @@ public class BrasilFarmaciaindianaCrawler extends Crawler {
       }
 
       return name;
+   }
+
+   private String scrapDescription(Document doc){
+      StringBuilder description = new StringBuilder();
+      String productDescription = CrawlerUtils.scrapStringSimpleInfo(doc, "#caracteristicas", true);
+      String information = CrawlerUtils.scrapStringSimpleInfo(doc, ".productDescription",  true);
+      if (productDescription != null){
+         description.append(productDescription).append("\n");
+      }
+      if (information != null){
+         description.append(information);
+      }
+
+      return description.toString();
+
    }
 
    protected boolean isProductPage(Document document) {
