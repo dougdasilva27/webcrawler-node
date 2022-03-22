@@ -67,7 +67,7 @@ public class BrasilDrogalCrawler extends Crawler {
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".big-image img", List.of("data-src"), "https", "io.convertiez.com.br");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image li:not(.active) img", List.of("data-src"), "https", "io.convertiez.com.br", primaryImage);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, List.of(".container:contains(Descrição)", ".container:contains(Especificação)"));
+         String description = scrapDescription(doc);
          RatingsReviews ratingsReviews = scrapRatingAndReviews(doc, internalId);
          boolean available = doc.selectFirst("#content-product .purchase > button:contains(Comprar)") != null;
          Offers offers = available ? scrapOffers(doc, internalPid) : new Offers();
@@ -95,6 +95,26 @@ public class BrasilDrogalCrawler extends Crawler {
       }
 
       return products;
+
+   }
+
+   private String scrapDescription(Document doc) {
+
+      StringBuilder description = new StringBuilder();
+      String information = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-style-3.mt-2 p", true);
+      String productDescription = CrawlerUtils.scrapStringSimpleInfo(doc, ".container:contains(Descrição)", true);
+      String specification = CrawlerUtils.scrapStringSimpleInfo(doc, ".container:contains(Especificação)", true);
+      if (information != null) {
+         description.append(information).append("\n");
+      }
+      if (productDescription != null) {
+         description.append(productDescription).append("\n");
+      }
+      if (specification != null) {
+         description.append(specification).append("\n");
+      }
+
+      return description.toString();
 
    }
 
