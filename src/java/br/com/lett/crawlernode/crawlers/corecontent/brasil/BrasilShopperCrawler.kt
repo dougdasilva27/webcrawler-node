@@ -26,7 +26,8 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
    companion object {
       const val SELLER_NAME: String = "Shopper"
-      var token: String = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjdXN0b21lcklkIjoyOTIyNjAsImRldmljZVVVSUQiOiIzYTc1YjdkNy1mMDhmLTQ4ZmEtOGM5Mi04OTliZjNkZmE1Y2IiLCJpYXQiOjE2MjQ2MjMzODl9.KXv2rXCKSkwERiGywoP6sI5HB_mSgp_sdsjN79qq338";
+      var token: String =
+         "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjdXN0b21lcklkIjoyOTIyNjAsImRldmljZVVVSUQiOiIzYTc1YjdkNy1mMDhmLTQ4ZmEtOGM5Mi04OTliZjNkZmE1Y2IiLCJpYXQiOjE2MjQ2MjMzODl9.KXv2rXCKSkwERiGywoP6sI5HB_mSgp_sdsjN79qq338";
    }
 
    //kennedybarcelos@lett.digital
@@ -35,11 +36,11 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
    private val password = getPassword()
    private val login = getLogin()
 
-   protected fun getPassword(): String?{
+   protected fun getPassword(): String? {
       return session.options.optString("password");
    }
 
-   protected fun getLogin(): String?{
+   protected fun getLogin(): String? {
       return session.options.optString("login");
    }
 
@@ -125,6 +126,16 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
       val primaryImage = json.optString("image")
 
+      val photos = json.optJSONArray("photos")?.map {
+         when (it) {
+              is JSONObject -> {
+                 return@map it.optString("photo_url")
+              }
+            else -> {}
+         }
+      }?.toList() as List<String>?
+
+
       val offers = scrapOffers(json)
 
       val product = ProductBuilder()
@@ -132,6 +143,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
          .setInternalId(internalId)
          .setInternalPid(internalId)
          .setName(name)
+         .setSecondaryImages(photos)
          .setPrimaryImage(primaryImage)
          .setOffers(offers)
          .build()
