@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -8,20 +7,14 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Element;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-public class BrasilShopeeHariboCrawler extends CrawlerRankingKeywords {
-   public BrasilShopeeHariboCrawler(Session session) {
+public class BrasilShopeeCrawler extends CrawlerRankingKeywords {
+   public BrasilShopeeCrawler(Session session) {
       super(session);
    }
 
@@ -32,7 +25,7 @@ public class BrasilShopeeHariboCrawler extends CrawlerRankingKeywords {
       JSONObject json = fetchJSONObject(url);
       JSONArray products = JSONUtils.getValueRecursive(json, "items", JSONArray.class);
       if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {  
+         if (this.totalProducts == 0) {
             this.totalProducts = JSONUtils.getValueRecursive(json, "total_count", Integer.class);
          }
          for (Object e : products) {
