@@ -56,9 +56,11 @@ public class BrasilSemardriveCrawler extends CrawlerRankingKeywords {
             boolean isAvailable = availability.isEmpty() || !availability.contains("OUTOFSTOCK");
             Integer price = null;
             if(isAvailable == true){
-               String Sprice = records.optQuery("/0/attributes/product.listPrice/0").toString();
-               Double Dprice = Double.parseDouble(Sprice) * 100;
-               price = Dprice.intValue();
+               String priceText = (String) records.optQuery("/0/attributes/product.listPrice/0");
+               if(priceText != null && !priceText.isEmpty()){
+                  Double priceDouble = Double.parseDouble(priceText) * 100;
+                  price = priceDouble.intValue();
+               }
             }
 
 

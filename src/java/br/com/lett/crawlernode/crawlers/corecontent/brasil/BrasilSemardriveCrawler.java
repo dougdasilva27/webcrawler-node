@@ -23,6 +23,7 @@ import models.Offer;
 import models.Offers;
 import models.pricing.CreditCards;
 import models.pricing.Pricing;
+import org.eclipse.jetty.util.ajax.JSON;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONPointer;
@@ -70,13 +71,13 @@ public class BrasilSemardriveCrawler extends Crawler {
       String productDescription1 = productDataJson.optString("x_descricaoLonga1");
       String productDescription2 = productDataJson.optString("x_descricaoLonga2");
       String productDescription3 = productDataJson.optString("x_descrioLonga3");
-      if (productDescription1 != "") {
+      if (!productDescription1.isEmpty()) {
          description = description + productDescription1;
       }
-      if (productDescription2 != "") {
+      if (!productDescription1.isEmpty()) {
          description = description + productDescription2;
       }
-      if (productDescription3 != "") {
+      if (!productDescription1.isEmpty()) {
          description = description + productDescription3;
       }
       return description;
@@ -161,11 +162,9 @@ public class BrasilSemardriveCrawler extends Crawler {
 
    protected String crawlId(Document document) throws Exception {
       String internalID = null;
-      String scrapId = CrawlerUtils.scrapScriptFromHtml(document, "body > script:nth-child(9)");
-      String parseToJson = scrapId.substring(15, scrapId.length() - 2);
-      JSONObject scriptJsonObj = CrawlerUtils.stringToJSONObject(parseToJson);
+      JSONObject scrapId = CrawlerUtils.selectJsonFromHtml(document, "script","var require =",";",false,false);
       if (scrapId != null) {
-         internalID = scriptJsonObj.optQuery("/config/ccNavState/pageContext").toString();
+         internalID = scrapId.optQuery("/config/ccNavState/pageContext").toString();
       }
 
       return internalID;
