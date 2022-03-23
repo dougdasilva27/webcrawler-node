@@ -28,11 +28,11 @@ public class BrasilShopeeHariboCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       Integer currentPageUrl = (this.currentPage - 1) * 60;
-      String url = "https://shopee.com.br/api/v4/search/search_items?by=relevancy&keyword=" + this.keywordEncoded + "&limit=60&match_id=556162741&newest=" + currentPageUrl + "&official_mall=1&order=desc&page_type=shop&scenario=PAGE_SHOP_SEARCH&version=2";
+      String url = "https://shopee.com.br/api/v4/search/search_items?by=relevancy&keyword=" + this.keywordEncoded + "&limit=60&match_id="+session.getOptions().optString("storeId")+"&newest=" + currentPageUrl + "&official_mall=1&order=desc&page_type=shop&scenario=PAGE_SHOP_SEARCH&version=2";
       JSONObject json = fetchJSONObject(url);
       JSONArray products = JSONUtils.getValueRecursive(json, "items", JSONArray.class);
       if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
+         if (this.totalProducts == 0) {  
             this.totalProducts = JSONUtils.getValueRecursive(json, "total_count", Integer.class);
          }
          for (Object e : products) {

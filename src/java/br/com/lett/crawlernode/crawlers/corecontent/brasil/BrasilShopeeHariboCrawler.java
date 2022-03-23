@@ -161,7 +161,7 @@ public class BrasilShopeeHariboCrawler extends Crawler {
          .setIsBuybox(false)
          .setPricing(pricing)
          .setSales(sales)
-         .setSellerFullName("shopee-haribo")
+         .setSellerFullName(session.getOptions().optString("sellerName"))
          .setIsMainRetailer(true)
          .setUseSlugNameAsInternalSellerId(true)
          .build());
