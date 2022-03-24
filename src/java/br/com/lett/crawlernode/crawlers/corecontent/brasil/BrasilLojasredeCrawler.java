@@ -48,4 +48,5 @@ public class BrasilLojasredeCrawler extends VTEXNewScraper {
 
       return ratingReviews;
    }
+
 }

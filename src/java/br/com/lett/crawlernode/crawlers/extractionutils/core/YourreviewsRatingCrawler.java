@@ -101,12 +101,14 @@ public class YourreviewsRatingCrawler {
       Integer totalRating = 0;
       Element totalRatingElement = doc.select("strong[itemprop=ratingCount]").first();
 
-      if (totalRatingElement != null) {
+      if (totalRatingElement != null && totalRatingElement.text().length() > 0) {
          String totalText = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();
 
          if (!totalText.isEmpty()) {
             totalRating = Integer.parseInt(totalText);
          }
+      } else {
+         totalRating = CrawlerUtils.scrapIntegerFromHtml(doc, ".yv-row span strong", true, 0);
       }
 
       return totalRating;
