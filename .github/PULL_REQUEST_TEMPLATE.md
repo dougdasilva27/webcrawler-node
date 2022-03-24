@@ -15,7 +15,7 @@ Informações
     - Produto Indisponivel:
     - Produto Promoção:
 
-- Keywords:
+- Keywords
     - keywords simples:
     - keywords com caracteres especiais:
     - keywords com espaços:
