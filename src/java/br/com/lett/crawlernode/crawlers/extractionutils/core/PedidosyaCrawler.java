@@ -47,7 +47,7 @@ public class PedidosyaCrawler extends Crawler {
       if (!response.isSuccess()) {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY, session, this.cookiesWD, url);
 
-         webdriver.waitForElement("#location__search__form", 30);
+         webdriver.waitForElement("#location__search__form", 60);
 
          Set<Cookie> webdriverCookies = webdriver.driver.manage().getCookies();
 
@@ -88,10 +88,27 @@ public class PedidosyaCrawler extends Crawler {
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("referer", session.getOriginalURL());
 
-      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setCookies(cookies).setProxyservice(
-         proxies).build();
+      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setCookies(cookies).setProxyservice(proxies)
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").mustUseMovingAverage(true).build())
+         .build();
 
       Response response = this.dataFetcher.get(session, request);
+
+      if (!response.isSuccess()) {
+         response = new JsoupDataFetcher().get(session, request);
+
+         if (!response.isSuccess()) {
+            int tries = 0;
+            while (!response.isSuccess() && tries < 3) {
+               tries++;
+               if (tries % 2 == 0) {
+                  response = new JsoupDataFetcher().get(session, request);
+               } else {
+                  response = this.dataFetcher.get(session, request);
+               }
+            }
+         }
+      }
 
       return response;
    }
