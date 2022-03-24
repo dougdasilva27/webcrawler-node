@@ -10,11 +10,12 @@ import org.json.JSONObject
 
 class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) {
    companion object {
-      private const val HOME_PAGE = "https://www.nagumo.com.br/guarulhos-lj42-guarulhos-aruja-jardim-cumbica-caminho-do-campo-do-rincao"
       private const val API_URL = "https://b2c-api-premiumlabel.sitemercado.com.br/api/v1/b2c/"
    }
 
    override fun getHomePage(): String {
+      val HOME_PAGE = session.options.optString("url")
+
       return HOME_PAGE
    }
 
