@@ -44,7 +44,7 @@ Testes
 - [ ] Rodou com um produto Disponivel
 - [ ] Rodou com um produto indisponível
 - [ ] Rodou com um produto Promoção
-- [ ]  Preço Formatado (vírgula, kg)
+- [ ] Preço Formatado (vírgula, kg)
 --------------------------------------------------------------------------------
 #### Ranking
 - [ ] Teste de keywords
