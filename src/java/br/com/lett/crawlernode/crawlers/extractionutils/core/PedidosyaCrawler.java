@@ -127,7 +127,8 @@ public class PedidosyaCrawler extends Crawler {
          String primaryImage = "https://images.deliveryhero.io/image/pedidosya/products/" + productInfo.optString("image");
          boolean available = productInfo.optBoolean("enabled");
          Offers offers = available ? scrapOffers(productInfo) : new Offers();
-
+         String description = productInfo.optString("description", "");
+         List<String> eans = Collections.singletonList(productInfo.optString("gtin"));
          // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -135,7 +136,9 @@ public class PedidosyaCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setPrimaryImage(primaryImage)
+            .setDescription(description)
             .setOffers(offers)
+            .setEans(eans)
             .build();
 
          products.add(product);
