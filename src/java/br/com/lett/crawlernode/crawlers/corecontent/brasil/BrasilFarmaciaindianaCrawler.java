@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -19,7 +20,12 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static br.com.lett.crawlernode.util.CrawlerUtils.crawlSkuJsonVTEX;
 
 
 public class BrasilFarmaciaindianaCrawler extends Crawler {
@@ -67,7 +73,7 @@ public class BrasilFarmaciaindianaCrawler extends Crawler {
       if (isProductPage(doc)) {
          VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, SELLER_NAME, HOME_PAGE, cookies, dataFetcher);
 
-         JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+         JSONObject skuJson = crawlSkuJsonVTEX(doc, session);
 
          String internalPid = vtexUtil.crawlInternalPid(skuJson);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li:not(:first-child) a");
@@ -144,15 +150,19 @@ public class BrasilFarmaciaindianaCrawler extends Crawler {
       return name;
    }
 
-   private String scrapDescription(Document doc){
+   private String scrapDescription(Document doc) {
       StringBuilder description = new StringBuilder();
-      String productDescription = CrawlerUtils.scrapStringSimpleInfo(doc, "#caracteristicas", true);
-      String information = CrawlerUtils.scrapStringSimpleInfo(doc, ".productDescription",  true);
-      if (productDescription != null){
+      String characteristics = CrawlerUtils.scrapStringSimpleInfo(doc, "#caracteristicas", true);
+      String productDescription = doc.select(".bf-description__container .productDescription p").text();
+
+      if (productDescription != null && !productDescription.isEmpty()) {
+         description.append("Descrição").append("\n");
          description.append(productDescription).append("\n");
       }
-      if (information != null){
-         description.append(information);
+      if (characteristics != null && !characteristics.isEmpty()) {
+         description.append("Características").append("\n");
+
+         description.append(characteristics);
       }
 
       return description.toString();
@@ -165,7 +175,13 @@ public class BrasilFarmaciaindianaCrawler extends Crawler {
 
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, MAIN_SELLER_STORE_ID, logger);
-      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
+      JSONObject json = crawlSkuJsonVTEX(doc, session);
+      String id = json.optString("productId");
+      if (id != null && !id.isEmpty()) {
+         return trustVox.extractRatingAndReviews(id, doc, new FetcherDataFetcher());
+      } else {
+         return trustVox.extractRatingAndReviews(internalPid, doc, new FetcherDataFetcher());
+      }
    }
 
 }
