@@ -147,7 +147,8 @@ public class BrasilFarmaciaindianaCrawler extends Crawler {
    private String scrapDescription(Document doc){
       StringBuilder description = new StringBuilder();
       String productDescription = CrawlerUtils.scrapStringSimpleInfo(doc, "#caracteristicas", true);
-      String information = CrawlerUtils.scrapStringSimpleInfo(doc, ".productDescription",  true);
+      String information = CrawlerUtils.scrapStringSimpleInfo(doc, ".productDescription p",  true);
+
       if (productDescription != null){
          description.append(productDescription).append("\n");
       }
