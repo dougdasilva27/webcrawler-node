@@ -55,23 +55,25 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
             String internalPid = product.optString("productReference", null);
             String productUrl = crawlProductUrl(product);
             String productName = product.optString("productName");
-            JSONObject item = (JSONObject) product.query("$.items[0]");
-            Integer price = (Integer) item.query("$.sellers.0.commertialOffer.Price");
-            String imageUrl = (String) item.query("$.images.0.imageUrl");
+            Object itemObject = product.optQuery("/items/0");
 
+            if (itemObject instanceof JSONObject) {
+               JSONObject item = (JSONObject) itemObject;
+               Integer price = scrapPrice(item);
+               String imageUrl = scrapImage(item);
 
-            RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(productUrl)
-               .setInternalPid(internalPid)
-               .setName(productName)
-               .setPriceInCents(price)
-               .setAvailability(price != null)
-               .setImageUrl(imageUrl)
-               .build();
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalPid(internalPid)
+                  .setName(productName)
+                  .setPriceInCents(price)
+                  .setAvailability(price != null)
+                  .setImageUrl(imageUrl)
+                  .build();
 
-            saveDataProduct(productRanking);
+               saveDataProduct(productRanking);
+            }
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit)
                break;
          }
@@ -81,6 +83,25 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String scrapImage(JSONObject item) {
+      Object imageUrl = item.optQuery("/images/0/imageUrl");
+
+      if(imageUrl instanceof String) {
+         return (String) imageUrl;
+      }
+      return null;
+   }
+
+   private Integer scrapPrice(JSONObject item) {
+      Object price = item.optQuery("/sellers/0/commertialOffer/Price");
+
+      if (price instanceof Integer) {
+         return (Integer) price;
+      }
+
+      return null;
    }
 
    private JSONObject fetchProducts() {
@@ -94,7 +115,7 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
       headers.put("origin", "https://www.jumbo.cl");
       headers.put("referer", "https://www.jumbo.cl/");
 
-      String payload = "{\"selectedFacets\":[{\"key\":\"trade-policy\",\"value\":\""+getStoreCode()+"\"}]}";
+      String payload = "{\"selectedFacets\":[{\"key\":\"trade-policy\",\"value\":\"" + getStoreCode() + "\"}]}";
 
       Request request = RequestBuilder.create()
          .setUrl(url)
@@ -103,8 +124,9 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
-               )
+               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            )
          )
          .build();
 
