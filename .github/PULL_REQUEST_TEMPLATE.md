@@ -40,7 +40,6 @@ Testes
     - [ ] Rating
     - [ ] Produto com desconto (sales)
     - [ ] Categoria
-
 - [ ] Rodou com um produto Disponivel
 - [ ] Rodou com um produto Indisponível
 - [ ] Rodou com um produto Promoção
