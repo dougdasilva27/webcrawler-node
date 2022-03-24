@@ -15,7 +15,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -49,7 +48,7 @@ public class BrasilEpocacosmeticosCrawler extends VTEXNewScraper {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "393", logger);
       JSONObject json = crawlSkuJsonVTEX(doc, session);
       String id = json.optString("productId");
-      if (id != null) {
+      if (id != null && !id.isEmpty()) {
          return trustVox.extractRatingAndReviews(id, doc, new FetcherDataFetcher());
       } else {
          return new TrustvoxRatingCrawler(session, "393", null).extractRatingAndReviews(internalPid, doc, new FetcherDataFetcher());
