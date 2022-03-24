@@ -101,17 +101,26 @@ public class BrasilDrogalCrawler extends Crawler {
    private String scrapDescription(Document doc) {
 
       StringBuilder description = new StringBuilder();
+      doc.select(".container .my-4").forEach(el -> {
+         String element = CrawlerUtils.scrapStringSimpleInfo(el, ".title", true);
+         String productDescription = CrawlerUtils.scrapStringSimpleInfo(el, "p", true);
+         if (element != null && productDescription != null) {
+            if (element.contains("Modo de Usar")) {
+
+               description.append("Modo de Usar").append("\n");
+               description.append(productDescription);
+
+            } else if (element.contains("Descrição")) {
+               description.append("Descrição").append("\n");
+               description.append(productDescription);
+            }
+         }
+      });
+
       String information = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-style-3.mt-2 p", true);
-      String productDescription = CrawlerUtils.scrapStringSimpleInfo(doc, ".container:contains(Descrição)", true);
-      String specification = CrawlerUtils.scrapStringSimpleInfo(doc, ".container:contains(Especificação)", true);
+
       if (information != null) {
          description.append(information).append("\n");
-      }
-      if (productDescription != null) {
-         description.append(productDescription).append("\n");
-      }
-      if (specification != null) {
-         description.append(specification).append("\n");
       }
 
       return description.toString();
