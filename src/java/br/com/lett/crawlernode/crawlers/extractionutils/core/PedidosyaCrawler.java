@@ -47,7 +47,7 @@ public class PedidosyaCrawler extends Crawler {
       if (!response.isSuccess()) {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY, session, this.cookiesWD, url);
 
-         webdriver.waitForElement("#location__search__form", 60);
+         webdriver.waitForElement("#location__search__form", 90);
 
          Set<Cookie> webdriverCookies = webdriver.driver.manage().getCookies();
 
