@@ -99,7 +99,7 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".container.tpl-produto .produto-section-detalhes") != null;
+      return doc.selectFirst("div.produto-info") != null;
    }
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
