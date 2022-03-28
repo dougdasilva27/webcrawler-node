@@ -1,7 +1,13 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.gson.JsonParser;
@@ -17,8 +23,8 @@ import br.com.lett.crawlernode.util.Logging;
 public class ColombiaFarmatodoCrawler extends CrawlerRankingKeywords {
 
    public static final String PRODUCTS_API_URL = "https://vcojeyd2po-dsn.algolia.net/1/indexes/" +
-         "products/query?x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%203.22.1" +
-         "&x-algolia-application-id=VCOJEYD2PO&x-algolia-api-key=e6f5ccbcdea95ff5ccb6fda5e92eb25c";
+      "products/query?x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%203.22.1" +
+      "&x-algolia-application-id=VCOJEYD2PO&x-algolia-api-key=e6f5ccbcdea95ff5ccb6fda5e92eb25c";
 
    public ColombiaFarmatodoCrawler(Session session) {
       super(session);
@@ -26,7 +32,7 @@ public class ColombiaFarmatodoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
@@ -44,9 +50,23 @@ public class ColombiaFarmatodoCrawler extends CrawlerRankingKeywords {
             String internalPid = JSONUtils.getStringValue(jsonSku, "id");
             String productUrl = "https://www.farmatodo.com.co/producto/" + internalPid;
 
-            saveDataProduct(null, internalPid, productUrl);
+            String name = jsonSku.optString("mediaDescription") + " " + jsonSku.optString("detailDescription");
+            String imgUrl = jsonSku.optString("mediaImageUrl");
+            Integer price = jsonSku.optInt("fullPrice");
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+           boolean isAvailable = jsonSku.optInt("stock") > 0;
+
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+              .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(productRanking);
+
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
@@ -73,15 +93,15 @@ public class ColombiaFarmatodoCrawler extends CrawlerRankingKeywords {
       JSONObject products = new JSONObject();
 
       String payload = "{\"params\":\"getRankingInfo=true&hitsPerPage=24&page=" + (this.currentPage - 1)
-            + "&query=" + this.keywordEncoded
-            + "&facets=marca%2CCategor%C3%ADa%2CSubCategor%C3%ADa%2CfullPrice%2CsubscribeAndSave&filters=idStoreGroup%3A26\"}";
+         + "&query=" + this.keywordEncoded
+         + "&facets=marca%2CCategor%C3%ADa%2CSubCategor%C3%ADa%2CfullPrice%2CsubscribeAndSave&filters=idStoreGroup%3A26\"}";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/x-www-form-urlencoded");
       headers.put("Accept-Encoding", "no");
 
       Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL).setCookies(cookies).setHeaders(headers).setPayload(payload)
-            .mustSendContentEncoding(false).build();
+         .mustSendContentEncoding(false).build();
       String page = this.dataFetcher.post(session, request).getBody();
 
 
