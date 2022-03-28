@@ -26,6 +26,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -207,8 +208,9 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    }
 
    private double calculatePriceSquareMeter(Document doc) {
-      double spotilightPrice = 0D;
-      Double squareMeter = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#spanPrecoCalculadoComponente", null, false, ',', session);
+      Double spotlightPrice = 0D;
+      Double squareMeter = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div #spanPrecoCalculadoComponente", null, false, ',', session);
+
       if (squareMeter != null) {
          Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
          if (price != null) {
@@ -216,14 +218,17 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
             return price / meter;
          }
       } else {
-// Is necessary because some products not have square meter in description on any place
+         // Is necessary because some products not have square meter in description on any place
          Document docWebDriver = getDocWithWebDriver();
          if (docWebDriver != null) {
-            spotilightPrice = CrawlerUtils.scrapDoublePriceFromHtml(docWebDriver, "#novoPrecoCalculado .textoPrecoCalculado:not(:first-child)", null, true, ',', session);
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(docWebDriver, "#novoPrecoCalculado .textoPrecoCalculado:not(:first-child)", null, true, ',', session);
+            if (spotlightPrice == null) {
+               spotlightPrice = 0D;
+            }
          }
       }
 
-      return spotilightPrice;
+      return spotlightPrice;
    }
 
    private Document getDocWithWebDriver() {
@@ -232,22 +237,16 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       try {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
          if (webdriver != null) {
-            webdriver.waitForElement(".textoPrecoCalculado", 20000);
+            webdriver.waitLoad(60000);
 
             document = Jsoup.parse(webdriver.getCurrentPageSource());
+
             webdriver.terminate();
          }
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-
       }
       return document;
    }
-
-   public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 70);
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
-   }
-
 
 }
