@@ -17,6 +17,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilDivvinoCrawler extends CrawlerRankingKeywords {
 
@@ -34,18 +36,26 @@ public class BrasilDivvinoCrawler extends CrawlerRankingKeywords {
       int pageNumber = 0;
 
       if (currentPage != 1) {
-         pageNumber = pageSize * this.currentPage;
+         pageNumber = pageSize * (this.currentPage - 1);
       }
 
-      String url = "https://www.divvino.com.br/busca?No="+ pageNumber +"&Nrpp=12&Ntt=" + this.keywordEncoded;
+      String url = "https://www.divvino.com.br/busca?No="+ pageNumber +"&Nrpp=" + this.pageSize + "&Ntt=" + this.keywordEncoded;
 
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
       Elements products = this.currentDoc.select(".container_products > div");
 
+      Integer totalProducts = crawlTotalProducts(this.currentDoc);
+
       if (products.size() >= 1) {
-         if (this.totalProducts == 0) setTotalProducts();
+         if (this.totalProducts == 0) {
+            this.totalProducts = totalProducts;
+            if (this.totalProducts > 0) {
+               this.log("Total: " + this.totalProducts);
+            }
+         }
+
          for (Element e : products) {
 
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"[data-product]","data-product");
@@ -75,6 +85,30 @@ public class BrasilDivvinoCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private Integer crawlTotalProducts(Document doc) {
+      Elements scripts = doc.select(".col.s80.conteudo_princ_content > script");
+      Integer totalProducts = 0;
+
+      for (Element script : scripts) {
+         if (script.dataNodes().size() > 0) {
+            String scriptContent =  script.dataNodes().get(0).toString();
+            if (scriptContent.contains("verifyTotalRecords")) {
+               String regex = "verifyTotalRecords\\('([0-9]+)+'\\)";
+               Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+               Matcher matcher = pattern.matcher(scriptContent);
+
+               if (matcher.find()) {
+                  String totalProductsStr = matcher.group(1);
+                  totalProducts = MathUtils.parseInt(totalProductsStr);
+                  totalProducts = totalProducts != null ? totalProducts : 0;
+                  break;
+               }
+            }
+         }
+      }
+      return totalProducts;
    }
 
    private int crawlPrice(Element e, String internalId) {
