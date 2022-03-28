@@ -2,11 +2,19 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import com.sun.jdi.IntegerValue;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class MerqueoCrawler extends CrawlerRankingKeywords {
 
@@ -15,18 +23,19 @@ public class MerqueoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
 
       String url = "https://merqueo.com/api/3.1/stores/281/search?q=+" + this.keywordEncoded + "&per_page=" + this.currentPage + "&per_page=50&zoneId="+ session.getOptions().optString("zoneId")+"&sort_by=relevance";
+
+
       this.log("Link onde são feitos os crawlers: " + url);
 
       JSONObject apiJson = fetchApiProducts(url);
       JSONArray productsArray = new JSONArray();
 
-      if (apiJson.has("included") && !apiJson.isNull("included")) {
-         productsArray = apiJson.getJSONArray("included");
-
+      if (apiJson.has("data") && !apiJson.isNull("data")) {
+         productsArray = apiJson.optJSONArray("data");
       }
 
       if (productsArray.length() > 0) {
@@ -35,15 +44,31 @@ public class MerqueoCrawler extends CrawlerRankingKeywords {
          }
 
          for (Object object : productsArray) {
-            JSONObject included = (JSONObject) object;
+            JSONObject product = (JSONObject) object;
 
-            if (included.optString("type").equals("slug")) {
+            if (product.optString("type").equals("products")) {
+               String internalId = product.optString("id");
+               String productUrl = assembleProductUrl(internalId, apiJson);
 
-               String internalId = included.has("id") ? included.get("id").toString() : null;
-               String productUrl = assembleProductUrl(included);
-               saveDataProduct(internalId, null, productUrl);
+               JSONObject attributes = product.optJSONObject("attributes");
 
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+               String name = attributes.optString("name");
+               String image = attributes.optString("image_large_url");
+               int price = crawlPrice(attributes);
+               boolean available = attributes.optInt("quantity") > 0;
+
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setInternalPid(null)
+                  .setImageUrl(image)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(available)
+                  .build();
+
+               saveDataProduct(productRanking);
+
                if (this.arrayProducts.size() == productsLimit) {
                   break;
                }
@@ -58,48 +83,57 @@ public class MerqueoCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   @Override
+   protected boolean hasNextPage() {
+      return true;
+   }
+
+   private Integer crawlPrice(JSONObject product) {
+      double price;
+      if (product.has("special_price") && (product.optInt("special_price") != 0)) {
+         price = product.optDouble("special_price") * 100;
+      } else {
+         price = product.optDouble("price") * 100;
+      }
+      return Math.toIntExact(Math.round(price));
+   }
+
    /*
     * Url exemple:
     * https://merqueo.com/bogota/despensa/condimentos-especias-y-adobos/canela-su-despensa-20-gr
     */
-   private String assembleProductUrl(JSONObject included) {
+   private String assembleProductUrl(String internalId, JSONObject apiJson) {
       String productUrl = "";
 
+      JSONArray includedArray = apiJson.optJSONArray("included");
+
+      List<JSONObject> jsonObject = IntStream
+         .range(0, includedArray.length())
+         .mapToObj(includedArray::optJSONObject)
+         .filter(json -> json.optString("id").equals(internalId)).collect(Collectors.toList());
+
+      if (jsonObject.isEmpty()) return "";
+
+      JSONObject included = jsonObject.get(0);
 
       if (included.has("attributes") && !included.isNull("attributes")) {
          JSONObject attributes = included.getJSONObject("attributes");
-
-         boolean hasFields = attributes.has("city")
-            && attributes.has("department")
-            && attributes.has("shelf")
-            && attributes.has("product");
-
-         boolean isFieldsNull =
-            !attributes.isNull("city")
-               && !attributes.isNull("department")
-               && !attributes.isNull("shelf")
-               && !attributes.isNull("product");
-
-         if (hasFields && isFieldsNull) {
-            productUrl = productUrl
-               .concat("https://merqueo.com.br/")
-               .concat(attributes.getString("city"))
-               .concat("/")
-               .concat("merqueo-sao-paulo")
-               .concat("/")
-               .concat(attributes.getString("department"))
-               .concat("/")
-               .concat(attributes.getString("shelf"))
-               .concat("/")
-               .concat(attributes.getString("product"));
-         }
+         productUrl = productUrl
+            .concat("https://merqueo.com/")
+            .concat(attributes.optString("city"))
+            .concat("/")
+            .concat(attributes.optString("department"))
+            .concat("/")
+            .concat(attributes.optString("shelf"))
+            .concat("/")
+            .concat(attributes.optString("product"));
       }
+
 
       return productUrl;
    }
 
    private JSONObject fetchApiProducts(String url) {
-
       Request request = Request.RequestBuilder
          .create()
          .setUrl(url)
@@ -108,4 +142,5 @@ public class MerqueoCrawler extends CrawlerRankingKeywords {
 
       return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
    }
+
 }
