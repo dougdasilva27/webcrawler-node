@@ -34,28 +34,33 @@ public class BrasilShopeeCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
       if (productObj != null) {
          JSONObject data = productObj.optJSONObject("data");
-         String internalId = data.optString("itemid");
-         String name = data.optString("name");
-         String primaryImage = "https://cf.shopee.com.br/file/" + data.optString("image");
-         String description = data.getString("description");
-         CategoryCollection categories = scrapCategories(data);
-         RatingsReviews ratingsReviews = scrapRatingsAlternativeWay(data);
-         Integer stock = data.optInt("other_stock");
-         List<String> secondaryImages = scrapSecondaryImages(data, primaryImage);
-         Offers offers = stock > 0 ? scrapOffers(data) : new Offers();
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setName(name)
-            .setOffers(offers)
-            .setRatingReviews(ratingsReviews)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setCategories(categories)
-            .build();
+         if(data != null){
+            String internalId = data.optString("itemid");
+            String name = data.optString("name");
+            String primaryImage = "https://cf.shopee.com.br/file/" + data.optString("image");
+            String description = data.getString("description");
+            CategoryCollection categories = scrapCategories(data);
+            RatingsReviews ratingsReviews = scrapRatingsAlternativeWay(data);
+            Integer stock = data.optInt("other_stock");
+            List<String> secondaryImages = scrapSecondaryImages(data, primaryImage);
+            Offers offers = stock > 0 ? scrapOffers(data) : new Offers();
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setName(name)
+               .setOffers(offers)
+               .setRatingReviews(ratingsReviews)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setCategories(categories)
+               .build();
 
-         products.add(product);
+            products.add(product);
+         }else{
+            Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+         }
+
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
