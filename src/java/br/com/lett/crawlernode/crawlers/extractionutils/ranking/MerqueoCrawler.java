@@ -26,7 +26,7 @@ public class MerqueoCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
 
-      String url = "https://merqueo.com/api/3.1/stores/281/search?q=+" + this.keywordEncoded + "&per_page=" + this.currentPage + "&per_page=50&zoneId="+ session.getOptions().optString("zoneId")+"&sort_by=relevance";
+      String url = "https://merqueo.com/api/3.1/stores/281/search?q=+" + this.keywordEncoded + "&per_page=" + this.currentPage + "&per_page=50&zoneId=" + session.getOptions().optString("zoneId") + "&sort_by=relevance";
 
 
       this.log("Link onde são feitos os crawlers: " + url);
@@ -54,8 +54,8 @@ public class MerqueoCrawler extends CrawlerRankingKeywords {
 
                String name = attributes.optString("name");
                String image = attributes.optString("image_large_url");
-               int price = crawlPrice(attributes);
                boolean available = attributes.optInt("quantity") > 0;
+               Integer price = available ? crawlPrice(attributes) : null;
 
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
