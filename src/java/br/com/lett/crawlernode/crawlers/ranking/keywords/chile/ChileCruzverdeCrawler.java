@@ -122,8 +122,12 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
    }
 
    private String getInternalId(JSONObject prodList) {
+      String internalId = "";
       Object objId = prodList.optString("productId");
-      return objId.toString();
+      if (objId != null){
+         internalId = objId.toString();
+      }
+      return internalId;
    }
 
    private Integer getPrice(JSONObject obj, String id) {
@@ -161,14 +165,22 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
    }
 
    private String getImg(JSONObject prodList) {
-      Object objImg = prodList.optQuery("/image/link").toString();
-      return objImg.toString();
+      String img = "";
+      Object objImg = prodList.optQuery("/image/link");
+      if (objImg != null){
+         img = objImg.toString();
+      }
+      return img;
 
    }
 
    private String getName(JSONObject prodList) {
+      String name = "";
       Object objName = prodList.optString("productName");
-      return objName.toString();
+      if (objName != null){
+         name = objName.toString();
+      }
+      return name;
    }
 
    private String getProductUrl(JSONObject prodList) {

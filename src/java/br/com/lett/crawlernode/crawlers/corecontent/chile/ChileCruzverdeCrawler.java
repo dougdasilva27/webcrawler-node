@@ -101,6 +101,8 @@ public class ChileCruzverdeCrawler extends Crawler {
 
          products.add(product);
 
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
       return products;
@@ -110,7 +112,9 @@ public class ChileCruzverdeCrawler extends Crawler {
    private CategoryCollection getCategory(JSONObject productList) {
       CategoryCollection categories = new CategoryCollection();
       Object objCategory = productList.query("/productData/category");
-      categories.add(objCategory.toString());
+      if (objCategory != null) {
+         categories.add(objCategory.toString());
+      }
       return categories;
    }
 
@@ -121,7 +125,7 @@ public class ChileCruzverdeCrawler extends Crawler {
 
    private String getDescription(JSONObject productList) {
       Object objDescription = productList.optQuery("/productData/pageDescription");
-      if (objDescription == null){
+      if (objDescription == null) {
          return null;
       }
       return objDescription.toString();
@@ -130,13 +134,13 @@ public class ChileCruzverdeCrawler extends Crawler {
    private List<String> getSecondaryImage(JSONObject productList, String primaryImage) {
       List<String> imgFormat = new ArrayList<>();
       JSONArray arrayImg = (JSONArray) productList.optQuery("/productData/imageGroups/0/images");
-      if (arrayImg == null){
+      if (arrayImg == null) {
          return null;
       }
-      for (Object obj : arrayImg){
+      for (Object obj : arrayImg) {
          JSONObject objJson = (JSONObject) obj;
          String urlImg = objJson.optString("link");
-         if (!urlImg.equals(primaryImage)){
+         if (!urlImg.equals(primaryImage)) {
             imgFormat.add(urlImg);
          }
       }
@@ -144,18 +148,30 @@ public class ChileCruzverdeCrawler extends Crawler {
    }
 
    private String getPrimaryImage(JSONObject productList) {
+      String primaryImg = "";
       Object objImg = productList.optQuery("/productData/imageGroups/0/images/0/link");
-      return objImg.toString();
+      if (objImg != null) {
+         primaryImg = objImg.toString();
+      }
+      return primaryImg;
    }
 
    private String getName(JSONObject productList) {
+      String name = "";
       Object objName = productList.optQuery("/productData/name");
-      return objName.toString();
+      if (objName != null) {
+         name = objName.toString();
+      }
+      return name;
    }
 
    private String getBrand(JSONObject productList) {
+      String brand = "";
       Object objBrand = productList.optQuery("/productData/brand");
-      return objBrand.toString();
+      if (objBrand != null){
+         brand = objBrand.toString();
+      }
+      return brand;
    }
 
    private String getId() {
