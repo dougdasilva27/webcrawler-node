@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -11,15 +10,13 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
-
-import java.util.*;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
 
@@ -28,29 +25,62 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.JSOUP;
    }
 
+   @Override
+   protected void processBeforeFetch() {
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://api.cruzverde.cl/customer-service/login")
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.BUY_HAPROXY))
+         .build();
+      Response responseApi = dataFetcher.post(session, request);
+      String cookie = responseApi.getHeaders().toString();
+
+      String finalCookie = null;
+      String regex = "sid=(.*); Path";
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      final Matcher matcher = pattern.matcher(cookie);
+
+      if (matcher.find()) {
+         finalCookie = matcher.group(1);
+      }
+
+      BasicClientCookie sidCookie = new BasicClientCookie("connect.sid", finalCookie);
+      sidCookie.setDomain("api.cruzverde.cl");
+      sidCookie.setPath("/");
+      sidCookie.setValue(finalCookie);
+      sidCookie.setSecure(true);
+      sidCookie.setAttribute("HttpOnly", "true");
+      this.cookies.add(sidCookie);
+
+   }
+
+
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 12;
       this.log("Página " + this.currentPage);
+      JSONObject reponseJson = getProductList();
 
-      String url = "https://www.cruzverde.cl/search?query=" + this.keywordWithoutAccents + "&search-button=&lang=es_CL";
-      String urlWithoutSpaces = url.replaceAll(" ", "+");
-
-      this.log("Link onde são feitos os crawlers: " + urlWithoutSpaces);
-      this.currentDoc = fetchDocument(urlWithoutSpaces);
-      Elements products = this.currentDoc.select(".product.product-wrapper");
-      String internalId = getProductList();
-
-      if (!products.isEmpty()) {
+      if (!reponseJson.isEmpty()) {
+         this.totalProducts = reponseJson.optInt("total");
          if (this.totalProducts == 0) {
             setTotalProducts();
          }
 
-         for (Element e : products) {
-            String productUrl = "https://www.cruzverde.cl" + CrawlerUtils.scrapStringSimpleInfoByAttribute(e, " .image-container a", "href");
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".pdp-link", false);
-            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".tile-image", Collections.singletonList("src"), "https", "cruzverde.cl");
-            Integer price = crawlPrice(e);
-            boolean isAvailable = CrawlerUtils.scrapStringSimpleInfo(e, ".add-to-cart:not([disabled])", false) != null;
+         JSONArray productsList = reponseJson.getJSONArray("hits");
+
+         for (Object arrayOfArrays : productsList) {
+
+            JSONObject jsonInfo = (JSONObject) arrayOfArrays;
+            String internalId = getInternalId(jsonInfo);
+            JSONObject extractAvaliPrice = getAvaliPrice(internalId);
+            String productUrl = getProductUrl(jsonInfo);
+            String name = getName(jsonInfo);
+            String imgUrl = getImg(jsonInfo);
+            boolean isAvailable = getAvaliability(extractAvaliPrice, internalId);
+            Integer price = null;
+            if (isAvailable) {
+               price = getPrice(extractAvaliPrice, internalId);
+            }
+
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -63,7 +93,6 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
-
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -72,40 +101,84 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
-
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private Integer crawlPrice(Element e) {
-      int price = 0;
-      String priceString = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".sales .value", "content");
-      if (priceString != null && !priceString.isEmpty() && !priceString.equals("null")) {
-         price = Integer.parseInt(priceString) * 100;
-      } else {
-         price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".d-block .large-price .value", null, true, ',', session, 0);
-      }
-      return price;
-   }
+   private JSONObject getProductList() {
 
-   @Override
-   protected boolean hasNextPage() {
-      return currentDoc.selectFirst(".pagination.pagination-footer button:not(first-child)") != null;
-   }
+      String url = "https://api.cruzverde.cl/product-service/products/search?limit=" + pageSize + "&offset=" + this.arrayProducts.size() + "&sort=&q=" + keywordEncoded;
 
-   private String getProductList() {
-      int pageOff = 0;
-      String url = "https://api.cruzverde.cl/product-service/products/search?limit=" + pageSize + "&offset=" + pageOff + "&sort=&q=" + keywordEncoded;
-      //Map<String, String> headers = new HashMap<>();
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
-         //.setHeaders(headers)
          .mustSendContentEncoding(true)
+         .setCookies(this.cookies)
          .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.BUY_HAPROXY))
          .build();
       Response response = this.dataFetcher.get(session, request);
-      if (response != null){
-         JSONObject reponseJson = CrawlerUtils.stringToJson(response.getBody());
+      if (response != null) {
+         return CrawlerUtils.stringToJson(response.getBody());
       }
-      return response.getBody();
+      return null;
    }
+
+   private String getInternalId(JSONObject prodList) {
+      Object objId = prodList.optString("productId");
+      return objId.toString();
+   }
+
+   private Integer getPrice(JSONObject obj, String id) {
+      int price = 0;
+      Object stockPrice = obj.optQuery("/" + id + "/prices/price-sale-cl");
+      if (stockPrice == null){
+         stockPrice = obj.optQuery("/" + id + "/prices/price-list-cl");
+      }
+      return Integer.parseInt(stockPrice.toString());
+   }
+
+   // Nova Request pra retornar o JSON que contem o stock e o preço
+   private boolean getAvaliability(JSONObject obj, String id) {
+
+      Object stock = obj.optQuery("/" + id + "/stock");
+      int stockNumber = Integer.parseInt(stock.toString());
+      return stockNumber > 0;
+
+   }
+
+   private JSONObject getAvaliPrice(String id) {
+      JSONObject obj = null;
+      String storeId = "1121";
+      String url = "https://api.cruzverde.cl/product-service/products/product-summary?ids=" + id + "&ids=" + id + "&fields=stock&fields=prices&fields=promotions&inventoryId=" + storeId;
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .mustSendContentEncoding(true)
+         .setCookies(this.cookies)
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.BUY_HAPROXY))
+         .build();
+      Response response = this.dataFetcher.get(session, request);
+      if (response != null) {
+         obj = CrawlerUtils.stringToJson(response.getBody());
+      }
+
+      return obj;
+   }
+
+   private String getImg(JSONObject prodList) {
+      Object objImg = prodList.optQuery("/image/link").toString();
+      return objImg.toString();
+
+   }
+
+   private String getName(JSONObject prodList) {
+      Object objName = prodList.optString("productName");
+      return objName.toString();
+   }
+
+   private String getProductUrl(JSONObject prodList) {
+      Object objname = prodList.optString("productName");
+      Object objId = prodList.optString("productId");
+      String replaceName = objname.toString().replace(" ", "").replace("%","").replace(",","");
+      return "https://www.cruzverde.cl/" + replaceName +"/"+ objId.toString() + ".html";
+   }
+
 }
+
