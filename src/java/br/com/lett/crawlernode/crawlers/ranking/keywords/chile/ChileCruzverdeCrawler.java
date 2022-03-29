@@ -139,9 +139,7 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
    private boolean getAvaliability(JSONObject obj, String id) {
 
       Object stock = obj.optQuery("/" + id + "/stock");
-      int stockNumber = Integer.parseInt(stock.toString());
-      return stockNumber > 0;
-
+      return stock != null;
    }
 
    private JSONObject getAvaliPrice(String id) {
