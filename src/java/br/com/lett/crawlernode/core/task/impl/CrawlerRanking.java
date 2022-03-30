@@ -331,14 +331,8 @@ public abstract class CrawlerRanking extends Task {
    }
 
    protected void saveDataProduct(RankingProduct product) {
-      this.position++;
       saveDataProduct(product, true);
    }
-
-   protected void saveDataProductWhitoutPosition(RankingProduct product) {
-      saveDataProduct(product, true);
-   }
-
 
 
    /**
@@ -347,6 +341,7 @@ public abstract class CrawlerRanking extends Task {
     * @param product produto
     */
    protected void saveDataProduct(RankingProduct product, boolean isUpdate) {
+      this.position++;
 
       if (product.getPosition() == 0) {
          product.setPosition(this.position);

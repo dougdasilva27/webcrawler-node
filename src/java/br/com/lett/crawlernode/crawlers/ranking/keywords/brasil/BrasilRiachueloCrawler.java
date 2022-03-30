@@ -70,35 +70,32 @@ public class BrasilRiachueloCrawler extends CrawlerRankingKeywords {
                Integer price = elemJson.optInt("priceCents");
                boolean isAvailable = elemJson.optBoolean("in_stock");
                String imageUrl = elemJson.optString("imageId");
+               
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(urlProduct)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setImageUrl(imageUrl)
+                  .setPosition(position)
+                  .build();
 
-               for (Object sku : skus) {
-                  if (sku instanceof String) {
-                     String internalId = (String) sku;
-
-                     RankingProduct productRanking = RankingProductBuilder.create()
-                        .setUrl(urlProduct)
-                        .setInternalId(internalId)
-                        .setInternalPid(internalPid)
-                        .setName(name)
-                        .setPriceInCents(price)
-                        .setAvailability(isAvailable)
-                        .setImageUrl(imageUrl)
-                        .setPosition(position)
-                        .build();
-
-                     saveDataProductWhitoutPosition(productRanking);
-
-                  }
-               }
+               saveDataProduct(productRanking);
 
 
             }
+
+
          }
       }
-      else {
-         log("keyword sem resultados");
-         result = false;
-      }
    }
+      else
+
+   {
+      log("keyword sem resultados");
+      result = false;
+   }
+}
 }
 
