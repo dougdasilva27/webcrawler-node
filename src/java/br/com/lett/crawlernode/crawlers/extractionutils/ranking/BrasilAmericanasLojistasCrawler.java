@@ -99,9 +99,9 @@ public class BrasilAmericanasLojistasCrawler extends CrawlerRankingKeywords {
       String keyword = this.keywordWithoutAccents.replace(" ", "-");
 
       if (this.currentPage == 1) {
-         url = session.getOptions().optString("url_first_page").replace("keyword", keyword);
+         url = "https://www.americanas.com.br/lojista/" + session.getOptions().optString("lojista") + "?ordenacao=relevance&conteudo=" + keyword;
       } else {
-         url = session.getOptions().optString("url_next_page").replace("keyword", keyword).replace("page", String.valueOf(this.currentPage));
+         url = "https://www.americanas.com.br/lojista/" + session.getOptions().optString("lojista") + "/pagina-" + this.currentPage + "?conteudo=" + keyword + "&ordenacao=relevance";
       }
       return url;
    }

@@ -29,7 +29,6 @@ import models.pricing.*;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Pricing.PricingBuilder;
-import org.apache.avro.data.Json;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -58,8 +57,7 @@ public class B2WCrawler extends Crawler {
    protected String seller1P = getSeller1P();
 
    public String getSeller1P() {
-      return session.getOptions().optString("seller" );
-
+      return session.getOptions().optString("seller");
    }
 
    public boolean isAllow3PSellers() {
@@ -199,7 +197,7 @@ public class B2WCrawler extends Crawler {
                JSONObject skuJson = skuOptions.optJSONObject(i);
                String internalId = skuJson.optString("id");
                name = skuOptions.length() > 1 || name == null ? skuJson.optString("name") : name;
-               boolean available = isAvailable(doc);
+               boolean available = isAvailable(skuOptions.optJSONObject(i));
                Offers offers = available ? scrapOffers(doc, internalId, internalPid, apolloJson) : new Offers();
 
                setMainRetailer(offers);
@@ -380,7 +378,7 @@ public class B2WCrawler extends Crawler {
    protected Offers scrapOffers(Document doc, String internalId, String internalPid, JSONObject apolloJson) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
 
-      if (!allow3PSellers){
+      if (!allow3PSellers) {
          setOffersForMainPageSeller(offers, apolloJson);
       } else {
          Document sellersDoc = null;
@@ -415,8 +413,8 @@ public class B2WCrawler extends Crawler {
       setOffersForMainPageSeller(offers, jsonSeller);
    }
 
-   private boolean isAvailable(Document doc) {
-      return doc.select("strong[class^=\"styles__Title-sc\"]").isEmpty();
+   private boolean isAvailable(JSONObject skuOptions) {
+      return skuOptions.has("offers") && !skuOptions.optJSONArray("offers").isEmpty();
    }
 
    private void setOffersForMainPageSeller(Offers offers, JSONObject jsonSeller) throws OfferException, MalformedPricingException {
