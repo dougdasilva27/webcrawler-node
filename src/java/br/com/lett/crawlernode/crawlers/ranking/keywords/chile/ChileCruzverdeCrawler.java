@@ -122,12 +122,7 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
    }
 
    private String getInternalId(JSONObject prodList) {
-      String internalId = "";
-      Object objId = prodList.optString("productId");
-      if (objId != null){
-         internalId = objId.toString();
-      }
-      return internalId;
+      return prodList.optString("productId");
    }
 
    private Integer getPrice(JSONObject obj, String id) {
@@ -184,10 +179,10 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
    }
 
    private String getProductUrl(JSONObject prodList) {
-      Object objname = prodList.optString("productName");
-      Object objId = prodList.optString("productId");
-      String replaceName = objname.toString().replace(" ", "").replace("%","").replace(",","");
-      return "https://www.cruzverde.cl/" + replaceName +"/"+ objId.toString() + ".html";
+      String objname = prodList.optString("productName");
+      String objId = prodList.optString("productId");
+      String replaceName = objname.replace(" ", "").replace("%","").replace(",","");
+      return "https://www.cruzverde.cl/" + replaceName +"/"+ objId + ".html";
    }
 
 }
