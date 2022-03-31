@@ -289,12 +289,15 @@ public class B2WCrawler extends Crawler {
          JSONObject ratingAverage = ratingInfo.optJSONObject("rating");
          AdvancedRatingReview advancedRatingReview = reviewStatistics != null ? getTotalStarsFromEachValue(reviewStatistics) : new AdvancedRatingReview();
 
-         Integer totalRating = ratingAverage.optInt("reviews");
+         if (ratingAverage != null) {
 
-         ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-         ratingReviews.setTotalRating(totalRating);
-         ratingReviews.setTotalWrittenReviews(totalRating);
-         ratingReviews.setAverageOverallRating(ratingAverage.optDouble("average"));
+            Integer totalRating = ratingAverage.optInt("reviews");
+
+            ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+            ratingReviews.setTotalRating(totalRating);
+            ratingReviews.setTotalWrittenReviews(totalRating);
+            ratingReviews.setAverageOverallRating(ratingAverage.optDouble("average"));
+         }
       }
       return ratingReviews;
    }
@@ -379,8 +382,12 @@ public class B2WCrawler extends Crawler {
       Offers offers = new Offers();
 
       if (!allow3PSellers) {
+
          setOffersForMainPageSeller(offers, apolloJson);
+
       } else {
+         setOffersForMainPageSeller(offers, apolloJson);
+
          Document sellersDoc = null;
 
          if (!doc.select(listSelectors.get("hasPageOffers")).isEmpty()) {
@@ -394,7 +401,7 @@ public class B2WCrawler extends Crawler {
 
             setOffersForSellersPage(offers, sellersFromHTML, listSelectors, sellersDoc);
 
-         } else {
+         }
 
         /*
                caso sellersFromHTML seja vazio significa que fomos bloqueados
@@ -402,16 +409,11 @@ public class B2WCrawler extends Crawler {
                ou que o produto em questão não possui pagina de sellers.
                Nesse caso devemos capturar apenas as informações da pagina principal.
                */
-            setOffersForMainPageSeller(offers, apolloJson);
-         }
+
       }
       return offers;
    }
 
-   protected void scrapAndSetInfoForMainPage(Document doc, Offers offers) throws OfferException, MalformedPricingException {
-      JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
-      setOffersForMainPageSeller(offers, jsonSeller);
-   }
 
    private boolean isAvailable(JSONObject skuOptions) {
       return skuOptions.has("offers") && !skuOptions.optJSONArray("offers").isEmpty();
@@ -467,20 +469,32 @@ public class B2WCrawler extends Crawler {
 
             Pricing pricing = scrapPricingForOffersPage(sellerInfo);
 
-            Offer offer = Offer.OfferBuilder.create()
-               .setInternalSellerId(sellerId)
-               .setSellerFullName(sellerName)
-               .setMainPagePosition(mainPagePosition)
-               .setSellersPagePosition(sellersPagePosition)
-               .setPricing(pricing)
-               .setIsBuybox(isBuyBox)
-               .setIsMainRetailer(false)
-               .build();
+            if (!checkIfHasSellerInOffer(offers, sellerId, pricing)) {
+
+               Offer offer = Offer.OfferBuilder.create()
+                  .setInternalSellerId(sellerId)
+                  .setSellerFullName(sellerName)
+                  .setMainPagePosition(mainPagePosition)
+                  .setSellersPagePosition(sellersPagePosition)
+                  .setPricing(pricing)
+                  .setIsBuybox(isBuyBox)
+                  .setIsMainRetailer(false)
+                  .build();
 
 
-            offers.add(offer);
+               offers.add(offer);
+            }
          }
       }
+   }
+
+   private boolean checkIfHasSellerInOffer(Offers offers, String sellerId, Pricing pricing) {
+      boolean hasSeller = false;
+      for (Offer offer : offers.getOffersList()) {
+         hasSeller = offer.getInternalSellerId().equals(sellerId) && offer.getPricing().getSpotlightPrice().equals(pricing.getSpotlightPrice());
+      }
+
+      return hasSeller;
    }
 
    protected Pricing scrapPricingForOffersPage(Element sellerInfo)
