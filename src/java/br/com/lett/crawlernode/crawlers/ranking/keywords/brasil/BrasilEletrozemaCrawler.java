@@ -39,7 +39,6 @@ public class BrasilEletrozemaCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, null, productUrl, this.position);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
               break;
             }

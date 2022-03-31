@@ -41,7 +41,6 @@ public class SaopauloOnofreCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(null, internalPid, urlProduct);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }

@@ -38,7 +38,6 @@ public class AustraliaCatchCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, null, url);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + url);
         }
         this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
     }

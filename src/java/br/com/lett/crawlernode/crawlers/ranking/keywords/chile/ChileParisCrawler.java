@@ -41,7 +41,6 @@ public class ChileParisCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.sanitizeUrl(c, "href", "https", HOST);
             saveDataProduct(null, internalPid, productUrl, this.position);
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
               break;
             }
@@ -51,7 +50,6 @@ public class ChileParisCrawler extends CrawlerRankingKeywords {
 
           saveDataProduct(null, internalPid, productUrl);
 
-          this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
           if (this.arrayProducts.size() == productsLimit) {
             break;
           }

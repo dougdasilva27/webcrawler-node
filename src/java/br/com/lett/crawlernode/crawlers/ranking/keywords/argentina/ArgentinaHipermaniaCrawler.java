@@ -33,7 +33,6 @@ public class ArgentinaHipermaniaCrawler extends CrawlerRankingKeywords {
             .orElseThrow(InternalIdNotFound::new);
 
          saveDataProduct(internalId, null, productUrl);
-         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
       }
    }
 
