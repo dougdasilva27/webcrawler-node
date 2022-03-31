@@ -1,8 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
@@ -18,7 +21,7 @@ public class BrasilDrogarianovaesperancaCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = PAGE_SIZE;
       this.log("Página " + this.currentPage);
 
@@ -41,10 +44,23 @@ public class BrasilDrogarianovaesperancaCrawler extends CrawlerRankingKeywords {
          for (Element e : products) {
             String productUrl = CrawlerUtils.scrapUrl(e, ".produto-descricao-lista a", "href", "https", "www.drogarianovaesperanca.com.br");
             String internalId = crawlInternalId(productUrl);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".produto-descricao-lista a span", false);
+            String imgUrl = scrapFullImage(e);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e,".valor .por", null, false, ',', session, 0);
 
-            saveDataProduct(internalId, null, productUrl);
+            boolean isAvailable = price != 0;
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -86,5 +102,11 @@ public class BrasilDrogarianovaesperancaCrawler extends CrawlerRankingKeywords {
       }
 
       return internalId;
+   }
+
+   private String scrapFullImage (Element e) {
+      String miniImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,  ".foto img.lazy", "dg-lazy");
+
+      return miniImage.replaceAll("imagens/265x265/", "imagens-complete/445x445/");
    }
 }
