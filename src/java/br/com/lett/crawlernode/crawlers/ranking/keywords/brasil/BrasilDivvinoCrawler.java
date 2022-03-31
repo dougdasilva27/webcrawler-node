@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.MathUtils;
+import org.apache.commons.lang.WordUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -60,7 +61,7 @@ public class BrasilDivvinoCrawler extends CrawlerRankingKeywords {
 
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"[data-product]","data-product");
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"a","href");
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".productName", false);
+            String name = WordUtils.capitalizeFully(CrawlerUtils.scrapStringSimpleInfo(e, ".productName", false));
             String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".img_responsive.img_center.prod_box_img", List.of("src"), "https", "statics.divvino.com.br");
             String inStockInfo = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".lazy_discount_stamp", "data-instock");
             boolean isAvailable = inStockInfo != null && inStockInfo.equals("true");
