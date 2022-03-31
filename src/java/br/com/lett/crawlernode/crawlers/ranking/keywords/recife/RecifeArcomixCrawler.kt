@@ -26,7 +26,7 @@ class RecifeArcomixCrawler(session: Session?) : CrawlerRankingKeywords(session) 
           {
           "avaliacoes": [],
           "categorias": [],
-          "descricao": "$keywordWithoutAccents",
+          "descricao": "$keywordEncoded",
           "marcas": [],
           "num_reg_pag": $pageSize,
           "order": "MV",
