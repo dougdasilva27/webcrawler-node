@@ -386,7 +386,10 @@ public class B2WCrawler extends Crawler {
          setOffersForMainPageSeller(offers, apolloJson);
 
       } else {
-         setOffersForMainPageSeller(offers, apolloJson);
+
+         if (!doc.select("div[class^=\"offers-box__Wrapper\"] p").isEmpty()) {
+            setOffersForMainPageSeller(offers, apolloJson);
+         }
 
          Document sellersDoc = null;
 
