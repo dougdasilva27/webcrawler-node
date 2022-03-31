@@ -23,6 +23,8 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilShopeeCrawler extends Crawler {
    public BrasilShopeeCrawler(Session session) {
@@ -59,6 +61,7 @@ public class BrasilShopeeCrawler extends Crawler {
             products.add(product);
          }else{
             Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+
          }
 
       } else {
@@ -132,7 +135,16 @@ public class BrasilShopeeCrawler extends Crawler {
 
    private JSONObject getProduct(String url) {
       JSONObject data = null;
-      String[] arr = url.split("\\.");
+      String regex = "-i(.*)\\?sp";
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      final Matcher matcher = pattern.matcher(url);
+      String ids = "";
+      if(matcher.find()) {
+         ids = matcher.group(1);
+      }else {
+         ids = url;
+      }
+      String[] arr = ids.split("\\.");
       String itemId = arr[arr.length - 1];
       String shopId = arr[arr.length - 2];
       String newUrl = "https://shopee.com.br/api/v4/item/get?itemid=" + itemId + "&shopid=" + shopId;
