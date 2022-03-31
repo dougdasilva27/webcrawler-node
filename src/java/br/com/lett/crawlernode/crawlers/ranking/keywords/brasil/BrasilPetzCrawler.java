@@ -2,11 +2,16 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.Arrays;
 
 public class BrasilPetzCrawler extends CrawlerRankingKeywords {
 
@@ -18,7 +23,7 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
    private static final String HOME_PAGE = "https://www.petz.com.br/";
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 18;
 
       this.log("Página " + this.currentPage);
@@ -39,10 +44,23 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
          for (Element e : products) {
             String internalPid = e.attr("data-idproduto");
             String productUrl = CrawlerUtils.completeUrl(e.attr("href"), "https", "www.petz.com.br");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".nome_produto", false);
+            String imgUrl = scrapFullImg(e);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e,"[itemprop=\"price\"]", "content", false, '.', session, 0);
 
-            saveDataProduct(null, internalPid, productUrl);
+            boolean isAvailable = price != 0;
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -79,4 +97,9 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
       }
    }
 
+   String scrapFullImg(Element e) {
+      String miniImg = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-img", Arrays.asList("src"), "https", "static.petz.com.br");
+
+      return miniImg.replaceAll("_mini", "");
+   }
 }
