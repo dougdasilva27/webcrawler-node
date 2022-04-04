@@ -50,11 +50,14 @@ public class ColombiaFarmatodoCrawler extends CrawlerRankingKeywords {
             String internalPid = JSONUtils.getStringValue(jsonSku, "id");
             String productUrl = "https://www.farmatodo.com.co/producto/" + internalPid;
 
-            String name = jsonSku.optString("mediaDescription") + " " + jsonSku.optString("detailDescription");
+            String name = jsonSku.optString("mediaDescription") + jsonSku.optString("detailDescription");
+            name = name.replaceAll("  ", " ");
             String imgUrl = jsonSku.optString("mediaImageUrl");
-            Integer price = jsonSku.optInt("fullPrice");
-
-           boolean isAvailable = jsonSku.optInt("stock") > 0;
+            Integer price = jsonSku.optInt("offerPrice");
+            boolean isAvailable = jsonSku.optInt("stock") > 0;
+            if (price == 0 && isAvailable) {
+               price = jsonSku.optInt("fullPrice");
+            }
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -62,7 +65,7 @@ public class ColombiaFarmatodoCrawler extends CrawlerRankingKeywords {
                .setName(name)
                .setImageUrl(imgUrl)
                .setPriceInCents(price)
-              .setAvailability(isAvailable)
+               .setAvailability(isAvailable)
                .build();
 
             saveDataProduct(productRanking);
