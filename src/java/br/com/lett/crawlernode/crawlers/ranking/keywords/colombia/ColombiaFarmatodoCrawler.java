@@ -51,14 +51,18 @@ public class ColombiaFarmatodoCrawler extends CrawlerRankingKeywords {
             String productUrl = "https://www.farmatodo.com.co/producto/" + internalPid;
 
             String name = jsonSku.optString("mediaDescription") + jsonSku.optString("detailDescription");
-            name = name.replaceAll("  ", " ");
+            name = name.trim();
             String imgUrl = jsonSku.optString("mediaImageUrl");
             Integer price = jsonSku.optInt("offerPrice");
             boolean isAvailable = jsonSku.optInt("stock") > 0;
             if (price == 0 && isAvailable) {
-               price = jsonSku.optInt("fullPrice");
+               price = jsonSku.optInt("fullPrice") * 100;
+            }else{
+               price = price * 100;
             }
-
+            if(isAvailable == false){
+               price = null;
+            }
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalPid(internalPid)
