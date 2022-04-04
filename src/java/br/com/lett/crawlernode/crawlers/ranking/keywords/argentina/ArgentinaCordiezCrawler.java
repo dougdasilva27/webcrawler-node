@@ -48,6 +48,7 @@ public class ArgentinaCordiezCrawler  extends CrawlerRankingKeywords {
                price=null;
             }
 
+
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalId(internalId)
@@ -60,6 +61,7 @@ public class ArgentinaCordiezCrawler  extends CrawlerRankingKeywords {
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
+
          }
 
       } else {

@@ -58,7 +58,6 @@ public class BrasilKabumCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, null, urlProduct);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }

@@ -203,8 +203,6 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
             saveDataProduct(productRanking);
 
 
-//            this.log("Position: " + this.position + " - InternalId: " + internalPid + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
