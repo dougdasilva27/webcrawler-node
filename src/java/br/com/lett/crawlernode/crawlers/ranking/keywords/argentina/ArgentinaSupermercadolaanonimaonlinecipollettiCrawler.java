@@ -75,20 +75,23 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
          Map<String, Integer> productStock = new HashMap<>();
 
          for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"input[name*=sku_item_imetrics]", "value");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "input[name*=sku_item_imetrics]", "value");
             internalPids.add(internalPid);
          }
          productStock = getStock(internalPids);
 
          for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"input[name*=sku_item_imetrics]", "value");
-            if(productStock.get(internalPid)!=null && productStock.get(internalPid) >= 0) {
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "input[name*=sku_item_imetrics]", "value");
+            if (productStock.get(internalPid) != null && productStock.get(internalPid) >= 0) {
                String internalId = crawlInternalId(e);
                String productUrl = crawlProductUrl(e);
                String name = CrawlerUtils.scrapStringSimpleInfo(e, "div.titulo_puntos a", true);
                Integer price = crawlPrice(e);
                String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "div.producto img", Arrays.asList("data-src"), "https", "supermercado.laanonimaonline.com");
                boolean isAvailable = productStock.get(internalPid) > 0;
+               if (!isAvailable) {
+                  price = null;
+               }
 
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
@@ -126,8 +129,8 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
 
    private String crawlProductUrl(Element e) {
 
-      String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".titulo_puntos a","href");
-      String productUrl = CrawlerUtils.completeUrl(url,"https:","supermercado.laanonimaonline.com");
+      String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".titulo_puntos a", "href");
+      String productUrl = CrawlerUtils.completeUrl(url, "https:", "supermercado.laanonimaonline.com");
 
       return productUrl;
    }
