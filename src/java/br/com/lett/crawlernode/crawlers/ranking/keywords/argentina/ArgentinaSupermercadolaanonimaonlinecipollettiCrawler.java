@@ -154,6 +154,7 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("cookie", "_gcl_au=1.1.1436553213.1649075405; laanonimaapp=0; laanonima=8f79de8dae8c9187dc56f75cace8c014; mostrarConfSucursal=0; _ga=GA1.2.1640467627.1649075405; _gid=GA1.2.263877864.1649075405; _fbp=fb.1.1649075404919.1988127883; _hjFirstSeen=1; _hjIncludedInSessionSample=0; _hjSession_2758890=eyJpZCI6IjRiZDA3YWZlLWYyYWQtNDNkYS1iYTA5LWZkNjgxZjJhMjljZSIsImNyZWF0ZWQiOjE2NDkwNzU0MDUzMTYsImluU2FtcGxlIjpmYWxzZX0=; _hjAbsoluteSessionInProgress=1; mostrar_ventana_sucursales=0; _hjSessionUser_2758890=eyJpZCI6IjNlNTIzMTdhLTE4NTAtNTkxOS05NWE1LTk5ODU3NWNhMmM5NSIsImNyZWF0ZWQiOjE2NDkwNzU0MDUyODQsImV4aXN0aW5nIjp0cnVlfQ==; laanonimasucursalnombre=CIPOLLETTI; laanonimasucursal=22; laanonimadatos=YTo0OntzOjE2OiJjb2RpZ29fc2VndXJpZGFkIjtzOjY6Ijd1NDc1NCI7czoxMzoibnVtZXJvY2Fycml0byI7czozMjoiYWYyZmYyMjFjOGY1OTM3ZDVkNjRkZTNlYmI4YzcyYjciO3M6MTU6InRfbnVtZXJvY2Fycml0byI7czo3OiJhbm9uaW1vIjtzOjEyOiJtb250b19taW5pbW8iO2Q6MDt9; laanonimaordenlistado=relevancia");
       Request request = Request.RequestBuilder.create()
          .setUrl("https://supermercado.laanonimaonline.com/paginas/controlStockListados.php")
          .setHeaders(headers)
