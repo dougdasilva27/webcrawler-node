@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -19,6 +20,7 @@ public abstract class HomecenterCrawlerRanking extends CrawlerRankingKeywords {
 
    protected HomecenterCrawlerRanking(Session session) {
       super(session);
+      super.fetchMode = FetchMode.FETCHER;
    }
 
    public abstract String getCity();
@@ -53,8 +55,8 @@ public abstract class HomecenterCrawlerRanking extends CrawlerRankingKeywords {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "data-key");
             String productUrl = CrawlerUtils.scrapUrl(e, ".product.ie11-product-container .link-with-wrapper a", Collections.singletonList("href"), "https", HOME_PAGE);
 
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".jsx-411745769 > a > .jsx-411745769.product-title", true);
-            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".jsx-411745769.product-image > div > img", Collections.singletonList("data-src"), "https", "https://www.homecenter.com.co");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product > div > a > .product-title", true);
+            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image > div > img", Collections.singletonList("data-src"), "https", "https://www.homecenter.com.co");
             Integer price = null;
             boolean isAvailable = getAvaliability(e);
             if (isAvailable) {
@@ -85,10 +87,10 @@ public abstract class HomecenterCrawlerRanking extends CrawlerRankingKeywords {
    }
 
    private boolean getAvaliability(Element e) {
-      String firstValidation = CrawlerUtils.scrapStringSimpleInfo(e, ".jsx-2799553099.dispatch-info", false);
-      String secondValidation = CrawlerUtils.scrapStringSimpleInfo(e, ".jsx-2799553099.withdrawl-info", false);
+      String firstValidation = CrawlerUtils.scrapStringSimpleInfo(e, ".dispatch-and-withdrawl-info > .dispatch-info", false);
+      String secondValidation = CrawlerUtils.scrapStringSimpleInfo(e, ".dispatch-and-withdrawl-info > .withdrawl-info", false);
 
-      return firstValidation.equals("Disponible para despacho") || secondValidation.equals("Disponible para retiro");
+      return firstValidation.contains("Disponible para despacho") || secondValidation.contains("Disponible para retiro");
    }
 
    @Override
