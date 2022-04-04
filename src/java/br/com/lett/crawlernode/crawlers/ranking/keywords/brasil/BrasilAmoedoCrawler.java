@@ -65,7 +65,6 @@ public class BrasilAmoedoCrawler extends CrawlerRankingKeywords {
 
          saveDataProduct(productRanking);
         
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }

@@ -59,7 +59,6 @@ public class BrasilDellCrawler extends CrawlerRankingKeywords {
 
           saveDataProduct(internalId, internalPid, productUrl);
 
-          this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
           if (this.arrayProducts.size() == productsLimit) {
             break;

@@ -77,7 +77,7 @@ public class BrasilDivvinoCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
-
+           
             if (this.arrayProducts.size() == productsLimit) break;
 
          }

@@ -33,7 +33,6 @@ public class PanamaSuperunicoCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productId, productPid, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + productId + " - InternalPid: " + productPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit)
                break;
 
