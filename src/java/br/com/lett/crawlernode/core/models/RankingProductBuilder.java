@@ -135,6 +135,8 @@ public class RankingProductBuilder {
       if (this.isAvailable && this.priceInCents == 0) {
          throw new MalformedProductException("Price can't be 0 when product is available");
       }
+      if (!this.isAvailable && this.priceInCents != null) {
+         this.priceInCents = null;
+      }
    }
-
 }
