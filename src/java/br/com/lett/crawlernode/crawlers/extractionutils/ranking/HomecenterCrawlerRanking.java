@@ -52,8 +52,6 @@ public abstract class HomecenterCrawlerRanking extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, null, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null
-               + " - Url: " + productUrl);
          }
       }
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "

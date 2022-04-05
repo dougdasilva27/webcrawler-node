@@ -34,8 +34,6 @@ public class PeruMetroCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(internalId, productPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + productPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
 

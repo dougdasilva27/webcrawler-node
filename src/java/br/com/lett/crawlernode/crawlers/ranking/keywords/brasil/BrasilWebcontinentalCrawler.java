@@ -145,7 +145,6 @@ public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
 
       saveDataProduct(internalId, internalPid, productUrl);
 
-      this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
       if (this.arrayProducts.size() == productsLimit) {
         break;
       }
@@ -170,7 +169,6 @@ public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
 
       saveDataProduct(null, internalPid, productUrl);
 
-      this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
       if (this.arrayProducts.size() == productsLimit) {
         break;
       }

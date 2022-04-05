@@ -54,7 +54,6 @@ public class BrasilWebarcondicionadoCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(null, null, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + null + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
