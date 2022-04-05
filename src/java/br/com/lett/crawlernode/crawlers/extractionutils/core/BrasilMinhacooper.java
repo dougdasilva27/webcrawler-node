@@ -132,7 +132,7 @@ public class BrasilMinhacooper extends Crawler {
    private List<String> scrapSales(Document doc) {
       List<String> sales = new ArrayList<>();
 
-      Element salesOneElement = doc.selectFirst(".details-discount-money");
+      Element salesOneElement = doc.selectFirst(".product-variation__discount-money");
       String firstSales = salesOneElement != null ? salesOneElement.text() : null;
 
       if (firstSales != null && !firstSales.isEmpty()) {
