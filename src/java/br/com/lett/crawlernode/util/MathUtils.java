@@ -371,4 +371,11 @@ public class MathUtils {
 
       return null;
    }
+
+   public static Integer parseInt(Double value) {
+      if (value == null)
+         return null;
+
+      return value.intValue();
+   }
 }

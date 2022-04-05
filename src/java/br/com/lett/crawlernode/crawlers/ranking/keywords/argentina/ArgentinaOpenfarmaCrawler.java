@@ -41,7 +41,6 @@ public class ArgentinaOpenfarmaCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.completeUrl(incompleteProductUrl, "https://", "www.openfarma.com.ar");
             saveDataProduct(internalId, internalPid, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) break;
 
          }

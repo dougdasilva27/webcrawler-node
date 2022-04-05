@@ -53,7 +53,6 @@ public class BrasilFastshopCrawler extends CrawlerRankingKeywords {
           String internalId = internalIds.getString(j);
           saveDataProduct(internalId, internalPid, productUrl, this.position);
 
-          this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         }
 
         if (this.arrayProducts.size() == productsLimit) {
