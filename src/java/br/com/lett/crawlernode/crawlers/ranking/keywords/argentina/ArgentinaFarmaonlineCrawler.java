@@ -1,19 +1,24 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.Arrays;
 
 /**
  * Date: 22/01/21
  *
  * @author Fellype Layunne
  */
-public class ArgentinaFarmaonlineCrawler  extends CrawlerRankingKeywords  {
+public class ArgentinaFarmaonlineCrawler extends CrawlerRankingKeywords {
 
    public ArgentinaFarmaonlineCrawler(Session session) {
       super(session);
@@ -25,7 +30,7 @@ public class ArgentinaFarmaonlineCrawler  extends CrawlerRankingKeywords  {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
       if (this.currentPage == 1) {
          setTotalProducts();
@@ -52,7 +57,21 @@ public class ArgentinaFarmaonlineCrawler  extends CrawlerRankingKeywords  {
             String internalPid = e.attr("data-id");
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href");
 
-            saveDataProduct(null, internalPid, productUrl);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "span > h3 > a", true);
+            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".span > a > img", Arrays.asList("src"), "https", "www.farmaonline.com");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "span > .price > a > .best-price", null, true, ',', session, null);
+            boolean isAvailable = price != null;
+
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
+
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
@@ -72,6 +91,6 @@ public class ArgentinaFarmaonlineCrawler  extends CrawlerRankingKeywords  {
       String url = getHomePage() + keywordWithoutAccents.replace(" ", "%20");
       Document doc = fetchDocument(url);
 
-      totalProducts =  CrawlerUtils.scrapIntegerFromHtml(doc, ".resultado-busca-numero .value", false, 0);
+      totalProducts = CrawlerUtils.scrapIntegerFromHtml(doc, ".resultado-busca-numero .value", false, 0);
    }
 }
