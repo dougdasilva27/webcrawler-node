@@ -24,8 +24,6 @@ public class BrasilSalonlineCrawler extends CrawlerRankingKeywords {
       String internalPid = elem.attr("data-product-id");
       String urlProduct = homePage + elem.selectFirst("div > div > a").attr("href");
       saveDataProduct(null, internalPid, urlProduct);
-      this.log("Position: " + this.position + " - InternalPid: " + internalPid + " - Url: "
-          + urlProduct);
     }
   }
 

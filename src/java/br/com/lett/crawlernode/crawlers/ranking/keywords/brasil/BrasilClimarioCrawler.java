@@ -60,7 +60,6 @@ public class BrasilClimarioCrawler extends CrawlerRankingKeywords {
             if (internalPid != null) {
                saveDataProduct(null, internalPid, urlProduct);
 
-               this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
                if (this.arrayProducts.size() == productsLimit) break;
             }
          }

@@ -55,6 +55,7 @@ public class ArgentinaOpenfarmaCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit) break;
          }
       } else {
