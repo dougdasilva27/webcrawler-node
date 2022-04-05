@@ -80,9 +80,7 @@ public class BrasilMinhacooper extends Crawler {
          String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail-section h4", false);
 
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image #product-zoom", Arrays.asList("src"), "http:", "");
-         if (primaryImage.contains("/450/")) primaryImage = primaryImage.replace("/450/", "/original/");
-
+         String primaryImage = scrapPrimaryImage(doc);
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".gal1 .gallery", List.of("data-zoom-image"), "http:", "", primaryImage);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs p > a", true);
          boolean availableToBuy = doc.selectFirst(".product-variation__add-actions.product-add-actions") != null;
@@ -108,6 +106,14 @@ public class BrasilMinhacooper extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapPrimaryImage(Document doc) {
+     String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image #product-zoom", Arrays.asList("src"), "http:", "");
+      if (primaryImage != null && primaryImage.contains("/450/"))  {
+         primaryImage = primaryImage.replace("/450/", "/original/");
+      }
+      return primaryImage;
    }
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
