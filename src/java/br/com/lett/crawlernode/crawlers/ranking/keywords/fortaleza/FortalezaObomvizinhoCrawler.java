@@ -61,8 +61,6 @@ public class FortalezaObomvizinhoCrawler extends CrawlerRankingKeywords {
 
                saveDataProduct(internalId, internalPid, productUrl);
 
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - name: " + jsonInfo.optString("short_description") + " - InternalPid: " +
-                  internalPid + " - Url: " + productUrl);
             }
          }
       }

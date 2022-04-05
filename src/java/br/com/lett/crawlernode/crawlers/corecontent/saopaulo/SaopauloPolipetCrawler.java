@@ -43,7 +43,7 @@ public class SaopauloPolipetCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (doc.selectFirst(".polipeti--produto") != null) {
+      if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "meta[property=\"product:retailer_item_id\"]", "content");
@@ -74,6 +74,10 @@ public class SaopauloPolipetCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".product--item-header") != null;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -113,7 +117,6 @@ public class SaopauloPolipetCrawler extends Crawler {
             .setBankSlip(bankSlip)
             .build();
    }
-
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();

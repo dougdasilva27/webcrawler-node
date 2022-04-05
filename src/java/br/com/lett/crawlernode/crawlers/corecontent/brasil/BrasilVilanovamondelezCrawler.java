@@ -21,7 +21,7 @@ public class BrasilVilanovamondelezCrawler extends BrasilVilanova {
 
    @Override
    public String getPassword() {
-      return "Paty@3001";
+      return "Tang@2022";
    }
 
    @Override

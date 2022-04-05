@@ -97,7 +97,14 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
          .mustSendContentEncoding(false)
          .build();
 
-      String content = this.dataFetcher.post(session, request).getBody();
+      String content = "{}";
+      int tries = 0;
+
+      while (content.equals("{}") && tries < 3) {
+         content = this.dataFetcher.post(session, request).getBody();
+         tries++;
+      }
+
       return CrawlerUtils.stringToJson(content);
    }
 }

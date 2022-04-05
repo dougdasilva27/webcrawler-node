@@ -220,7 +220,7 @@ public class MexicoAmazonCrawler extends Crawler {
       if (priceFrom == null) {
          priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "td.a-span12.a-color-secondary.a-size-base > span.a-price.a-text-price.a-size-base > span.a-offscreen", null, false, '.', session);
       }
-      if (priceFrom == null){
+      if (priceFrom == null) {
          priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price.a-text-price .a-offscreen", null, false, '.', session);
 
       }
@@ -338,7 +338,7 @@ public class MexicoAmazonCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
       RatingsReviews ratingReviews = new RatingsReviews();
 
-      if (document.select("#cm-cr-dp-no-reviews-message").isEmpty()) {
+      if (document.select("#cm-cr-dp-no-reviews-message").isEmpty() || !document.select("#reviewsMedley").isEmpty()) {
          ratingReviews.setDate(session.getDate());
 
          if (internalId != null) {

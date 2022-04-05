@@ -90,8 +90,6 @@ public class FortalezaCompremaxCrawler extends CrawlerRankingKeywords {
 
                saveDataProduct(internalId, internalPid, productUrl);
 
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " +
-                  internalPid + " - Url: " + productUrl);
             }
          }
       }

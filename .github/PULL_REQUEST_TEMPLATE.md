@@ -1,12 +1,25 @@
-
-Motivação e contexto
+Contexto
 ================================================================================
 <!--
 Explique o porque este pull-request foi aberto, qual problema ele resolve.
 Esta explicação deve incluir informações suficientes para uma pessoa sem contexto poder entender.
 -->
 
+Informações
+================================================================================
 
+- MarketId:
+
+- Urls
+    - Produto Disponivel:
+    - Produto Indisponivel:
+    - Produto Promoção:
+
+- Keywords
+    - keywords simples:
+    - keywords com caracteres especiais:
+    - keywords com espaços:
+    - keywords de categorias:
 
 Qual foi a alteração?
 ================================================================================
@@ -16,24 +29,44 @@ Qual foi a alteração?
 
 Testes
 ================================================================================
-<!-- Informe quais tipos de teste foi realizado-->
-* O que foi testado? 
-  - <!-- coloque o teste aqui-->
-  - <!-- coloque o teste aqui-->
 
-# Mergiu? Builda ai !!
+### O que foi testado?
 
-###[jenkins](https://jenkins.lett.global/job/webcrawler-node/)
-    
-<!--   Checklist comentado 
-Checklist:
+#### Core
+
+- [ ] Está capturando todas as informações:
+    - [ ] Imagem primária e secundárias
+    - [ ] Descrição
+    - [ ] Rating
+    - [ ] Produto com desconto (sales)
+    - [ ] Categoria
+- [ ] Rodou com um produto Disponivel
+- [ ] Rodou com um produto Indisponível
+- [ ] Rodou com um produto Promoção
+- [ ] Preço Formatado (vírgula, kg)
+--------------------------------------------------------------------------------
+#### Ranking
+- [ ] Teste de keywords
+  - [ ] Testado com keywords que contém espaços
+  - [ ] Testado com keywords que contém caracteres especiais 
+  - [ ] Testado com keywords de categoria 
+- [ ] Está capturando paginação
+- [ ] Ordem dos produtos (primeira e segunda página)
+- [ ] Está capturando preço e disponibilidade corretamente (indisponível preço é `null`) 
+
+--------------------------------------------------------------------------------
+### DISCOVERY
+
+- [ ]  Não tem mismatching (Ids correspondente nos modos Ranking e Core)
+
+
+
+--------------------------------------------------------------------------------
+
+Mergiu? Builda ai !!
 ================================================================================
-- [ ] Minha mudança requer uma mudança na documentação.
-  - [ ] Já atualizei a documentação de acordo.
-  - [ ] Já procurei e atualizei documentações externas.
-- [ ] Este PR requer tradução.
-  - [ ] Tradução está completa.
--->
+## [jenkins](https://jenkins.lett.global/job/webcrawler-node/)
+
 
 --------------------------------------------------------------------------------
 > **Revisor**

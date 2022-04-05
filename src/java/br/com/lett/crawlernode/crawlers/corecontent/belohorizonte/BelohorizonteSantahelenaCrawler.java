@@ -42,7 +42,7 @@ public class BelohorizonteSantahelenaCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title.entry-title", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".images a", Collections.singletonList("href"), "https", "santahelenacenter.com.br");
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".woocommerce-breadcrumb span a", true);
-         boolean available = doc.select(".stock .out-of-stock").isEmpty();
+         boolean available = doc.select(".stock.out-of-stock").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -123,10 +123,10 @@ public class BelohorizonteSantahelenaCrawler extends Crawler {
 
    private Map<String, Double> getPrice(Document doc) {
       Map<String, Double> prices = new HashMap<>();
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price ins bdi", null, false, ',', session);
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price del bdi", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".summary ins bdi", null, false, ',', session);
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".summary del bdi", null, true, ',', session);
       if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price .woocommerce-Price-amount  bdi", null, true, ',', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".summary bdi", null, true, ',', session);
          price = null;
       }
       prices.put("spotlightPrice", spotlightPrice);

@@ -117,18 +117,18 @@ public class ColombiaMerqueolicoresCrawler extends Crawler {
 
    private JSONObject scrapApiJson(String originalURL) {
       List<String> slugs = scrapSlugs(originalURL);
-      int index = 0;
       StringBuilder apiUrl = new StringBuilder();
       apiUrl.append("https://merqueo.com/api/3.1/stores/" + store + "/department/");
 
-      if(slugs.get(0).equals("super-ahorro")){
-         index++;
+      if(slugs.size() < 4) {
+         return new JSONObject();
       }
-      apiUrl.append(slugs.get(index++));
-      apiUrl.append("/shelf/").append(slugs.get(index++));
-      apiUrl.append("/products/").append(slugs.get(index++));
 
+      String department = slugs.get(1);
+      String shelf = slugs.get(2);
+      String product = slugs.get(3);
 
+      apiUrl.append(department + "/shelf/" + shelf + "/products/" + product);
       apiUrl.append("?zoneId=");
       apiUrl.append(zoneId);
 

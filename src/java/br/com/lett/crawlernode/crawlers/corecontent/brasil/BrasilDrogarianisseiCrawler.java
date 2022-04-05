@@ -53,11 +53,12 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".small a", true);
          String primaryImage = fixUrlImage(doc, internalId);
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".dots-preview .swiper-slide img", Collections.singletonList("src"), "https", "www.farmaciasnissei.com.br", primaryImage);
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".card #tabCollapse-descricao", "div .row div .mt-1"));
+         String description = CrawlerUtils.scrapElementsDescription(doc, List.of(".card #tabCollapse-descricao"));
 
          JSONObject json = accesAPIOffers(internalId);
          Offers offers = scrapOffers(json);
          RatingsReviews ratingsReviews = getRatingsReviews(doc);
+         List<String> eans = scrapEan(doc);
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -69,6 +70,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
+            .setEans(eans)
             .setRatingReviews(ratingsReviews)
             .build();
 
@@ -80,6 +82,19 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private List<String> scrapEan(Document doc){
+      List<String> ean = new ArrayList<>();
+      String productInfo = CrawlerUtils.scrapStringSimpleInfo(doc, "div .row div .mt-1", true);
+      if (productInfo != null){
+         String[] split = productInfo.split("EAN:");
+         if (split.length > 1){
+            ean.add(split[1].trim());
+         }
+      }
+
+      return ean;
    }
 
    private boolean isProductPage(Document doc) {

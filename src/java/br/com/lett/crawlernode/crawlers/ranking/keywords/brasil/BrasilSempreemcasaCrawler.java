@@ -73,7 +73,6 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productRanking);
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -98,8 +97,8 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
+               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
             )
          )
          .build();

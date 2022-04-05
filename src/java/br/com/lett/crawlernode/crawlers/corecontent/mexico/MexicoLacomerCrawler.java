@@ -96,7 +96,7 @@ public class MexicoLacomerCrawler extends Crawler {
             List<String> images = scrapImages(json);
             String primaryImage = scrapPrimaryImage(images);
             images.remove(primaryImage);
-            String description = JSONUtils.getStringValue(data, "artDes");
+            String description = JSONUtils.getStringValue(data, "artTexto");
             List<String> eans = new ArrayList<>();
             eans.add(scrapEan());
 

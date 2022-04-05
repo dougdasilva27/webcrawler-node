@@ -120,7 +120,7 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
          .addParameter("sortBy", this.sortBy)
          .addParameter("showOnlyAvailable", String.valueOf(this.showOnlyAvailable));
 
-      if (!this.salesChannel.isEmpty()) {
+      if (this.salesChannel != null && !this.salesChannel.isEmpty()) {
          salesChannel.forEach(channel -> uriBuilder.addParameter("salesChannel", channel));
       }
 

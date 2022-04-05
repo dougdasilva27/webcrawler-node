@@ -1,12 +1,13 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -18,6 +19,8 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +29,7 @@ public class FavoCrawler extends Crawler {
    public FavoCrawler(Session session) {
       super(session);
       super.config.setParser(Parser.JSON);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    private static final String SELLER_FULL_NAME = "Favo Market Deelsa";
@@ -49,10 +52,18 @@ public class FavoCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
       headers.put("x-origin-id", this.ORIGIN_ID);
+      headers.put("referer", "https://" + STORE + ".mercadofavo.com/");
+      headers.put("origin", "https://" + STORE + ".mercadofavo.com/");
+      headers.put("accept", "application/json, text/plain, */*");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
          .build();
 
       return this.dataFetcher.get(session, request);
@@ -66,7 +77,11 @@ public class FavoCrawler extends Crawler {
 
       if (matcher.find()) {
          productSlug = matcher.group(1);
+      } else {
+         productSlug = CommonMethods.getLast(session.getOriginalURL().split("/"));
       }
+
+      productSlug = URLEncoder.encode(productSlug, StandardCharsets.UTF_8);
 
       return "https://customer-bff.favoapp.com.br/products/by_slug?product_slug=" + productSlug + "&store=" + STORE;
    }

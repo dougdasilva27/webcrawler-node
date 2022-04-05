@@ -21,12 +21,14 @@ import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -65,7 +67,7 @@ public class BrasilDrogalCrawler extends Crawler {
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".big-image img", List.of("data-src"), "https", "io.convertiez.com.br");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image li:not(.active) img", List.of("data-src"), "https", "io.convertiez.com.br", primaryImage);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, List.of(".container:contains(Descrição)", ".container:contains(Especificação)"));
+         String description = scrapDescription(doc);
          RatingsReviews ratingsReviews = scrapRatingAndReviews(doc, internalId);
          boolean available = doc.selectFirst("#content-product .purchase > button:contains(Comprar)") != null;
          Offers offers = available ? scrapOffers(doc, internalPid) : new Offers();
@@ -93,6 +95,35 @@ public class BrasilDrogalCrawler extends Crawler {
       }
 
       return products;
+
+   }
+
+   private String scrapDescription(Document doc) {
+
+      StringBuilder description = new StringBuilder();
+      doc.select(".container .my-4").forEach(el -> {
+         String element = CrawlerUtils.scrapStringSimpleInfo(el, ".title", true);
+         String productDescription = CrawlerUtils.scrapStringSimpleInfo(el, "p", true);
+         if (element != null && productDescription != null) {
+            if (element.contains("Modo de Usar")) {
+
+               description.append("Modo de Usar").append("\n");
+               description.append(productDescription);
+
+            } else if (element.contains("Descrição")) {
+               description.append("Descrição").append("\n");
+               description.append(productDescription);
+            }
+         }
+      });
+
+      String information = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-style-3.mt-2 p", true);
+
+      if (information != null) {
+         description.append(information).append("\n");
+      }
+
+      return description.toString();
 
    }
 
@@ -283,10 +314,10 @@ public class BrasilDrogalCrawler extends Crawler {
       double avgRating = 0D;
 
       if (ratingCount > 0) {
-         Element avg = doc.select("[itemprop=aggregateRating] .rating-star [itemprop=ratingValue]").first();
+         Element avg = doc.select(".rating-star.ml-auto span").first();
 
          if (avg != null) {
-            String text = avg.ownText().replaceAll("[^0-9.]", "").replace(",", ".").trim();
+            String text = avg.className().replaceAll("[^0-9.]", "").replace(",", ".").trim();
 
             if (!text.isEmpty()) {
                avgRating = Double.parseDouble(text);
@@ -297,62 +328,58 @@ public class BrasilDrogalCrawler extends Crawler {
       return avgRating;
    }
 
-   private Document fetchAdvancedRating(int page) {
-      StringBuilder url = new StringBuilder(this.session.getOriginalURL()).append("?p=").append(page);
-      Request request = Request.RequestBuilder.create().setUrl(url.toString()).build();
-      return Jsoup.parse(dataFetcher.get(session, request).getBody());
-   }
 
-   private AdvancedRatingReview scrapAdvancedRatingReview(Document document) {
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
 
-      // Select all 'li' with no class, this selector get all elements page (1, 2, 3...) of rating
-      // pagination
-      Element paginationExists = document.select(".pagination").first();
+      int stars5 = 0;
+      int stars4 = 0;
+      int stars3 = 0;
+      int stars2 = 0;
+      int stars1 = 0;
 
-      Logging.printLogDebug(logger, session, "Will run rating");
-      // The size of ratingElementsPage is the number of pages
-      int totalPages = 1;
-      int pageIterator = 1;
+      Elements elements = doc.select("#ratings-tab-list .box-ratings .rating-star span");
 
-      if (paginationExists != null) {
-         Elements ratingElementsPage = document.select(".pagination>ul>li:not([class])");
-         totalPages = ratingElementsPage.size();
-      }
-      ;
+      if (!elements.isEmpty()) {
+         for (Element element : elements) {
 
+            String star = element.className().replaceAll("[^0-9.]", "").replace(",", ".").trim();
 
-      Map<Integer, Integer> starsCount = new HashMap<>();
-
-      Document currentDocument = document;
-      while (pageIterator <= totalPages) {
-         Logging.printLogDebug(logger, session, "Will run rating " + totalPages);
-         if (pageIterator > 1) {
-            currentDocument = fetchAdvancedRating(pageIterator);
-         }
-
-         Elements ratingComments = currentDocument.select("div#ratings div.float span.rating-star>span");
-
-         ratingComments.forEach(element -> {
-            Integer ratingValue = Integer.parseInt(element.html().trim());
-            if (ratingValue > 0 && ratingValue <= 5) {
-               Integer count = starsCount.getOrDefault(ratingValue, 0) + 1;
-               starsCount.put(ratingValue, count);
-            } else {
-               Logging.printLogError(logger, session, "rating error: rating star error");
+            switch (star) {
+               case "5":
+                  stars5 += 1;
+                  break;
+               case "4":
+                  stars4 += 1;
+                  break;
+               case "3":
+                  stars3 += 1;
+                  break;
+               case "2":
+                  stars2 += 1;
+                  break;
+               case "1":
+                  stars1 += 1;
+                  break;
+               default:
+                  break;
             }
-         });
-
-         pageIterator++;
+         }
       }
 
       return new AdvancedRatingReview.Builder()
-         .allStars(starsCount)
+         .totalStar1(stars1)
+         .totalStar2(stars2)
+         .totalStar3(stars3)
+         .totalStar4(stars4)
+         .totalStar5(stars5)
          .build();
+
    }
+
 
    private Integer getTotalNumOfRatings(Document docRating) {
       int totalRating = 0;
-      Element totalRatingElement = docRating.select("[itemprop=aggregateRating] [itemprop=reviewCount]").first();
+      Element totalRatingElement = docRating.select(".rating-star.ml-auto span").first();
 
       if (totalRatingElement != null) {
          String text = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();

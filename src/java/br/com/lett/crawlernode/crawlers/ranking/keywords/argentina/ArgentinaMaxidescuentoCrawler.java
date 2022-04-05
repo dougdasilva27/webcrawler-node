@@ -1,10 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.Collections;
 
 public class ArgentinaMaxidescuentoCrawler extends CrawlerRankingKeywords {
 
@@ -13,7 +18,7 @@ public class ArgentinaMaxidescuentoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 12;
 
       this.log("Página " + this.currentPage);
@@ -25,16 +30,28 @@ public class ArgentinaMaxidescuentoCrawler extends CrawlerRankingKeywords {
       this.currentDoc = fetchDocument(url);
       Elements products = this.currentDoc.select(".products.row .product-miniature");
 
-      if (products.size() >= 1) {
+      if (!products.isEmpty()) {
          if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
 
             String internalId = e.attr("data-id-product");
             String productUrl = CrawlerUtils.scrapUrl(e, ".thumbnail-container-image .product-thumbnail", "href", "https://", "http://www.maxidescuento.com.ar");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-title", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-thumbnail img", Collections.singletonList("data-catalog-medium"), "https", "maxidescuento.com.ar");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price", null, false, ',', session, null);
+            boolean isAvailable = price != null;
 
-            saveDataProduct(internalId, null, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(null)
+               .setImageUrl(imgUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
             if (this.arrayProducts.size() == productsLimit) break;
 
          }

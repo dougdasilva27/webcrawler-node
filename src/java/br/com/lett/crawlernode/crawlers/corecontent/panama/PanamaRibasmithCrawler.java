@@ -40,7 +40,7 @@ public class PanamaRibasmithCrawler extends Crawler {
 
          String name = CrawlerUtils.scrapStringSimpleInfo(document,".base",true);
          String internalId = CrawlerUtils.scrapStringSimpleInfo(document, ".value[itemprop=\"sku\"]", true);
-         String internalPId = CrawlerUtils.scrapStringSimpleInfo(document, "input[name=\"product\"]", true);
+         String internalPId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "input[name=\"product\"]", "value");
          CategoryCollection categories = CrawlerUtils.crawlCategories(document, ".breadcrumbs ul li", true);
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".gallery-placeholder__image", "src");
          String description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList("#description", "#additional"));

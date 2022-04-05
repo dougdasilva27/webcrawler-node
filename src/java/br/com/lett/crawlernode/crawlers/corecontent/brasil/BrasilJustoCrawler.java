@@ -60,16 +60,21 @@ public class BrasilJustoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONObject contextSchema = CrawlerUtils.selectJsonFromHtml(doc, ".row.product.product-details > script", null, ";", true, true);
+         JSONObject contextSchema = CrawlerUtils.selectJsonFromHtml(doc, ".row.product.product__container > script", null, ";", true, true);
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".shopping-list__content", "data-id");
          String internalId = internalPid;
+         List<String> eans = new ArrayList<>();
          if (contextSchema != null) {
-            internalId = !contextSchema.isEmpty() ? JSONUtils.getValueRecursive(contextSchema, "offers.0.sku", String.class, internalPid) : internalPid;
+            String sku = JSONUtils.getValueRecursive(contextSchema, "offers.0.sku", String.class, internalPid);
+            internalId = !contextSchema.isEmpty() ? sku : internalPid;
+            if (sku != null) {
+               eans.add(sku);
+            }
          }
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc,".product-info__name", false);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc,".product-details__name", false);
          boolean isAvailable = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
-         List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(contextSchema.optJSONArray("image"), null, null, "https", "media.soujusto.com.br", session);
+         List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(JSONUtils.getValueRecursive(contextSchema, "image", "/", JSONArray.class, new JSONArray()), null, null, "https", "media.soujusto.com.br", session);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__info-description-text", false);
          Offers offers = isAvailable ? crawlOffers(doc) : new Offers();
@@ -84,6 +89,7 @@ public class BrasilJustoCrawler extends Crawler {
             .setSecondaryImages(images)
             .setDescription(description)
             .setOffers(offers)
+            .setEans(eans)
             .build();
 
          products.add(product);
@@ -95,7 +101,7 @@ public class BrasilJustoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select(".product-details").isEmpty();
+      return !doc.select(".product__container").isEmpty();
    }
 
    private Offers crawlOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -148,12 +154,12 @@ public class BrasilJustoCrawler extends Crawler {
       Double spotlightPrice;
       Double priceFrom;
 
-      if (doc.select(".product-info__discount").isEmpty()){
+      if (doc.select(".product-details__discount").isEmpty()){
          priceFrom = null;
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info__price", null, false, ',', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-details__price > span > span", null, true, ',', session);
       }else{
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info__discount", null, false, ',', session);
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info__price", null, false, ',', session);
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-details__discount", null, true, ',', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-details__price > span > span", null, true, ',', session);
       }
 
       return new Double[]{priceFrom, spotlightPrice};
@@ -183,15 +189,13 @@ public class BrasilJustoCrawler extends Crawler {
       List<String> sales = new ArrayList<>();
 
       String saleDiscount = CrawlerUtils.calculateSales(pricing);
-      if (saleDiscount != null) {
-         sales.add(saleDiscount);
-      }
+      sales.add(saleDiscount);
 
       return sales;
    }
 
    private boolean crawlAvailability(Document doc){
-      return !doc.select(".product-info__price").isEmpty();
+      return !doc.select(".product-details__price").isEmpty();
    }
 
    private CategoryCollection crawlCategories(Document doc){

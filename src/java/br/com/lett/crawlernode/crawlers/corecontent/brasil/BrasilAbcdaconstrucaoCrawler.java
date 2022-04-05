@@ -26,6 +26,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -99,7 +100,7 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".container.tpl-produto .produto-section-detalhes") != null;
+      return doc.selectFirst("div.produto-info") != null;
    }
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
@@ -207,58 +208,27 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    }
 
    private double calculatePriceSquareMeter(Document doc) {
-      double spotilightPrice = 0D;
-      Double boxPriceSquareMeter;
+      Double spotlightPrice = 0D;
+      Double squareMeter = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div #spanPrecoCalculadoComponente", null, false, ',', session);
 
-      String squareMeter = scrapPriceBoxFromDescription(doc);
-
-      if (!squareMeter.isEmpty()) {
-
-
-         if (squareMeter.contains(",")) {
-            boxPriceSquareMeter = MathUtils.parseDoubleWithComma(squareMeter);
-
-         } else {
-            boxPriceSquareMeter = MathUtils.parseDoubleWithDot(squareMeter);
-         }
-
-         Double boxPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precosDiv .precoPor", null, true, ',', session);
-
-         if (boxPrice != null && boxPriceSquareMeter != null) {
-            spotilightPrice = MathUtils.normalizeTwoDecimalPlaces(boxPrice / boxPriceSquareMeter);
-            double fivePerCent = 0.05 * spotilightPrice;
-            spotilightPrice = spotilightPrice - fivePerCent;
+      if (squareMeter != null) {
+         Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
+         if (price != null) {
+            Double meter = squareMeter / price;
+            return price / meter;
          }
       } else {
-// Is necessary because some products not have square meter in description on any place
+         // Is necessary because some products not have square meter in description on any place
          Document docWebDriver = getDocWithWebDriver();
          if (docWebDriver != null) {
-            spotilightPrice = CrawlerUtils.scrapDoublePriceFromHtml(docWebDriver, "#novoPrecoCalculado .textoPrecoCalculado:not(:first-child)", null, true, ',', session);
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(docWebDriver, "#novoPrecoCalculado .textoPrecoCalculado:not(:first-child)", null, true, ',', session);
+            if (spotlightPrice == null) {
+               spotlightPrice = 0D;
+            }
          }
       }
 
-      return spotilightPrice;
-   }
-
-
-   private String scrapPriceBoxFromDescription(Document doc) {
-
-      String priceBox = "";
-
-      Elements elements = doc.select("#conteudo-0 .paddingbox ul li");
-      if (elements.isEmpty()) {
-         elements = doc.select(".paddingbox p");
-      }
-
-      for (Element e : elements) {
-         String element = e.toString().toLowerCase().replace(" ", "");
-         if (!element.isEmpty() && element.contains("m2/caixa:") || element.contains("m2porcaixa:") || element.contains("m²porcaixa") || element.contains("m²/caixa") || element.contains("caixa")) {
-            priceBox = CommonMethods.getLast(e.text().split(":"));
-
-            break;
-         }
-      }
-      return priceBox;
+      return spotlightPrice;
    }
 
    private Document getDocWithWebDriver() {
@@ -267,22 +237,16 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       try {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
          if (webdriver != null) {
-            webdriver.waitForElement(".textoPrecoCalculado", 20000);
+            webdriver.waitLoad(60000);
 
             document = Jsoup.parse(webdriver.getCurrentPageSource());
+
             webdriver.terminate();
          }
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-
       }
       return document;
    }
-
-   public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 70);
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
-   }
-
 
 }
