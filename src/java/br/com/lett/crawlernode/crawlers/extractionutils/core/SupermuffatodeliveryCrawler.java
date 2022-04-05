@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -24,6 +26,7 @@ public class SupermuffatodeliveryCrawler extends VTEXOldScraper {
 
    public SupermuffatodeliveryCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.APACHE);
    }
 
    @Override

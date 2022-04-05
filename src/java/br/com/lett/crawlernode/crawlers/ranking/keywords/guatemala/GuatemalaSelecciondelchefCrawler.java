@@ -62,8 +62,6 @@ public class GuatemalaSelecciondelchefCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, internalId, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl);
-
          }
       }
 

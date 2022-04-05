@@ -29,9 +29,9 @@ public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords
       String url = "https://delivery.supermuffato.com.br/buscapagina?" +
          "ft=" + this.keywordEncoded +
          "&sc=" + getCityCode() +
-         "&PS=24" +
+         "&PS=48" +
          "&sl=d85149b5-097b-4910-90fd-fa2ce00fe7c9" +
-         "&cc=24" +
+         "&cc=48" +
          "&sm=0" +
          "&PageNumber=" + this.currentPage;
 

@@ -5,6 +5,7 @@ import java.util.*;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -51,6 +52,12 @@ public class BrasilBalarotiCrawler extends VTEXNewScraper {
    @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
       return null;
+   }
+
+   @Override
+   protected CreditCards scrapCreditCards(JSONObject comertial, JSONObject discounts, boolean mustSetDiscount) throws MalformedPricingException {
+      Double creditCardPrice = JSONUtils.getDoubleValueFromJSON(comertial, "ListPrice", false);
+      return CrawlerUtils.scrapCreditCards(creditCardPrice, cards);
    }
 
    @Override

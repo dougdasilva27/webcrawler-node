@@ -47,7 +47,6 @@ public class GuatemalaWalmartCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, internalPid, url);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + url);
          }
 
 

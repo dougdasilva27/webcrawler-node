@@ -89,7 +89,6 @@ public class MexicoChedrauiCrawler extends CrawlerRankingKeywords {
       this.pageSize = 24;
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-
    }
 
    private String scrapUrl(Element e) {

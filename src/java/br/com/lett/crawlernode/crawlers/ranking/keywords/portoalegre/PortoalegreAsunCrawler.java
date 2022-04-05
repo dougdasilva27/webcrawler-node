@@ -40,7 +40,6 @@ public class PortoalegreAsunCrawler extends CrawlerRankingKeywords {
 
             String productUrl = CrawlerUtils.completeUrl(incompleteUrl,"https","loja.asun.com.br");
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl);
             saveDataProduct(internalId,internalId,productUrl);
          }
       }else {

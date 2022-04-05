@@ -61,7 +61,6 @@ public class PeruJuntozCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit)
                break;
          }
