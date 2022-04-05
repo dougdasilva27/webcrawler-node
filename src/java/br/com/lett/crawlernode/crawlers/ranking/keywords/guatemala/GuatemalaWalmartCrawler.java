@@ -1,8 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.guatemala;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
@@ -28,7 +31,7 @@ public class GuatemalaWalmartCrawler extends CrawlerRankingKeywords {
 
 
    @Override
-   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       Document doc = fetchDocument(HOME_PAGE + this.keywordEncoded);
       JSONObject searchResult = fetchSearchApi(doc);
 
@@ -39,20 +42,43 @@ public class GuatemalaWalmartCrawler extends CrawlerRankingKeywords {
          }
 
          for (Object object : searchResult.optJSONArray("products")) {
-            JSONObject products = (JSONObject) object;
+            JSONObject product = (JSONObject) object;
 
-            String internalId = JSONUtils.getValueRecursive(products, "items.0.itemId", String.class);
-            String internalPid = products.optString("productId");
-            String url = HOME_PAGE + products.optString("linkText") + "/p";
+            String internalId = JSONUtils.getValueRecursive(product, "items.0.itemId", String.class, null);
+            String internalPid = product.optString("productId");
+            String url = HOME_PAGE + product.optString("linkText") + "/p";
+            String name = product.optString("productName");
+            String imgUrl = JSONUtils.getValueRecursive(product, "items.0.images.0.imageUrl", String.class, null);
+            int price = scrapPrice(product);
+            int stock = JSONUtils.getValueRecursive(product, "items.0.sellers.0.commertialOffer.AvailableQuantity", Integer.class, 0);
+            boolean available = stock > 0;
 
-            saveDataProduct(internalId, internalPid, url);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(url)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setImageUrl(imgUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(available)
+               .build();
 
+            saveDataProduct(productRanking);
          }
 
 
       } else {
          log("keyword sem resultado");
       }
+   }
+
+   private int scrapPrice(JSONObject product) {
+      Integer price = null;
+      JSONObject sellingPrice = JSONUtils.getValueRecursive(product, "priceRange.sellingPrice", JSONObject.class, null);
+      if (sellingPrice != null) {
+         price = JSONUtils.getPriceInCents(sellingPrice, "lowPrice");
+      }
+      return price;
    }
 
 
