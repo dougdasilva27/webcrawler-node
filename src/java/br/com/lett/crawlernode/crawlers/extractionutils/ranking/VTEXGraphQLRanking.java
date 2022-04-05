@@ -148,7 +148,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
          variables.put("installmentCriteria", "MAX_WITHOUT_INTEREST");
          variables.put("productOriginVtex", false);
          variables.put("map", "ft");
-         variables.put("orderBy", "OrderByScoreDESC");
+         variables.put("orderBy", "");
          variables.put("facetsBehavior", "Static");
          variables.put("categoryTreeBehavior", "default");
          variables.put("withFacets", false);
