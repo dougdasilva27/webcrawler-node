@@ -38,7 +38,6 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, internalPid, completeUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + completeUrl);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
