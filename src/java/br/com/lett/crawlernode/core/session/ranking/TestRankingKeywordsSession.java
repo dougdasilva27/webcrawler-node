@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.ScraperInformation;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.Arrays;
 
@@ -20,8 +21,7 @@ public class TestRankingKeywordsSession extends TestRankingSession {
    public TestRankingKeywordsSession(Market market, String keyword, ScraperInformation scraperInformation) {
       super(market, keyword);
 
-      this.options = JSONUtils.stringToJson(scraperInformation.getOptionsScraper());
-
+      this.options = getSessionOptions(scraperInformation);
 
       JSONArray proxiesArray = this.options.optJSONArray("proxies");
       if (proxiesArray != null && !proxiesArray.isEmpty()) {
@@ -47,6 +47,17 @@ public class TestRankingKeywordsSession extends TestRankingSession {
          maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
       }
 
+   }
+
+   private JSONObject getSessionOptions(ScraperInformation scraperInformation) {
+      JSONObject options = JSONUtils.stringToJson(scraperInformation.getOptionsScraper());
+      JSONObject optionsScraperClass = JSONUtils.stringToJson(scraperInformation.getOptionsScraperClass());
+
+      if (optionsScraperClass != null && !optionsScraperClass.isEmpty()) {
+         options.put("scraperClass", optionsScraperClass);
+      }
+
+      return options;
    }
 
 }
