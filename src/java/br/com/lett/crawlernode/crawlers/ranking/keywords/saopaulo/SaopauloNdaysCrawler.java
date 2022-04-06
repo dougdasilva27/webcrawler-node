@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -10,6 +13,8 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.Arrays;
+
 public class SaopauloNdaysCrawler extends CrawlerRankingKeywords {
 
    public SaopauloNdaysCrawler(Session session){
@@ -17,7 +22,7 @@ public class SaopauloNdaysCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
       this.log("Página " + this.currentPage);
       String url = "https://www.ndays.com.br/index.php?route=product/search&search=" + this.keywordEncoded + "&page=" + this.currentPage;
@@ -36,11 +41,29 @@ public class SaopauloNdaysCrawler extends CrawlerRankingKeywords {
          for(Element product:products){
 
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".button-group button", "data-id");
-
+            Boolean isAvailable = false;
+            Integer price = null;
             String[] nonFormattedUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".caption a", "href").split("\\?search");
             String urlProduct = nonFormattedUrl.length > 0 ? nonFormattedUrl[0] : null;
-
-            saveDataProduct(internalId, null, urlProduct);
+            String name = CrawlerUtils.scrapStringSimpleInfo(product, ".caption > h4 > a", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(product, "a .img-responsive", Arrays.asList("src"), "", "");
+            Double priceDouble = CrawlerUtils.scrapDoublePriceFromHtml(product, ".price", null, false, ',', session);
+            if(priceDouble == null){
+               priceDouble = CrawlerUtils.scrapDoublePriceFromHtml(product, ".price .price-new", null, false, ',', session);
+            }
+            if(priceDouble != null){
+               isAvailable = true;
+               price = Math.toIntExact(Math.round(priceDouble * 100));
+            }
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(urlProduct)
+               .setInternalId(internalId)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit) break;
          }
