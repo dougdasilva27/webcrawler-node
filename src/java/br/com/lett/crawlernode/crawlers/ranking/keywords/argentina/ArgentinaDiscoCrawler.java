@@ -62,7 +62,6 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, null, urlProduct);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + urlProduct);
          }
       }
 

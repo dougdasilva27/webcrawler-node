@@ -49,7 +49,6 @@ public class BrasilSupermuffatoCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, internalPid, urlProduct);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
             if (this.arrayProducts.size() == productsLimit) break;
          }
       } else {

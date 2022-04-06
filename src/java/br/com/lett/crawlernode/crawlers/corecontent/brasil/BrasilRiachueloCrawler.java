@@ -31,7 +31,7 @@ import java.util.*;
 public class BrasilRiachueloCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.riachuelo.com.br/";
-   private static final String SELLER_FULL_NAME = "Riachuelo";
+   private String SELLER_FULL_NAME;
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -42,6 +42,7 @@ public class BrasilRiachueloCrawler extends Crawler {
    public BrasilRiachueloCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
+      SELLER_FULL_NAME = session.getOptions().optString("sellerName", "Riachuelo");
    }
 
    @Override
@@ -157,6 +158,11 @@ public class BrasilRiachueloCrawler extends Crawler {
 
                      Offers offers = isAvailable ? scrapVariationOffers(variations, variationName) : new Offers();
 
+                     if (SELLER_FULL_NAME.equalsIgnoreCase("Nivea") && !variationName.contains("nivea")) {
+                        throw new Exception("Produto não é da loja Nivea");
+                     }
+
+
                      Product product = ProductBuilder.create()
                         .setUrl(session.getOriginalURL())
                         .setInternalId(internalId)
@@ -230,17 +236,17 @@ public class BrasilRiachueloCrawler extends Crawler {
       Double spotLightPrice = null;
       Double priceFrom = null;
 
-         if(spotLightPriceObject instanceof Integer) {
-            spotLightPrice = (double) (int) spotLightPriceObject;
-         } else if (spotLightPriceObject instanceof Double) {
-            spotLightPrice = (double) spotLightPriceObject;
-         }
+      if (spotLightPriceObject instanceof Integer) {
+         spotLightPrice = (double) (int) spotLightPriceObject;
+      } else if (spotLightPriceObject instanceof Double) {
+         spotLightPrice = (double) spotLightPriceObject;
+      }
 
-         if(priceFromObject instanceof Integer) {
-            priceFrom = (double) (int) priceFromObject;
-         } else if (priceFromObject instanceof Double) {
-            priceFrom = (double) priceFromObject;
-         }
+      if (priceFromObject instanceof Integer) {
+         priceFrom = (double) (int) priceFromObject;
+      } else if (priceFromObject instanceof Double) {
+         priceFrom = (double) priceFromObject;
+      }
 
       if (priceFrom != null && priceFrom.equals(spotLightPrice)) {
          priceFrom = null;
