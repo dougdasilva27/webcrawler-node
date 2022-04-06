@@ -34,7 +34,6 @@ public class ManausSenhormercadomanausCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productId, null, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + productId + " - InternalPid: " + null + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit)
                break;
 

@@ -58,7 +58,7 @@ abstract public class SupersjCrawler extends Crawler {
 
       if (isProductPage(doc)) {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "[class=\"text-dark text-center mb-2 ng-star-inserted\"]", true);
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-dt-view div.product-cdg a", false);
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-dt-view div.product-cdg", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-dt-view div.imagem img", Arrays.asList("src"), "https", "");
          boolean available = doc.selectFirst("input.mais-btn") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
@@ -103,11 +103,11 @@ abstract public class SupersjCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-dt-view h2.product-price-promocao", null, true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-dt-view h2.product-price-small", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-dt-view .product-price-promocao", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-dt-view .product-price-small", null, true, ',', session);
 
       if(spotlightPrice == null){
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-dt-view h2.product-price", null, true, ',', session);         priceFrom = null;
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-dt-view .product-price", null, true, ',', session);         priceFrom = null;
       }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
@@ -124,7 +124,7 @@ abstract public class SupersjCrawler extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditCards(double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();

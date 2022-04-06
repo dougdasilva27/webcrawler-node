@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import jdk.jfr.Category;
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
@@ -43,7 +44,7 @@ public class BrasilShopeeCrawler extends Crawler {
             String description = data.getString("description");
             CategoryCollection categories = scrapCategories(data);
             RatingsReviews ratingsReviews = scrapRatingsAlternativeWay(data);
-            Integer stock = data.optInt("other_stock");
+            Integer stock = scrapStock(data);
             List<String> secondaryImages = scrapSecondaryImages(data, primaryImage);
             Offers offers = stock > 0 ? scrapOffers(data) : new Offers();
             Product product = ProductBuilder.create()
@@ -56,6 +57,7 @@ public class BrasilShopeeCrawler extends Crawler {
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setCategories(categories)
+               .setStock(stock)
                .build();
 
             products.add(product);
@@ -69,6 +71,14 @@ public class BrasilShopeeCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private Integer scrapStock(JSONObject data) {
+      int stock = data.optInt("stock");
+      if(stock == 0){
+         stock = data.optInt("other_stock");
+      }
+      return stock;
    }
 
    private RatingsReviews scrapRatingsAlternativeWay(JSONObject data) {
@@ -117,7 +127,7 @@ public class BrasilShopeeCrawler extends Crawler {
          }
       }
 
-      return null;
+      return categories;
    }
 
    private List<String> scrapSecondaryImages(JSONObject data, String primaryImage) {

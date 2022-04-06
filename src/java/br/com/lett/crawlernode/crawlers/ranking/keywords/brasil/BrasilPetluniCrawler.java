@@ -39,7 +39,6 @@ public class BrasilPetluniCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(null, productPid, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + productPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit)
                break;
 

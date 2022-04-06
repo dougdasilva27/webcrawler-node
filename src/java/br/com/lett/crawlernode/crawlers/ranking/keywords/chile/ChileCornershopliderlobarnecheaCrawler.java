@@ -38,8 +38,6 @@ public class ChileCornershopliderlobarnecheaCrawler extends CrawlerRankingKeywor
 
           saveDataProduct(internalId, null, productUrl);
 
-          this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-
           if (this.arrayProducts.size() == productsLimit) {
             break;
           }
