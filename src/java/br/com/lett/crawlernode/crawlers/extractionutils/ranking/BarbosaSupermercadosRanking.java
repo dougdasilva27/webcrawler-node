@@ -1,10 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -19,9 +15,6 @@ import br.com.lett.crawlernode.util.Logging;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,15 +23,14 @@ public class BarbosaSupermercadosRanking extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private String STORE_ID = session.getOptions().optString("storeId");
-   private JSONObject scOptions = session.getOptions().optJSONObject("scraperClass");
+   private final String STORE_ID = session.getOptions().optString("storeId");
+   private final JSONObject scOptions = session.getOptions().optJSONObject("scraperClass");
 
    private JSONObject fetch() {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
       headers.put("Connection", "keep-alive");
       headers.put("referer", "https://www.barbosasupermercados.com.br/");
-      headers.put("accept", "application/json, text/plain, */*");
 
       String appSecret = scOptions.optString("app_secret");
       String appKey = scOptions.optString("app_key");
@@ -46,22 +38,27 @@ public class BarbosaSupermercadosRanking extends CrawlerRankingKeywords {
       String url = "https://bsm.applayos.com:6033/api/ecom/enav/buscarprodutos";
       String payload = "{\"filter\":{\"text\":\"" + this.keywordWithoutAccents + "\"},\"session\":{\"loja\":{\"id\":\"" + STORE_ID + "\"}},\"limit\":350,\"app_key\":\"" + appKey + "\",\"app_secret\":\"" + appSecret + "\"}";
 
-      headers.put("Content-Length", String.valueOf(payload.length()));
-
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
-//         .setHeaders(headers)
+         .setHeaders(headers)
          .setPayload(payload)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
-         .setSendUserAgent(false)
+         .mustSendContentEncoding(false)
          .build();
 
-      try {
-         Response response = new FetcherDataFetcher().post(session, request);
-         String content = response.getBody();
-         return CrawlerUtils.stringToJson(content);
-      } catch (Exception e) {
-         Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+      int tries = 0;
+      Response response = null;
+
+      while (tries < 3) {
+         try {
+            response = new FetcherDataFetcher().post(session, request);
+            String content = response.getBody();
+            if (response.isSuccess()) {
+               return CrawlerUtils.stringToJson(content);
+            }
+         } catch (Exception e) {
+            Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+         }
+         tries++;
       }
 
       return new JSONObject();
@@ -80,13 +77,13 @@ public class BarbosaSupermercadosRanking extends CrawlerRankingKeywords {
             if (o instanceof JSONObject) {
                JSONObject product = (JSONObject) o;
 
-               String internalId = product.optString("id");
-               String internalPid = product.optString("sku");
-               String productUrl = CrawlerUtils.completeUrl(product.optString("url_key") + product.optString("url_suffix"), "https", "naturaldaterra.com.br");
-               String name = product.optString("name");
-               String imageUrl = JSONUtils.getValueRecursive(product, "small_image.url", String.class);
-               int price = 0;
-               boolean isAvailable = price != 0;
+               String internalId = product.optString("sku");
+               String internalPid = internalId;
+               String productUrl = scrapUrl(product);
+               String name = product.optString("descricao");
+               String imageUrl = JSONUtils.getValueRecursive(product, "files2.0.url", String.class);
+               Integer price = JSONUtils.getPriceInCents(product, "por", Integer.class, null);
+               boolean isAvailable = price != null;
 
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
@@ -110,6 +107,15 @@ public class BarbosaSupermercadosRanking extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String scrapUrl(JSONObject product) {
+      String url = "https://www.barbosasupermercados.com.br/#product=";
+      String productUri = product.optString("uri", "");
+      if (!productUri.isEmpty()) {
+         return url + productUri;
+      }
+      return null;
    }
 
    @Override
