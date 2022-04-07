@@ -78,7 +78,7 @@ public class BarbosaSupermercadosRanking extends CrawlerRankingKeywords {
                JSONObject product = (JSONObject) o;
 
                String internalId = product.optString("sku");
-               String internalPid = internalId;
+               String internalPid = product.optString("_id");
                String productUrl = scrapUrl(product);
                String name = product.optString("descricao");
                String imageUrl = JSONUtils.getValueRecursive(product, "files2.0.url", String.class);
