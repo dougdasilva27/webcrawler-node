@@ -50,7 +50,7 @@ public class DynamicDataFetcher {
    }
 
    public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session, Set<Cookie> cookies, String homePage) {
-      return fetchPageWebdriver(url, proxyString, session, null, homePage, null);
+      return fetchPageWebdriver(url, proxyString, session, cookies, homePage, null);
    }
 
    public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session, Set<Cookie> cookies, String homePage, ChromeOptions chromeOptions) {
