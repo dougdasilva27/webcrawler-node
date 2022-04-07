@@ -65,7 +65,7 @@ public class BelohorizonteBernardaoCrawler extends CrawlerRankingKeywords {
 
    private String scrapImageUrl(Element product) {
       String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".product-image .alternative-img", Collections.singletonList("src"), "https", "bernardaoemcasa.com.br");
-      if (imageUrl.contains("placeholder")) {
+      if (imageUrl != null && imageUrl.contains("placeholder")) {
          imageUrl = null;
       }
       return imageUrl;
