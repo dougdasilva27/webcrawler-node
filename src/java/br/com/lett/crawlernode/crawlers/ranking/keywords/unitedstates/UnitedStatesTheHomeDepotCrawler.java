@@ -130,60 +130,6 @@ public class UnitedStatesTheHomeDepotCrawler extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
-//
-//   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session, Set<Cookie> cookies, String homePage) {
-//      Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
-//      String requestHash = FetchUtilities.generateRequestHash(session);
-//
-//      CrawlerWebdriver webdriver = null;
-//      try {
-//         LettProxy proxy = randomProxy(proxyString != null ? proxyString : ProxyCollection.BUY_HAPROXY);
-//
-//         Proxy proxySel = new Proxy();
-//         proxySel.setHttpProxy(proxy.getAddress() + ":" + proxy.getPort());
-//         proxySel.setSslProxy(proxy.getAddress() + ":" + proxy.getPort());
-//
-//         String userAgent = FetchUtilities.randUserAgent();
-//
-//         ChromeOptions chromeOptions = new ChromeOptions();
-//         chromeOptions.setProxy(proxySel);
-//         chromeOptions.setHeadless(true);
-//         chromeOptions.setPageLoadStrategy(PageLoadStrategy.NORMAL);
-//
-//
-//         chromeOptions.setCapability("browserName", "chrome");
-//         chromeOptions.addArguments("--user-agent=" + userAgent);
-//
-//         chromeOptions.addArguments("--window-size=1920,1080");
-//         chromeOptions.addArguments("--headless");
-//
-//
-//         sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
-//
-//         if (cookies != null) {
-//            webdriver = new CrawlerWebdriver(chromeOptions, session, cookies, homePage);
-//         } else {
-//            webdriver = new CrawlerWebdriver(chromeOptions, session);
-//         }
-//         webdriver.loadUrl(url);
-//
-//         // saving request content result on Amazon
-//         S3Service.saveResponseContent(session, requestHash, webdriver.getCurrentPageSource());
-//
-//         return webdriver;
-//      } catch (Exception e) {
-//         Exporter.collectError(e, session);
-//         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-//
-//         // close the webdriver
-//         if (webdriver != null) {
-//            Logging.printLogDebug(logger, session, "Terminating Chrome instance because it gave error...");
-//            webdriver.terminate();
-//         }
-//         return null;
-//      }
-//   }
-
 
    private String scrapProductUrl(Element prod) {
       String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(prod, "a.header.product-pod--ie-fix", "href");
