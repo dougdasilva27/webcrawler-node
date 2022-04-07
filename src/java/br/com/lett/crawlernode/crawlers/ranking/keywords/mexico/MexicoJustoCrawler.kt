@@ -2,9 +2,11 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.models.Request
+import br.com.lett.crawlernode.core.models.RankingProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CrawlerUtils
+import br.com.lett.crawlernode.util.JSONUtils
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.json.JSONArray
 import org.json.JSONObject
@@ -63,8 +65,33 @@ class MexicoJustoCrawler(session: Session?) : CrawlerRankingKeywords(session) {
          val urlPath = product?.optString("url")
          val internalId = urlPath?.split("-")?.last()?.substringBeforeLast("/")
          val productUrl = HOME_PAGE + urlPath
-         saveDataProduct(internalId, null, productUrl)
-         log("Position: $position - InternalId: $internalId - Url: $productUrl")
+         val name = product?.optString("name")
+         val price = JSONUtils.getValueRecursive(product, "price.amount", Integer.javaClass)
+         val imageUrl = JSONUtils.getValueRecursive(product, "thumbnail.url", String.javaClass)
+         val isAvailable = price != null
+
+         val productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setInternalPid(null)
+            .setName(name)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .setImageUrl(imageUrl)
+            .build()
+
+         saveDataProduct(productRanking)
+
       }
    }
+
+   private fun getPrice(product: JSONObject): Int {
+      val price = JSONUtils.getValueRecursive(product, "price.amount", Integer.javaClass)
+      if (price == null) {
+         price = JSONUtils.getValueRecursive(product, "price.amount", Double.javaClass)
+      }
+      val priceInCents = price.substringBefore(" ").replace(",", "").toInt()
+      return priceInCents
+   }
+
 }
