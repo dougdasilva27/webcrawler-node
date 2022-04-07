@@ -64,7 +64,7 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
       try {
          if (this.VARIATION == 1) {
             webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY, session, this.cookiesWD, this.HOME_PAGE);
-            webdriver.waitForElement(".buybox__actions", 120);
+            webdriver.waitForElement("h1.product-details__title", 120);
 
             webdriver.waitLoad(70000);
             this.CURRENT_URL = this.session.getOriginalURL();
@@ -118,7 +118,7 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
                String primaryImage = scrapFirstImage(images);
                List<String> secondaryImages = scrapSecondaryImages(images);
                CategoryCollection categories = scrapCategories(this.currentDoc);
-               boolean available = scrapAvailability(productJson);
+               boolean available = scrapAvailability(this.currentDoc);
                RatingsReviews ratingsReviews = scrapRatingReviews(productJson);
 
                Offers offers = available ? scrapOffers(productJson) : new Offers();
@@ -166,10 +166,10 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
       return secondaryImages;
    }
 
-   private Boolean scrapAvailability(JSONObject productJson) {
-      String availability  = JSONUtils.getValueRecursive(productJson,"offers.availability", String.class);
+   private Boolean scrapAvailability(Document doc) {
+      Element availability = doc.selectFirst(".buybox__actions");
 
-      if (availability != null && availability.equals("https://schema.org/InStock")) {
+      if (availability != null) {
          return true;
       }
 
@@ -197,6 +197,7 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
       Integer priceInt = JSONUtils.getValueRecursive(productJson, "offers.price", Integer.class);
       Double spotlightPrice = null;
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(this.currentDoc, ".price-detailed__was-price span.u__strike span", null, false, '.', session);
 
       if (priceInt != null) {
          spotlightPrice = Double.valueOf(priceInt);
@@ -208,7 +209,7 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
-         .setPriceFrom(null)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .build();
    }

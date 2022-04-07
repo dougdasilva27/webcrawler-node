@@ -46,7 +46,7 @@ public class UnitedStatesTheHomeDepotCrawler extends CrawlerRankingKeywords {
 
    public void scrollDownPage() {
       JavascriptExecutor js = (JavascriptExecutor) webdriver.driver;
-      js.executeScript("window.scrollTo(0, document.querySelector('.browse-search__pod-col-no-padding').scrollHeight);", "");
+      js.executeScript("window.scrollTo(0, document.body.scrollHeight);", "");
       webdriver.waitLoad(7000);
    }
 
@@ -59,7 +59,7 @@ public class UnitedStatesTheHomeDepotCrawler extends CrawlerRankingKeywords {
             webdriver = DynamicDataFetcher.fetchPageWebdriver(HOME_PAGE, ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY, session, this.cookiesWD, this.HOME_PAGE);
 
             webdriver.waitForElement("input.SearchBox__input", 120);
-            webdriver.sendToInput("input.SearchBox__input", this.keywordEncoded, 120);
+            webdriver.sendToInput("input.SearchBox__input", this.keywordWithoutAccents, 120);
             webdriver.findAndClick("#headerSearchButton", 120);
             webdriver.waitLoad(70000);
             scrollDownPage();
