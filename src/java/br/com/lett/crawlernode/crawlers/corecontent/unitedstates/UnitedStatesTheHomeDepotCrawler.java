@@ -308,7 +308,7 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
       if (reviews != null) {
 
          for (Object rating : reviews) {
-            Integer star = JSONUtils.getValueRecursive(rating, "reviewRating.ratingValue", Integer.class);
+            Integer star = JSONUtils.getValueRecursive(rating, "reviewRating.ratingValue", Integer.class, 0);
 
             switch (star) {
                case 1:
