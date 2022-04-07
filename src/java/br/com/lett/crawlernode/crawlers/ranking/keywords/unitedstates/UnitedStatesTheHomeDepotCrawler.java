@@ -94,7 +94,7 @@ public class UnitedStatesTheHomeDepotCrawler extends CrawlerRankingKeywords {
          }
          if (currentPage == 1) {
             String productCount = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, "span.results-applied__label", false);
-            productCount = productCount.replaceAll("[a-zA-Z]", "");
+            productCount = productCount.replaceAll("[\\p{Punct}a-zA-Z]", "");
             productCount = productCount.trim();
             this.totalProducts = Integer.parseInt(productCount);
          }

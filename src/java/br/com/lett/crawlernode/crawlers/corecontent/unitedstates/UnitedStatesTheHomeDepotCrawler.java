@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -14,8 +15,10 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -35,6 +38,7 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
    private String CURRENT_URL = null;
    private Integer VARIATION = 1;
    private static final String HOME_PAGE = "https://www.homedepot.com/";
+   private Document currentDoc;
 
    public UnitedStatesTheHomeDepotCrawler(Session session) {
       super(session);
@@ -60,13 +64,23 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
       try {
          if (this.VARIATION == 1) {
             webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY, session, this.cookiesWD, this.HOME_PAGE);
-            webdriver.waitForElement(".super-sku__inline-attribute-wrapper", 120);
+            webdriver.waitForElement(".buybox__actions", 120);
+
+            webdriver.waitLoad(70000);
             this.CURRENT_URL = this.session.getOriginalURL();
          } else {
             webdriver.waitForElement(".super-sku__inline-attribute-wrapper", 120);
 
-            WebElement variationButton = webdriver.driver.findElement(
-               By.cssSelector(".super-sku__inline-attribute-wrapper div:nth-child(" + this.VARIATION + ") button"));
+            String variationButtonString = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, ".super-sku__inline-attribute-wrapper div:nth-child(" + this.VARIATION + ") button", false);
+            WebElement variationButton;
+
+            if (variationButtonString != null) {
+               variationButton = webdriver.driver.findElement(
+                  By.cssSelector(".super-sku__inline-attribute-wrapper div:nth-child(" + this.VARIATION + ") button"));
+            } else {
+               variationButton = webdriver.driver.findElement(
+                  By.cssSelector(".super-sku__inline-attribute-wrapper button:nth-child(" + this.VARIATION + ")"));
+            }
 
             webdriver.clickOnElementViaJavascript(variationButton);
             webdriver.waitLoad(70000);
@@ -88,11 +102,11 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (doc != null) {
-         Elements variations = doc.select(".super-sku__inline-attribute-wrapper div button");
+         Elements variations = scrapVariation(doc);
 
-         for (Element e : variations) {
-            Document variationHtml = scrapVariation(doc);
-            JSONObject productJson = scrapJsonFromHtml(variationHtml);
+         for (int i = 0; i < variations.size(); i++) {
+            this.currentDoc = fetchVariation(doc);
+            JSONObject productJson = scrapJsonFromHtml(this.currentDoc);
 
             if (productJson != null) {
                Logging.printLogDebug(logger, session, "Product page identified: " + this.CURRENT_URL);
@@ -103,8 +117,9 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
                JSONArray images = productJson.optJSONArray("image");
                String primaryImage = scrapFirstImage(images);
                List<String> secondaryImages = scrapSecondaryImages(images);
-               //            CategoryCollection categories = getCategories(doc, "[name=keywords]", "content");
+               CategoryCollection categories = scrapCategories(this.currentDoc);
                boolean available = scrapAvailability(productJson);
+               RatingsReviews ratingsReviews = scrapRatingReviews(productJson);
 
                Offers offers = available ? scrapOffers(productJson) : new Offers();
 
@@ -114,10 +129,11 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
                   .setInternalPid(internalId)
                   .setName(name)
                   .setOffers(offers)
-                  //.setCategories(categories)
+                  .setCategories(categories)
                   .setPrimaryImage(primaryImage)
                   .setSecondaryImages(secondaryImages)
                   .setDescription(description)
+                  .setRatingReviews(ratingsReviews)
                   .build();
 
                products.add(product);
@@ -179,9 +195,14 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
-//      Double priceFrom = null;
       Integer priceInt = JSONUtils.getValueRecursive(productJson, "offers.price", Integer.class);
-      Double spotlightPrice = Double.valueOf(priceInt);
+      Double spotlightPrice = null;
+
+      if (priceInt != null) {
+         spotlightPrice = Double.valueOf(priceInt);
+      } else {
+         spotlightPrice = JSONUtils.getValueRecursive(productJson, "offers.price", Double.class);
+      }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
@@ -218,12 +239,29 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
       return creditCards;
    }
 
-   private Document scrapVariation(Document doc) {
+   private Document fetchVariation(Document doc) {
       if (this.VARIATION != 1) {
             doc = fetch();
       }
       this.VARIATION++;
       return doc;
+   }
+
+   private Elements scrapVariation(Document doc) {
+      Element variationsDiv = doc.selectFirst(".super-sku__inline-attribute-wrapper--tile");
+      Elements variations = new Elements();
+
+      if (variationsDiv != null) {
+         variations = variationsDiv.select("div.super-sku__inline-tile--space button");
+      } else {
+         variations = doc.select(".super-sku__inline-attribute .super-sku__inline-attribute-wrapper button");
+      }
+
+      if (variations.size() == 0) {
+         variations = doc.select(".product-details__title");
+      }
+
+      return variations;
    }
 
    JSONObject scrapJsonFromHtml (Document doc) {
@@ -238,5 +276,79 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
       }
 
       return productJson;
+   }
+
+   private RatingsReviews scrapRatingReviews(JSONObject json) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      JSONArray reviews = json.optJSONArray("review");
+
+      Integer totalNumOfEvaluations = reviews.length();
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(reviews);
+      Double avgRating = CrawlerUtils.extractRatingAverageFromAdvancedRatingReview(advancedRatingReview);
+
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+
+      return ratingReviews;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(JSONArray reviews) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+
+      if (reviews != null) {
+
+         for (Object rating : reviews) {
+            Integer star = JSONUtils.getValueRecursive(rating, "reviewRating.ratingValue", Integer.class);
+
+            switch (star) {
+               case 1:
+                  star1++;
+                  break;
+               case 2:
+                  star2++;
+                  break;
+               case 3:
+                  star3++;
+                  break;
+               case 4:
+                  star4++;
+                  break;
+               case 5:
+                  star5++;
+                  break;
+               default:
+                  break;
+            }
+         }
+      }
+
+      return new AdvancedRatingReview.Builder()
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
+   }
+
+   protected CategoryCollection scrapCategories(Document doc) {
+      CategoryCollection categories = new CategoryCollection();
+      Elements breadcrumbs = doc.select("[name=\"breadcrumbs\"] a");
+
+      for (Element category : breadcrumbs) {
+         String categoryName = CrawlerUtils.scrapStringSimpleInfo(category,"a", false);
+         categories.add(categoryName);
+      }
+
+      return categories;
    }
 }
