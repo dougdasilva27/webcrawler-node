@@ -347,7 +347,7 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
 
       for (Element category : breadcrumbs) {
          String categoryName = CrawlerUtils.scrapStringSimpleInfo(category,"a", false);
-         categories.add(categoryName);
+          if (categoryName != null)  categories.add(categoryName);
       }
 
       return categories;
