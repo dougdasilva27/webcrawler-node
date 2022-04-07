@@ -46,11 +46,14 @@ public class DynamicDataFetcher {
     * @return a webdriver instance with the page already loaded
     */
    public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
-      return fetchPageWebdriver(url, proxyString, session, null, null);
+      return fetchPageWebdriver(url, proxyString, session, null, null, null);
    }
 
-
    public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session, Set<Cookie> cookies, String homePage) {
+      return fetchPageWebdriver(url, proxyString, session, null, homePage, null);
+   }
+
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session, Set<Cookie> cookies, String homePage, ChromeOptions chromeOptions) {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
@@ -63,16 +66,18 @@ public class DynamicDataFetcher {
          proxySel.setSslProxy(proxy.getAddress() + ":" + proxy.getPort());
 
          String userAgent = FetchUtilities.randUserAgent();
+         if (chromeOptions == null) {
+            chromeOptions = new ChromeOptions();
+            chromeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
 
-         ChromeOptions chromeOptions = new ChromeOptions();
-         chromeOptions.setProxy(proxySel);
-         chromeOptions.setHeadless(true);
-         chromeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
+            chromeOptions.addArguments("--window-size=1024,768", "--no-sandbox");
+            chromeOptions.addArguments("--disable-dev-shm-usage", "--disable-gpu");
+         }
 
-         chromeOptions.setCapability("browserName", "chrome");
          chromeOptions.addArguments("--user-agent=" + userAgent);
-         chromeOptions.addArguments("--window-size=1024,768", "--no-sandbox");
-         chromeOptions.addArguments("--disable-dev-shm-usage", "--disable-gpu");
+         chromeOptions.setHeadless(true);
+         chromeOptions.setCapability("browserName", "chrome");
+         chromeOptions.setProxy(proxySel);
 
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
@@ -101,7 +106,7 @@ public class DynamicDataFetcher {
    }
 
 
-   private static void sendRequestInfoLogWebdriver(String url, String requestType, LettProxy proxy, String userAgent, Session session, String requestHash) {
+   public static void sendRequestInfoLogWebdriver(String url, String requestType, LettProxy proxy, String userAgent, Session session, String requestHash) {
 
       JSONObject requestMetadata = new JSONObject();
 
@@ -116,7 +121,7 @@ public class DynamicDataFetcher {
 
    }
 
-   private static LettProxy randomProxy(String proxyService) {
+   public static LettProxy randomProxy(String proxyService) {
       List<LettProxy> proxies = GlobalConfigurations.proxies.getProxy(proxyService);
 
       if (!proxies.isEmpty()) {

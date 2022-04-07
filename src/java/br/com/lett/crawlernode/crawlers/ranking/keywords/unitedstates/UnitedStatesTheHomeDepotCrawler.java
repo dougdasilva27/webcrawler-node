@@ -14,16 +14,15 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Cookie;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.util.List;
 
 public class UnitedStatesTheHomeDepotCrawler extends CrawlerRankingKeywords {
    private static final String HOME_PAGE = "https://www.homedepot.com/";
    protected String localizer = getStoreLocalizer();
+   private ChromeOptions chromeOptions = new ChromeOptions();
 
    public UnitedStatesTheHomeDepotCrawler(Session session) {
       super(session);
@@ -54,14 +53,16 @@ public class UnitedStatesTheHomeDepotCrawler extends CrawlerRankingKeywords {
    protected Document fetchDocument(String url) {
       Document doc = null;
 
+      chromeOptions.addArguments("--window-size=1920,1080");
+
       try {
          if (this.currentPage == 1) {
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(HOME_PAGE, ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY, session, this.cookiesWD, this.HOME_PAGE);
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(HOME_PAGE, ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY, session, this.cookiesWD, this.HOME_PAGE, chromeOptions);
 
-            webdriver.waitForElement("input.SearchBox__input", 120);
-            webdriver.sendToInput("input.SearchBox__input", this.keywordWithoutAccents, 120);
-            webdriver.findAndClick("#headerSearchButton", 120);
-            webdriver.waitLoad(70000);
+            webdriver.waitForElement("input.SearchBox__input", 10);
+            webdriver.sendToInput("input.SearchBox__input", this.keywordWithoutAccents, 10);
+            webdriver.findAndClick("#headerSearchButton", 10);
+            webdriver.waitLoad(1000);
             scrollDownPage();
          } else {
             WebElement nextButton = webdriver.driver.findElement(
@@ -129,6 +130,60 @@ public class UnitedStatesTheHomeDepotCrawler extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
+//
+//   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session, Set<Cookie> cookies, String homePage) {
+//      Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
+//      String requestHash = FetchUtilities.generateRequestHash(session);
+//
+//      CrawlerWebdriver webdriver = null;
+//      try {
+//         LettProxy proxy = randomProxy(proxyString != null ? proxyString : ProxyCollection.BUY_HAPROXY);
+//
+//         Proxy proxySel = new Proxy();
+//         proxySel.setHttpProxy(proxy.getAddress() + ":" + proxy.getPort());
+//         proxySel.setSslProxy(proxy.getAddress() + ":" + proxy.getPort());
+//
+//         String userAgent = FetchUtilities.randUserAgent();
+//
+//         ChromeOptions chromeOptions = new ChromeOptions();
+//         chromeOptions.setProxy(proxySel);
+//         chromeOptions.setHeadless(true);
+//         chromeOptions.setPageLoadStrategy(PageLoadStrategy.NORMAL);
+//
+//
+//         chromeOptions.setCapability("browserName", "chrome");
+//         chromeOptions.addArguments("--user-agent=" + userAgent);
+//
+//         chromeOptions.addArguments("--window-size=1920,1080");
+//         chromeOptions.addArguments("--headless");
+//
+//
+//         sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
+//
+//         if (cookies != null) {
+//            webdriver = new CrawlerWebdriver(chromeOptions, session, cookies, homePage);
+//         } else {
+//            webdriver = new CrawlerWebdriver(chromeOptions, session);
+//         }
+//         webdriver.loadUrl(url);
+//
+//         // saving request content result on Amazon
+//         S3Service.saveResponseContent(session, requestHash, webdriver.getCurrentPageSource());
+//
+//         return webdriver;
+//      } catch (Exception e) {
+//         Exporter.collectError(e, session);
+//         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+//
+//         // close the webdriver
+//         if (webdriver != null) {
+//            Logging.printLogDebug(logger, session, "Terminating Chrome instance because it gave error...");
+//            webdriver.terminate();
+//         }
+//         return null;
+//      }
+//   }
+
 
    private String scrapProductUrl(Element prod) {
       String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(prod, "a.header.product-pod--ie-fix", "href");
@@ -140,18 +195,20 @@ public class UnitedStatesTheHomeDepotCrawler extends CrawlerRankingKeywords {
       return "https://www.homedepot.com" + url;
    }
 
-   protected Elements scrapAllElements (Document doc) {
+   protected Elements scrapAllElements(Document doc) {
       Elements firstPartElements = doc.select("#browse-search-pods-1 .browse-search__pod");
       Elements secondPartElements = doc.select("#browse-search-pods-2 .browse-search__pod");
 
       if (secondPartElements != null && !secondPartElements.isEmpty()) {
-         for (Element product: secondPartElements) {
+         for (Element product : secondPartElements) {
             firstPartElements.add(product);
          }
       }
 
       return firstPartElements;
    }
+
+
    @Override
    protected void setTotalProducts() {
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".b-sss_tabs-nav_numbers", true, 0);
