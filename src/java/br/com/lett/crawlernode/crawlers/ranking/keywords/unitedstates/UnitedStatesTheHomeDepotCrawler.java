@@ -94,18 +94,13 @@ public class UnitedStatesTheHomeDepotCrawler extends CrawlerRankingKeywords {
             setTotalProducts();
          }
          if (currentPage == 1) {
-            String productCount = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, "span.results-applied__label", false);
-            productCount = productCount.replaceAll("[\\p{Punct}a-zA-Z]", "");
-            productCount = productCount.trim();
-            this.totalProducts = Integer.parseInt(productCount);
+            setTotalProducts();
          }
-         int i = 0;
 
          for (Element prod : results) {
-            i++;
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(prod, "[data-prop=\"productID\"]", "content");
             String name = CrawlerUtils.scrapStringSimpleInfo(prod, "span.product-pod__title__product", false);
-            String productUrl = scrapProductUrl(prod);
+            String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(prod, "a.header.product-pod--ie-fix", "href"), "https", "www.homedepot.com");
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(prod, ".product-pod__image-wrapper img", List.of("src"), "https", "");
             int price = CrawlerUtils.scrapPriceInCentsFromHtml(prod, ".price-format__main-price span:nth-child(2)", null, true, '.', session, 0);
             boolean isAvailable = price != 0;
@@ -131,16 +126,6 @@ public class UnitedStatesTheHomeDepotCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private String scrapProductUrl(Element prod) {
-      String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(prod, "a.header.product-pod--ie-fix", "href");
-
-      if (url == null) {
-         return null;
-      }
-
-      return "https://www.homedepot.com" + url;
-   }
-
    protected Elements scrapAllElements(Document doc) {
       Elements firstPartElements = doc.select("#browse-search-pods-1 .browse-search__pod");
       Elements secondPartElements = doc.select("#browse-search-pods-2 .browse-search__pod");
@@ -154,9 +139,11 @@ public class UnitedStatesTheHomeDepotCrawler extends CrawlerRankingKeywords {
       return firstPartElements;
    }
 
-
    @Override
    protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".b-sss_tabs-nav_numbers", true, 0);
+      String productCount = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, "span.results-applied__label", false);
+      if (productCount != null )
+         this.totalProducts = Integer.parseInt(productCount.replaceAll("[^0-9]", ""));
+      this.log("Total da busca: " + this.totalProducts);
    }
 }
