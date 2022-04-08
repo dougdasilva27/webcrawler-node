@@ -40,7 +40,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
          for (String key : cookies.keySet()) {
             BasicClientCookie cookie = new BasicClientCookie(key, cookies.optString(key));
             cookie.setPath("/");
-            cookie.setDomain(HOME_PAGE);
+            cookie.setDomain(getHomePage().replace("https://", "").replace("/", ""));
             this.cookies.add(cookie);
          }
       }
