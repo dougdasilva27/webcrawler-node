@@ -54,6 +54,9 @@ public class UnitedStatesTheHomeDepotCrawler extends CrawlerRankingKeywords {
       Document doc = null;
 
       chromeOptions.addArguments("--window-size=1920,1080");
+      chromeOptions.addArguments("--headless");
+      chromeOptions.addArguments("--no-sandbox");
+      chromeOptions.addArguments("--disable-dev-shm-usage");
 
       try {
          if (this.currentPage == 1) {
