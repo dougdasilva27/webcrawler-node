@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import com.google.common.collect.Sets;
@@ -29,7 +31,6 @@ import models.pricing.Pricing.PricingBuilder;
 
 
 /**
- * 
  * @author Marcos Moura date: 2020-06-23
  */
 
@@ -54,9 +55,17 @@ public class BrasilMinhacooper extends Crawler {
    }
 
    private static final Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
-         Card.MASTERCARD.toString(), Card.ELO.toString());
+      Card.MASTERCARD.toString(), Card.ELO.toString());
    private static final String SELLER_FULL_NAME = "Minha Cooper";
 
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      BasicClientCookie sidCookie = new BasicClientCookie("subsidiaryId", store_name);
+      sidCookie.setDomain("www.minhacooper.com.br");
+      sidCookie.setPath("/");
+      this.cookies.add(sidCookie);
+   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -70,25 +79,24 @@ public class BrasilMinhacooper extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ref", false).replace("REF. ", "");
          String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail-section h4", false);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image #product-zoom", Arrays.asList("src"), "http:", "");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".col-xs-3 .gallery", Arrays.asList("data-zoom-image"), "http:", "", primaryImage);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs p a");
+
+         String primaryImage = scrapPrimaryImage(doc);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".gal1 .gallery", List.of("data-zoom-image"), "http:", "", primaryImage);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs p > a", true);
          boolean availableToBuy = doc.selectFirst(".product-variation__add-actions.product-add-actions") != null;
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setOffers(offers)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setOffers(offers)
+            .build();
 
          products.add(product);
 
@@ -100,20 +108,28 @@ public class BrasilMinhacooper extends Crawler {
       return products;
    }
 
+   private String scrapPrimaryImage(Document doc) {
+     String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image #product-zoom", Arrays.asList("src"), "http:", "");
+      if (primaryImage != null && primaryImage.contains("/450/"))  {
+         primaryImage = primaryImage.replace("/450/", "/original/");
+      }
+      return primaryImage;
+   }
+
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(doc);
 
       offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       return offers;
 
@@ -122,7 +138,7 @@ public class BrasilMinhacooper extends Crawler {
    private List<String> scrapSales(Document doc) {
       List<String> sales = new ArrayList<>();
 
-      Element salesOneElement = doc.selectFirst(".details-discout-money");
+      Element salesOneElement = doc.selectFirst(".product-variation__discount-money");
       String firstSales = salesOneElement != null ? salesOneElement.text() : null;
 
       if (firstSales != null && !firstSales.isEmpty()) {
@@ -133,17 +149,24 @@ public class BrasilMinhacooper extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price .full-price", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-variation__cooper-price", null, true, ',', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-variation__final-price", null, true, ',', session);
+      }
+
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-variation__price .de-por-container .preco-desconto", null, true, ',', session);
+      }
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-variation__price .de-por-container > span", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setBankSlip(bankSlip)
-            .build();
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
 
    }
 
@@ -153,22 +176,21 @@ public class BrasilMinhacooper extends Crawler {
       Installments installments = new Installments();
       if (installments.getInstallments().isEmpty()) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;
    }
-
 
 
 }

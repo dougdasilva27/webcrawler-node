@@ -107,7 +107,6 @@ public abstract class CoopsupermercadosCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href"), "https", "www.comper.com.br");
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".insert-sku-checkbox", "rel");
             saveDataProduct(internalId, null, productUrl);
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit)
                break;
          }

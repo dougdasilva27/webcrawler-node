@@ -32,7 +32,6 @@ public class BrasilCasadoprodutorCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "a", "href");
             saveDataProduct(internalId, null, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + productUrl);
          }
       } else {
          this.result = false;

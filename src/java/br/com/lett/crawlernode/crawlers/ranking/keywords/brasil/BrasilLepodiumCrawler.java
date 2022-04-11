@@ -34,7 +34,6 @@ public class BrasilLepodiumCrawler extends CrawlerRankingKeywords {
         String internalId = element.attr("data-id");
         String productUrl = crawlProductUrl(element);
         saveDataProduct(internalId, null, productUrl);
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
