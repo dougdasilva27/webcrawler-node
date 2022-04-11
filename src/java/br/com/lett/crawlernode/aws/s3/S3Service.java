@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
 import com.amazonaws.ClientConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.joda.time.DateTime;
@@ -230,7 +231,7 @@ public class S3Service {
     */
    public static void saveResponseContent(Session session, String requestHash, String html) {
 
-      if (!(session instanceof TestCrawlerSession)) {
+      if (!(session instanceof TestCrawlerSession) && !(session instanceof TestRankingKeywordsSession)) {
          String path = new StringBuilder().append(LOCAL_PATH).append(requestHash).append(".html").toString();
          session.addResponseBodyPath(path);
 

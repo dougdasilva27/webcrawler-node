@@ -1,12 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import models.RatingsReviews;
 import models.pricing.BankSlip;
@@ -28,14 +29,15 @@ import models.Marketplace;
 import models.prices.Prices;
 
 
-public class BrasilBalarotiCrawler extends VTEXOldScraper {
+public class BrasilBalarotiCrawler extends VTEXNewScraper {
 
-   private static final String HOME_PAGE = "https://www.balaroti.com.br//";
-   private static final List<String> SELLERS = Arrays.asList( "balaroti","balaroti comércio de materiais de construção sa");
+   private static final String HOME_PAGE = "https://www.balaroti.com.br/";
+   private Set<String> cards = Sets.newHashSet(Card.VISA.toString(),
+      Card.MASTERCARD.toString(), Card.DINERS.toString(), Card.HIPERCARD.toString(), Card.ELO.toString());
 
-  public BrasilBalarotiCrawler(Session session) {
-    super(session);
-  }
+   public BrasilBalarotiCrawler(Session session) {
+      super(session);
+   }
 
    @Override
    protected String getHomePage() {
@@ -44,7 +46,7 @@ public class BrasilBalarotiCrawler extends VTEXOldScraper {
 
    @Override
    protected List<String> getMainSellersNames() {
-      return SELLERS;
+      return Arrays.asList("balaroti","balaroti comércio de materiais de construção sa");
    }
 
    @Override
@@ -53,41 +55,46 @@ public class BrasilBalarotiCrawler extends VTEXOldScraper {
    }
 
    @Override
-   protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson) throws MalformedPricingException {
-      Double principalPrice = comertial.optDouble("Price");
-      Double priceFrom = comertial.optDouble("ListPrice");
-
-      CreditCards creditCards = scrapCreditCards(comertial, discountsJson, true);
-
-
-
-      Double spotlightPrice = scrapSpotlightPrice(doc, internalId, principalPrice, comertial, discountsJson);
-      if (priceFrom != null && spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
-         priceFrom = null;
-      }
-
-      BankSlip bankSlip;
-
-      if(spotlightPrice!=null){
-         bankSlip = BankSlip.BankSlipBuilder.create()
-            .setFinalPrice(spotlightPrice)
-            .build();
-      }
-      else {
-         bankSlip = BankSlip.BankSlipBuilder.create()
-            .setFinalPrice(principalPrice)
-            .build();
-      }
-
-
-
-      return Pricing.PricingBuilder.create()
-         .setSpotlightPrice(spotlightPrice)
-         .setPriceFrom(priceFrom)
-         .setBankSlip(bankSlip)
-         .setCreditCards(creditCards)
-         .build();
+   protected CreditCards scrapCreditCards(JSONObject comertial, JSONObject discounts, boolean mustSetDiscount) throws MalformedPricingException {
+      Double creditCardPrice = JSONUtils.getDoubleValueFromJSON(comertial, "ListPrice", false);
+      return CrawlerUtils.scrapCreditCards(creditCardPrice, cards);
    }
 
+   @Override
+   protected BankSlip scrapBankSlip(Double spotlightPrice, JSONObject comertial, JSONObject discounts, boolean mustSetDiscount) throws MalformedPricingException {
+      Double bankSlipPrice = spotlightPrice;
+      Double discount = 0d;
+
+      JSONObject paymentOptions = comertial.optJSONObject("PaymentOptions");
+      if (paymentOptions != null) {
+         JSONArray cardsArray = paymentOptions.optJSONArray("installmentOptions");
+         if (cardsArray != null) {
+            for (Object o : cardsArray) {
+               JSONObject paymentJson = (JSONObject) o;
+
+               String paymentCode = paymentJson.optString("paymentSystem");
+               JSONObject paymentDiscount = discounts.has(paymentCode) ? discounts.optJSONObject(paymentCode) : null;
+               String name = paymentJson.optString("paymentName");
+
+               if (name.toLowerCase().contains("boleto")) {
+                  if (paymentDiscount != null) {
+                     discount = paymentDiscount.optDouble("discount");
+                     bankSlipPrice = MathUtils.normalizeTwoDecimalPlaces(bankSlipPrice - (bankSlipPrice * discount));
+                  }
+                  break;
+               }
+            }
+         }
+      }
+
+      if (!mustSetDiscount) {
+         discount = null;
+      }
+
+      return BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(bankSlipPrice)
+         .setOnPageDiscount(discount)
+         .build();
+   }
 
 }

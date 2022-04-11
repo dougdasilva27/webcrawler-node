@@ -39,7 +39,6 @@ public class ArgentinaPardoCrawler extends CrawlerRankingKeywords {
         saveDataProduct(null, internalPid, productUrl);
         count++;
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }

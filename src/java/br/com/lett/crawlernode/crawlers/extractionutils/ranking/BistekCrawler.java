@@ -60,7 +60,6 @@ public abstract class BistekCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productRanking);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalid + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }

@@ -95,7 +95,7 @@ public class SupermercadonowCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
+               .setUrl(scrapUrl())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
@@ -116,6 +116,14 @@ public class SupermercadonowCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapUrl() {
+      String url = session.getOriginalURL();
+      if(url.contains("emporionestle.com.br")) {
+         url = url.replace("emporionestle.com.br", "supermercadonow.com");
+      }
+      return url;
    }
 
    private String crawlInternalId(JSONObject json) {

@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.models.Request
+import br.com.lett.crawlernode.core.models.RankingProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CommonMethods
@@ -11,6 +13,7 @@ import org.apache.http.cookie.Cookie
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
+import java.util.*
 
 /**
  * Date: 26/01/21
@@ -21,7 +24,7 @@ import org.jsoup.nodes.Element
 class ArgentinaLareinaCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
    init {
-      fetchMode = FetchMode.FETCHER
+      fetchMode = FetchMode.JSOUP
       pageSize = 50
    }
 
@@ -44,34 +47,88 @@ class ArgentinaLareinaCrawler(session: Session) : CrawlerRankingKeywords(session
       headers["Accept"] = "*/*"
       headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36"
 
+      var body = ""
 
-      val request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .build()
+      if (currentPage == 1) {
+         val payload = "cpoB=${keywordEncoded}&TM=Bus";
 
-      val response = dataFetcher.get(session, request)
+         val request = Request.RequestBuilder.create()
+            .setUrl(url)
+            .setHeaders(headers)
+            .setProxyservice(
+               listOf(
+                  ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+                  ProxyCollection.BUY_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+               )
+            )
+            .setPayload(payload)
+            .setSendUserAgent(true)
+            .build()
+         body = dataFetcher.post(session, request).body
 
-      return response.body.toDoc() ?: Document(url)
+      } else {
+
+         val request = Request.RequestBuilder.create()
+            .setUrl(url + "?pg=${currentPage}&nl=&TM=Bus&cpoB=${keywordEncoded}")
+            .setHeaders(headers)
+            .setProxyservice(
+               listOf(
+                  ProxyCollection.BUY_HAPROXY,
+                  ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+               )
+            )
+            .setSendUserAgent(false)
+
+            .build()
+
+         body = dataFetcher.get(session, request).body
+      }
+
+      return body.toDoc() ?: Document(url)
    }
 
    override fun extractProductsFromCurrentPage() {
 
-      val url1 = "https://www.lareinaonline.com.ar/Productos.asp?cpoBuscar=${getKeyword()}"
-      val url2 = "https://www.lareinaonline.com.ar/productos.asp?page=${currentPage}&N1=&N2=&N3=&N4="
+      val url = "https://www.lareinaonline.com.ar/productosnl.asp"
 
-      currentDoc = if (currentPage == 1) fetchProducts(url1) else fetchProducts(url2)
+      currentDoc = fetchProducts(url)
 
       val products = currentDoc.select(".listaProds li")
 
       for (productDoc in products) {
 
          val internalId = scrapInternalId(productDoc)
+         val name = CrawlerUtils.scrapStringSimpleInfo(productDoc, ".desc", true)
+         val price = scrapPrice(productDoc)
+         val imageUrl = CrawlerUtils.scrapSimplePrimaryImage(productDoc, ".FotoProd img", Arrays.asList("src"), "https", "www.lareinaonline.com.ar")
+         val productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(productDoc, ".FotoProd a", "href"), "https", "www.lareinaonline.com.ar")
+         val isAvailable = price != null
 
-         val productUrl = "https://www.lareinaonline.com.ar/Detalle.asp?Pr=${internalId}&P="
-         saveDataProduct(internalId, null, productUrl)
-         log("Position: $position - internalId: $internalId - internalPid null - url: $productUrl")
+         val productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setInternalPid(null)
+            .setName(name)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .setImageUrl(imageUrl)
+            .build()
+
+         saveDataProduct(productRanking)
       }
+   }
+
+   private fun scrapPrice(productDoc: Element): Int? {
+      var price = CrawlerUtils.scrapIntegerFromHtml(productDoc, ".precio .der", null, null, true, false, null)
+      if (price == null) {
+         price = CrawlerUtils.scrapIntegerFromHtml(productDoc, ".precio", null, null, true, false, null)
+      }
+
+      return price
    }
 
    private fun scrapInternalId(doc: Element): String? {
@@ -83,10 +140,6 @@ class ArgentinaLareinaCrawler(session: Session) : CrawlerRankingKeywords(session
       }
 
       return null
-   }
-
-   private fun getKeyword(): String {
-      return keywordWithoutAccents.replace(" ", "@")
    }
 
    override fun hasNextPage(): Boolean {
