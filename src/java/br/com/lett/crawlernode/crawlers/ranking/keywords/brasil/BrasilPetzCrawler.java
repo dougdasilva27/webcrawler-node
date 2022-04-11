@@ -46,7 +46,7 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.completeUrl(e.attr("href"), "https", "www.petz.com.br");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".nome_produto", false);
             String imgUrl = scrapFullImg(e);
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e,"[itemprop=\"price\"]", "content", false, '.', session, 0);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e,"[itemprop=\"price\"]", "content", false, '.', session, null);
 
             boolean isAvailable = price != 0;
 
@@ -100,6 +100,9 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
    String scrapFullImg(Element e) {
       String miniImg = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-img", Arrays.asList("src"), "https", "static.petz.com.br");
 
-      return miniImg.replaceAll("_mini", "");
+      if (miniImg != null) {
+         return miniImg.replaceAll("_mini", "");
+      }
+      return null;
    }
 }
