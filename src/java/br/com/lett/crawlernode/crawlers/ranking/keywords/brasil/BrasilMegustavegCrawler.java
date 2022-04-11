@@ -24,7 +24,6 @@ public class BrasilMegustavegCrawler extends CrawlerRankingKeywords {
 
       this.log("Página " + this.currentPage);
 
-      // monta a url com a keyword e a página
       String url = "https://www.megustaveg.com.br/buscar?q=" + this.keywordEncoded + "&pagina=" + currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
@@ -33,7 +32,6 @@ public class BrasilMegustavegCrawler extends CrawlerRankingKeywords {
 
       Elements products = this.currentDoc.select("ul > .span3 > .listagem-item");
 
-      // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
             setTotalProducts();
@@ -84,4 +82,6 @@ public class BrasilMegustavegCrawler extends CrawlerRankingKeywords {
       String hasNext = CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc, ".ordenar-listagem.rodape.borda-alpha > div > div > div > ul > li:last-child > a", "href");
       return !hasNext.contains("#");
    }
+
+   
 }
