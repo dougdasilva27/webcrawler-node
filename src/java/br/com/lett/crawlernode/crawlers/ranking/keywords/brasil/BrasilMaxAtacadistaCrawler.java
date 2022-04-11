@@ -57,10 +57,7 @@ public class BrasilMaxAtacadistaCrawler extends CrawlerRankingKeywords {
                   .build();
 
                saveDataProduct(productRanking);
-               this.log(
-                  "Position: " + this.position +
-                     " - InternalId: " + internalId +
-                     " - Url: " + productUrl);
+
 
             }
 
@@ -83,8 +80,7 @@ public class BrasilMaxAtacadistaCrawler extends CrawlerRankingKeywords {
       headers.put("Accept","*/*");
       headers.put("Accept-Encoding","gzip, deflate, br");
       headers.put("Connection","keep-alive");
-      headers.put("cookie","ISSMB=ScreenMedia=0&UserAcceptMobile=False; VtexRCMacIdv7=62e56c83-ec89-4f69-afaf-265fc49238f2; checkout.vtex.com=__ofid=a12e85cf618c4ed1aa55c0f117b4fe89; smd_has-channel_name=S.%20J.%20Rio%20Preto%20-%20Regi%C3%A3o%20Norte%20-%20SP; smd_has-channel=true; VTEXSC=sc=25; ISS=InternalCampaign=7312022185517183; ISICI=InternalCampaign=7312022185517183; janus_sid=83993ad3-872d-4027-a68b-acb4e2f036ac; .ASPXAUTH=B28E2B1B602945A9D53C5D8D25457C6340F2840B73CBDEC0CFE24C45900AEF770CFC76577B4532091697906D0D74C5F402303A0EA658AC0CBEF6FA8767DCA7F3D9B0AC55977D7D5036E1F63520CBCB6063F353381CA0B1F17E5A8FC8B62373137C3C76FD37877F249BFEFDDB3521F96F27DD1CDD9D75D59C3FE8F3AE3B80671146005EF617CBB307E618D503A17C520D51A8D15F21CA63DAE8DB048EA1E2E6419856EF3E; vtex_session=eyJhbGciOiJFUzI1NiIsImtpZCI6IjRBQjVERTgwQjVGMkIzRUVFNzE1ODEyRTBFMTZCRkNFREI5QjVEM0EiLCJ0eXAiOiJqd3QifQ.eyJhY2NvdW50LmlkIjoiM2IxMGQzY2QtYjhjMC00YWM2LWE4MDEtNGU3ZTc5Zjk1ZTE0IiwiaWQiOiI1ODM4Yjg1Mi01OTc0LTQ1MTgtYWEwOS05MzVlNjVkOWNhMDEiLCJ2ZXJzaW9uIjozLCJzdWIiOiJzZXNzaW9uIiwiYWNjb3VudCI6InNlc3Npb24iLCJleHAiOjE2NTAwNTk3MjEsImlhdCI6MTY0OTM2ODUyMSwiaXNzIjoidG9rZW4tZW1pdHRlciIsImp0aSI6IjQ4OThiZjQ1LTA5NDItNGVmMS05MDllLWQzYTc3ZGUyMDE1ZSJ9.L2dfDxRhAA_aSlx7KKs6zsH7jm0q_97V8w0KfAsVy9hLj4FCQitnNERm4nJxM24FHT8G2sDK9HTubss5CZQXvQ; vtex_segment=eyJjYW1wYWlnbnMiOm51bGwsImNoYW5uZWwiOiIyNSIsInByaWNlVGFibGVzIjpudWxsLCJyZWdpb25JZCI6bnVsbCwidXRtX2NhbXBhaWduIjpudWxsLCJ1dG1fc291cmNlIjpudWxsLCJ1dG1pX2NhbXBhaWduIjoiNzMxMjAyMjE4NTUxNzE4MyIsImN1cnJlbmN5Q29kZSI6IkJSTCIsImN1cnJlbmN5U3ltYm9sIjoiUiQiLCJjb3VudHJ5Q29kZSI6IkJSQSIsImN1bHR1cmVJbmZvIjoicHQtQlIiLCJhZG1pbl9jdWx0dXJlSW5mbyI6InB0LUJSIiwiY2hhbm5lbFByaXZhY3kiOiJwdWJsaWMifQ; urlLastSearch=http://delivery.maxatacadista.com.br/cerveja; VtexRCSessionIdv7=b7018fb9-b24f-4370-bf21-41da8ee84136; SGTS=EFBD68D37B5A455FE7F1B082C436F181");
-
+      headers.put("cookie",session.getOptions().optString("cookie"));
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
