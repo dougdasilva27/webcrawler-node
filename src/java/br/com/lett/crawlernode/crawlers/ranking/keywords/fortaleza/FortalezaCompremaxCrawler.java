@@ -114,7 +114,7 @@ public class FortalezaCompremaxCrawler extends CrawlerRankingKeywords {
    }
 
    protected Integer scrapPrice(JSONObject jsonInfo) {
-      Double priceDouble = jsonInfo.optDouble("original_price");
+      Double priceDouble = jsonInfo.optDouble("original_price", 0.0);
       priceDouble = priceDouble * 100;
 
       if (priceDouble != null) {
