@@ -186,7 +186,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
    private String getSha256Hash(Document doc) {
       Element el = doc.selectFirst("template[data-varname='__STATE__']");
       String sha256Hash = null;
-      
+
       String script = getScript(el);
       if (script != null && !script.isEmpty()) {
          JSONObject jsonObject = CrawlerUtils.stringToJson(script);
@@ -212,7 +212,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
       }
 
       if (sha256Hash == null) {
-         sha256Hash = session.getOptions().optString("sha256Hash");
+         sha256Hash = session.getOptions().optString("sha256Hash", "6869499be99f20964918e2fe0d1166fdf6c006b1766085db9e5a6bc7c4b957e5");
       }
 
       return sha256Hash;
