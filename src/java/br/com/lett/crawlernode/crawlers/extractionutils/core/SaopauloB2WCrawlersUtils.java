@@ -175,12 +175,9 @@ public class SaopauloB2WCrawlersUtils {
             sku.put("eans", skuJson.optJSONArray("eans"));
          }
 
-         if (skuJson.has("offers")) {
-            JSONObject offers = skuJson.optJSONObject("offers");
-
-            if (offers != null && offers.has("result")) {
-               sku.put("offers", offers.optJSONArray("result"));
-            }
+         JSONObject offers = getJson(skuJson, "offers");
+         if (offers != null && offers.has("result")) {
+            sku.put("offers", offers.optJSONArray("result"));
          }
       }
 

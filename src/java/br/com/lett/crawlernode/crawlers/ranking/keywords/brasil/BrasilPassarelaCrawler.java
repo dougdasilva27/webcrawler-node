@@ -40,7 +40,6 @@ public class BrasilPassarelaCrawler extends CrawlerRankingKeywords {
 
           saveDataProduct(internalId, internalPid, productUrl);
 
-          this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         }
       }
     } else {

@@ -45,7 +45,7 @@ public class ZedeliveryCrawler extends Crawler {
       config.setParser(Parser.HTML);
    }
 
-   public String getSellerName(){
+   public String getSellerName() {
       return session.getMarket().getName();
    }
 
@@ -91,13 +91,13 @@ public class ZedeliveryCrawler extends Crawler {
          .setPayload(initPayload)
          .setHeaders(headers)
          //coloquei o proxy para afetar todos os ze deliveries 
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY_HAPROXY,ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
 
       Response response = new JsoupDataFetcher().post(session, request);
       visitorId = response.getHeaders().get("x-visitorid");
-      if(visitorId == null || visitorId.isEmpty()) {
+      if (visitorId == null || visitorId.isEmpty()) {
          Logging.printLogError(logger, "FAILED TO GET VISITOR ID");
       }
       return CrawlerUtils.stringToJson(response.getBody());
@@ -107,17 +107,22 @@ public class ZedeliveryCrawler extends Crawler {
    protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
       JSONObject apiJson = validateUUID();
-      if(!apiJson.isEmpty()) {
-         JSONObject userAddress = JSONUtils.getValueRecursive(apiJson, "data.manageCheckout.checkout.deliveryOption.address", JSONObject.class);
-         JSONObject deliveryOptions = JSONUtils.getValueRecursive(apiJson, "data.manageCheckout.checkout.deliveryOption", JSONObject.class);
-         String cookie = "visitorId=%22" + visitorId +
-            "%22; userAddress=" + URLEncoder.encode(userAddress.toString(), StandardCharsets.UTF_8) +
-            "; deliveryOptions=" + URLEncoder.encode(deliveryOptions.toString(), StandardCharsets.UTF_8) + ";";
+      if (!apiJson.isEmpty()) {
+         JSONObject userAddress = JSONUtils.getValueRecursive(apiJson, "data.manageCheckout.checkout.deliveryOption.address", JSONObject.class, null);
+         JSONObject deliveryOptions = JSONUtils.getValueRecursive(apiJson, "data.manageCheckout.checkout.deliveryOption", JSONObject.class, null);
+
+         if (userAddress != null && deliveryOptions != null) {
+            String cookie = "visitorId=%22" + visitorId +
+               "%22; userAddress=" + URLEncoder.encode(userAddress.toString(), StandardCharsets.UTF_8) +
+               "; deliveryOptions=" + URLEncoder.encode(deliveryOptions.toString(), StandardCharsets.UTF_8) + ";";
+            headers.put("cookie", cookie);
+         } else {
+            Logging.printLogError(logger, "FAILED TO GET DELIVERY OPTIONS");
+         }
 
          headers.put("Accept", "*/*");
          headers.put("Accept-Encoding", "gzip, deflate, br");
          headers.put("Connection", "keep-alive");
-         headers.put("cookie", cookie);
       }
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())

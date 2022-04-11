@@ -22,6 +22,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 import static br.com.lett.crawlernode.util.CrawlerUtils.stringToJson;
 
@@ -175,6 +176,7 @@ public class Scheduler {
    public static JSONObject mountMessageToSendToQueue(String parameters, Market market , ScraperInformation scraper, String scraperType) {
 
       JSONObject jsonToSendToCrawler = new JSONObject();
+      String sessionId = UUID.randomUUID().toString();
       JSONObject marketInfo = new JSONObject();
       marketInfo.put("code", market.getCode());
       marketInfo.put("regex", market.getFirstPartyRegex());
@@ -182,12 +184,12 @@ public class Scheduler {
       marketInfo.put("marketId", market.getId());
       marketInfo.put("use_browser", scraper.isUseBrowser());
       marketInfo.put("name", market.getName());
+      jsonToSendToCrawler.put("sessionId", sessionId);
       jsonToSendToCrawler.put("type", scraperType);
       jsonToSendToCrawler.put("options", jsonOptionsRefine(scraper.getOptionsScraper(), scraper.getOptionsScraperClass(), scraper.getProxiesMarket()));
       jsonToSendToCrawler.put("market", marketInfo);
       jsonToSendToCrawler.put("className", scraper.getClassName());
       jsonToSendToCrawler.put("parameters", parameters);
-
 
       return jsonToSendToCrawler;
 

@@ -11,7 +11,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
+public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
    private static final String BASE_URL = "delivery.supermuffato.com.br/";
 
@@ -19,7 +19,9 @@ public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords
       super(session);
    }
 
-   protected abstract String getCityCode();
+   protected String getCityCode() {
+      return session.getOptions().optString("cityCode");
+   }
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
@@ -29,9 +31,9 @@ public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords
       String url = "https://delivery.supermuffato.com.br/buscapagina?" +
          "ft=" + this.keywordEncoded +
          "&sc=" + getCityCode() +
-         "&PS=24" +
+         "&PS=48" +
          "&sl=d85149b5-097b-4910-90fd-fa2ce00fe7c9" +
-         "&cc=24" +
+         "&cc=48" +
          "&sm=0" +
          "&PageNumber=" + this.currentPage;
 

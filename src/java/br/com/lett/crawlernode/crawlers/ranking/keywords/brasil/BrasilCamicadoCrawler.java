@@ -41,7 +41,6 @@ public class BrasilCamicadoCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, internalPid, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;

@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.ScraperInformation;
 import enums.ScrapersTypes;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class TestCrawlerSession extends Session {
 
@@ -50,7 +51,7 @@ public class TestCrawlerSession extends Session {
       this.originalURL = url;
 
 
-      this.options = JSONUtils.stringToJson(scraperInformation.getOptionsScraper());
+      this.options = getSessionOptions(scraperInformation);
 
 
       JSONArray proxiesArray = this.options.optJSONArray("proxies");
@@ -78,6 +79,17 @@ public class TestCrawlerSession extends Session {
       }
 
 
+   }
+
+   private JSONObject getSessionOptions(ScraperInformation scraperInformation) {
+      JSONObject options = JSONUtils.stringToJson(scraperInformation.getOptionsScraper());
+      JSONObject optionsScraperClass = JSONUtils.stringToJson(scraperInformation.getOptionsScraperClass());
+
+      if (optionsScraperClass != null && !optionsScraperClass.isEmpty()) {
+         options.put("scraperClass", optionsScraperClass);
+      }
+
+      return options;
    }
 
 
