@@ -46,7 +46,7 @@ public class BrasilDrogarianovaesperancaCrawler extends CrawlerRankingKeywords {
             String internalId = crawlInternalId(productUrl);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".produto-descricao-lista a span", false);
             String imgUrl = scrapFullImage(e);
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e,".valor .por", null, false, ',', session, 0);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e,".valor .por", null, false, ',', session, null);
 
             boolean isAvailable = price != 0;
 
