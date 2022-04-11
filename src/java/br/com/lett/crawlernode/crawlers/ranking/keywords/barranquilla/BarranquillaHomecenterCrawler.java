@@ -10,7 +10,7 @@ public class BarranquillaHomecenterCrawler extends HomecenterCrawlerRanking {
 
    @Override
    public String getCity() {
-      return "Barranquilla";
+      return "BARRANQUILLA";
    }
 
    @Override

@@ -2,14 +2,16 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.fortaleza;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,7 +63,7 @@ public class FortalezaCompremaxCrawler extends CrawlerRankingKeywords {
 
 
    @Override
-   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       // número de produtos por página do market
       this.pageSize = 25;
 
@@ -76,22 +78,30 @@ public class FortalezaCompremaxCrawler extends CrawlerRankingKeywords {
             JSONObject jsonInfo = (JSONObject) productJsonInfo;
 
             if (jsonInfo != null) {
-
                String internalId = jsonInfo.optString("id");
-
                String internalPid = jsonInfo.optString("mix_id");
-
                String category = jsonInfo.optString("section_id");
-
                String productUrl = "https://compremax.com.br" +
                   "/loja/" + 36 +
                   "/categoria/" + category +
                   "/produto/" + internalId;
+               String name = jsonInfo.optString("short_description");
+               String imgUrl = jsonInfo.optString("image");
+               Integer price = scrapPrice(jsonInfo);
 
-               saveDataProduct(internalId, internalPid, productUrl);
+               boolean isAvailable = price != 0;
 
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " +
-                  internalPid + " - Url: " + productUrl);
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setImageUrl(imgUrl)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .build();
+
+               saveDataProduct(productRanking);
             }
          }
       }
@@ -101,5 +111,16 @@ public class FortalezaCompremaxCrawler extends CrawlerRankingKeywords {
    @Override
    protected boolean hasNextPage() {
       return true;
+   }
+
+   protected Integer scrapPrice(JSONObject jsonInfo) {
+      Double priceDouble = jsonInfo.optDouble("original_price", 0.0);
+      priceDouble = priceDouble * 100;
+
+      if (priceDouble != null) {
+         return priceDouble.intValue();
+      }
+
+      return 0;
    }
 }

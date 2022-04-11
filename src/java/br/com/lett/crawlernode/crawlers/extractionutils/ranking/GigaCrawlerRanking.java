@@ -226,4 +226,9 @@ public class GigaCrawlerRanking extends CrawlerRankingKeywords {
       this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(data, "total", 0);
       this.log("Total da busca: " + this.totalProducts);
    }
+
+   @Override
+   protected boolean hasNextPage(){
+      return true;
+   }
 }

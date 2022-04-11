@@ -1,12 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
@@ -20,10 +24,11 @@ public class ChileSantaisabelapoquindoCrawler extends CrawlerRankingKeywords {
 
    public ChileSantaisabelapoquindoCrawler(Session session) {
       super(session);
+     // super.fetchMode = FetchMode.JSOUP;
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
 
       this.pageSize = 40;
@@ -44,15 +49,25 @@ public class ChileSantaisabelapoquindoCrawler extends CrawlerRankingKeywords {
 
             JSONObject product = (JSONObject) object;
 
-            String internalId = product.optString("productId");
-            String internalPid = product.optString("productReference");
-            String productUrl = CrawlerUtils.completeUrl(product.optString("linkText"),"https","www.santaisabel.cl") + "/p";
+            String internalId = JSONUtils.getValueRecursive(product, "items.0.itemId", String.class);;
+            String productUrl = CrawlerUtils.completeUrl(product.optString("linkText"), "https", "www.santaisabel.cl") + "/p";
+            String name = product.optString("productName");
+            String imgUrl = JSONUtils.getValueRecursive(product, "items.0.images.0.imageUrl", String.class);
+            Boolean isAvailable = JSONUtils.getValueRecursive(product, "items.0.sellers.0.commertialOffer.AvailableQuantity", Integer.class) > 0;
+            Integer price = isAvailable ? JSONUtils.getValueRecursive(product, "items.0.sellers.0.commertialOffer.Price", Integer.class) : null;
 
-            saveDataProduct(internalId, internalPid, productUrl);
-
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit)
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+            saveDataProduct(productRanking);
+            if (this.arrayProducts.size() == productsLimit) {
                break;
+            }
 
          }
 
@@ -68,19 +83,20 @@ public class ChileSantaisabelapoquindoCrawler extends CrawlerRankingKeywords {
    }
 
 
-   private JSONObject getJSONFromAPI(){
-      String urlAPI = "https://apis.santaisabel.cl:8443/catalog/api/v1/pedrofontova/search/"+this.keywordWithoutAccents+"?page=" + this.currentPage;
+   private JSONObject getJSONFromAPI() {
+      String urlAPI = "https://apis.santaisabel.cl:8443/catalog/api/v1/pedrofontova/search/" + this.keywordWithoutAccents + "?page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + urlAPI);
 
-      Map<String,String> headers = new HashMap<>();
-      headers.put("x-api-key","5CIqbUOvJhdpZp4bIE5jpiuFY3kLdq2z");
-      headers.put("content-type","application/json");
+      Map<String, String> headers = new HashMap<>();
+      headers.put("x-api-key", "5CIqbUOvJhdpZp4bIE5jpiuFY3kLdq2z");
+      headers.put("content-type", "application/json");
       headers.put("accept", "*/*");
-      headers.put("user-agent","Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36");
+      headers.put("x-consumer", "santaisabel");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36");
       headers.put("Connection", "keep-alive");
       headers.put("authority", "apis.santaisabel.cl:8443");
       headers.put("x-account", "pedrofontova");
-      headers.put("accept-language","pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(urlAPI)
@@ -96,12 +112,14 @@ public class ChileSantaisabelapoquindoCrawler extends CrawlerRankingKeywords {
          ).setProxyservice(
             Arrays.asList(
                ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR
             )
          ).build();
 
 
-      Response response = new FetcherDataFetcher().post(session,request);
+      Response response = new FetcherDataFetcher().post(session, request);
       String content = response.getBody();
 
 

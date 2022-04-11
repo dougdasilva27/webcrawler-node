@@ -2,8 +2,11 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -15,6 +18,7 @@ import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,7 +68,7 @@ public class ArgentinaMasfarmaciasCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 16;
       this.log("Página " + this.currentPage);
 
@@ -95,17 +99,25 @@ public class ArgentinaMasfarmaciasCrawler extends CrawlerRankingKeywords {
             this.totalProducts = products.size();
             this.log("Total da busca: " + this.totalProducts);
          }
-         for (Element e : products) {
-            String internalId = e.attr("id").replace("post-", "");
-            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".elementor-image > a", "href");
+         for (Element product : products) {
+            String internalId = product.attr("id").replace("post-", "");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".elementor-heading-title a", "href");
+            String name = CrawlerUtils.scrapStringSimpleInfo(product, ".elementor-heading-title", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".elementor-widget-container img", Collections.singletonList("src"), "https", "masfarmacias.com");
+            Integer price = scrapPrice(product);
+            boolean isAvailable = product.selectFirst(".out-of-stock") == null;
 
-            saveDataProduct(internalId, null, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(null)
+               .setImageUrl(imgUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log(
-               "Position: " + this.position +
-                  " - InternalId: " + internalId +
-                  " - InternalPid: " + null +
-                  " - Url: " + productUrl);
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
@@ -119,6 +131,20 @@ public class ArgentinaMasfarmaciasCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
          + this.arrayProducts.size() + " produtos crawleados");
 
+   }
+
+   private Integer scrapPrice(Element product) {
+      Elements prices = product.select(".woocommerce-Price-amount");
+      Element price = null;
+      if(prices.isEmpty()) return null;
+
+      if(prices.size() > 1) {
+         price = prices.get(1);
+      } else {
+         price = prices.get(0);
+      }
+
+      return CrawlerUtils.scrapPriceInCentsFromHtml(price, null, null, false, ',',  session, null);
    }
 
    @Override

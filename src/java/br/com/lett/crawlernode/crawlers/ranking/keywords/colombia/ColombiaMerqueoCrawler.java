@@ -84,7 +84,7 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
 
    private int crawlPrice(JSONObject product) {
       int price = 0;
-      if (product.has("special_price")) {
+      if (product.has("special_price") && (product.optInt("special_price") != 0)) {
          price = product.optInt("special_price") * 100;
       } else {
          price = product.optInt("price") * 100;

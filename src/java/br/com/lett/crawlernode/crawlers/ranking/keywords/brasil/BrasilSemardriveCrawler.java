@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -27,6 +28,7 @@ public class BrasilSemardriveCrawler extends CrawlerRankingKeywords {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
+         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .build();
 
       String response = dataFetcher.get(session, request).getBody();
@@ -40,7 +42,7 @@ public class BrasilSemardriveCrawler extends CrawlerRankingKeywords {
       String response = getProductsList();
       JSONObject reponseJson = CrawlerUtils.stringToJson(response);
       this.totalProducts = reponseJson.optJSONObject("resultsList").optInt("totalNumRecs");
-      if(totalProducts > 0){
+      if (totalProducts > 0) {
          JSONArray productsList = reponseJson.getJSONObject("resultsList").getJSONArray("records");
          for (Object arrayOfArrays : productsList) {
             JSONObject jsonInfo = (JSONObject) arrayOfArrays;
@@ -49,10 +51,21 @@ public class BrasilSemardriveCrawler extends CrawlerRankingKeywords {
             String internalId = jsonInfo.optQuery("/attributes/product.repositoryId/0").toString();
             String name = records.optQuery("/0/attributes/sku.displayName/0").toString();
             String imgUrl = "https://www.semarentrega.com.br" + records.optQuery("/0/attributes/product.primaryFullImageURL/0").toString();
-            String Sprice = records.optQuery("/0/attributes/product.listPrice/0").toString();
-            Double Dprice = Double.parseDouble(Sprice)*100;
-            Integer price = Dprice.intValue();
-            boolean isAvailable = isAvailable(internalId);
+
+            String availability = records.optQuery("/0/attributes/sku.availabilityStatus/0").toString();
+            boolean isAvailable = availability.isEmpty() || !availability.contains("OUTOFSTOCK");
+            Integer price = null;
+            if(isAvailable == true){
+               String priceText = (String) records.optQuery("/0/attributes/product.listPrice/0");
+               if(priceText != null && !priceText.isEmpty()){
+                  Double priceDouble = Double.parseDouble(priceText) * 100;
+                  price = priceDouble.intValue();
+               }
+            }
+
+
+
+
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalId(internalId)
@@ -65,33 +78,11 @@ public class BrasilSemardriveCrawler extends CrawlerRankingKeywords {
             saveDataProduct(productRanking);
 
          }
-      }else{
+      } else {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
 
    }
-   protected Boolean isAvailable(String code){
-      String url = "https://www.semarentrega.com.br/ccstore/v1/inventories?fields=skuId,locationInventoryInfo,stockLevel";
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/json");
-
-      JSONObject payload = new JSONObject();
-      payload.put("ids", code);
-      payload.put("locationIds", session.getOptions().optString("storeId"));
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setPayload(payload.toString())
-         .build();
-      String response = new JavanetDataFetcher().post(session, request).getBody();
-      JSONObject reponseJson = CrawlerUtils.stringToJson(response);
-      Object objStock = reponseJson.optQuery("/items/0/locationInventoryInfo/0/availabilityStatusMsg");
-      String stock = objStock.toString();
-      return stock.equals("inStock");
-
-   }
-
 }
 

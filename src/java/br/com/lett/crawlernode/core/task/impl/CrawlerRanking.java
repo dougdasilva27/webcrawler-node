@@ -105,7 +105,7 @@ public abstract class CrawlerRanking extends Task {
          productsLimit = 1000;
          pageLimit = 125;
       } else if (session instanceof RankingSession || session instanceof TestRankingSession) {
-         productsLimit = 300;
+         productsLimit = 60;
          pageLimit = 35;
       }
 
