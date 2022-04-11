@@ -172,7 +172,8 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
    }
 
    private String getScript(Element element) {
-      String script = null;
+      if(element == null) return null;
+      String script = "";
       Pattern pattern = Pattern.compile("\\<script>(.*)<\\/script>");
       Matcher matcher = pattern.matcher(element.toString());
       if (matcher.find()) {
@@ -211,7 +212,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
       }
 
       if (sha256Hash == null) {
-         sha256Hash = session.getOptions().optString("sha256Hash");
+         sha256Hash = session.getOptions().optString("sha256Hash", "6869499be99f20964918e2fe0d1166fdf6c006b1766085db9e5a6bc7c4b957e5");
       }
 
       return sha256Hash;
