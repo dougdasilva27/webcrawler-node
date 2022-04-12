@@ -83,7 +83,6 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "p.product-name > a", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-name", false);
 
-
             Elements variations = product.select(".sku-variation-content .owl-item");
 
             if (!variations.isEmpty()) {
@@ -92,7 +91,7 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
                   Integer price = CrawlerUtils.scrapIntegerFromHtmlAttr(variation, ".picking", "data-preco-por", null);
                   String imageUrl = scrapImageUrl(variation);
                   String variationName = assembleName(name, variation);
-                  boolean available = price != null;
+                  boolean available = scrapAvaiability(variation);
 
                   RankingProduct productRanking = RankingProductBuilder.create()
                      .setUrl(productUrl)
@@ -120,6 +119,11 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private boolean scrapAvaiability(Element variation) {
+      Element availability = variation.selectFirst(".sem-estoque");
+      return availability == null;
    }
 
    private String assembleName(String name, Element variation) {
