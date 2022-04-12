@@ -396,8 +396,11 @@ public class FetchUtilities {
    public static List<Cookie> getCookiesFromHeadersMap(Map<String, String> headers) {
       List<Cookie> cookies = new ArrayList<>();
 
-      if (headers.containsKey(HEADER_SET_COOKIE)) {
+      if (headers.containsKey(HEADER_SET_COOKIE) || headers.containsKey(HEADER_SET_COOKIE.toLowerCase())) {
          String cookieHeader = headers.get(HEADER_SET_COOKIE);
+         if(cookieHeader == null) {
+            cookieHeader = headers.get(HEADER_SET_COOKIE.toLowerCase());
+         }
          String cookieName = cookieHeader.split("=")[0].trim();
 
          int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
