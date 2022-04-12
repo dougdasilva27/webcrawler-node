@@ -42,7 +42,7 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapUrl(e, ".spot-parte-um", "href", "https:", "www.abcdaconstrucao.com.br");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".spotTitle", true);
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".spotImg img", Collections.singletonList("data-original"), "https", "www.abcdaconstrucao.com.br");
-            Integer price = CrawlerUtils.scrapIntegerFromHtml(e, ".fbits-valor", true, null);
+            Integer price = getPrice(e);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -73,6 +73,13 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
    protected void setTotalProducts() {
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".fbits-qtd-produtos-pagina", true, 0);
       this.log("Total: " + this.totalProducts);
+   }
+
+   private Integer getPrice(Element e) {
+      Integer price = CrawlerUtils.scrapIntegerFromHtml(e, ".fbits-preco-calculado-spot", true, null);
+      if (price == null) price = CrawlerUtils.scrapIntegerFromHtml(e, ".fbits-valor", true, null);
+
+      return price;
    }
 
 }
