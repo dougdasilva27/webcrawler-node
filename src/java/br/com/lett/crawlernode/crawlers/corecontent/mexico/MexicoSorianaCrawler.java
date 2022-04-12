@@ -16,7 +16,6 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 
 import java.util.*;
 
@@ -109,8 +108,8 @@ public class MexicoSorianaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sales .value", "content", true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".strike-through.list span", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sales .value", "content", true, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".strike-through.list span", "content", true, '.', session);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
