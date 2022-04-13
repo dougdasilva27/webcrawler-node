@@ -370,7 +370,7 @@ public abstract class CrawlerRanking extends Task {
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
-               if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && hasLtrBeforeOneMonth(p.getLrt())) {
+               if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && ((!p.getUrl().equals(product.getUrl())) || hasLtrBeforeOneMonth(p.getLrt()))) {
                   saveProductUrlToQueue(product.getUrl());
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + product.getUrl());
                }
