@@ -370,7 +370,7 @@ public abstract class CrawlerRanking extends Task {
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
-               if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && ((!p.getUrl().equals(product.getUrl())) || hasLtrBeforeOneMonth(p.getLrt()))) {
+               if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && ((!p.getUrl().equals(product.getUrl())) || hasLrtBeforeOneMonth(p.getLrt()))) {
                   saveProductUrlToQueue(product.getUrl());
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + product.getUrl());
                }
@@ -391,7 +391,7 @@ public abstract class CrawlerRanking extends Task {
       this.arrayProducts.add(product);
    }
 
-   public boolean hasLtrBeforeOneMonth(String lrt) {
+   public boolean hasLrtBeforeOneMonth(String lrt) {
       if (lrt != null && !lrt.isEmpty()) {
          try {
             Date lrtDate = new SimpleDateFormat("yyyy-M-dd hh:mm:ss").parse(lrt);
