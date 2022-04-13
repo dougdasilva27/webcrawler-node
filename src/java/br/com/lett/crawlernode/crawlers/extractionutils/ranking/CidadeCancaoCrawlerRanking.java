@@ -93,6 +93,8 @@ public class CidadeCancaoCrawlerRanking extends CrawlerRankingKeywords {
 
    @Override
    public boolean hasNextPage() {
-      return  true;
+      Element pager = this.currentDoc.selectFirst(".pager .pages .next");
+      boolean finalPage = pager != null && pager.classNames().contains("disable");
+      return !finalPage;
    }
 }
