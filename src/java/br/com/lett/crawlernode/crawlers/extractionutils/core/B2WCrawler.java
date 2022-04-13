@@ -180,7 +180,6 @@ public class B2WCrawler extends Crawler {
 
       JSONObject apolloJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
 
-
       if (!apolloJson.isEmpty() && session.getOriginalURL().startsWith(this.homePage)) {
          String sellerName = getSellerFromApolloJson(apolloJson);
          boolean mustAddProduct = checkIfMustScrapProduct(sellerName);
