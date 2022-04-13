@@ -24,7 +24,7 @@ public class CampinasPetcampCrawler extends CrawlerRankingKeywords {
 
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.petcamp.com.br/" + this.keywordEncoded + "#" + this.currentPage;
+      String url = "https://www.petcamp.com.br/" + this.keywordWithoutAccents.replace(" ", "%20") + "#" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
 
