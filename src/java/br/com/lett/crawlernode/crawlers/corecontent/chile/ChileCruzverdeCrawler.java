@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -11,7 +11,6 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -19,7 +18,6 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -38,34 +36,16 @@ public class ChileCruzverdeCrawler extends Crawler {
 
    public ChileCruzverdeCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
    public void handleCookiesBeforeFetch() {
       Request request = Request.RequestBuilder.create()
          .setUrl("https://api.cruzverde.cl/customer-service/login")
-         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.BUY_HAPROXY))
          .build();
-      Response responseApi = dataFetcher.post(session, request);
-      String cookie = responseApi.getHeaders().toString();
-
-      String finalCookie = null;
-      String regex = "sid=(.*); Path";
-      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-      final Matcher matcher = pattern.matcher(cookie);
-
-      if (matcher.find()) {
-         finalCookie = matcher.group(1);
-      }
-
-      BasicClientCookie sidCookie = new BasicClientCookie("connect.sid", finalCookie);
-      sidCookie.setDomain("api.cruzverde.cl");
-      sidCookie.setPath("/");
-      sidCookie.setValue(finalCookie);
-      sidCookie.setSecure(true);
-      sidCookie.setAttribute("HttpOnly", "true");
-      this.cookies.add(sidCookie);
+      Response responseApi = new JsoupDataFetcher().post(session, request);
+      this.cookies.addAll(responseApi.getCookies());
 
    }
 
@@ -87,7 +67,6 @@ public class ChileCruzverdeCrawler extends Crawler {
          boolean available = getAvaliability(productList);
          Offers offers = available ? getOffer(productList) : new Offers();
 
-         // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
@@ -196,7 +175,6 @@ public class ChileCruzverdeCrawler extends Crawler {
          .setUrl(url)
          .mustSendContentEncoding(true)
          .setCookies(this.cookies)
-         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.BUY_HAPROXY))
          .build();
       Response response = this.dataFetcher.get(session, request);
       if (response != null) {
