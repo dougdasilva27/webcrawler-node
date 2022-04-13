@@ -1,6 +1,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -8,20 +14,28 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.*;
+import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,7 +50,31 @@ public class BrasilAmaroCrawler extends Crawler {
 
    public BrasilAmaroCrawler(Session session) {
       super(session);
-      this.config.setFetcher(FetchMode.FETCHER);
+   }
+
+   @Override
+   protected Object fetch() {
+      Document doc = new Document("");
+      int attempt = 0;
+      boolean sucess = false;
+      do {
+         try {
+            Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
+
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, session);
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+            sucess = doc.selectFirst("div[class*=ProductView_container]") != null;
+            attempt++;
+            webdriver.waitLoad(10000);
+
+         } catch (Exception e) {
+            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, "Página não capturada");
+         }
+      } while (attempt < 3 && !sucess);
+
+      return doc;
    }
 
    public List<Product> extractInformation(Document document) throws Exception {
@@ -53,6 +91,9 @@ public class BrasilAmaroCrawler extends Crawler {
             String internalPid = matcher.group(2);
             String name = CrawlerUtils.scrapStringSimpleInfo(document, "h1[class*=Heading_heading]", true);
             CategoryCollection categories = CrawlerUtils.crawlCategories(document, "a[class*=ProductBreadcrumb_link]", true);
+            String description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList("div[class*=ProductInformation_apiMessage]"));
+            RatingsReviews ratingsReviews = crawlRating(internalPid);
+
             boolean availableToBuy = !document.select("button[id*=add-to-cart-button]").isEmpty();
             Offers offers = availableToBuy ? scrapOffers(document) : new Offers();
 
@@ -62,6 +103,8 @@ public class BrasilAmaroCrawler extends Crawler {
                .setInternalPid(internalPid)
                .setName(name)
                .setCategories(categories)
+               .setDescription(description)
+               .setRatingReviews(ratingsReviews)
                .setOffers(offers)
                .build();
 
@@ -107,6 +150,7 @@ public class BrasilAmaroCrawler extends Crawler {
       return offers;
 
    }
+
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[class*=Information_nowPrice]", null, true, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[class*=Information_discounted]", null, true, ',', session);
@@ -118,6 +162,7 @@ public class BrasilAmaroCrawler extends Crawler {
          .setCreditCards(creditCards)
          .build();
    }
+
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
@@ -149,5 +194,45 @@ public class BrasilAmaroCrawler extends Crawler {
       }
 
       return sales;
+   }
+
+   private RatingsReviews crawlRating(String internalPid) {
+      String url = "https://api-cdn.yotpo.com/v1/widget/0eU0TYNuFzWbeD60wD2lB7UWnCbAkVtX3vwtaEH0/products/" + internalPid + "/reviews";
+      RatingsReviews ratingsReviews = new RatingsReviews();
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setSendUserAgent(true)
+         .build();
+      Response response = new FetcherDataFetcher().get(session, request);
+      JSONObject jsonObject = CrawlerUtils.stringToJSONObject(response.getBody());
+      JSONObject aggregationRating = jsonObject.optJSONObject("bottomline");
+
+      if (aggregationRating != null) {
+         AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(aggregationRating);
+
+         ratingsReviews.setTotalRating(aggregationRating.optInt("total_review"));
+         ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
+         ratingsReviews.setAverageOverallRating(aggregationRating.optDouble("average_score", 0d));
+      }
+      return ratingsReviews;
+   }
+
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject reviews) {
+
+      JSONObject reviewValue = reviews.optJSONObject("star_distribution");
+
+      if (reviewValue != null) {
+         return new AdvancedRatingReview.Builder()
+            .totalStar1(reviewValue.optInt("1"))
+            .totalStar2(reviewValue.optInt("2"))
+            .totalStar3(reviewValue.optInt("3"))
+            .totalStar4(reviewValue.optInt("4"))
+            .totalStar5(reviewValue.optInt("5"))
+            .build();
+      }
+
+      return new AdvancedRatingReview();
    }
 }
