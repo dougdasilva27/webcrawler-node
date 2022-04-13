@@ -1,9 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.peru;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -16,9 +14,7 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
 
@@ -46,14 +42,11 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY)
          )
-
          .build();
 
       String json = dataFetcher.post(session, request).getBody();
-
       return JSONUtils.stringToJson(json);
    }
-
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
@@ -64,22 +57,18 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
 
       String url = "https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/MFPRD/filtered-products";
 
-      JSONObject json = fetchJSONObject(url, payload, new ApacheDataFetcher());
+      JSONObject json = fetchJSONObject(url, payload, new JsoupDataFetcher());
       JSONArray products = json.optJSONArray("rows");
 
       if (products != null && !products.isEmpty()) {
-         if (totalProducts == 0) {
-            this.totalPages = json.optInt("records");
-            setTotalProducts(json);
-         }
 
          for (Object obj : products) {
             if (obj instanceof JSONObject) {
                JSONObject product = (JSONObject) obj;
                String internalPid = product.optString("id");
-               String productUrl = product.optString("Link");
+               String productUrl = scrapUrl(product.optString("slug"), internalPid);
                String name = product.optString("name");
-               String imgUrl = product.optString("UrlImagen");
+               String imgUrl = JSONUtils.getValueRecursive(product, "imageList.0.url", String.class);
                Integer price = getPriceIfAvailable(product);
                boolean isAvailable = price != null;
 
@@ -107,12 +96,7 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return this.currentPage < totalPages;
-   }
-
-   protected void setTotalProducts(JSONObject json) {
-      this.totalProducts = json.optInt("nbHits");
-      this.log("Total de produtos: " + this.totalProducts);
+      return true;
    }
 
    private Integer getPriceIfAvailable(JSONObject product) {
@@ -123,9 +107,16 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
       return null;
    }
 
+   private String scrapUrl(String slug, String internalPid) {
+      if (slug != null && !slug.isEmpty()) {
+         return "https://mifarma.com.pe/product/" + slug + "/" + internalPid;
+      }
+      return null;
+   }
+
    private String getPayload() {
       JSONObject payloadJson = new JSONObject();
-
+      List<String> ids = new ArrayList<>();
 
       String url = "https://o74e6qkj1f-dsn.algolia.net/1/indexes/" +
          "products/query?x-algolia-agent=Algolia%20for%20JavaScript%20(3.35.1)%3B%20Browser" +
@@ -136,16 +127,11 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
       JSONObject json = fetchJSONObject(url, payload, new JsoupDataFetcher());
       JSONArray products = json.optJSONArray("hits");
       if (products != null && !products.isEmpty()) {
-         for (int i = 0; i < products.length(); i++) {
-            if (products.get(i) instanceof JSONObject) {
-               JSONObject product = (JSONObject) products.get(i);
+         for (Object obj : products) {
+            if (obj instanceof JSONObject) {
+               JSONObject product = (JSONObject) obj;
                String internalPid = product.optString("objectID");
-               if (internalPid != null && !internalPid.isEmpty()) {
-                  sb.append("\"").append(internalPid).append("\"");
-               }
-               if (i != products.length() - 1) {
-                  sb.append(",");
-               }
+               if (internalPid != null && !internalPid.isEmpty()) ids.add(internalPid);
             }
          }
          System.out.println("Workkk");
@@ -153,7 +139,7 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
          payloadJson.put("rows", products.length());
          payloadJson.put("order", "ASC");
          payloadJson.put("sort", "ranking");
-         payloadJson.put("productsFilter", sb.toString());
+         payloadJson.put("productsFilter", ids);
 
          return payloadJson.toString();
       }
@@ -164,6 +150,3 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
 
 
 }
-
-//{"departmentsFilter":[],"categoriesFilter":[],"subcategoriesFilter":[],"brandsFilter":[],"page":0,"rows":10,"order":"ASC","sort":"ranking","productsFilter": ["029136","011640","424079","430683","010278","424080","003408","431498","003411","023871"]}
-//{"departmentsFilter":[],"categoriesFilter":[],"subcategoriesFilter":[],"brandsFilter":[],"page":0,"rows":10,"order":"ASC","sort":"ranking","productsFilter": ["029136","011640","424079","430683","010278","424080","003408","431498","003411","023871"]}
