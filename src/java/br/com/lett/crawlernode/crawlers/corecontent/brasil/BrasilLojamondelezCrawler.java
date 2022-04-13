@@ -38,8 +38,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
    private static final String IMAGES_HOST = "images-mondelez.ifcshop.com.br";
 
    private static final String LOGIN_URL = "https://www.lojamondelez.com.br/Cliente/Logar";
-   private static final String CNPJ = "33033028004090";
-   private static final String PASSWORD = "monica08";
+
    private static final String SELLER_NAME_LOWER = "loja mondelez brasil";
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
@@ -49,7 +48,16 @@ public class BrasilLojamondelezCrawler extends Crawler {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
    }
+   private final String PASSWORD = getPassword();
+   private final String CNPJ = getCnpj();
 
+   protected String getPassword() {
+      return session.getOptions().optString("password");
+   }
+
+   protected String getCnpj() {
+      return session.getOptions().optString("cnpj");
+   }
    @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
