@@ -48,7 +48,7 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
 
    protected String apiSearchUrl(String lojaId) {
-      return API_URL + lojaId + "/product/load_search/";
+      return "https://www.sitemercado.com.br/api/b2c/product?store_id=" + lojaId + "&text=";
    }
 
    @Override

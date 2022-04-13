@@ -41,8 +41,7 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
             .setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
             .setProxyservice(
                listOf(
-                  ProxyCollection.NETNUT_RESIDENTIAL_ES,
-                  ProxyCollection.INFATICA_RESIDENTIAL_BR
+                  ProxyCollection.NETNUT_RESIDENTIAL_ES
                )
             )
             .build();
@@ -67,7 +66,10 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
          ?.attr("data-location-select-form-submit")?.toJson()?.optString("offerSwappingToken")!!
 
       requestOn("onboard/check?postalCode=$cep&offerSwappingToken=$token", false)
-      requestOn("cart/initiatePostalCodeUpdate?newPostalCode=$cep&allCartItemsSwappableUrl=%2Fhome&noCartUpdateRequiredUrl=%2Fhome&someCartItemsUnswappableUrl=%2Fhome&offer-swapping-token=$token", false)
+      requestOn(
+         "cart/initiatePostalCodeUpdate?newPostalCode=$cep&allCartItemsSwappableUrl=%2Fhome&noCartUpdateRequiredUrl=%2Fhome&someCartItemsUnswappableUrl=%2Fhome&offer-swapping-token=$token",
+         false
+      )
    }
 
    override fun extractInformation(document: Document): MutableList<Product> {
@@ -85,9 +87,9 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
          var internalId = "";
 
          if (document.selectFirst("#sellerProfileTriggerId") != null) {
-            var sellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document,"#sellerProfileTriggerId","href" ).substringAfter("&seller=")
+            var sellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "#sellerProfileTriggerId", "href").substringAfter("&seller=")
             internalId = sellerId + "_" + session.originalURL.substringAfter("dp/").substringBefore("?")
-         }else{
+         } else {
             internalId = session.originalURL.substringAfter("dp/").substringBefore("?")
          }
 

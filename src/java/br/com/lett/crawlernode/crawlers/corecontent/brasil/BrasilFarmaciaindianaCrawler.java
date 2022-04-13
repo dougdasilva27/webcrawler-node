@@ -1,15 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.*;
-
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
-import models.RatingsReviews;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -20,7 +12,20 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static br.com.lett.crawlernode.util.CrawlerUtils.crawlSkuJsonVTEX;
 
 
 public class BrasilFarmaciaindianaCrawler extends Crawler {
@@ -57,7 +62,7 @@ public class BrasilFarmaciaindianaCrawler extends Crawler {
          .setCookies(cookies)
          .build();
 
-      return Jsoup.parse(dataFetcher.get(session,request).getBody());
+      return Jsoup.parse(dataFetcher.get(session, request).getBody());
    }
 
    @Override
@@ -68,11 +73,11 @@ public class BrasilFarmaciaindianaCrawler extends Crawler {
       if (isProductPage(doc)) {
          VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, SELLER_NAME, HOME_PAGE, cookies, dataFetcher);
 
-         JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+         JSONObject skuJson = crawlSkuJsonVTEX(doc, session);
 
          String internalPid = vtexUtil.crawlInternalPid(skuJson);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li:not(:first-child) a");
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescription", "#caracteristicas"));
+         String description = scrapDescription(doc);
          JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
          RatingsReviews ratingReviews = scrapRating(internalPid, null, doc, null);
 
@@ -84,7 +89,7 @@ public class BrasilFarmaciaindianaCrawler extends Crawler {
 
             String internalId = vtexUtil.crawlInternalId(jsonSku);
             JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-            String name = vtexUtil.crawlName(jsonSku, skuJson);
+            String name = scrapName(doc, vtexUtil, jsonSku, skuJson);
             Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
             Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
             boolean available = marketplaceMap.containsKey(SELLER_NAME);
@@ -130,13 +135,53 @@ public class BrasilFarmaciaindianaCrawler extends Crawler {
       return products;
    }
 
+
+   /**
+    * There are some product pages that do not have a name
+    * https://www.farmaciaindiana.com.br/100--albumina-health-labs-natural-500g/p
+    */
+   private String scrapName(Document doc, VTEXCrawlersUtils vtexUtil, JSONObject jsonSku, JSONObject skuJson) {
+      boolean hasTitle = !doc.select(".hidden .plugin-preco").isEmpty();
+      String name = vtexUtil.crawlName(jsonSku, skuJson);
+      if (!hasTitle) {
+         name = " ";
+      }
+
+      return name;
+   }
+
+   private String scrapDescription(Document doc) {
+      StringBuilder description = new StringBuilder();
+      String characteristics = CrawlerUtils.scrapStringSimpleInfo(doc, "#caracteristicas", true);
+      String productDescription = doc.select(".bf-description__container .productDescription p").text();
+
+      if (productDescription != null && !productDescription.isEmpty()) {
+         description.append("Descrição").append("\n");
+         description.append(productDescription).append("\n");
+      }
+      if (characteristics != null && !characteristics.isEmpty()) {
+         description.append("Características").append("\n");
+
+         description.append(characteristics);
+      }
+
+      return description.toString();
+
+   }
+
    protected boolean isProductPage(Document document) {
       return document.selectFirst(".productName") != null;
    }
 
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, MAIN_SELLER_STORE_ID, logger);
-      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
+      JSONObject json = crawlSkuJsonVTEX(doc, session);
+      String id = json.optString("productId");
+      if (id != null && !id.isEmpty()) {
+         return trustVox.extractRatingAndReviews(id, doc, new FetcherDataFetcher());
+      } else {
+         return trustVox.extractRatingAndReviews(internalPid, doc, new FetcherDataFetcher());
+      }
    }
 
 }

@@ -55,7 +55,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          val secondaryImages = jsonImages.map { (it as JSONObject).optString("url") }
          val name = json.optString("name")
          val isAvailable = doc.select(".text-unavailable-item").isEmpty()
-         val offers = if (isAvailable) scrapOffers(json) else Offers()
+         val offers = if (isAvailable) scrapOffers(json, doc) else Offers()
          val rating = scrapRating(doc)
 
          val product = ProductBuilder.create()
@@ -112,7 +112,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          .replace("&a;reg;", "®")
    }
 
-   private fun scrapOffers(json: JSONObject): Offers {
+   private fun scrapOffers(json: JSONObject, doc: Document): Offers {
       var price = json.optDouble("originalPrice")
       var priceFrom: Double? = null
       val discount = (json.optQuery("/discount/percentage") as Int?)
@@ -122,23 +122,38 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
       }
       val bankSlip = price.toBankSlip()
       val creditCards = listOf(Card.HIPERCARD, Card.VISA, Card.MASTERCARD, Card.AMEX, Card.DINERS).toCreditCards(price)
-
+      val pricing = Pricing.PricingBuilder.create()
+         .setSpotlightPrice(price.round())
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build()
+      val sales = scrapSales(doc, pricing)
       val offer = Offer.OfferBuilder.create()
-         .setPricing(
-            Pricing.PricingBuilder.create()
-               .setSpotlightPrice(price.round())
-               .setPriceFrom(priceFrom)
-               .setCreditCards(creditCards)
-               .setBankSlip(bankSlip)
-               .build()
-         )
+         .setPricing(pricing)
          .setUseSlugNameAsInternalSellerId(true)
          .setIsBuybox(false)
          .setIsMainRetailer(true)
+         .setSales(sales)
          .setSellerFullName("Panvel")
          .build()
 
       return Offers(listOf(offer))
+   }
+
+   private fun scrapSales(doc: Document, pricing: Pricing): MutableList<String>? {
+      val sales = mutableListOf<String>()
+      val discount = CrawlerUtils.calculateSales(pricing)
+      if (discount != null && discount.isNotEmpty()) {
+         sales.add(discount)
+      }
+
+      val kitSales = doc.select(".card-pack.ng-star-inserted span")
+
+      if (kitSales != null && kitSales.isNotEmpty()) {
+         sales.add(kitSales.text())
+      }
+      return sales
    }
 
    private fun scrapRating(doc: Document): RatingsReviews {

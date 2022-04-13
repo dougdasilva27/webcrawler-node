@@ -1,5 +1,9 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -13,11 +17,11 @@ public class MexicoCornershopCrawlerRanking extends CrawlerRankingKeywords {
    private final String STORE_ID = getStoreId();
    private final String PRODUCT_STORE_ID = getProductStoreId();
 
-   protected String getStoreId(){
+   protected String getStoreId() {
       return session.getOptions().optString("STORE_ID");
    }
 
-   protected String getProductStoreId(){
+   protected String getProductStoreId() {
       return session.getOptions().optString("PRODUCT_STORE_ID");
    }
 
@@ -26,12 +30,12 @@ public class MexicoCornershopCrawlerRanking extends CrawlerRankingKeywords {
    }
 
    @Override
-   public void extractProductsFromCurrentPage() {
+   public void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
 
       String url = "https://cornershopapp.com/api/v1/branches/"
-            + STORE_ID + "/search?query="
-            + this.keywordEncoded;
+         + STORE_ID + "/search?query="
+         + this.keywordEncoded;
       this.log("Link onde são feitos os crawlers: " + url);
 
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
@@ -47,11 +51,22 @@ public class MexicoCornershopCrawlerRanking extends CrawlerRankingKeywords {
 
                String internalId = crawlInternalId(product);
                String productUrl = crawlProductUrl(internalId);
+               String imgUrl = product.optString("img_url");
+               String name = crawlProductName(product);
+               int price = JSONUtils.getPriceInCents(product, "price");
+               boolean isAvailable = product.optBoolean("purchasable");
 
-               saveDataProduct(internalId, null, productUrl);
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setInternalPid(null)
+                  .setImageUrl(imgUrl)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .build();
 
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-
+               saveDataProduct(productRanking);
                if (this.arrayProducts.size() == productsLimit) {
                   break;
                }
@@ -64,6 +79,15 @@ public class MexicoCornershopCrawlerRanking extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
+   }
+
+   protected String crawlProductName(JSONObject product) {
+      String name = product.optString("name");
+      String brand = JSONUtils.getValueRecursive(product, "brand.name", String.class, "");
+      if(!brand.isEmpty()) {
+         return brand + " - " + name;
+      }
+      return name;
    }
 
    @Override

@@ -1,11 +1,17 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,11 +24,6 @@ import models.RatingsReviews;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.Pricing.PricingBuilder;
 
-/**
- * date: 27/03/2018
- *
- * @author gabriel
- */
 
 public class BrasilCassolCrawler extends VTEXNewScraper {
 
@@ -51,73 +52,49 @@ public class BrasilCassolCrawler extends VTEXNewScraper {
       return null;
    }
 
-   /**
-    * As requested by the customer, this store captures the price per square meter
-    * https://app.clickup.com/t/5v8vra
-    */
-
    @Override
-   protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson) throws MalformedPricingException {
-      Double spotlightPrice = comertial.optDouble("Price");
-      Double priceFrom = comertial.optDouble("ListPrice");
-      CreditCards creditCards = scrapCreditCardsCassol(comertial);
+   protected BankSlip scrapBankSlip(Double spotlightPrice, JSONObject comertial, JSONObject discounts, boolean mustSetDiscount) throws MalformedPricingException {
+      Double bankSlipPrice = spotlightPrice;
+      Double discount = 0d;
 
+      JSONObject paymentOptions = comertial.optJSONObject("PaymentOptions");
+      if (paymentOptions != null) {
+         JSONArray cardsArray = paymentOptions.optJSONArray("installmentOptions");
+         if (cardsArray != null) {
+            for (Object o : cardsArray) {
+               JSONObject paymentJson = (JSONObject) o;
 
-      BankSlip bankSlipPrice = BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build();
+               String paymentCode = paymentJson.optString("paymentSystem");
+               JSONObject paymentDiscount = discounts.has(paymentCode) ? discounts.optJSONObject(paymentCode) : null;
+               String name = paymentJson.optString("paymentName");
 
-      if (priceFrom != null && spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
-         priceFrom = null;
-      }
-
-      return PricingBuilder.create()
-         .setSpotlightPrice(spotlightPrice)
-         .setPriceFrom(priceFrom)
-         .setBankSlip(bankSlipPrice)
-         .setCreditCards(creditCards)
-         .build();
-
-
-   }
-
-   protected CreditCards scrapCreditCardsCassol(JSONObject comertial) throws MalformedPricingException {
-      CreditCards creditCards = new CreditCards();
-      Installments installments = new Installments();
-
-      JSONArray cardsArray = comertial.optJSONArray("Installments");
-      if (cardsArray != null) {
-         for (Object o : cardsArray) {
-            JSONObject cardJson = (JSONObject) o;
-
-            Integer installmentNumber = cardJson.optInt("NumberOfInstallments");
-            Double value = cardJson.optDouble("Value");
-            Double interest = cardJson.optDouble("InterestRate");
-            if (installments.getInstallmentPrice(1) != null && installments.getInstallmentPrice(1).equals(value)) {
-               break;
+               if (name.toLowerCase().contains("boleto")) {
+                  if (paymentDiscount != null) {
+                     discount = paymentDiscount.optDouble("discount");
+                     bankSlipPrice = MathUtils.normalizeTwoDecimalPlaces(bankSlipPrice - (bankSlipPrice * discount));
+                  }
+                  break;
+               }
             }
-            installments.add(setInstallment(installmentNumber, value, interest, null, null));
-         }
-
-         for (String card : cards) {
-            creditCards.add(CreditCard.CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
-
          }
       }
 
-      return creditCards;
+      if (!mustSetDiscount) {
+         discount = null;
+      }
 
+      return BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(bankSlipPrice)
+         .setOnPageDiscount(discount)
+         .build();
    }
-
    @Override
    protected String scrapDescription(Document doc, JSONObject productJson) {
       StringBuilder description = new StringBuilder();
 
       if (productJson.has("description")) {
          description.append("<div>");
-         description.append(sanitizeDescription(productJson.get("description")));
+         description.append(sanitizeDescription(productJson.optString("description", "")));
          description.append("</div>");
       }
 

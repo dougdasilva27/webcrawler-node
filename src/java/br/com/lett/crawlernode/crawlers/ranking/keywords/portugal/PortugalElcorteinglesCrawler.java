@@ -35,7 +35,6 @@ public class PortugalElcorteinglesCrawler extends CrawlerRankingKeywords {
             .setProxyservice(
                   Arrays.asList(
                         ProxyCollection.NETNUT_RESIDENTIAL_BR,
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                         ProxyCollection.LUMINATI_SERVER_BR
                   )
             ).build();
@@ -94,7 +93,6 @@ public class PortugalElcorteinglesCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, null, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
          }
       }
    }

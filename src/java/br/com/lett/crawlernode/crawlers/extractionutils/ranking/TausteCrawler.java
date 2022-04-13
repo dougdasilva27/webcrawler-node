@@ -17,7 +17,7 @@ import org.jsoup.select.Elements;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class TausteCrawler extends CrawlerRankingKeywords {
+public class TausteCrawler extends CrawlerRankingKeywords {
 
    private static final List<Cookie> COOKIES = new ArrayList<>();
 
@@ -25,7 +25,9 @@ public abstract class TausteCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   protected abstract String getLocation();
+   protected String getLocation() {
+      return session.getOptions().optString("LOCATION");
+   };
 
    private Document fetchProducts(){
 
@@ -69,7 +71,6 @@ public abstract class TausteCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, internalPid, urlProduct);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
             if (this.arrayProducts.size() == productsLimit) break;
 
          }

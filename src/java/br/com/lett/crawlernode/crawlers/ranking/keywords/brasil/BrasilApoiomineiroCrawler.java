@@ -1,5 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -14,7 +18,7 @@ public class BrasilApoiomineiroCrawler extends CrawlerRankingKeywords {
   private static final String HOME_PAGE = "https://www.apoioentrega.com/";
 
   @Override
-  protected void extractProductsFromCurrentPage() {
+  protected void extractProductsFromCurrentPage() throws MalformedProductException {
     this.pageSize = 40;
 
     this.log("Página " + this.currentPage);
@@ -33,7 +37,21 @@ public class BrasilApoiomineiroCrawler extends CrawlerRankingKeywords {
         String internalPid = crawlInternalPid(e);
         String productUrl = crawlProductUrl(e);
 
-        saveDataProduct(null, internalPid, productUrl);
+         String name = CrawlerUtils.scrapStringSimpleInfo(e, ".limit-defined > h3 > a.espiar-btn", true);
+         String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".qd-sil-wrapper > a.espiar-btn.qd_sil_img_wrapper.qd-sil-on > img.qd-sil-image.qd-sil-image-loaded", "src");
+         Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".product-box-price__best-price", null, true, ',', session, null);
+         boolean isAvailable = price != null;
+
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalPid)
+            .setName(name)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .setImageUrl(imageUrl)
+            .build();
+
+         saveDataProduct(productRanking);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;

@@ -36,7 +36,6 @@ public class BrasilServnutriCrawler extends CrawlerRankingKeywords {
         String productUrl = CrawlerUtils.completeUrl(captureUrl,"http:","www.servnutri.com.br");
         saveDataProduct(internalId, internalId, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + productUrl);
 
         if (this.arrayProducts.size() == productsLimit) {
            break;

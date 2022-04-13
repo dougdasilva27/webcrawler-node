@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,7 +20,7 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
@@ -33,16 +36,24 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id").replace("produto-spot-item-", "");
+            String internalPid = setPid(e);
             String productUrl = CrawlerUtils.scrapUrl(e, ".spot div.spotContent > a", "href", "https", HOME_PAGE);
 
-            saveDataProduct(null, internalPid, productUrl);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".fbits-spot-conteudo > .spot-parte-dois > .spotTitle", true);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spotImg > img", "src");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".precoPor > .fbits-valor", null, true, ',', session, 0);
+            boolean isAvailable = price != 0;
 
-            this.log(
-               "Position: " + this.position +
-                  " - InternalId: " + internalPid +
-                  " - InternalPid: " + null +
-                  " - Url: " + productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
+
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit)
                break;
@@ -62,5 +73,15 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
    protected void setTotalProducts() {
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "span.fbits-qtd-produtos-pagina", null, null, false, true, 0);
       this.log("Total da busca: " + this.totalProducts);
+   }
+
+   private String setPid(Element e) {
+      String verifyPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id");
+      if (verifyPid != null && !verifyPid.isEmpty()) {
+         verifyPid = verifyPid.replace("produto-spot-item-", "");
+      }
+
+      return verifyPid;
+
    }
 }

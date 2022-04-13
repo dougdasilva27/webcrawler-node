@@ -186,7 +186,6 @@ public class GuatemalaCemacoCrawler extends Crawler {
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
-
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setPriceFrom(priceFrom)
@@ -194,7 +193,6 @@ public class GuatemalaCemacoCrawler extends Crawler {
          .setBankSlip(bankSlip)
          .build();
    }
-
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 

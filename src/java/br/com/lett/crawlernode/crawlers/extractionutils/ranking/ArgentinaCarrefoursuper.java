@@ -62,7 +62,6 @@ public abstract class ArgentinaCarrefoursuper extends CrawlerRankingKeywords {
          String internalPid = product.optString("productId");
 
          saveDataProduct(null, internalPid, productUrl);
-         this.log("Position: " + this.position + " - InternalPid: " + internalPid + " - Url: " + productUrl);
       }
    }
 
@@ -96,7 +95,6 @@ public abstract class ArgentinaCarrefoursuper extends CrawlerRankingKeywords {
                .build())
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
             ProxyCollection.LUMINATI_SERVER_BR)
          )
          .build();

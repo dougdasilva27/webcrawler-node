@@ -1,12 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
@@ -20,14 +18,8 @@ import models.RatingsReviews;
 import models.pricing.*;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -41,11 +33,12 @@ public class BrasilMartinsCrawler extends Crawler {
 
    public BrasilMartinsCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setParser(Parser.HTML);
    }
 
-   private String password = getPassword();
-   private String login = getLogin();
+   private final String password = getPassword();
+   private final String login = getLogin();
 
    protected String getPassword() {
       return session.getOptions().optString("pass");
@@ -63,67 +56,50 @@ public class BrasilMartinsCrawler extends Crawler {
    }
 
    @Override
-   protected Object fetch() {
-      if (login == null || password == null) {
-         return super.fetch();
-      }
-      try {
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
+   protected Response fetchResponse() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("content-type", "application/x-www-form-urlencoded");
+      headers.put("referer", session.getOriginalURL());
+      headers.put("authority", "www.martinsatacado.com.br");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
 
-         Logging.printLogInfo(logger, session, "awaiting product page without login");
+      String payload = "j_username=" + login.replace("@", "%40") + "&j_password=" + password;
 
-         webdriver.waitLoad(4500);
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.martinsatacado.com.br/j_spring_security_check")
+         .setPayload(payload)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY))
 
-         WebElement buyButtom = webdriver.driver.findElement(By.cssSelector("#btnBuyProd"));
-         webdriver.clickOnElementViaJavascript(buyButtom);
+         .setHeaders(headers)
+         .build();
 
-         webdriver.driver.manage().timeouts().pageLoadTimeout(25, TimeUnit.SECONDS);
+      Response response = this.dataFetcher.post(session, request);
+      int statusCode = response.getLastStatusCode();
 
-         waitForElement(webdriver.driver, "#js_username_login");
-         WebElement email = webdriver.driver.findElement(By.cssSelector("#js_username_login"));
-         email.sendKeys(login);
-
-         webdriver.waitLoad(4000);
-
-         waitForElement(webdriver.driver, "#jsSelectCNPJ");
-         WebElement cnpj = webdriver.driver.findElement(By.cssSelector("#jsSelectCNPJ"));
-         webdriver.clickOnElementViaJavascript(cnpj);
-         webdriver.waitLoad(4000);
-
-         waitForElement(webdriver.driver, ".form-group.c-login__group #j_password");
-         WebElement pass = webdriver.driver.findElement(By.cssSelector(".form-group.c-login__group #j_password"));
-         pass.sendKeys(password);
-
-         Logging.printLogInfo(logger, session, "awaiting login button");
-         webdriver.waitLoad(6000);
-
-         WebElement login = webdriver.driver.findElement(By.cssSelector("#btn-login"));
-         webdriver.clickOnElementViaJavascript(login);
-
-         webdriver.driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
-         Logging.printLogInfo(logger, session, "awaiting product page");
-
-         waitForElement(webdriver.driver, ".qdForm");
-
-         Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
-
-         if (!isProductPage(doc)) {
-            doc = (Document) super.fetch();
+      if (statusCode == 0) {
+         try {
+            TimeUnit.SECONDS.sleep(2);
+         } catch (InterruptedException e) {
+            e.printStackTrace();
          }
-
-         return doc;
-      } catch (Exception e) {
-         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-         return super.fetch();
+         Request requestNextTry = Request.RequestBuilder.create()
+            .setUrl("https://www.martinsatacado.com.br/j_spring_security_check")
+            .setPayload(payload)
+            .setProxyservice(Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
+            ))
+            .setHeaders(headers)
+            .build();
+         response = this.dataFetcher.post(session, requestNextTry);
       }
+      return response;
    }
-
-   public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 90);
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
-   }
-
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -136,8 +112,9 @@ public class BrasilMartinsCrawler extends Crawler {
 
          List<String> variations = scrapVariations(doc);
 
-         if(!variations.isEmpty()) {
-            for (String variation : variations) {
+         if (!variations.isEmpty()) {
+            for (int i = 0; i < variations.size(); i++) {
+               String variation = i == 0 ? "" : variations.get(i);
                products.add(extractProductFromHtml(doc, variation));
             }
          } else {
@@ -157,11 +134,11 @@ public class BrasilMartinsCrawler extends Crawler {
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".qdDetails .title", true);
       Double variationPrice = null;
 
-      if(!variation.isEmpty()) {
+      if (!variation.isEmpty()) {
          String variationName = StringUtils.substringBetween(variation, "(", ")");
          String variationSlug = CrawlerUtils.toSlug(variationName);
          variationPrice = convertPrice(variation);
-         if(!"1-unid".equals(variationSlug)) {
+         if (!"1-unid".equals(variationSlug)) {
             variationInternalId += "-" + variationSlug;
             name += " " + variationName;
          }
@@ -177,20 +154,20 @@ public class BrasilMartinsCrawler extends Crawler {
       Offers offers = available ? scrapOffers(doc, variationPrice) : new Offers();
 
       return ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(variationInternalId)
-            .setInternalPid(internalId)
-            .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setRatingReviews(ratingsReviews)
-            .setSecondaryImages(secondaryImages)
-            .setOffers(offers)
-            .setDescription(description)
-            .setEans(eans)
-            .build();
+         .setUrl(session.getOriginalURL())
+         .setInternalId(variationInternalId)
+         .setInternalPid(internalId)
+         .setName(name)
+         .setCategory1(categories.getCategory(0))
+         .setCategory2(categories.getCategory(1))
+         .setCategory3(categories.getCategory(2))
+         .setPrimaryImage(primaryImage)
+         .setRatingReviews(ratingsReviews)
+         .setSecondaryImages(secondaryImages)
+         .setOffers(offers)
+         .setDescription(description)
+         .setEans(eans)
+         .build();
    }
 
    private Double convertPrice(String variation) {
@@ -252,7 +229,7 @@ public class BrasilMartinsCrawler extends Crawler {
    private Pricing scrapPricing(Document doc, Double variationPrice) throws MalformedPricingException {
       Double spotlightPrice;
 
-      if(variationPrice != null) {
+      if (variationPrice != null) {
          spotlightPrice = variationPrice;
       } else {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".qdValue .value", null, true, ',', session);

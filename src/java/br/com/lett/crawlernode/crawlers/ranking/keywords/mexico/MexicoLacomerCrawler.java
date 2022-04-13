@@ -1,11 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.kafka.common.protocol.types.Field;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+
+import java.io.UnsupportedEncodingException;
 
 public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
 
@@ -16,7 +21,7 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
    private final String succId = session.getOptions().optString("succId");
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       // número de produtos por página do market
       this.pageSize = 30;
 
@@ -53,10 +58,26 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
             // Url do produto
             String productUrl = crawlProductUrl(product);
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            String name = product.optString("artDes") + " " + product.optString("marDes");
+//
+            String imgUrl = "https://www.lacomer.com.mx/superc/img_art/" + product.optString("artEan")+"_1.jpg";
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-                  + internalPid + " - Url: " + productUrl);
+            Integer price = getPrice(product);
+
+            boolean  isAvailable  = price != 0;
+
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -75,6 +96,15 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
       return this.arrayProducts.size() < this.totalProducts;
    }
 
+   protected Integer getPrice( JSONObject product){
+      try {
+         Double priceDouble = product.getDouble("artPrlin")*100;
+         return priceDouble.intValue();
+      } catch (NullPointerException e) {
+         return 0;
+      }
+
+   }
    protected void setTotalBusca(JSONObject search) {
       if (search.has("total")) {
 

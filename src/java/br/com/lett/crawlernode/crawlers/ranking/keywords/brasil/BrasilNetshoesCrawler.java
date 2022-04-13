@@ -1,8 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -13,7 +20,7 @@ public class BrasilNetshoesCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 42;
 
       this.log("Página " + this.currentPage);
@@ -33,10 +40,22 @@ public class BrasilNetshoesCrawler extends CrawlerRankingKeywords {
          for (Element e : products) {
             String internalPid = crawlInternalPid(e);
             String productUrl = CrawlerUtils.scrapUrl(e, null, "href", "https:", "www.netshoes.com.br");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".item-card__description__product-name > span", true);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".item-card__images__image-link > img", "data-src");
+            int price = crawlPrice(internalPid);
+            boolean isAvailable = price != 0;
 
-            saveDataProduct(null, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
+
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -72,4 +91,17 @@ public class BrasilNetshoesCrawler extends CrawlerRankingKeywords {
       return e.attr("parent-sku");
    }
 
+   private int crawlPrice(String internalPid) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.netshoes.com.br/refactoring/tpl/frdmprcs/" + internalPid + "/lazy/b")
+         .build();
+      Document doc = Jsoup.parse(dataFetcher.get(session, request).getBody());
+
+      String productPrice = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".pr", "data-final-price");
+      int price = 0;
+      if (productPrice != null && !productPrice.isEmpty()) {
+         price = Integer.parseInt(productPrice);
+      }
+      return price;
+   }
 }

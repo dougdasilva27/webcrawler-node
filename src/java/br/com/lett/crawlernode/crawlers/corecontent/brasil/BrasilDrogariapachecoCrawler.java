@@ -10,7 +10,6 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -18,15 +17,10 @@ import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
-import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
-import models.RatingsReviews;
 import models.pricing.CreditCard;
 import models.pricing.CreditCards;
 import models.pricing.Installment;
@@ -89,7 +83,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
             String secondaryImages = scrapSecondaryImage(vtexUtil, apiJSON);
             Integer stock = jsonSku.optInt("availablequantity");
             String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
-            Offers offer = available ? scrapOffers(jsonSku) : new Offers();
+            Offers offer = available ? scrapOffers(jsonSku, doc) : new Offers();
 
             List<String> eans = new ArrayList<>();
             eans.add(ean);
@@ -123,9 +117,9 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
    private String scrapSecondaryImage(VTEXCrawlersUtils vtexUtil, JSONObject apiJSON) {
       JSONArray array = new JSONArray();
-      if(vtexUtil != null && apiJSON != null) {
+      if (vtexUtil != null && apiJSON != null) {
          String secondary = vtexUtil.crawlSecondaryImages(apiJSON);
-         if(secondary!= null) {
+         if (secondary != null) {
             JSONArray images = new JSONArray(secondary);
             for (int i = 0; i < Math.min(images.length(), 3); i++) {
                array.put(images.get(i));
@@ -137,7 +131,6 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
    /**
     * Average is calculate
-    *
     */
    private Double getTotalAvgRating(Document docRating) {
       Double avgRating = null;
@@ -152,7 +145,6 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
    /**
     * Number of ratings appear in rating page
-    *
     */
    private Integer getTotalNumOfRatings(Document doc) {
       Integer totalRating = null;
@@ -264,9 +256,10 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
       return description.toString();
    }
 
-   private Offers scrapOffers(JSONObject json) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(JSONObject json, Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(json);
+      List<String> sales = scrapSales(pricing, doc);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -275,10 +268,27 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
          .setIsBuybox(false)
          .setIsMainRetailer(true)
          .setPricing(pricing)
+         .setSales(sales)
          .build());
 
       return offers;
 
+   }
+
+   private List<String> scrapSales(Pricing pricing, Document doc) {
+      List<String> sales = new ArrayList<>();
+      String discount = CrawlerUtils.calculateSales(pricing);
+      if (!discount.isEmpty()) sales.add(discount);
+
+      List<Element> salesElements = doc.select(".rnk-flags");
+      for (Element element : salesElements) {
+         String sale = element.text();
+         if (!sales.contains(sale) && !sale.isEmpty()) {
+            sales.add(sale);
+         }
+      }
+
+      return sales;
    }
 
 

@@ -1,11 +1,17 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.Collections;
 
 public class BrasilNutricaototalCrawler extends CrawlerRankingKeywords {
    public BrasilNutricaototalCrawler(Session session) {
@@ -13,7 +19,7 @@ public class BrasilNutricaototalCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 12;
 
       this.log("Página " + this.currentPage);
@@ -26,19 +32,31 @@ public class BrasilNutricaototalCrawler extends CrawlerRankingKeywords {
 
       Elements products = this.currentDoc.select(".product.product-item");
 
-      if (products.size() >= 1) {
+      if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
             setTotalProducts();
          }
 
          for (Element e : products) {
 
-            String internalId = e.selectFirst(".price-box").attr("data-product-id");
-            String productUrl = e.selectFirst(".product-item-photo").attr("href");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".price-box", "data-product-id");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item-photo", "href");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-name", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image-photo", Collections.singletonList("src"), "https", "nutricaototal.com.br");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "span[data-price-type=finalPrice]", null, false, ',', session, null);
+            boolean isAvailable = e.selectFirst("div.stock.unavailable") == null;
 
-            saveDataProduct(internalId, null, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(null)
+               .setImageUrl(imgUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
          }
 
       } else {

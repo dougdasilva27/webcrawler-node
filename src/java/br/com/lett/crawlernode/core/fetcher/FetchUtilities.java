@@ -169,10 +169,6 @@ public class FetchUtilities {
       while (proxies.isEmpty() && attemptTemp <= maxAttempts) {
          serviceName = getProxyService(attemptTemp, session);
 
-         if ((session instanceof EqiCrawlerSession || session instanceof EqiRankingDiscoverKeywordsSession) && serviceName.equals(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY)) {
-            serviceName = ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI;
-         }
-
          if (serviceName != null) {
             if (GlobalConfigurations.proxies != null) {
                proxies = GlobalConfigurations.proxies.getProxy(serviceName);
@@ -400,8 +396,11 @@ public class FetchUtilities {
    public static List<Cookie> getCookiesFromHeadersMap(Map<String, String> headers) {
       List<Cookie> cookies = new ArrayList<>();
 
-      if (headers.containsKey(HEADER_SET_COOKIE)) {
+      if (headers.containsKey(HEADER_SET_COOKIE) || headers.containsKey(HEADER_SET_COOKIE.toLowerCase())) {
          String cookieHeader = headers.get(HEADER_SET_COOKIE);
+         if(cookieHeader == null) {
+            cookieHeader = headers.get(HEADER_SET_COOKIE.toLowerCase());
+         }
          String cookieName = cookieHeader.split("=")[0].trim();
 
          int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;

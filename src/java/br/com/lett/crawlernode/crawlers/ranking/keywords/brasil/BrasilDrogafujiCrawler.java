@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -14,38 +15,33 @@ public class BrasilDrogafujiCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected void extractProductsFromCurrentPage() {
 		//número de produtos por página do market
-		this.pageSize = 24;
+		this.pageSize = 12;
 	
 		this.log("Página "+ this.currentPage);
 		
 		//monta a url com a keyword e a página
-		String url = "https://www.drogafuji.com.br/catalogsearch/result/index/?p="+ this.currentPage +"&q=" + this.keywordEncoded;
+      String url = "https://www.drogafuji.com.br/buscapagina?ft=" + this.keywordEncoded + "&PS=" + this.pageSize + "&sl=ef3fcb99-de72-4251-aa57-71fe5b6e149f&cc=3&sm=0&PageNumber=" + this.currentPage;
 		this.log("Link onde são feitos os crawlers: "+url);	
 		
 		//chama função de pegar o html
 		this.currentDoc = fetchDocument(url);
 
-		Elements products =  this.currentDoc.select(".products-grid .item");
+		Elements products =  this.currentDoc.select(".prateleira.vitrine.n3colunas > ul > li[layout]");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
-			if(totalProducts == 0) {
-				setTotalProducts();
-			}
-			
 			for(Element e : products) {
 				// InternalPid
 				String internalPid = null;
 				
 				// InternalId
-				String internalId = crawlInternalId(e);
+				String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "span[data-sku]", "data-sku");
 				
 				// Url do produto
-				String productUrl = crawlProductUrl(e);
+				String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-name > a", "href");
 				
 				saveDataProduct(internalId, internalPid, productUrl);
 				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 				if(this.arrayProducts.size() == productsLimit) {
 					break;
 				}
@@ -61,52 +57,7 @@ public class BrasilDrogafujiCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected boolean hasNextPage() {
-		return this.arrayProducts.size() < this.totalProducts;
+		return this.arrayProducts.size() > 0 && this.arrayProducts.size() % this.pageSize == 0;
 	}
-	
-	@Override
-	protected void setTotalProducts() {
-		Element total = this.currentDoc.select(".amount").first();
-		
-		if(total != null) {
-			String totalText = total.ownText().trim().split(" ")[0].replaceAll("[^0-9]", "");
-			
-			if(!totalText.isEmpty()) {
-				this.totalProducts = Integer.parseInt(totalText);
-			}
-		}
-		
-		this.log("Total products: " + this.totalProducts);
-	}
-	
-	private String crawlInternalId(Element e){
-		String internalId = null;
-		Element idElement = e.select("span[id^=product-price-]").first();
-		
-		if(idElement != null) {
-			String[] tokens = idElement.attr("id").split("-");
-			String id = tokens[tokens.length-1].replaceAll("[^0-9]", "").trim();
-			
-			if(!id.isEmpty()) {
-				internalId = id;
-			}
-		}
-		
-		return internalId;
-	}
-	
-	private String crawlProductUrl(Element e){
-		String productUrl = null;
-		Element url = e.select("> a").first();
-		
-		if(url != null) {
-			productUrl = url.attr("href");
-			
-			if(!productUrl.startsWith("https://www.drogafuji.com.br/")) {
-				productUrl = "https://www.drogafuji.com.br/" + productUrl;
-			}
-		}
-		
-		return productUrl;
-	}
+
 }

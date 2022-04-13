@@ -1,9 +1,13 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -11,6 +15,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,28 +34,18 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "LettDigital/1.0");
 
-      Request request = null;
-      try {
-         request = Request.RequestBuilder.create()
-            .setUrl(url)
-            .setHeaders(headers)
-            .setProxy(getFixedIp())
-            .build();
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
+      Request request = Request.RequestBuilder.create().setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .build();
 
       return Jsoup.parse(dataFetcher.get(session, request).getBody());
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
-
-      try {
-         Thread.sleep(3000);
-      } catch (InterruptedException e) {
-         e.printStackTrace();
-      }
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
@@ -58,16 +54,14 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".carousel__detalhes-top");
+      Elements products = this.currentDoc.select(".carousel__detalhe-item ");
 
       if (!products.isEmpty()) {
 
          for (Element e : products) {
             String data = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href");
-
             String urlProduct = "";
             String internalId = "";
-
             if (data != null) {
                urlProduct = "https://www.extrabom.com.br/" + data;
                String[] internalIdSplit = data.split("/");
@@ -76,19 +70,26 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
                }
             }
 
-            saveDataProduct(internalId, null, urlProduct);
+            String name = crawlName(e);
+            String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".carousel__box-img > table > tbody > tr > td > a > img", Collections.singletonList("src"), "https", "www.extrabom.com.br");
+            Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".item-por > strong ", null, false, ',', session, null);
+            boolean available = priceInCents != null;
 
-            this.log(
-               "Position: " + this.position +
-                  " - InternalId: " + internalId +
-                  " - InternalPid: " + null +
-                  " - Url: " + urlProduct);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(urlProduct)
+               .setInternalId(internalId)
+               .setImageUrl(image)
+               .setName(name)
+               .setPriceInCents(priceInCents)
+               .setAvailability(available)
+               .build();
+
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
          }
-
       } else {
          this.result = false;
          this.log("Keyword sem resultado!");
@@ -96,7 +97,6 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
          + this.arrayProducts.size() + " produtos crawleados");
-
    }
 
    @Override
@@ -106,14 +106,13 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
       return selector != null && selector.contains("»");
    }
 
-   public LettProxy getFixedIp() throws IOException {
+   private String crawlName(Element e) {
+      String scrapName = CrawlerUtils.scrapStringSimpleInfo(e, ".carousel__inner > a > table > tbody > tr > td > div.name-produto", false);
+      if(scrapName == null){
+         scrapName = CrawlerUtils.scrapStringSimpleInfo(e, ".carousel__box__dados > a > table > tbody > tr > td", false);
+      }
+      return scrapName;
 
-      LettProxy lettProxy = new LettProxy();
-      lettProxy.setSource("fixed_ip");
-      lettProxy.setPort(3144);
-      lettProxy.setAddress("haproxy.lett.global");
-      lettProxy.setLocation("brazil");
-
-      return lettProxy;
    }
+
 }

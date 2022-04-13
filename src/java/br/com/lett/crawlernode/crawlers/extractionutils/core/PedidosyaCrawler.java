@@ -1,8 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.*;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -20,8 +22,9 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
-import org.jsoup.nodes.Document;
+import org.openqa.selenium.Cookie;
 
 import java.util.*;
 
@@ -29,66 +32,91 @@ public class PedidosyaCrawler extends Crawler {
    public PedidosyaCrawler(Session session) {
       super(session);
       config.setParser(Parser.JSON);
+      config.setFetcher(FetchMode.FETCHER);
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      String url = "https://www.pedidosya.com.ar";
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(proxies)
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").mustUseMovingAverage(true).build())
+         .build();
+      Response response = this.dataFetcher.get(session, request);
+      if (!response.isSuccess()) {
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY, session, this.cookiesWD, url);
+
+         webdriver.waitForElement("#location__search__form", 90);
+
+         Set<Cookie> webdriverCookies = webdriver.driver.manage().getCookies();
+
+         for (Cookie cookie : webdriverCookies) {
+            BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
+            basicClientCookie.setDomain(cookie.getDomain());
+            basicClientCookie.setPath(cookie.getPath());
+            basicClientCookie.setExpiryDate(cookie.getExpiry());
+            this.cookies.add(basicClientCookie);
+         }
+         webdriver.terminate();
+         return;
+      }
+      this.cookies = response.getCookies();
    }
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.HIPERCARD.toString(), Card.ELO.toString());
    private static final String MAINSELLER = "Pedidos Ya";
-   private final List<String> proxies =  Arrays.asList(
-      ProxyCollection.BONANZA,
-      ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+
+   private final List<String> proxies = Arrays.asList(
       ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
       ProxyCollection.BUY_HAPROXY);
-   private List<DataFetcher> fetchers = Arrays.asList(new ApacheDataFetcher(),new JavanetDataFetcher(),new JsoupDataFetcher(),new FetcherDataFetcher());
 
 
    @Override
    protected Response fetchResponse() {
-      Response responseCookies ;
-      Response response = new Response() ;
+      String internalId = getInternalIdFromUrl();
 
-      for (DataFetcher fetcher : fetchers) {
-         Request request = Request.RequestBuilder.create().setUrl("https://www.pedidosya.com.ar").setProxyservice(
-            proxies).build();
-         responseCookies = this.dataFetcher.get(session,request);
-         if (responseCookies.isSuccess()){
-            this.cookies = responseCookies.getCookies();
-            break;
+      String storeId = session.getOptions().optString("store_id");
+
+      String url = "https://www.pedidosya.com.ar/mobile/v1/products/" + internalId + "?restaurantId=" + storeId + "&businessType=GROCERIES";
+      Map<String, String> headers = new HashMap<>();
+      headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
+      headers.put("authority", "www.pedidosya.com.ar");
+      headers.put("accept", "application/json, text/plain, */*");
+      headers.put("referer", session.getOriginalURL());
+
+      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setCookies(cookies).setProxyservice(proxies)
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").mustUseMovingAverage(true).build())
+         .build();
+
+      Response response = this.dataFetcher.get(session, request);
+
+      if (!response.isSuccess()) {
+         response = new JsoupDataFetcher().get(session, request);
+
+         if (!response.isSuccess()) {
+            int tries = 0;
+            while (!response.isSuccess() && tries < 3) {
+               tries++;
+               if (tries % 2 == 0) {
+                  response = new JsoupDataFetcher().get(session, request);
+               } else {
+                  response = this.dataFetcher.get(session, request);
+               }
+            }
          }
       }
 
-      for (DataFetcher fetcher : fetchers) {
-
-         String internalId = getInternalIdFromUrl();
-
-         String storeId =  session.getOptions().optString("store_id");
-
-         String url = "https://www.pedidosya.com.ar/mobile/v1/products/" + internalId + "?restaurantId="+storeId+"&businessType=GROCERIES";
-
-         Map<String,String> headers = new HashMap<>();
-         headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
-
-         Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setProxyservice(
-            proxies).build();
-
-         response = fetcher.get(session,request);
-         if (response.isSuccess()){
-            break;
-         }
-      }
-
-         return response;
-
+      return response;
    }
 
    @Override
    public List<Product> extractInformation(JSONObject productInfo) throws Exception {
       super.extractInformation(productInfo);
       List<Product> products = new ArrayList<>();
-
-
 
       if (productInfo.has("name")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -99,7 +127,8 @@ public class PedidosyaCrawler extends Crawler {
          String primaryImage = "https://images.deliveryhero.io/image/pedidosya/products/" + productInfo.optString("image");
          boolean available = productInfo.optBoolean("enabled");
          Offers offers = available ? scrapOffers(productInfo) : new Offers();
-
+         String description = productInfo.optString("description", "");
+         List<String> eans = Collections.singletonList(productInfo.optString("gtin"));
          // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -107,7 +136,9 @@ public class PedidosyaCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setPrimaryImage(primaryImage)
+            .setDescription(description)
             .setOffers(offers)
+            .setEans(eans)
             .build();
 
          products.add(product);
@@ -121,7 +152,7 @@ public class PedidosyaCrawler extends Crawler {
 
    private String getInternalIdFromUrl() {
       String originalUrl = CommonMethods.getLast(session.getOriginalURL().split("p="));
-      originalUrl = originalUrl.split("&menu")[0];
+      originalUrl = originalUrl.split("&")[0];
       return originalUrl;
    }
 
@@ -139,7 +170,6 @@ public class PedidosyaCrawler extends Crawler {
          .setSales(sales)
          .setPricing(pricing)
          .build());
-
 
       return offers;
 
@@ -183,10 +213,8 @@ public class PedidosyaCrawler extends Crawler {
             .setInstallments(installments)
             .setIsShopCard(false)
             .build());
-
       }
 
       return creditCards;
-
    }
 }

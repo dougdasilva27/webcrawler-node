@@ -22,7 +22,6 @@ class PortugalContinenteCrawler(session: Session?) : CrawlerRankingKeywords(sess
          .setCookies(cookies)
          .setProxyservice(
             listOf(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_ES
             )
          ).build()

@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
@@ -26,7 +29,7 @@ public class ElsalvadorSuperselectosCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
 
@@ -39,16 +42,23 @@ public class ElsalvadorSuperselectosCrawler extends CrawlerRankingKeywords {
 
       if (!products.isEmpty()) {
          for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "button.add-producto", "data-cod");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".add-control button", "data-cod");
             String productUrl = HOME_PAGE + "Tienda/_DetalleProducto?idProducto=" + internalId;
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".desc", false);
+            String imgUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".pic a img", "src");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e,".precio",null,false,'.',session,null);
+            Boolean isAvailable = price !=null;
 
-            saveDataProduct(internalId, null, productUrl);
 
-            this.log(
-               "Position: " + this.position +
-                  " - InternalId: " + internalId +
-                  " - InternalPid: " + null +
-                  " - Url: " + productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit)
                break;

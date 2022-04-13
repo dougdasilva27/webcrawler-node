@@ -1,42 +1,69 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.LinxImpulseRanking;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
-public class BrasilDrogalCrawler extends CrawlerRankingKeywords {
+import java.io.UnsupportedEncodingException;
+import java.util.Collections;
+
+public class BrasilDrogalCrawler extends LinxImpulseRanking {
+   protected String internalPid = "";
+   protected String internalId = "";
 
    public BrasilDrogalCrawler(Session session) {
       super(session);
    }
 
+   // Inverts internalPid and internalId
    @Override
-   protected void extractProductsFromCurrentPage() {
-      this.pageSize = 56;
+   protected String crawlInternalPid(JSONObject product) {
+      this.internalPid = super.crawlInternalPid(product);
+      this.internalId = super.crawlInternalId(product, this.internalPid);
 
-      this.log("Página " + this.currentPage);
+      return internalId;
+   }
 
-      String url = "https://www.drogal.com.br/" + this.keywordEncoded + "/?p=" + this.currentPage;
-      this.log("Link onde são feitos os crawlers: " + url);
+   @Override
+   protected String crawlInternalId(JSONObject product, String internalPid) {
+      return this.internalPid;
+   }
 
-      this.currentDoc = fetchDocument(url);
-
-      Elements products = this.currentDoc.select(".list-products li > div");
-
-      if (!products.isEmpty()) {
-
-         for (Element e : products) {
-            String internalPid = crawlInternalPid(e);
-            String productUrl = crawlProductUrl(e);
-
-            saveDataProduct(null, internalPid, productUrl);
-
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
+   @Override
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
+      String url = mountURL();
+      JSONObject data = fetchPage(url);
+      if (data.optString("queryType").contains("redirect")) {
+         url = data.optString("link");
+         this.currentDoc = fetchDocument(url);
+         Elements products = this.currentDoc.select(".list-products .li");
+         if (!products.isEmpty()) {
+            for (Element e : products) {
+               RankingProduct rankingProduct = createRankingProductFromHtml(e);
+               saveDataProduct(rankingProduct);
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
             }
-
+         }
+      } else if (!data.optString("queryType").contains("redirect")) {
+         JSONArray products = data.optJSONArray("products");
+         if (products != null && !products.isEmpty()) {
+            this.totalProducts = data.optInt("size");
+            for (Object object : products) {
+               RankingProduct rankingProduct = createRankingProductFromData(object);
+               saveDataProduct(rankingProduct);
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
+            }
          }
       } else {
          this.result = false;
@@ -46,27 +73,48 @@ public class BrasilDrogalCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   @Override
-   protected boolean hasNextPage() {
-      return !this.currentDoc.select("a.view-more[data-direction=next]").isEmpty();
+   private String crawlInternalPidAlt(Element e){
+      return CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".item-product", "data-sku");
    }
 
-   private String crawlInternalPid(Element e) {
-      return e.attr("data-sku");
+   private RankingProduct createRankingProductFromData(Object object) throws MalformedProductException {
+      JSONObject product = (JSONObject) object;
+      String productUrl = crawlProductUrl(product);
+      String internalPid = crawlInternalPid(product);
+      String internalId = crawlInternalId(product, internalPid);
+      String name = product.optString("name");
+      String image = crawlImage(product);
+      int priceInCents = crawlPrice(product);
+      boolean isAvailable = crawlAvailability(product);
+
+      return RankingProductBuilder.create()
+         .setUrl(productUrl)
+         .setInternalId(internalId)
+         .setInternalPid(internalPid)
+         .setName(name)
+         .setImageUrl(image)
+         .setPriceInCents(priceInCents)
+         .setAvailability(isAvailable)
+         .build();
    }
 
-   private String crawlProductUrl(Element e) {
-      String productUrl = null;
 
-      Element url = e.select("a.link").first();
-      if (url != null) {
-         productUrl = url.attr("href");
+   private RankingProduct createRankingProductFromHtml(Element e) throws MalformedProductException {
+      String productUrl = CrawlerUtils.scrapUrl(e, ".title a", "href", "https:", "www.drogal.com.br");
+      String internalPid = crawlInternalPidAlt(e);
+      String name = CrawlerUtils.scrapStringSimpleInfo(e, ".title a", true);
+      String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".item-product > a > .img-lazy", Collections.singletonList("data-src"), "https", "www.drogal.com.br");
+      int price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".box-prices > div > div > p.sale-price > strong", null, false, ',', session, null);
+      boolean isAvailable = price != 0;
 
-         if (!productUrl.contains("drogal")) {
-            productUrl = ("https://www.drogal.com.br/" + productUrl).replace("br//", "br/");
-         }
-      }
-
-      return productUrl;
+      return RankingProductBuilder.create()
+         .setUrl(productUrl)
+         .setInternalPid(internalPid)
+         .setName(name)
+         .setPriceInCents(price)
+         .setImageUrl(image)
+         .setPriceInCents(price)
+         .setAvailability(isAvailable)
+         .build();
    }
 }

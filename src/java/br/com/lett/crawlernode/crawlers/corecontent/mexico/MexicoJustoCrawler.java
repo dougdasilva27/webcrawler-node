@@ -11,20 +11,17 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Marketplace;
 import models.Offer;
 import models.Offers;
-import models.prices.Prices;
 import models.pricing.*;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import javax.swing.event.DocumentEvent;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class MexicoJustoCrawler extends Crawler {
    private static final String HOME_PAGE = "https://justo.mx/";
@@ -61,7 +58,8 @@ public class MexicoJustoCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".shopping-list__content", "data-id");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc,".product-info__name", false);;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details__name", false);
+         ;
          boolean isAvailable = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
          List<String> images = crawlImages(doc);
@@ -82,7 +80,7 @@ public class MexicoJustoCrawler extends Crawler {
             .build();
 
          products.add(product);
-      }else {
+      } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
@@ -90,7 +88,7 @@ public class MexicoJustoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select(".product-details").isEmpty();
+      return !doc.select(".row.product.product__container").isEmpty();
    }
 
    private Offers crawlOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -98,7 +96,7 @@ public class MexicoJustoCrawler extends Crawler {
       Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(pricing);
 
-      if(pricing != null){
+      if (pricing != null) {
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
             .setSellerFullName(SELLER_FULL_NAME)
@@ -118,7 +116,7 @@ public class MexicoJustoCrawler extends Crawler {
       Double priceFrom = prices[0];
       Double spotlightPrice = prices[1];
 
-      if(spotlightPrice != null){
+      if (spotlightPrice != null) {
          CreditCards creditCards = scrapCreditCards(spotlightPrice);
          BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
@@ -130,21 +128,21 @@ public class MexicoJustoCrawler extends Crawler {
             .setCreditCards(creditCards)
             .setBankSlip(bankSlip)
             .build();
-      }else{
+      } else {
          return null;
       }
    }
 
-   private Double[] scrapPrices(Document doc){
+   private Double[] scrapPrices(Document doc) {
       Double spotlightPrice;
       Double priceFrom;
 
-      if(doc.select(".product-info__discount").isEmpty()){
+      if (doc.select(".product-details__discount").isEmpty()) {
          priceFrom = null;
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info__price", null, false, '.', session);
-      }else{
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info__discount", null, false, '.', session);
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info__price", null, false, '.', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-details__price", null, false, '.', session);
+      } else {
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-details__discount", null, false, '.', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-details__price.discount", null, false, '.', session);
       }
 
       return new Double[]{priceFrom, spotlightPrice};
@@ -181,11 +179,11 @@ public class MexicoJustoCrawler extends Crawler {
       return sales;
    }
 
-   private boolean crawlAvailability(Document doc){
-      return !doc.select(".product-info__price").isEmpty();
+   private boolean crawlAvailability(Document doc) {
+      return !doc.select(".product-details__price").isEmpty();
    }
 
-   private CategoryCollection crawlCategories(Document doc){
+   private CategoryCollection crawlCategories(Document doc) {
 
       CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, ".breadcrumbs.list-unstyled span:not(:last-child)", false);
 
@@ -194,12 +192,12 @@ public class MexicoJustoCrawler extends Crawler {
       return categoryCollection;
    }
 
-   private List<String> crawlImages(Document doc){
+   private List<String> crawlImages(Document doc) {
       Elements imageElements = doc.select(".product-image img");
       List<String> imageList = new ArrayList<>();
 
-      if(!imageElements.isEmpty()){
-         for (Element element: imageElements) {
+      if (!imageElements.isEmpty()) {
+         for (Element element : imageElements) {
             imageList.add(element.attr("data-src"));
          }
       }

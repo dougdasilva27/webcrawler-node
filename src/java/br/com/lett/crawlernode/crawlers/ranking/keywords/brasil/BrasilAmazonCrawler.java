@@ -63,6 +63,8 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
                String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "img.s-image", "src");
                String name = CrawlerUtils.scrapStringSimpleInfo(e, ".a-color-base.a-text-normal", true);
                Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "span.a-price-whole", null, true, ',', session, 0);
+               String sponsored = CrawlerUtils.scrapStringSimpleInfo(e, ".s-label-popover-default > .a-color-secondary", true);
+               boolean isSpondored = sponsored != null;
                boolean isAvailable = price != 0;
 
                RankingProduct objProducts = RankingProductBuilder.create()
@@ -72,6 +74,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
                   .setPriceInCents(price)
                   .setInternalId(internalId)
                   .setAvailability(isAvailable)
+                  .setIsSponsored(isSpondored)
                   .build();
 
                saveDataProduct(objProducts);

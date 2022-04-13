@@ -1,12 +1,19 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ColombiaAlkostoCrawler extends CrawlerRankingKeywords {
 
@@ -17,7 +24,7 @@ public class ColombiaAlkostoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 25;
       this.log("Página " + this.currentPage);
 
@@ -32,11 +39,23 @@ public class ColombiaAlkostoCrawler extends CrawlerRankingKeywords {
          for (Element e : products) {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "h2.product__information--name > a.js-product-click-datalayer", "data-id");
             String productUrl = CrawlerUtils.scrapUrl(e, "h2.product__information--name > a.js-product-click-datalayer", Collections.singletonList("href"), "https", HOME_PAGE);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "h2.product__information--name > a.js-product-click-datalayer", true);
+            Integer price = crawlPrice(e);
+            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "div.product__image__container > img", Arrays.asList("data-src"), "https", "www.alkosto.com");
+            boolean isAvailable = price != null;
 
-            saveDataProduct(null, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(null)
+               .setInternalPid(internalPid)
+               .setImageUrl(imageUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid
-               + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
+
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
@@ -62,5 +81,22 @@ public class ColombiaAlkostoCrawler extends CrawlerRankingKeywords {
       }
 
       return false;
+   }
+
+   private Integer crawlPrice(Element e){
+      String priceStr = CrawlerUtils.scrapStringSimpleInfo(e, "span.price", true);
+      Integer priceInCents = 0;
+
+      if (priceStr != null) {
+         final String regex = "[0-9]+\\.[0-9]++";
+         final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+         final Matcher matcher = pattern.matcher(priceStr);
+
+         if (matcher.find()) {
+            priceStr = matcher.group(0);
+            priceInCents = CommonMethods.stringPriceToIntegerPrice(priceStr, '.', 0);
+         }
+      }
+      return priceInCents;
    }
 }

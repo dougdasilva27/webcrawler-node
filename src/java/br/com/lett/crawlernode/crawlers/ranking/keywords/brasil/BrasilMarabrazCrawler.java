@@ -1,6 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import java.util.Arrays;
+
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -14,7 +18,7 @@ public class BrasilMarabrazCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected void extractProductsFromCurrentPage() {
+  protected void extractProductsFromCurrentPage() throws MalformedProductException {
     this.pageSize = 10;
     this.log("Página " + this.currentPage);
 
@@ -36,9 +40,21 @@ public class BrasilMarabrazCrawler extends CrawlerRankingKeywords {
 
         String productUrl = scrapProductUrl(e);
 
-        saveDataProduct(internalId, internalPid, productUrl);
+         String name = CrawlerUtils.scrapStringSimpleInfo(e, ".nm-product-info > h2 > a", true);
+         String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".nm-product-img-container > a > img", "src");
+         Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".nm-price-container > span", null, true, ',', session, null);
+         boolean isAvailable = price != null;
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setName(name)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .setImageUrl(imageUrl)
+            .build();
+         saveDataProduct(productRanking);
+
 
         if (this.arrayProducts.size() == productsLimit)
           break;

@@ -52,12 +52,16 @@ public class MercadolivreCrawler extends Crawler {
 
    private String homePage;
    private String mainSellerNameLower;
-   protected boolean allow3PSellers = false;
+   protected boolean allow3PSellers = isAllow3PSellers();
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
    private List<String> sellerVariations;
 
    protected MercadolivreCrawler(Session session) {
       super(session);
+   }
+
+   public boolean isAllow3PSellers() {
+      return session.getOptions().optBoolean("allow_3p", false);
    }
 
    public void setHomePage(String homePage) {

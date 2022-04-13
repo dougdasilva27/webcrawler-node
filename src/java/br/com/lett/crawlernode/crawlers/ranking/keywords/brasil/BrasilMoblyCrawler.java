@@ -1,7 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
+
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -9,6 +14,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilMoblyCrawler extends CrawlerRankingKeywords {
 
@@ -17,7 +23,7 @@ public class BrasilMoblyCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected void extractProductsFromCurrentPage() {
+  protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
     this.pageSize = 60;
 
     this.log("Página " + this.currentPage);
@@ -44,9 +50,21 @@ public class BrasilMoblyCrawler extends CrawlerRankingKeywords {
 
         String productUrl = scrapUrl(product);
 
-        saveDataProduct(null, internalPid, productUrl);
+         String name = product.optString("name");
+         String imgUrl = getImage(product);
+         Integer price = CommonMethods.stringPriceToIntegerPrice(product.optString("finalPrice"), ',', 0);
+         boolean  isAvailable  =  product.optBoolean("stockAvailable");
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setImageUrl(imgUrl)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
+
+         saveDataProduct(productRanking);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
@@ -59,6 +77,17 @@ public class BrasilMoblyCrawler extends CrawlerRankingKeywords {
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
+
+   private String getImage(JSONObject product){
+      try {
+         return CrawlerUtils.completeUrl(product.optQuery("/productImage/optionTwo/main").toString(), "https", null);
+      }
+
+      catch(NullPointerException e)
+      {
+         return "NullPointerException caught";
+      }
+   }
 
   private String scrapUrl(JSONObject product) {
     String url = null;

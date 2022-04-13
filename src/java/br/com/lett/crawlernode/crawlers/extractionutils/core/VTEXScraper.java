@@ -20,15 +20,14 @@ import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public abstract class VTEXScraper extends Crawler {
 
@@ -134,13 +133,27 @@ public abstract class VTEXScraper extends Crawler {
    protected abstract String scrapPidFromApi(Document doc);
 
    protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
+      String name = null;
       if (jsonSku.has("nameComplete")) {
-         return jsonSku.get("nameComplete").toString();
+         name = jsonSku.optString("nameComplete");
       } else if (jsonSku.has("name")) {
-         return jsonSku.get("name").toString();
-      } else {
-         return null;
+         name = jsonSku.optString("name");
       }
+
+      if (name != null && !name.isEmpty() && productJson.has("brand")) {
+         String brand = productJson.optString("brand");
+         if (brand != null && !brand.isEmpty() && !checkIfNameHasBrand(brand, name)){
+            name = name + " " + brand;
+         }
+      }
+
+      return name;
+   }
+
+   private boolean checkIfNameHasBrand(String brand, String name) {
+         String brandStripAccents = StringUtils.stripAccents(brand);
+         String nameStripAccents = StringUtils.stripAccents(name);
+         return nameStripAccents.toLowerCase(Locale.ROOT).contains(brandStripAccents.toLowerCase(Locale.ROOT));
    }
 
    protected CategoryCollection scrapCategories(JSONObject product) {
@@ -242,7 +255,7 @@ public abstract class VTEXScraper extends Crawler {
                   boolean isBuyBox = sellers.length() > 1;
                   boolean isMainRetailer = isMainRetailer(sellerFullName);
 
-                  Pricing pricing = scrapPricing(doc, internalId, commertialOffer, discounts);
+                  Pricing pricing = scrapPricing(doc, internalId, commertialOffer, discounts, jsonSku);
                   List<String> sales = isDefaultSeller ? scrapSales(doc, offerJson, internalId, internalPid, pricing) : new ArrayList<>();
 
                   offers.add(OfferBuilder.create()
@@ -265,16 +278,45 @@ public abstract class VTEXScraper extends Crawler {
    }
 
    protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid, Pricing pricing) {
-      return new ArrayList<>();
+      List<String> sales = new ArrayList<>();
+      if(pricing != null) sales.add(CrawlerUtils.calculateSales(pricing));
+      return sales;
    }
 
    protected boolean isMainRetailer(String sellerName) {
       return mainSellersNames.stream().anyMatch(seller -> seller.toLowerCase().startsWith(sellerName.toLowerCase()));
    }
 
+   @Deprecated
    protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson) throws MalformedPricingException {
       Double principalPrice = comertial.optDouble("Price");
       Double priceFrom = comertial.optDouble("ListPrice");
+
+      CreditCards creditCards = scrapCreditCards(comertial, discountsJson, true);
+      BankSlip bankSlip = scrapBankSlip(principalPrice, comertial, discountsJson, true);
+
+      Double spotlightPrice = scrapSpotlightPrice(doc, internalId, principalPrice, comertial, discountsJson);
+      if (priceFrom != null && spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
+         priceFrom = null;
+      }
+
+      return PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson, JSONObject jsonSku) throws MalformedPricingException {
+      Double principalPrice = comertial.optDouble("Price");
+      Double priceFrom = comertial.optDouble("ListPrice");
+
+      if(jsonSku.optString("measurementUnit").equals("kg")) {
+         Double unitMultiplier = jsonSku.optDouble("unitMultiplier");
+         principalPrice = Math.floor((principalPrice * unitMultiplier) * 100) / 100.0;
+         if(priceFrom != null) priceFrom = Math.floor((priceFrom * unitMultiplier) * 100) / 100.0;
+      }
 
       CreditCards creditCards = scrapCreditCards(comertial, discountsJson, true);
       BankSlip bankSlip = scrapBankSlip(principalPrice, comertial, discountsJson, true);
@@ -529,7 +571,9 @@ public abstract class VTEXScraper extends Crawler {
          .build();
    }
 
-   protected abstract RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku);
+   protected  RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku){
+      return null;
+   }
 
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
       JSONObject productApi = new JSONObject();

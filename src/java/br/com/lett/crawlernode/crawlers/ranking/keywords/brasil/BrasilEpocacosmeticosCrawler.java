@@ -1,25 +1,28 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
 
    public BrasilEpocacosmeticosCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.APACHE;
    }
 
    @Override
-   public void extractProductsFromCurrentPage() {
+   public void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 24;
 
       this.log("Página " + this.currentPage);
@@ -39,9 +42,20 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
             String productUrl = crawlProductUrl(product);
             String internalPid = crawlInternalPid(product);
 
-            saveDataProduct(null, internalPid, productUrl);
+            String name = product.optString("name");
+            String imgUrl = product.optString("imageId");
+            Integer price = product.optInt("priceCents");
+            boolean isAvailable = crawlStock(product);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
@@ -61,6 +75,14 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
          this.totalProducts = search.getInt("numFound");
          this.log("Total da busca: " + this.totalProducts);
       }
+   }
+
+   private Boolean crawlStock(JSONObject product) {
+      String stock = product.optString("estoque");
+      if (stock.equals("BAIXO") || stock.equals("MEDIO") || stock.equals("ALTO")) {
+         return true;
+      }
+      return false;
    }
 
    private String crawlInternalPid(JSONObject product) {
@@ -86,13 +108,17 @@ public class BrasilEpocacosmeticosCrawler extends CrawlerRankingKeywords {
    private JSONObject crawlSearchApi() {
       JSONObject searchApi = new JSONObject();
       String url = "https://recs.richrelevance.com/rrserver/api/find/v1/c85912f892c73e30?lang=pt" + "&query=" + this.keywordEncoded
-            + "&log=true&userId=&placement=search_page.find" + "&start=" + this.arrayProducts.size() + "&rows=24";
+         + "&log=true&userId=&placement=search_page.find" + "&start=" + this.arrayProducts.size() + "&tie=0.1&rows=24";
+
       this.log("Link onde são feitos os crawlers: " + url);
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
+      headers.put("Host", "recs.richrelevance.com");
+      headers.put("Referer", "https://www.epocacosmeticos.com.br/");
+      headers.put("Origin", "https://www.epocacosmeticos.com.br/");
 
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setSendUserAgent(false).build();
       JSONObject json = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
       if (json.has("placements")) {

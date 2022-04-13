@@ -1,8 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.guatemala;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONObject;
 
@@ -28,7 +31,7 @@ public class GuatemalaCemacoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
 
       JSONObject searchResult = searchJson();
 
@@ -40,13 +43,52 @@ public class GuatemalaCemacoCrawler extends CrawlerRankingKeywords {
 
          for (Object object : searchResult.optJSONArray("Products")) {
             JSONObject products = (JSONObject) object;
+            String internalPid = null;
+            String name = null;
+            String imgUrl = null;
+            Integer price = null;
 
-            String internalId = products.optString("sku");
+
+            for (Object obj : products.optJSONArray("AddtionalFields")) {
+               JSONObject info = (JSONObject) obj;
+               String nameInfo = info.optString("Name");
+               switch (nameInfo) {
+                  case "productid":
+                     internalPid = info.optString("Value");
+                     break;
+                  case "Title":
+                     name = info.optString("Value");
+                     break;
+                  case "Image_link":
+                     imgUrl = "https://www.cemaco.com/" + info.optString("Value");
+                     break;
+                  case "Price":
+                     String priceString = info.optString("Value");
+                     priceString = priceString.replaceAll("\\.", "");
+                     price = Integer.parseInt(priceString);
+
+                     break;
+               }
+            }
             String url = getUrl(products);
+            Boolean isAvailable = price>0;
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(url)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            saveDataProduct(internalId, internalId, url);
+            saveDataProduct(productRanking);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + url);
+
+
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+
          }
 
 

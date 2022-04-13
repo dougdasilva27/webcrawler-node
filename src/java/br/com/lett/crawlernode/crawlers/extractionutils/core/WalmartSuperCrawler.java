@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -77,6 +78,7 @@ public class WalmartSuperCrawler extends Crawler {
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector(".Mantn-presionado-el").build())
          .build();
 
 
@@ -215,7 +217,7 @@ public class WalmartSuperCrawler extends Crawler {
       boolean available = false;
 
       if (apiJson.has("status")) {
-         String status = apiJson.getString("status");
+         String status = apiJson.optString("status");
 
          available = status.equalsIgnoreCase("SELLABLE");
       }
@@ -242,7 +244,7 @@ public class WalmartSuperCrawler extends Crawler {
       CategoryCollection categories = new CategoryCollection();
 
       if (apiJson.has("breadcrumb") && apiJson.get("breadcrumb") instanceof JSONObject) {
-         JSONObject breadcrumb = apiJson.getJSONObject("breadcrumb");
+         JSONObject breadcrumb = apiJson.optJSONObject("breadcrumb");
 
          if (breadcrumb.has("departmentName")) {
             categories.add(breadcrumb.get("departmentName").toString());
@@ -272,16 +274,16 @@ public class WalmartSuperCrawler extends Crawler {
       StringBuilder caracteristicas = new StringBuilder();
 
       if (apiJson.has("attributesMap")) {
-         JSONObject attributesMap = apiJson.getJSONObject("attributesMap");
+         JSONObject attributesMap = apiJson.optJSONObject("attributesMap");
 
          for (String key : attributesMap.keySet()) {
-            JSONObject attribute = attributesMap.getJSONObject(key);
+            JSONObject attribute = attributesMap.optJSONObject(key);
 
-            if (attribute.has("attrGroupId")) {
-               JSONObject attrGroupId = attribute.getJSONObject("attrGroupId");
+            if (attribute != null && attribute.optJSONObject("attrGroupId") != null) {
+               JSONObject attrGroupId = attribute.optJSONObject("attrGroupId");
 
-               if (attrGroupId.has("optionValue")) {
-                  String optionValue = attrGroupId.getString("optionValue");
+               if (attrGroupId.optString("optionValue") != null) {
+                  String optionValue = attrGroupId.optString("optionValue");
 
                   if (optionValue.equalsIgnoreCase("Tabla nutrimental")) {
                      setAPIDescription(attribute, nutritionalTable);

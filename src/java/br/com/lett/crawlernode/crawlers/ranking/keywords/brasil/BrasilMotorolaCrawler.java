@@ -35,7 +35,6 @@ public class BrasilMotorolaCrawler extends CrawlerRankingKeywords {
 
         saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }

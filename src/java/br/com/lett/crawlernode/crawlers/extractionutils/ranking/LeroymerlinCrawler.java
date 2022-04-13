@@ -3,7 +3,14 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.cookie.Cookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -13,138 +20,124 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class LeroymerlinCrawler extends CrawlerRankingKeywords {
 
+   protected String region;
    public LeroymerlinCrawler(Session session) {
       super(session);
+      this.region = getRegion();
    }
 
-   private String nextUrl;
-   protected String region;
-
-   @Override
-   protected Document fetchDocument(String url, List<Cookie> cookies) {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36");
-      headers.put("authority", "www.leroymerlin.com.br");
-
-      this.currentDoc = new Document(url);
-      if (this.currentPage == 1) {
-         this.session.setOriginalURL(url);
-      }
-
-      Request request = Request.RequestBuilder.create()
-         .setCookies(cookies)
-         .setUrl(url)
-         .setHeaders(headers)
-         .build();
-      Response response = dataFetcher.get(session, request);
-
-      return Jsoup.parse(response.getBody());
+   protected String getRegion() {
+      return session.getOptions().optString("region", "");
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
-      // número de produtos por página do market
-      this.pageSize = 40;
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
+      String url = mountURL();
+      JSONObject data = fetchPage(url);
+      JSONArray products = data.optJSONArray("products");
 
-      this.log("Página " + this.currentPage);
+      if (products != null && !products.isEmpty()) {
+          int totalProducts = JSONUtils.getValueRecursive(data, "metadata.totalCount", ".", Integer.class, 0);
+          setTotalProducts(totalProducts);
+         for (Object object : products) {
+            JSONObject product = (JSONObject) object;
+            String productUrl = crawlUrl(product);
+            String internalId = product.optString("id");
+            String name = product.optString("name");
+            String image = product.optString("picture");
+            int priceInCents = crawlPrice(product);
+            boolean isAvailable = !product.optBoolean("isSoldOut");
 
-      if (this.currentPage == 1) {
-         String url = "https://www.leroymerlin.com.br/search?term=" + this.keywordEncoded + "&region=" + this.region;
-         this.log("Link onde são feitos os crawlers: " + url);
 
-         this.currentDoc = fetchDocument(url, null);
-         this.nextUrl = getNextUrl(url);
-      } else {
-         String url;
-         if (this.nextUrl.contains("?")) {
-            url = this.nextUrl + "&page=" + this.currentPage;
-         } else {
-            url = this.nextUrl + "?page=" + this.currentPage;
-         }
+            try {
+               RankingProduct rankingProduct = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setInternalPid(null)
+                  .setName(name)
+                  .setImageUrl(image)
+                  .setPriceInCents(priceInCents)
+                  .setAvailability(isAvailable)
+                  .build();
 
-         if (!url.contains("region")) {
-            url += "&region=" + this.region;
-         }
-
-         // chama função de pegar o html
-         this.currentDoc = fetchDocument(url, null);
-         this.log("Link onde são feitos os crawlers: " + url);
-      }
-
-      Elements products = this.currentDoc.select(".product-col .product-thumb .caption > a:first-child");
-
-      // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-      if (!products.isEmpty()) {
-         for (Element e : products) {
-            String productUrl = e.attr("href");
-            String internalId = crawlInternalId(productUrl);
-
-            saveDataProduct(internalId, null, productUrl);
-
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+               saveDataProduct(rankingProduct);
+            } catch (MalformedProductException e) {
+               this.log(e.getMessage());
+            }
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
-
          }
       } else {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
-
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   @Override
-   protected boolean hasNextPage() {
-      return !this.currentDoc.select("a.pagination-item").isEmpty()
-         && this.currentDoc.select("a.pagination-item.disabled > i.glyph-arrow-right").isEmpty();
-   }
-
-   private String crawlInternalId(String url) {
-      String internalId = null;
-
-      if (url.contains("?")) {
-         url = url.split("\\?")[0];
-      }
-
-      if (url.contains("_")) {
-         internalId = CommonMethods.getLast(url.split("_"));
-      }
-
-      return internalId;
-   }
-
-   private String getNextUrl(String url) {
-      String newUrl = url;
-
-      if (!this.currentDoc.select(".content-header .expandable-description").isEmpty()) {
-         Elements categories = this.currentDoc.select("div.categories-col a");
-
-         for (Element e : categories) {
-            String title = e.attr("title").toLowerCase();
-            String categoryUrl = e.attr("href");
-
-            if (title.contains("ver todos")) {
-               newUrl = categoryUrl;
-               break;
-            }
-         }
+   private String crawlUrl(JSONObject product) {
+      String url = product.optString("url");
+      if(!url.isEmpty()) {
+         return url + "?region=" + this.region;
       } else {
-         String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
+         String id = product.optString("id");
+         String name = product.optString("name");
+         return CommonMethods.toSlug(name) + "_" + id + "?region=" + this.region;
+      }
+   }
 
-         if (redirectUrl != null) {
-            newUrl = redirectUrl;
-         }
+   protected String mountURL() {
+      URIBuilder uriBuilder = new URIBuilder()
+         .setScheme("https")
+         .setHost("www.leroymerlin.com.br")
+         .setPath("/api/boitata/v1/search")
+         .addParameter("term", this.keywordWithoutAccents)
+         .addParameter("searchTerm", this.keywordWithoutAccents)
+         .addParameter("searchType", "default")
+         .addParameter("region", this.region)
+         .addParameter("page", String.valueOf(this.currentPage));
+
+      return uriBuilder.toString();
+   }
+
+   protected JSONObject fetchPage(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("authority", "www.leroymerlin.com.br");
+      headers.put("referer", "www.leroymerlin.com.br");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setFollowRedirects(false)
+         .build();
+
+      Response response = dataFetcher.get(session, request);
+
+      return CrawlerUtils.stringToJSONObject(response.getBody());
+   }
+
+   protected void setTotalProducts(int totalProducts) {
+      this.totalProducts = Math.min(totalProducts, 300);
+   }
+
+   private int crawlPrice(JSONObject product) {
+      int price = 0;
+      Object priceData = product.optQuery("/price/to");
+      if (priceData instanceof JSONObject) {
+         JSONObject priceObject = (JSONObject) priceData;
+         Double integers = JSONUtils.getDoubleValueFromJSON(priceObject, "integers", false);
+         if(integers == null) integers = 0.0;
+         String decimals = priceObject.optString("decimals", "0");
+         price = (int) (Math.round(integers * 100) + Integer.parseInt(decimals));
       }
 
-      return newUrl;
+      return price;
    }
 }

@@ -6,15 +6,20 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import models.AdvancedRatingReview;
-import models.Marketplace;
-import models.RatingsReviews;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.*;
 import models.prices.Prices;
+import models.pricing.BankSlip;
+import models.pricing.CreditCards;
+import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -26,10 +31,10 @@ import java.util.*;
 public class BrasilFarmadeliveryCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.farmadelivery.com.br/";
+   private Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.DINERS.toString());
 
    public BrasilFarmadeliveryCrawler(Session session) {
       super(session);
-
    }
 
    @Override
@@ -37,8 +42,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
       Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setProxyservice(
          Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY
+            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
          )
       ).build();
 
@@ -52,8 +56,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
          && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
             ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY));
 
          content = new JsoupDataFetcher().get(session, request).getBody();
       }
@@ -75,80 +78,37 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
       if (isProductPage(this.session.getOriginalURL(), doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = null;
-         Element elementID = doc.select("input[name=product]").first();
-         if (elementID != null) {
-            internalId = Integer.toString(Integer.parseInt(elementID.val()));
-         }
-
-         String internalPid = null;
-         Elements elementInternalPid = doc.select("#product-attribute-specs-table tr.sku td.data");
-         if (elementInternalPid != null && elementInternalPid.size() > 1) {
-            internalPid = elementInternalPid.get(0).text().trim();
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".title-new .sku_info", true);
+         if (internalPid != null && !internalPid.isEmpty()) {
+            internalPid = internalPid.replaceAll("[^0-9]", "");
          }
 
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div.title-new h1", true);
-         Float price = crawlPrice(doc);
-         boolean available = true;
-         Element buttonUnavailable = doc.select("a.btn-esgotado").first();
-         if (buttonUnavailable != null) {
-            available = false;
-         }
-
-         String category1 = "";
-         String category2 = "";
-         String category3 = "";
-         ArrayList<String> categories = new ArrayList<>();
-         Elements elementCategories = doc.select(".breadcrumbs ul li");
-
-         for (Element e : elementCategories) {
-            if (!e.attr("class").equals("home") && !e.attr("class").equals("product")) {
-               categories.add(e.select("a").text());
-            }
-         }
-
-         for (String category : categories) {
-            if (category1.isEmpty()) {
-               category1 = category;
-            } else if (category2.isEmpty()) {
-               category2 = category;
-            } else if (category3.isEmpty()) {
-               category3 = category;
-            }
-         }
-
-         String primaryImage = crawlPrimaryImage(doc);
-         String secondaryImages = crawlSecondaryImages(doc);
+         List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li", true);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".inner-container-productimage img", List.of("data-zoom-image"), "https", "farmadelivery.com.br");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".showproductimage", List.of("data-zoom-image"), "https", "farmadelivery.com.br", primaryImage);
          String description = scrapDescription(doc, internalId);
-         Integer stock = null;
-         Prices prices = crawlPrices(doc, price);
-         Marketplace marketplace = new Marketplace();
-         String ean = crawlEan(doc);
+         List<String> eans = crawlEan(doc);
          RatingsReviews ratingReviews = crawRating(doc);
-         List<String> eans = new ArrayList<>();
-         eans.add(ean);
 
-         Product product = new Product();
-         product.setUrl(this.session.getOriginalURL());
-         product.setInternalId(internalId);
-         product.setInternalPid(internalPid);
-         product.setName(name);
-         product.setPrice(price);
-         product.setPrices(prices);
-         product.setCategory1(category1);
-         product.setCategory2(category2);
-         product.setCategory3(category3);
-         product.setPrimaryImage(primaryImage);
-         product.setSecondaryImages(secondaryImages);
-         product.setDescription(description);
-         product.setStock(stock);
-         product.setMarketplace(marketplace);
-         product.setAvailable(available);
-         product.setEans(eans);
-         product.setRatingReviews(ratingReviews);
+         boolean available = doc.selectFirst("p.alert-stock") == null;
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setCategories(categories)
+            .setDescription(description)
+            .setOffers(offers)
+            .setEans(eans)
+            .setRatingReviews(ratingReviews)
+            .build();
          products.add(product);
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -156,123 +116,74 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
       return products;
    }
 
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(pricing, doc);
 
-   /*******************************
-    * Product page identification *
-    *******************************/
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName("Farma Delivery Brasil")
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+   }
+
+   private List<String> scrapSales(Pricing pricing, Document doc) {
+      List<String> sales = new ArrayList<>();
+      if (pricing != null) {
+         String discount = CrawlerUtils.calculateSales(pricing);
+         if (!discount.isEmpty()) {
+            sales.add(discount);
+         }
+      }
+
+      String kitSales = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-pricing .tier-price", false);
+      if (kitSales != null && !kitSales.isEmpty()) {
+         sales.add(kitSales);
+      }
+      return sales;
+   }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-shop .price-box .special-price .price", null, true, ',', session);
+      if(spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-shop .price-box .regular-price .price", null, true, ',', session);
+      }
+
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-shop .price-box .old-price span[id]", null, true, ',', session);
+      Double bankSlipPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".pagamento .boleto > span", null, true, ',', session);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create().setFinalPrice(bankSlipPrice).build();
+      CreditCards creditCards = CrawlerUtils.scrapCreditCards(spotlightPrice, cards);
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+
 
    private boolean isProductPage(String url, Document doc) {
       Element elementProduct = doc.select("div.product-view").first();
       return elementProduct != null && !url.contains("/review/");
    }
 
-   private String crawlPrimaryImage(Document doc) {
-      String primaryImage = null;
+   private List<String> crawlEan(Document doc) {
+      List<String> eans = new ArrayList<>();
+      String ean = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-collateral.box-additional .codigo_barras .data", true);
 
-      Element elementPrimaryImage = doc.select(".inner-container-productimage img").first();
-      if (elementPrimaryImage != null) {
-         primaryImage = elementPrimaryImage.attr("data-zoom-image").trim();
-
-         if (primaryImage.isEmpty() || primaryImage.contains("banner_produto_sem_imagem")) {
-            primaryImage = elementPrimaryImage.attr("src").trim();
-         }
+      if (ean != null && !ean.isEmpty()) {
+         eans.add(ean);
       }
 
-      if (primaryImage != null && primaryImage.contains("banner_produto_sem_imagem")) {
-         primaryImage = null;
-      }
-
-      return primaryImage;
-   }
-
-   private String crawlSecondaryImages(Document doc) {
-      String secondaryImages = null;
-
-      JSONArray secondaryImagesArray = new JSONArray();
-
-      Elements images = doc.select(".more-views li a:not(.ver-video)");// Ignore video if there exists
-
-      for (int i = 1; i < images.size(); i++) {
-         Element e = images.get(i);
-         String image = e.attr("data-zoom-image").trim();
-
-         if (image.isEmpty() || image.equals("#")) {
-            image = e.attr("data-image").trim();
-         }
-
-         secondaryImagesArray.put(image);
-      }
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
-   }
-
-   private Float crawlPrice(Document doc) {
-      Float price = null;
-      Element elementPrice = doc.select(".product-shop .price-box .regular-price .price").first();
-      if (elementPrice == null) {
-         elementPrice = doc.select(".product-shop .price-box .special-price .price").first();
-      }
-
-      Element elementSpecialPrice = doc.select(".product-shop .pagamento .boleto span").first();
-
-      if (elementPrice != null) {
-         price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-      } else if (elementSpecialPrice != null) {
-         price = MathUtils.parseFloatWithComma(elementSpecialPrice.ownText());
-      }
-
-      return price;
-   }
-
-   /**
-    * In product page only has bank slip price and showcase price
-    *
-    * @param document
-    * @return
-    */
-   private Prices crawlPrices(Document document, Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Element bankSlip = document.select(".pagamento .boleto > span").first();
-
-         if (bankSlip != null) {
-            Float bankSlipPrice = MathUtils.parseFloatWithComma(bankSlip.text());
-            prices.setBankTicketPrice(bankSlipPrice);
-         }
-
-         Element priceFrom = document.select(".old-price span[id]").first();
-         if (priceFrom != null) {
-            prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
-         }
-
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-
-         installmentPriceMap.put(1, price);
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-      }
-
-      return prices;
-   }
-
-   private String crawlEan(Document doc) {
-      String ean = null;
-      Element e = doc.selectFirst(".box-collateral.box-additional .codigo_barras .data");
-
-      if (e != null) {
-         ean = e.text().trim();
-      }
-
-      return ean;
+      return eans;
    }
 
    private String scrapDescription(Document doc, String internalId) {
@@ -296,7 +207,6 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
    RatingsReviews crawRating(Document document) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
-
 
       Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
       Double avgRating = getTotalAvgRating(document, totalNumOfEvaluations);

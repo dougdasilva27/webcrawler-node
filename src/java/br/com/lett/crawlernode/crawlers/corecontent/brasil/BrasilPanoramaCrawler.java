@@ -52,6 +52,7 @@ public class BrasilPanoramaCrawler extends Crawler {
          boolean available = !document.select(".icon.icon-cart-light").isEmpty();
          Offers offers = available ? scrapOffers(document) : new Offers();
          RatingsReviews ratingsReviews = crawlRating(document);
+         List<String> eans = CrawlerUtils.scrapEansFromTable(document, "EAN");
 
          products.add(ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -64,6 +65,7 @@ public class BrasilPanoramaCrawler extends Crawler {
             .setDescription(description)
             .setRatingReviews(ratingsReviews)
             .setOffers(offers)
+            .setEans(eans)
             .build());
 
       } else {

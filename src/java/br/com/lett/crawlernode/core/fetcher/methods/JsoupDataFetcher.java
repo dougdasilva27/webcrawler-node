@@ -1,5 +1,27 @@
 package br.com.lett.crawlernode.core.fetcher.methods;
 
+import br.com.lett.crawlernode.aws.s3.S3Service;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.*;
+import br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.exceptions.ResponseCodeException;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
+import org.json.JSONObject;
+import org.jsoup.Connection;
+import org.jsoup.Connection.Method;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -12,35 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSession;
-
-import org.apache.http.HttpHeaders;
-import org.json.JSONObject;
-import org.jsoup.Connection;
-import org.jsoup.Connection.Method;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
-import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
-import br.com.lett.crawlernode.exceptions.ResponseCodeException;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
 
 public class JsoupDataFetcher implements DataFetcher {
 
@@ -68,20 +61,14 @@ public class JsoupDataFetcher implements DataFetcher {
       List<String> proxiesTemp = request.getProxyServices() != null ? new ArrayList<>(request.getProxyServices()) : new ArrayList<>();
       List<String> proxies = new ArrayList<>();
 
-      if (session instanceof EqiCrawlerSession || session instanceof EqiRankingDiscoverKeywordsSession) {
-         for (String proxy : proxiesTemp) {
-            proxies.add(proxy.toLowerCase().contains("infatica") ? ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI : proxy);
-         }
-      } else {
-         for (String proxy : proxiesTemp) {
+      for (String proxy : proxiesTemp) {
 
-            if (proxy.toLowerCase().contains("netnut_residential") && !proxy.toLowerCase().contains("haproxy")) {
-               proxies.add(proxy + "_haproxy");
-            } else if (proxy.toLowerCase().contains("luminati_server")) {
-               proxies.add(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
-            } else {
-               proxies.add(proxy);
-            }
+         if (proxy.toLowerCase().contains("netnut_residential") && !proxy.toLowerCase().contains("haproxy")) {
+            proxies.add(proxy + "_haproxy");
+         } else if (proxy.toLowerCase().contains("luminati_server")) {
+            proxies.add(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
+         } else {
+            proxies.add(proxy);
          }
       }
 
@@ -91,12 +78,12 @@ public class JsoupDataFetcher implements DataFetcher {
          headers = new HashMap<>();
       }
 
-      if(request.getCookies() != null && !request.getCookies().isEmpty()){
-         headers.put("cookie",CommonMethods.cookiesToString(request.getCookies()));
+      if (request.getCookies() != null && !request.getCookies().isEmpty()) {
+         headers.put("cookie", CommonMethods.cookiesToString(request.getCookies()));
       }
 
       String randUserAgent =
-            headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
+         headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
       headers.put(FetchUtilities.USER_AGENT, randUserAgent);
 
       int attemptsNumber = proxies.isEmpty() ? 2 : proxies.size();
@@ -142,27 +129,27 @@ public class JsoupDataFetcher implements DataFetcher {
             Map<String, String> responseHeaders = res.headers();
 
             response = new ResponseBuilder()
-                  .setBody(content)
-                  .setProxyused(!proxySelected.isEmpty() ? proxySelected.get(0) : null)
-                  .setRedirecturl(res.url().toString())
-                  .setHeaders(responseHeaders)
-                  .setCookies(FetchUtilities.getCookiesFromHeadersMap(responseHeaders))
-                  .setLastStatusCode(res.statusCode())
-                  .build();
+               .setBody(content)
+               .setProxyused(!proxySelected.isEmpty() ? proxySelected.get(0) : null)
+               .setRedirecturl(res.url().toString())
+               .setHeaders(responseHeaders)
+               .setCookies(FetchUtilities.getCookiesFromHeadersMap(responseHeaders))
+               .setLastStatusCode(res.statusCode())
+               .build();
 
             requestStats.setHasPassedValidation(true);
             requests.add(requestStats);
             session.addRedirection(request.getUrl(), res.url().toString());
 
             FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, proxyServiceName, getMethod ? FetchUtilities.GET_REQUEST : FetchUtilities.POST_REQUEST, randUserAgent, session,
-                  res.statusCode(), requestHash);
+               res.statusCode(), requestHash);
          } catch (Exception e) {
             Logging.printLogDebug(logger, session, "Attempt " + attempt + " -> Error performing GET request. Error: " + e.getMessage());
 
             int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
 
             FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, proxyServiceName, getMethod ? FetchUtilities.GET_REQUEST : FetchUtilities.POST_REQUEST, randUserAgent, session,
-                  code, requestHash);
+               code, requestHash);
 
             if (session instanceof TestCrawlerSession) {
                Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
@@ -174,9 +161,9 @@ public class JsoupDataFetcher implements DataFetcher {
       }
 
       JSONObject jsoupMetadata = new JSONObject().put("req_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_attempts_number", attempt)
-            .put("req_type", "url_request")
-            .put("req_lib", "jsoup");
+         .put("req_attempts_number", attempt)
+         .put("req_type", "url_request")
+         .put("req_lib", "jsoup");
 
       Logging.logInfo(logger, session, jsoupMetadata, "JSOUP REQUESTS INFO");
 
@@ -192,27 +179,15 @@ public class JsoupDataFetcher implements DataFetcher {
          .ignoreHttpErrors(true)
          .sslSocketFactory(FetchUtilities.createSSLSocketFactory())
          .headers(headers)
+         .proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxySelected.get(0).getAddress(), proxySelected.get(0).getPort())))
          .timeout(20000)
          .followRedirects(request.isFollowRedirects());
 
-      if(!getMethod) {
+      if (!getMethod) {
          connection.requestBody(request.getPayload());
       }
 
-      if(!proxySelected.get(0).getSource().contains("infatica")) {
-         connection.proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxySelected.get(0).getAddress(), proxySelected.get(0).getPort())));
-      } else {
-         setProxyInfatica(proxySelected);
-      }
-
       return connection.execute();
-   }
-
-   private void setProxyInfatica(List<LettProxy> proxySelected) {
-      System.setProperty("http.proxyhost", proxySelected.get(0).getAddress());
-      System.setProperty("http.proxyport", String.valueOf(proxySelected.get(0).getPort()));
-      System.setProperty("http.proxyPass", proxySelected.get(0).getPass());
-      System.setProperty("http.proxyUser", proxySelected.get(0).getUser());
    }
 
    @Override
@@ -291,13 +266,13 @@ public class JsoupDataFetcher implements DataFetcher {
          Map<String, String> responseHeaders = FetchUtilities.headersJavaNetToMap(connection.getHeaderFields());
 
          response = new ResponseBuilder()
-               .setBody(content)
-               .setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null)
-               .setRedirecturl(connection.getURL().toString())
-               .setHeaders(responseHeaders)
-               .setCookies(FetchUtilities.getCookiesFromHeadersJavaNet(connection.getHeaderFields()))
-               .setLastStatusCode(connection.getResponseCode())
-               .build();
+            .setBody(content)
+            .setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null)
+            .setRedirecturl(connection.getURL().toString())
+            .setHeaders(responseHeaders)
+            .setCookies(FetchUtilities.getCookiesFromHeadersJavaNet(connection.getHeaderFields()))
+            .setLastStatusCode(connection.getResponseCode())
+            .build();
 
          requestStats.setHasPassedValidation(true);
          requests.add(requestStats);
@@ -312,8 +287,8 @@ public class JsoupDataFetcher implements DataFetcher {
       }
 
       JSONObject apacheMetadata = new JSONObject()
-            .put("req_javanet_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_javanet_attempts_number", 1);
+         .put("req_javanet_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+         .put("req_javanet_attempts_number", 1);
 
       Logging.logInfo(logger, session, apacheMetadata, "JAVANET REQUEST DELETE INFO");
 

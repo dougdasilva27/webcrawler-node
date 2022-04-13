@@ -12,6 +12,8 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.*;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 
 import com.google.common.collect.Sets;
@@ -21,6 +23,10 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -33,15 +39,46 @@ import org.jsoup.nodes.Element;
  */
 public class LeroymerlinCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "https://www.leroymerlin.com.br";
-   protected static String REGION;
+   private final String HOME_PAGE = "https://www.leroymerlin.com.br";
+   protected String region;
 
    public LeroymerlinCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.JAVANET);
+      region = getRegion();
+      config.setFetcher(FetchMode.APACHE);
    }
 
+   protected String getRegion() {
+      return session.getOptions().optString("region");
+   }
 
+   @Override
+   public String handleURLBeforeFetch(String curURL) {
+      try {
+         String url = curURL;
+         List<NameValuePair> paramsOriginal = URLEncodedUtils.parse(new URI(url), "UTF-8");
+         List<NameValuePair> paramsNew = new ArrayList<>();
+
+         for (NameValuePair param : paramsOriginal) {
+            if (!param.getName().equals("region")) {
+               paramsNew.add(param);
+            }
+         }
+
+         paramsNew.add(new BasicNameValuePair("region", region));
+         URIBuilder builder = new URIBuilder(curURL.split("\\?")[0]);
+
+         builder.clearParameters();
+         builder.setParameters(paramsNew);
+
+         curURL = builder.build().toString();
+
+         return curURL;
+
+      } catch (URISyntaxException e) {
+         return curURL;
+      }
+   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -242,7 +279,7 @@ public class LeroymerlinCrawler extends Crawler {
             String sellerNameLower = JSONUtils.getValueRecursive(offerJson, "shop.name", String.class).toLowerCase(Locale.ROOT);
 
             boolean isMainRetailer = sellerNameLower.contains("leroy");
-            String sellerFullname = isMainRetailer ? "leroy merlin " + REGION : sellerNameLower;
+            String sellerFullname = isMainRetailer ? "leroy merlin " + region : sellerNameLower;
 
             offers.add(Offer.OfferBuilder.create()
                .setUseSlugNameAsInternalSellerId(true)

@@ -1,10 +1,18 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Element;
+
+import java.util.Collections;
+import java.util.List;
 
 public class BrasilMultinepCrawler extends CrawlerRankingKeywords {
 
@@ -13,7 +21,7 @@ public class BrasilMultinepCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected void extractProductsFromCurrentPage() {
+  protected void extractProductsFromCurrentPage() throws MalformedProductException {
     this.pageSize = 16;
     this.log("Página " + this.currentPage);
 
@@ -36,10 +44,22 @@ public class BrasilMultinepCrawler extends CrawlerRankingKeywords {
 
         String productUrl = crawlProductUrl(product);
         String internalId = crawlInternalId(product);
+         String name = crawlProductName(i);
+         String imgUrl = product.optString("urlImage");
+         Integer price = crawlPrice(product);
+         boolean isAvailable = price != 0;
 
-        saveDataProduct(internalId, null, productUrl);
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setInternalPid(null)
+            .setImageUrl(imgUrl)
+            .setName(name)
+            .setPriceInCents(price)
+            .setAvailability(isAvailable)
+            .build();
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+         saveDataProduct(productRanking);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
@@ -54,7 +74,23 @@ public class BrasilMultinepCrawler extends CrawlerRankingKeywords {
 
   }
 
-  protected void setTotalProducts(JSONObject search) {
+   private String crawlProductName(int index) {
+     String name = "";
+     List<Element> names = this.currentDoc.select(".catalog-content .product-name");
+
+     if (names.size() > index) {
+       name = names.get(index).text();
+     }
+
+     return name;
+   }
+
+   private Integer crawlPrice(JSONObject product) {
+     String priceString = product.optString("sellPrice");
+     return CommonMethods.stringPriceToIntegerPrice(priceString, '.', 0);
+   }
+
+   protected void setTotalProducts(JSONObject search) {
     if (search.has("siteSearchResults")) {
       String total = search.get("siteSearchResults").toString().replaceAll("[^0-9]", "");
 

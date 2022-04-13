@@ -49,7 +49,7 @@ public class JSONUtils {
    public static <T> T getValueRecursive(Object json, String path, String separator, Class<T> clazz, T defaultValue) {
 
       try {
-         String[] keys = path.split("["+separator+"]");
+         String[] keys = path.split("[" + separator + "]");
 
          Object currentObject = json;
 
@@ -98,7 +98,7 @@ public class JSONUtils {
    public static String getStringValue(JSONObject json, String key) {
       String value = null;
 
-      if (json!=null && json.has(key) && json.get(key) instanceof String) {
+      if (json != null && json.has(key) && json.get(key) instanceof String) {
          value = json.getString(key);
       }
 
@@ -136,12 +136,10 @@ public class JSONUtils {
    }
 
    /**
-    * 
     * @param json
     * @param key
     * @param stringWithFloatLayout -> if price string is a float in a string format like "23.99", if
-    *        false e.g: R$ 2.779,20 returns the Float 2779.2
-    * 
+    *                              false e.g: R$ 2.779,20 returns the Float 2779.2
     * @return
     */
    public static Float getFloatValueFromJSON(JSONObject json, String key, boolean stringWithFloatLayout) {
@@ -167,11 +165,10 @@ public class JSONUtils {
    }
 
    /**
-    * 
     * @param json
     * @param key
     * @param stringWithDoubleLayout -> if price string is a double in a string format like "23.99", if
-    *        false e.g: R$ 2.779,20 returns the Double 2779.2
+    *                               false e.g: R$ 2.779,20 returns the Double 2779.2
     * @return
     */
    public static Double getDoubleValueFromJSON(JSONObject json, String key, boolean stringWithDoubleLayout) {
@@ -197,7 +194,6 @@ public class JSONUtils {
    }
 
    /**
-    * 
     * @param json
     * @param key
     * @param defaultValue - return this value if key not exists
@@ -224,13 +220,13 @@ public class JSONUtils {
    }
 
 
-
    /**
     * This method simply adds all the string values inside a json array to a string list.
+    *
     * @param jsonArray Json Array.
     * @return String list with all the values inside the array
     */
-   public static List<String> jsonArrayToStringList(JSONArray jsonArray){
+   public static List<String> jsonArrayToStringList(JSONArray jsonArray) {
       return jsonArrayToStringList(jsonArray, null, null);
    }
 
@@ -238,12 +234,13 @@ public class JSONUtils {
     * This method simply adds all the string values inside a json array to a string list.
     * The path is similar with the getValueRecursive method.
     * Example: 'produts.images.url'
+    *
     * @param jsonArray Json Array.
-    * @param path If its a {@link JSONObject} array, it's necessary to specify the path containing the key that must be added to the list.
-    *              If its array of strings, just pass a null path.
+    * @param path      If its a {@link JSONObject} array, it's necessary to specify the path containing the key that must be added to the list.
+    *                  If its array of strings, just pass a null path.
     * @return String list with all the values inside the array
     */
-   public static List<String> jsonArrayToStringList(JSONArray jsonArray, String path){
+   public static List<String> jsonArrayToStringList(JSONArray jsonArray, String path) {
       return jsonArrayToStringList(jsonArray, path, null);
    }
 
@@ -251,18 +248,19 @@ public class JSONUtils {
     * This method simply adds all the string values inside a json array to a string list.
     * The path is similar with the getValueRecursive method.
     * Example: 'produts.images.url'
-    * @param jsonArray Json Array.
-    * @param path If its a {@link JSONObject} array, it's necessary to specify the path containing the key that must be added to the list.
-    *              If its array of strings, just pass a null path.
+    *
+    * @param jsonArray     Json Array.
+    * @param path          If its a {@link JSONObject} array, it's necessary to specify the path containing the key that must be added to the list.
+    *                      If its array of strings, just pass a null path.
     * @param pathSeparator Separator to the json keys in the path, default '.'
     * @return String list with all the values inside the array
     */
    public static List<String> jsonArrayToStringList(JSONArray jsonArray, String path, String pathSeparator) {
       List<String> list = new ArrayList<>();
 
-      if(jsonArray != null && !jsonArray.isEmpty()){
-         if(path != null && !path.equals("")){
-            if(pathSeparator == null){
+      if (jsonArray != null && !jsonArray.isEmpty()) {
+         if (path != null && !path.equals("")) {
+            if (pathSeparator == null) {
                pathSeparator = ".";
             }
 
@@ -273,7 +271,7 @@ public class JSONUtils {
 
                list.add(str);
             }
-         }else{
+         } else {
             for (Object o : jsonArray) {
                list.add(o.toString());
             }
@@ -281,5 +279,33 @@ public class JSONUtils {
       }
 
       return list;
+   }
+
+   /**
+    * This extracts a double or integer value and convert it to cents.
+    *
+    * @param product JSONObject where we can find the desired value .
+    * @param key     String with the key that we want to extract.
+    * @return integer with the value in cents.
+    */
+   public static int getPriceInCents(JSONObject product, String key) {
+      int priceInCents = 0;
+      Object price = product.opt(key);
+      if (price instanceof Double) {
+         priceInCents = (int) Math.round((Double) price * 100);
+      } else if (price instanceof Integer) {
+         priceInCents = (int) price * 100;
+      }
+      return priceInCents;
+   }
+
+   public static <T> T getPriceInCents(JSONObject product, String key, Class<T> clazz, T defaultValue) {
+      try {
+         int priceInCents = getPriceInCents(product, key);
+         if (priceInCents == 0) return defaultValue;
+         return clazz.cast(priceInCents);
+      } catch (Exception e) {
+         return defaultValue;
+      }
    }
 }

@@ -48,7 +48,6 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
             .setCookies(cookies)
             .setProxyservice(
                Arrays.asList(
-                  ProxyCollection.INFATICA_RESIDENTIAL_BR,
                   ProxyCollection.NETNUT_RESIDENTIAL_BR,
                   ProxyCollection.BUY
                )

@@ -2,43 +2,15 @@ package br.com.lett.crawlernode.core.fetcher.methods;
 
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherRequest;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestForcedProxies;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestsParameters;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.fetcher.models.*;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
-import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
-import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
@@ -47,6 +19,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class FetcherDataFetcher implements DataFetcher {
 
@@ -180,7 +159,7 @@ public class FetcherDataFetcher implements DataFetcher {
 
             if (statistics.has("request_id")) {
                requestId = statistics.get("request_id").toString();
-               }
+            }
          }
 
          response = responseBuilder(responseJson);
@@ -416,16 +395,8 @@ public class FetcherDataFetcher implements DataFetcher {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
 
-      List<String> proxiesTemp = request.getProxyServices() != null ? new ArrayList<>(request.getProxyServices()) : new ArrayList<>();
-      List<String> proxies = new ArrayList<>();
+      List<String> proxies = request.getProxyServices() != null ? new ArrayList<>(request.getProxyServices()) : new ArrayList<>();
 
-      if (proxies != null && (session instanceof EqiCrawlerSession || session instanceof EqiRankingDiscoverKeywordsSession)) {
-         for (String proxy : proxiesTemp) {
-            proxies.add(proxy.toLowerCase().contains("infatica") ? ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI : proxy);
-         }
-      } else {
-         proxies = proxiesTemp;
-      }
       FetcherRequestBuilder requestBuilder = FetcherRequestBuilder.create()
          .setUrl(url)
          .setForcedProxies(
@@ -444,7 +415,7 @@ public class FetcherDataFetcher implements DataFetcher {
          .setSession(session.getSessionId());
 
       if (options != null) {
-         payload =  requestBuilder
+         payload = requestBuilder
             .setMustUseMovingAverage(options.isMustUseMovingAverage())
             .setRequestType(method)
             .setRetrieveStatistics(options.isRetrieveStatistics())

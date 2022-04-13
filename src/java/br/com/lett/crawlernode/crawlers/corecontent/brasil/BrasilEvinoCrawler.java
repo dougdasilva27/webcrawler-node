@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -12,9 +13,10 @@ import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
-import models.prices.Prices;
+import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,7 +24,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class BrasilEvinoCrawler extends Crawler {
 
@@ -48,9 +56,11 @@ public class BrasilEvinoCrawler extends Crawler {
 
          String name = crawlName(productBiggyJson);
          String primaryImage = crawlPrimaryImage(productBiggyJson);
+         List<String> secondaryImages = crawlSecondaryImages(doc, primaryImage);
          CategoryCollection categories = crawlCategories(productBiggyJson);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".Product__details"));
          String internalPid = crawlInternalPid(productBiggyJson);
+         RatingsReviews ratingsReviews = crawlRating(internalPid);
 
          for (Object object : biggyJson) {
             JSONObject variation = (JSONObject) object;
@@ -61,10 +71,20 @@ public class BrasilEvinoCrawler extends Crawler {
             Offers offers = available ? scrapOffers(productBiggyJson) : new Offers();
 
             // Creating the product
-            Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-                 .setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description).setOffers(offers)
-                  .setStock(stock).setEans(null).build();
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategories(categories)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setRatingReviews(ratingsReviews)
+               .setOffers(offers)
+               .setStock(stock)
+               .setEans(null)
+               .build();
 
             products.add(product);
          }
@@ -75,16 +95,59 @@ public class BrasilEvinoCrawler extends Crawler {
       return products;
    }
 
-   private JSONObject getScriptJson(Document doc){
+   private List<String> crawlSecondaryImages(Document doc, String primaryImage) {
+      List<String> secondaryImages = new ArrayList<>();
+      boolean hasImageSecondary = !doc.select(".GalleryNavigation__itemWrapper").isEmpty();
+
+      if (hasImageSecondary) {
+         Elements scripts = doc.select("script");
+
+         for (Element e : scripts) {
+            String json = e.outerHtml();
+
+            if ((json.contains("__PRELOADED_STATE__") || json.contains("__INITIAL_STATE__")) && json.contains("}")) {
+               String regex = "extralarge\":\"(.+?),\"type\":\"";
+               Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+               Matcher matcher = pattern.matcher(json);
+
+               while (matcher.find()) secondaryImages.add(matcher.group(1));
+               break;
+            }
+         }
+
+         List<String> imagesUrl = new ArrayList<>();
+         for (String image : secondaryImages) {
+            String imageUrl = extractUrl(image);
+            if (!imageUrl.equals(primaryImage)) imagesUrl.add(imageUrl);
+         }
+
+         return imagesUrl.stream().distinct().collect(Collectors.toList());
+      }
+
+      return secondaryImages;
+   }
+
+   private String extractUrl(String image) {
+      String urlRegex = "(http|ftp|https):\\/\\/([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:\\/~+#-]*[\\w@?^=%&\\/~+#-])";
+      Pattern pattern = Pattern.compile(urlRegex);
+      Matcher matcher = pattern.matcher(image);
+
+      if (matcher.find()) {
+         return matcher.group(0).replaceAll(".jpg", ".png");
+      }
+      return image;
+   }
+
+   private JSONObject getScriptJson(Document doc) {
       JSONObject jsonObject = new JSONObject();
       Elements scripts = doc.select("script[type=\"text/javascript\"]");
-      for (Element e : scripts){
+      for (Element e : scripts) {
          String script = e.html();
 
-         if (script.contains("var TC = ")){
+         if (script.contains("var TC = ")) {
             String[] withoutToken = script.split("var TC = ");
-            if (withoutToken.length > 0){
-               jsonObject = CrawlerUtils.stringToJson(withoutToken[1].split("if")[0]);
+            if (withoutToken.length > 0) {
+               jsonObject = CrawlerUtils.stringToJson(withoutToken[1].split(" if \\(window.canPushDataLayer")[0]);
             }
          }
       }
@@ -209,6 +272,41 @@ public class BrasilEvinoCrawler extends Crawler {
       }
 
       return sales;
+   }
+
+   private RatingsReviews crawlRating(String internalPid) {
+      String url = "https://evino.mais.social/api/pdp/reviews?ecommerceId=evn&productId=" + internalPid + "&limit=2";
+      RatingsReviews ratingsReviews = new RatingsReviews();
+
+      Request request = Request.RequestBuilder.create().setUrl(url).build();
+      JSONObject jsonObject = CrawlerUtils.stringToJSONObject(this.dataFetcher.get(session, request).getBody());
+      JSONObject aggregationRating = jsonObject.optJSONObject("aggregateRating");
+      if (aggregationRating != null) {
+         AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(aggregationRating);
+
+         ratingsReviews.setTotalRating(aggregationRating.optInt("recommendedBy"));
+         ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
+         ratingsReviews.setAverageOverallRating(aggregationRating.optDouble("ratingValue", 0d));
+      }
+      return ratingsReviews;
+   }
+
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject reviews) {
+
+      JSONObject reviewValue = reviews.optJSONObject("ratingComposition");
+
+      if (reviewValue != null) {
+         return new AdvancedRatingReview.Builder()
+            .totalStar1(reviewValue.optInt("1"))
+            .totalStar2(reviewValue.optInt("2"))
+            .totalStar3(reviewValue.optInt("3"))
+            .totalStar4(reviewValue.optInt("4"))
+            .totalStar5(reviewValue.optInt("5"))
+            .build();
+      }
+
+      return new AdvancedRatingReview();
    }
 
 

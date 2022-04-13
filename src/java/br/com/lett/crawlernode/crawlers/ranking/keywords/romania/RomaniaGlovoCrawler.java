@@ -46,7 +46,6 @@ public class RomaniaGlovoCrawler extends CrawlerRankingKeywords {
                      String productUrl = BASE_URL + internalId;
 
                      saveDataProduct(internalId, internalPid, productUrl);
-                     this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
                      if (this.arrayProducts.size() == productsLimit)
                         break;
                   }

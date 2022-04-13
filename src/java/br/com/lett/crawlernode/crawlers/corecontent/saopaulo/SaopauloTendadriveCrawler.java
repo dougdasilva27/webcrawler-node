@@ -68,7 +68,6 @@ public class SaopauloTendadriveCrawler extends Crawler {
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
          Offers offers = scrapOffers(skuJson);
          Integer stock = getStockFromStoreSpecific(skuJson);
-         RatingsReviews ratingsReviews = scrapRating(internalId, doc);
 
          Product product =
             ProductBuilder.create()
@@ -81,7 +80,6 @@ public class SaopauloTendadriveCrawler extends Crawler {
                .setSecondaryImages(images)
                .setDescription(description)
                .setStock(stock)
-               .setRatingReviews(ratingsReviews)
                .build();
 
          products.add(product);
@@ -164,11 +162,6 @@ public class SaopauloTendadriveCrawler extends Crawler {
          }
       }
       return images;
-   }
-
-   private RatingsReviews scrapRating(String internalId, Document doc) {
-      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "80984", logger);
-      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
    }
 
    private Integer getStockFromStoreSpecific(JSONObject skuJson){

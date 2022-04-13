@@ -12,8 +12,14 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offers;
 import models.prices.Prices;
+import models.pricing.*;
 import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -23,6 +29,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Date: 08/08/2017
@@ -32,6 +39,7 @@ import java.util.*;
 public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
    private final String HOME_PAGE = "https://www.drogarianovaesperanca.com.br/";
+   private static final List<Card> CARDS = Arrays.asList(Card.VISA, Card.MASTERCARD, Card.AMEX, Card.ELO);
 
    public BrasilDrogarianovaesperancaCrawler(Session session) {
       super(session);
@@ -45,16 +53,6 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
    }
 
    @Override
-   protected Object fetch() {
-      Request request = RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setCookies(cookies)
-         .build();
-
-      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-   }
-
-   @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
@@ -64,30 +62,28 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
          String internalId = crawlInternalId(doc);
          String internalPid = null;
-         String name = crawlName(doc);
-         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "span.preco-final span.valor, span.preco-por span.valor", null, true, ',', session);
-         Prices prices = crawlPrices(price, internalId, doc);
-         boolean available = crawlAvailability(doc);
-         CategoryCollection categories = crawlCategories(doc);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#thumbs-produto div a", Arrays.asList("data-image"), "https",
-            "www.drogarianovaesperanca.com.br/");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
-            "#thumbs-produto div a",
-            Arrays.asList("data-image"), "https", "www.drogarianovaesperanca.com.br/", primaryImage);
-         String description = crawlDescription(doc);
-         Integer stock = null;
-         Marketplace marketplace = crawlMarketplace();
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-head h1", true);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imgProduto", List.of("src"), "https", "drogarianovaesperanca.com.br");
+         List<String> secondaryImages = scrapSecondaryImages(doc, primaryImage);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "span[property=itemListElement]:not(:last-child)", true);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, List.of(".ficha-produto", ".tabs-produto #tabs", ".aviso-medicamento"));
+         List<String> eans = crawlEan(doc);
+         boolean availableToBuy = doc.selectFirst(".produto-esgotado-avise") == null;
 
-         String ean = crawlEan(doc);
-         List<String> eans = new ArrayList<>();
-         eans.add(ean);
+         Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
-         // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
-
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setCategories(categories)
+            .setDescription(description)
+            .setOffers(offers)
+            .setEans(eans)
+            .build();
          products.add(product);
 
       } else {
@@ -95,7 +91,28 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
       }
 
       return products;
+   }
 
+   private List<String> scrapSecondaryImages(Document doc, String primaryImage) {
+      List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "#thumbs-produto img", List.of("src"), "https", "drogarianovaesperanca.com.br", primaryImage);
+      secondaryImages = secondaryImages.stream().map(image -> image.replace("100x100", "1000x1000")).collect(Collectors.toList());
+      return secondaryImages;
+   }
+
+   private List<String> crawlEan(Document doc) {
+      List<String> eans = new ArrayList<>();
+      Elements elements = doc.select(".ficha-produto ul li div ul li");
+
+      for (Element e : elements) {
+         String aux = e.text();
+
+         if (aux.contains("Código EAN")) {
+            eans.add(aux.replaceAll("[^0-9]+", ""));
+            break;
+         }
+      }
+
+      return eans;
    }
 
    private boolean isProductPage(Document doc) {
@@ -113,206 +130,78 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
       return internalId;
    }
 
-   private String crawlName(Document document) {
-      String name = null;
-      Element nameElement = document.select(".produto-detalhes h1").first();
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(doc, pricing);
 
-      if (nameElement != null) {
-         name = nameElement.text().trim();
-      }
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName("Drogaria Nova Esperanca")
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setSales(sales)
+         .setPricing(pricing)
+         .build());
 
-      return name;
+      return offers;
    }
 
-   private Marketplace crawlMarketplace() {
-      return new Marketplace();
+   private List<String> scrapSales(Document doc, Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
+
+      String buyPromotion = CrawlerUtils.scrapStringSimpleInfo(doc, ".BtComprarProdutoPromocao", false);
+      if(buyPromotion != null && !buyPromotion.isEmpty()) {
+         sales.add(buyPromotion);
+      }
+      return sales;
    }
 
-   /**
-    * In the time when this crawler was made, this market hasn't secondary Images
-    *
-    * @param doc
-    * @return
-    */
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".preco-por", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".preco-de", null, true, ',', session);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      BankSlip bankSlip =  BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build();
 
+      if(priceFrom == spotlightPrice) priceFrom = null;
 
-   /**
-    * @param document
-    * @return
-    */
-   private CategoryCollection crawlCategories(Document document) {
-      CategoryCollection categories = new CategoryCollection();
-      Elements elementCategories = document.select("span[property=itemListElement] > a span");
-
-      for (int i = 1; i < elementCategories.size(); i++) {
-         String cat = elementCategories.get(i).ownText().replace("/", "").trim();
-
-         if (!cat.isEmpty()) {
-            categories.add(cat);
-         }
-      }
-
-      return categories;
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
    }
 
-   private String crawlDescription(Document doc) {
-      StringBuilder description = new StringBuilder();
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
 
-      Element elementDescription = doc.select(".ficha-produto").first();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
-      if (elementDescription != null) {
-         description.append(elementDescription.html());
+      Integer maxInstallments = CrawlerUtils.scrapIntegerFromHtml(doc, ".preco-parcelado-produto .parcelas", true, null);
+      Double installmentPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".preco-parcelado-produto > b  > span:not(:first-child)", null, true, ',', session);
+      if (maxInstallments != null && installmentPrice != null) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(maxInstallments)
+            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(installmentPrice))
+            .build());
       }
 
-      Element elementInfo = doc.select(".tabs-produto #tabs").first();
-
-      if (elementInfo != null) {
-         description.append(elementInfo.html());
+      for (Card card : CARDS) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card.name())
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
-      Element aviso = doc.select(".aviso-medicamento").first();
-
-      if (aviso != null) {
-         description.append(aviso.html());
-      }
-
-      return description.toString();
+      return creditCards;
    }
 
-   private boolean crawlAvailability(Document doc) {
-      return doc.select("#BtComprarProduto").first() != null;
-   }
-
-   /**
-    * @param doc
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price, String internalId, Document doc) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         prices.setBankTicketPrice(price);
-         Element priceFrom = doc.select(".preco-de").first();
-         if (priceFrom != null) {
-            prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
-         }
-
-         String pricesUrl = "https://www.drogarianovaesperanca.com.br/Funcoes_Ajax.aspx/CarregaFormaPagamento";
-
-         JSONObject payloadJson = new JSONObject();
-         payloadJson.put("ID_OpcaoPagamento", 0);
-         payloadJson.put("ID_FormaPagamento", 0);
-         payloadJson.put("ID_SubProduto", internalId);
-         payloadJson.put("IsMobile", true);
-
-         Map<String, String> headers = new HashMap<>();
-         headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-
-         Request request = RequestBuilder.create()
-            .setUrl(pricesUrl)
-            .setCookies(this.cookies)
-            .setHeaders(headers)
-            .setPayload(payloadJson.toString())
-            .build();
-
-         JSONObject pricesJson = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
-
-         if (pricesJson.has("d")) {
-            JSONArray cards = pricesJson.getJSONArray("d");
-
-            for (int i = 0; i < cards.length() - 1; i++) {
-               JSONObject card = cards.getJSONObject(i);
-               String cardName = crawlCardName(card);
-
-               if (cardName != null && card.has("Itens")) {
-                  setInstallments(cardName, card, prices);
-               }
-            }
-
-         }
-
-
-      }
-
-      return prices;
-   }
-
-   private String crawlCardName(JSONObject card) {
-      String officalCardName = null;
-
-      if (card.has("Icon")) {
-         String cardName = card.getString("Icon").trim();
-
-         switch (cardName) {
-            case "visa":
-               officalCardName = Card.VISA.toString();
-               break;
-            case "mastercard":
-               officalCardName = Card.MASTERCARD.toString();
-               break;
-            case "diners":
-               officalCardName = Card.DINERS.toString();
-               break;
-            case "american-express":
-               officalCardName = Card.AMEX.toString();
-               break;
-            case "elo":
-               officalCardName = Card.ELO.toString();
-               break;
-            case "boleto-bancario":
-               officalCardName = "boleto";
-               break;
-            default:
-               break;
-         }
-      }
-
-      return officalCardName;
-   }
-
-   private void setInstallments(String cardName, JSONObject card, Prices prices) {
-      JSONArray installments = card.getJSONArray("Itens");
-
-      if (cardName.equals("boleto") && installments.length() > 0) {
-         prices.setBankTicketPrice(installments.getJSONObject(0).getDouble("TotalGeral"));
-      } else {
-         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-
-         for (int i = 0; i < installments.length(); i++) {
-            JSONObject installmentJson = installments.getJSONObject(i);
-
-            if (installmentJson.has("Nparcel")) {
-               Integer installment = installmentJson.getInt("Nparcel");
-
-               if (installmentJson.has("TotalParcela")) {
-                  String parcelText = installmentJson.getString("TotalParcela").trim();
-                  Float value = parcelText.isEmpty() ? null : MathUtils.parseFloatWithComma(parcelText);
-
-                  if (value != null) {
-                     installmentPriceMap.put(installment, value);
-                  }
-               }
-            }
-         }
-
-         prices.insertCardInstallment(cardName, installmentPriceMap);
-      }
-   }
-
-   private String crawlEan(Document doc) {
-      String ean = null;
-      Elements elmnts = doc.select(".ficha-produto ul li div ul li");
-
-      for (Element e : elmnts) {
-         String aux = e.text();
-
-         if (aux.contains("Código EAN")) {
-            ean = aux.replaceAll("[^0-9]+", "");
-            break;
-         }
-      }
-
-      return ean;
-   }
 }

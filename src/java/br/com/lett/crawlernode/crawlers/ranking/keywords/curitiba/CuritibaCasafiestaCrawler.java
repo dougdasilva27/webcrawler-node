@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.curitiba;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
@@ -20,7 +23,7 @@ public class CuritibaCasafiestaCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
       this.pageSize = 24;
 
@@ -39,18 +42,26 @@ public class CuritibaCasafiestaCrawler extends CrawlerRankingKeywords {
          if(this.totalProducts == 0) setTotalProducts();
          for(Element e : products) {
 
-            // InternalPid
             String internalPid = crawlInternalPid(e);
-
-            // InternalId
             String internalId = crawlInternalId(e);
-
-            // Url do produto
             String productUrl = CrawlerUtils.scrapUrl(e, ".fbits-spot-conteudo a", "href", "https", HOST);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".spotTitle", true);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".fbits-valor", null, true, ',', session,null);
+            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".jsImgSpot.imagem-primaria", Arrays.asList("src"), "https", "casafiesta.fbitsstatic.net");
+            boolean isAvailable = price != null;
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setImageUrl(imageUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            saveDataProduct(productRanking);
+
             if(this.arrayProducts.size() == productsLimit) break;
 
          }
@@ -76,35 +87,22 @@ public class CuritibaCasafiestaCrawler extends CrawlerRankingKeywords {
    private String crawlInternalId(Element e){
 
       return CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "id").split("-"));
-//      String idProperty = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "id");
-//
-//      List<String> idSeparated = Arrays.asList(idProperty.split("-"));
-//
-//      return idSeparated.size() > 0 ? idSeparated.get(idSeparated.size() - 1): null;
+
    }
 
    private String crawlInternalPid(Element e){
 
       String dataSeparated = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".imagem-spot img:first-of-type", "data-original").split(".jpg")[0];
-//      String dataProperty = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".imagem-spot img:first-of-type", "data-original");
-//
-//      List<String> dataSeparated = Arrays.asList(dataProperty.split(".jpg"));
+
       String internalPid = null;
       if(!dataSeparated.isEmpty()){
          internalPid = CommonMethods.getLast(dataSeparated.split("/"));
-//         List<String> firstPart = Arrays.asList(dataSeparated.get(0).split("/"));
-//
-//         internalPid = firstPart.size() > 0 ? firstPart.get(firstPart.size() - 1).replaceAll("[^0-9]", "") : null;
+
       }
 
       return internalPid;
    }
 
-//   private String crawlProductUrl(Element e){
-//
-//      String nonFormattedUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".fbits-spot-conteudo a", "href");
-//      return HOME_PAGE + nonFormattedUrl;
-//   }
 
 
 }

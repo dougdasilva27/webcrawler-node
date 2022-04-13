@@ -18,14 +18,19 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author gabriel date: 2018-05-25
@@ -57,15 +62,15 @@ public class BrasilDrogalCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = crawlInternalId(doc);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#content_product [data-sku]", "data-sku");
-         String name = crawlName(doc);
+         String internalPid = crawlInternalPid(doc);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.name", true);
          CategoryCollection categories = crawlCategories(doc);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".big-image a img", Arrays.asList("src"), "https", "io2.convertiez.com.br");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "#sly_carousel li:not(.active) a", Arrays.asList("big_img"), "https", "io2.convertiez.com.br", primaryImage);
-         String description = crawlDescription(doc);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".big-image img", List.of("data-src"), "https", "io.convertiez.com.br");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image li:not(.active) img", List.of("data-src"), "https", "io.convertiez.com.br", primaryImage);
+         String description = scrapDescription(doc);
          RatingsReviews ratingsReviews = scrapRatingAndReviews(doc, internalId);
-         boolean available = doc.selectFirst(".box-buttons .bt-big.bt-checkout") != null;
-         Offers offers = available ? scrapOffers(doc) : new Offers();
+         boolean available = doc.selectFirst("#content-product .purchase > button:contains(Comprar)") != null;
+         Offers offers = available ? scrapOffers(doc, internalPid) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -93,31 +98,54 @@ public class BrasilDrogalCrawler extends Crawler {
 
    }
 
+   private String scrapDescription(Document doc) {
 
-   /*******************************
-    * Product page identification *
-    *******************************/
+      StringBuilder description = new StringBuilder();
+      doc.select(".container .my-4").forEach(el -> {
+         String element = CrawlerUtils.scrapStringSimpleInfo(el, ".title", true);
+         String productDescription = CrawlerUtils.scrapStringSimpleInfo(el, "p", true);
+         if (element != null && productDescription != null) {
+            if (element.contains("Modo de Usar")) {
 
-   private boolean isProductPage(Document doc) {
-      return doc.select(".code span[itemprop=sku]").first() != null;
+               description.append("Modo de Usar").append("\n");
+               description.append(productDescription);
+
+            } else if (element.contains("Descrição")) {
+               description.append("Descrição").append("\n");
+               description.append(productDescription);
+            }
+         }
+      });
+
+      String information = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-style-3.mt-2 p", true);
+
+      if (information != null) {
+         description.append(information).append("\n");
+      }
+
+      return description.toString();
+
+   }
+
+   private String crawlInternalPid(Document doc) {
+      List<Element> scripts = doc.select("script[type=text/javascript]").stream().filter(e -> e.html().contains("window.dataProduct")).collect(Collectors.toList());
+      if (!scripts.isEmpty()) {
+         String script = scripts.get(0).html();
+         try {
+            JSONObject productJSON = new JSONObject(CrawlerUtils.extractSpecificStringFromScript(script, "=", true, "", true));
+            return productJSON.optString("sku", null);
+         } catch (Exception e) {
+            e.printStackTrace();
+         }
+      }
+      return null;
    }
 
 
-   /**
-    * We extract internalId on script like this:
-    * <p>
-    * Key: productId
-    * <p>
-    * In that case below, internalId will be "kityenzahshleave"
-    * <p>
-    * ;var dataLayer=dataLayer||[];dataLayer.push({device:"d"})
-    * dataLayer.push({pageName:"product",productId:"kityenzahshleave",productName:"Kit Yenzah Sou+
-    * Cachos Shampoo Lowpoo 240ml + Leave In Suave
-    * 365ml",productPrice:"63.24",productDepartment:"CUIDADOS COM CABELOS",productCategory:"CUIDADOS
-    * COM CABELOS",productSubCategory:"KIT CABELOS",productBrand:"Yenzah"});
-    *
-    * @return
-    */
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".product-form") != null;
+   }
+
    private String crawlInternalId(Document document) {
       String internalId = null;
       JSONObject dataLayer = new JSONObject();
@@ -151,18 +179,6 @@ public class BrasilDrogalCrawler extends Crawler {
       return internalId;
    }
 
-   private String crawlName(Document document) {
-      String name = null;
-      Element nameElement = document.select("h1.name").first();
-
-      if (nameElement != null) {
-         name = nameElement.ownText().trim();
-      }
-
-      return name;
-   }
-
-
    private CategoryCollection crawlCategories(Document document) {
       CategoryCollection categories = new CategoryCollection();
       Elements elementCategories = document.select("#breadcrumb li:not(.home) > a");
@@ -178,26 +194,11 @@ public class BrasilDrogalCrawler extends Crawler {
       return categories;
    }
 
-   private String crawlDescription(Document document) {
-      StringBuilder description = new StringBuilder();
-      Element descriptionElement = document.select(".container .float > .center:not(.product) > .row").first();
 
-      if (descriptionElement != null) {
-         description.append(descriptionElement.html());
-      }
-
-      Element modal = document.select(".modal-content .modal-body").last();
-      if (modal != null) {
-         description.append(modal.html());
-      }
-
-      return description.toString();
-   }
-
-   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+   private Offers scrapOffers(Document doc, String internalPid) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = scrapSales(pricing, doc);
+      List<String> sales = scrapSales(pricing, internalPid);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -212,21 +213,41 @@ public class BrasilDrogalCrawler extends Crawler {
       return offers;
    }
 
-   private List<String> scrapSales(Pricing pricing, Document doc) {
+   private List<String> scrapSales(Pricing pricing, String internalPid) {
       List<String> sales = new ArrayList<>();
-      String sale = CrawlerUtils.calculateSales(pricing);
-      if (sale != null) {
-         sales.add(sale);
-      }
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
+      String url = HOME_PAGE + "api/1.0/public/offers/search/?skus=" + internalPid;
+
+      Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      JSONObject response = CrawlerUtils.stringToJSONObject(this.dataFetcher.get(session, request).getBody());
+
+      if (response.has("results")) {
+         JSONArray results = response.optJSONArray("results");
+         if (results != null) {
+            IntStream.range(0, results.length()).forEach(i -> {
+               JSONObject result = results.optJSONObject(i);
+               if (!result.isNull("seal")) {
+                  Object sale = result.optQuery("/seal/title");
+                  if (sale instanceof String) {
+                     sales.add(sale.toString());
+                  }
+               }
+            });
+         }
+      }
       return sales;
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_off span", null, false, ',', session);
-      Double priceCard = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sale .sale_price", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .sale-price", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .unit-price", null, false, ',', session);
+      Double priceCard = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .get_card_price", null, false, ',', session);
+
+      if (Objects.equals(priceFrom, spotlightPrice)) priceFrom = null;
+
       CreditCards creditCards = scrapCreditCards(priceCard, doc);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-boleto.get_price_boleto", null, false, ',', session);
+
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
@@ -293,10 +314,10 @@ public class BrasilDrogalCrawler extends Crawler {
       double avgRating = 0D;
 
       if (ratingCount > 0) {
-         Element avg = doc.select("[itemprop=aggregateRating] .rating-star [itemprop=ratingValue]").first();
+         Element avg = doc.select(".rating-star.ml-auto span").first();
 
          if (avg != null) {
-            String text = avg.ownText().replaceAll("[^0-9.]", "").replace(",", ".").trim();
+            String text = avg.className().replaceAll("[^0-9.]", "").replace(",", ".").trim();
 
             if (!text.isEmpty()) {
                avgRating = Double.parseDouble(text);
@@ -307,65 +328,58 @@ public class BrasilDrogalCrawler extends Crawler {
       return avgRating;
    }
 
-   private Document fetchAdvancedRating(int page) {
-      StringBuilder url = new StringBuilder(this.session.getOriginalURL()).append("?p=").append(page);
-      Request request = Request.RequestBuilder.create().setUrl(url.toString()).build();
-      return Jsoup.parse(dataFetcher.get(session, request).getBody());
-   }
 
-   private AdvancedRatingReview scrapAdvancedRatingReview(Document document) {
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
 
-      // Select all 'li' with no class, this selector get all elements page (1, 2, 3...) of rating
-      // pagination
-      Element paginationExists = document.select(".pagination").first();
+      int stars5 = 0;
+      int stars4 = 0;
+      int stars3 = 0;
+      int stars2 = 0;
+      int stars1 = 0;
 
-      Logging.printLogDebug(logger, session, "Will run rating");
-      // The size of ratingElementsPage is the number of pages
-      int totalPages = 1;
-      int pageIterator = 1;
+      Elements elements = doc.select("#ratings-tab-list .box-ratings .rating-star span");
 
-      if (paginationExists != null) {
-         Elements ratingElementsPage = document.select(".pagination>ul>li:not([class])");
-         totalPages = ratingElementsPage.size();
-      }
-      ;
+      if (!elements.isEmpty()) {
+         for (Element element : elements) {
 
+            String star = element.className().replaceAll("[^0-9.]", "").replace(",", ".").trim();
 
-      Map<Integer, Integer> starsCount = new HashMap<>();
-
-      Document currentDocument = document;
-      while (pageIterator <= totalPages) {
-         Logging.printLogDebug(logger, session, "Will run rating " + totalPages);
-         if (pageIterator > 1) {
-            currentDocument = fetchAdvancedRating(pageIterator);
-         }
-
-         Elements ratingComments = currentDocument.select("div#ratings div.float span.rating-star>span");
-
-         ratingComments.forEach(element -> {
-            Integer ratingValue = Integer.parseInt(element.html().trim());
-            if (ratingValue > 0 && ratingValue <= 5) {
-               Integer count = starsCount.getOrDefault(ratingValue, 0) + 1;
-               starsCount.put(ratingValue, count);
-            } else {
-               Logging.printLogError(logger, session, "rating error: rating star error");
+            switch (star) {
+               case "5":
+                  stars5 += 1;
+                  break;
+               case "4":
+                  stars4 += 1;
+                  break;
+               case "3":
+                  stars3 += 1;
+                  break;
+               case "2":
+                  stars2 += 1;
+                  break;
+               case "1":
+                  stars1 += 1;
+                  break;
+               default:
+                  break;
             }
-         });
-
-         pageIterator++;
+         }
       }
 
       return new AdvancedRatingReview.Builder()
-         .allStars(starsCount)
+         .totalStar1(stars1)
+         .totalStar2(stars2)
+         .totalStar3(stars3)
+         .totalStar4(stars4)
+         .totalStar5(stars5)
          .build();
+
    }
 
-   /**
-    * Number of ratings appear in html
-    */
+
    private Integer getTotalNumOfRatings(Document docRating) {
       int totalRating = 0;
-      Element totalRatingElement = docRating.select("[itemprop=aggregateRating] [itemprop=reviewCount]").first();
+      Element totalRatingElement = docRating.select(".rating-star.ml-auto span").first();
 
       if (totalRatingElement != null) {
          String text = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();

@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 public class CrawlerUtils {
@@ -251,7 +252,7 @@ public class CrawlerUtils {
       return price != null ? MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()) : null;
    }
 
-   public static Integer scrapPriceInCentsFromHtml(Element doc, String cssSelector, String att, boolean ownText, char priceFormat, Session session ,Integer defaultValue) {
+   public static Integer scrapPriceInCentsFromHtml(Element doc, String cssSelector, String att, boolean ownText, char priceFormat, Session session, Integer defaultValue) {
       Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, cssSelector, att, ownText, priceFormat, session);
       if (price != null) return (int) Math.round((price * 100));
       return defaultValue;
@@ -1651,8 +1652,28 @@ public class CrawlerUtils {
       return primaryImage;
    }
 
+   public static List<String> scrapSecondaryImagesMagentoList(JSONArray images, String primaryImage) {
+      JSONArray secondaryImages = scrapSecondaryImagesArrayMagento(images, primaryImage);
+      if (secondaryImages.length() > 0) {
+         return secondaryImages.toList().stream().map(Objects::toString).collect(Collectors.toList());
+      }
+      else{
+         return null;
+      }
+   }
+
+   @Deprecated
    public static String scrapSecondaryImagesMagento(JSONArray images, String primaryImage) {
-      String secondaryImages = null;
+      JSONArray secondaryImages = scrapSecondaryImagesArrayMagento(images, primaryImage);
+      if(secondaryImages.length() > 0){
+         return secondaryImages.toString();
+      }
+      else{
+         return null;
+      }
+   }
+
+   private static JSONArray scrapSecondaryImagesArrayMagento(JSONArray images, String primaryImage) {
       JSONArray secondaryImagesArray = new JSONArray();
 
       for (int i = 0; i < images.length(); i++) {
@@ -1675,11 +1696,8 @@ public class CrawlerUtils {
          }
       }
 
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
 
-      return secondaryImages;
+      return secondaryImagesArray;
    }
 
    public static String scrapImagesMagento(JSONArray images, Boolean isPrimary) {
@@ -2142,11 +2160,15 @@ public class CrawlerUtils {
    }
 
    private static Double getTotalAvgRatingFromYourViews(Document docRating, String cssSelector) {
-      Double avgRating = 0d;
+      double avgRating = 0d;
       Element rating = docRating.selectFirst(cssSelector);
 
       if (rating != null) {
-         avgRating = MathUtils.parseDoubleWithDot(rating.toString());
+         String avgText = rating.ownText();
+         if (!avgText.isEmpty()) {
+            avgRating = Double.parseDouble(avgText);
+
+         }
       }
 
       return avgRating;
@@ -2284,8 +2306,9 @@ public class CrawlerUtils {
 
    /**
     * get a list of installment for each Credit Card based only on spotlightPrice
+    *
     * @param spotlightPrice Double
-    * @param cards Set<String> of all cards
+    * @param cards          Set<String> of all cards
     * @return CreditCards
     */
 
@@ -2312,8 +2335,9 @@ public class CrawlerUtils {
 
    /**
     * Get a list of key-value string from a json that is inside a script tag
+    *
     * @param script String of the script tag that has a json
-    * @param key the key to search
+    * @param key    the key to search
     * @return List<String>  with the matches
     */
 
@@ -2328,6 +2352,23 @@ public class CrawlerUtils {
          }
       }
       return list;
+   }
+
+   /**
+    * Get a list of eans from a table that has a structure like that: https://prnt.sc/26jlpny
+    *
+    * @param doc
+    * @param text the row text to search
+    * @return List<String>  with the matches
+    */
+   public static List<String> scrapEansFromTable(Element doc, String text) {
+      List<String> eans = new ArrayList<>();
+      List<Element> eanElements = doc.select("td:contains(" + text + ") ~ td");
+
+      if (!eanElements.isEmpty()) {
+         eanElements.forEach(eanElement -> eans.add(eanElement.text()));
+      }
+      return eans;
    }
 
 }

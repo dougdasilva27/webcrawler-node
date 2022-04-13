@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -8,6 +9,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -17,6 +19,7 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.apache.commons.lang.ArrayUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -52,38 +55,15 @@ public class BrasilThebeautyboxCrawler extends Crawler {
 
          if (items != null && !items.isEmpty()) {
             for (Element e : items) {
-               String url = e.attr("href");
-               Document variantPage = url != null ? fetchPage(url) : null;
+               String url = CrawlerUtils.scrapUrl(e, "a", Collections.singletonList("href"), "", "");
+               doc = fetchPage(url);
+               products.add(captureData(e, categories, description, ratingsReviews, internalPid, doc, url));
+            }
 
-               String internalId = scrapInternalId(e);
-               String name = e.attr("title");
-               List<String> images = scrapImages(variantPage);
-               String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-
-               boolean available = doc.selectFirst("button.isnt-marketable.js-notify-me") == null;
-               Offers offers = available ? scrapOffers(variantPage) : new Offers();
-
-               ratingsReviews.setInternalId(internalId);
-               ratingsReviews.setDate(session.getDate());
-               ratingsReviews.setUrl(session.getOriginalURL());
-
-               // Creating the product
-               Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setRatingReviews(ratingsReviews.clone())
-                  .setOffers(offers)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(images)
-                  .setDescription(description)
-                  .build();
-
-               products.add(product);
+         } else {
+            Element e = doc.selectFirst(".container.nproduct-page.js-product-detail");
+            if (e != null) {
+               products.add(captureData(e, categories, description, ratingsReviews, internalPid, doc, session.getOriginalURL()));
             }
          }
       } else {
@@ -91,6 +71,39 @@ public class BrasilThebeautyboxCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private Product captureData(Element e, CategoryCollection categories, String description, RatingsReviews ratingsReviews, String internalPid, Document doc, String url) throws OfferException, MalformedPricingException, MalformedProductException {
+
+      String internalId = scrapInternalId(doc);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nproduct-title", false);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-wrapper.carousel-slide > img", Collections.singletonList("src"), "", "");
+      List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".product-image-wrapper.carousel-slide > img", Collections.singletonList("data-zoom-image"), "", "", primaryImage);
+      boolean available = doc.selectFirst("button.isnt-marketable.js-notify-me") == null;
+      Offers offers = available ? scrapOffers(doc) : new Offers();
+
+      ratingsReviews.setInternalId(internalId);
+      ratingsReviews.setDate(session.getDate());
+      ratingsReviews.setUrl(session.getOriginalURL());
+
+      // Creating the product
+      Product product = ProductBuilder.create()
+         .setUrl(url)
+         .setInternalId(internalId)
+         .setInternalPid(internalPid)
+         .setName(name)
+         .setRatingReviews(ratingsReviews.clone())
+         .setOffers(offers)
+         .setCategory1(categories.getCategory(0))
+         .setCategory2(categories.getCategory(1))
+         .setCategory3(categories.getCategory(2))
+         .setPrimaryImage(primaryImage)
+         .setSecondaryImages(images)
+         .setDescription(description)
+         .build();
+
+
+      return product;
    }
 
    private boolean isProductPage(Document doc) {
@@ -111,39 +124,10 @@ public class BrasilThebeautyboxCrawler extends Crawler {
    }
 
    private String scrapInternalId(Element el) {
-      String internalId = "";
-      String jsonStr = el.attr("data-interaction");
 
-      if (jsonStr != null) {
-         JSONObject json = CrawlerUtils.stringToJson(jsonStr);
-
-         String values = json.optString("values");
-
-         if (values != null) {
-            internalId = values.replace("sku;", "");
-         }
-      }
-
+      String internalId = CrawlerUtils.scrapStringSimpleInfo(el, ".product-sku", false);
+      internalId = internalId.replaceAll("[\\D]", "");
       return internalId;
-   }
-
-   private List<String> scrapImages(Document variantPage) {
-      List<String> images = new ArrayList<>();
-
-      if (variantPage != null) {
-         String jsonStr = CrawlerUtils.scrapStringSimpleInfoByAttribute(variantPage, "div.js-carousel-simple.owl-carousel.product-images-carousel", "data-images");
-
-         if (jsonStr != null) {
-            JSONArray jsonArr = CrawlerUtils.stringToJsonArray(jsonStr);
-
-            for (Object o : jsonArr) {
-               JSONObject json = (JSONObject) o;
-               images.add(json.optString("extraLarge"));
-            }
-         }
-      }
-
-      return images;
    }
 
    private Document fetchPage(String url) {
@@ -156,13 +140,13 @@ public class BrasilThebeautyboxCrawler extends Crawler {
    private RatingsReviews scrapRating(Document doc, String internalPid) {
       RatingsReviews ratingReviews = new RatingsReviews();
 
-         Integer totalRatings = CrawlerUtils.scrapIntegerFromHtml(doc, ".rating-count", true, 0);
-         Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".rating-value-container", null, true, '.', session);
+      Integer totalRatings = CrawlerUtils.scrapIntegerFromHtml(doc, ".rating-count", true, 0);
+      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".rating-value-container", null, true, '.', session);
 
-         ratingReviews.setAdvancedRatingReview(scrapAdvancedRating(internalPid));
-         ratingReviews.setTotalRating(totalRatings);
-         ratingReviews.setAverageOverallRating(avgRating);
-         ratingReviews.setTotalWrittenReviews(totalRatings);
+      ratingReviews.setAdvancedRatingReview(scrapAdvancedRating(internalPid));
+      ratingReviews.setTotalRating(totalRatings);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setTotalWrittenReviews(totalRatings);
 
 
       return ratingReviews;
@@ -215,10 +199,10 @@ public class BrasilThebeautyboxCrawler extends Crawler {
             }
             Element nextPage = ratingsDoc.selectFirst("a.js-load-more.reviews-load-more");
 
-            if(nextPage != null){
+            if (nextPage != null) {
                page++;
                url = "https://www.beautybox.com.br/api/htmls/reviews/" + internalPid + "?pagina=" + page + "&size=50&skus=undefined";
-            }else{
+            } else {
                hasNextPage = false;
             }
          }

@@ -37,7 +37,8 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
          String internalId = getInternalId();
          String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc,".product-details-area .product-details-content h2",true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,"#product-zoom", Arrays.asList("src"),"https:","www.elabastecedor.com.ar");
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,".zoompro-border.zoompro-span .zoompro", Arrays.asList("src"),"https:","www.elabastecedor.com.ar");
+         List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(doc,".product-dec-slider-2.swiper-container .swiper-wrapper .swiper-slide .active",Arrays.asList("data-image"), "https:","www.elabastecedor.com.ar", primaryImage);
          Boolean available = true;
          Offers offers = available? scrapOffers(doc): new Offers();
 
@@ -45,6 +46,7 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalPid)
+            .setSecondaryImages(productSecondaryImages)
             .setName(name)
             .setPrimaryImage(primaryImage)
             .setOffers(offers)

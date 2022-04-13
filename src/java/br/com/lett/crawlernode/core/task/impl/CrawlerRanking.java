@@ -105,7 +105,7 @@ public abstract class CrawlerRanking extends Task {
          productsLimit = 1000;
          pageLimit = 125;
       } else if (session instanceof RankingSession || session instanceof TestRankingSession) {
-         productsLimit = 300;
+         productsLimit = 60;
          pageLimit = 35;
       }
 
@@ -342,7 +342,10 @@ public abstract class CrawlerRanking extends Task {
     */
    protected void saveDataProduct(RankingProduct product, boolean isUpdate) {
       this.position++;
-      product.setPosition(this.position);
+
+      if (product.getPosition() == 0) {
+         product.setPosition(this.position);
+      }
       product.setPageNumber(this.currentPage);
       product.setMarketId(session.getMarket().getId());
 

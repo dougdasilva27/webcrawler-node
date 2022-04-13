@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class TausteCrawler extends VTEXOldScraper {
+public class TausteCrawler extends VTEXOldScraper {
 
    private static final String HOME_PAGE = "https://www.tauste.com.br/";
    private static final List<String> MAIN_SELLERS = Collections.singletonList("Tauste Supermercados LTDA.");
@@ -28,7 +28,9 @@ public abstract class TausteCrawler extends VTEXOldScraper {
       super(session);
    }
 
-   protected abstract String getLocation();
+   protected String getLocation() {
+      return session.getOptions().optString("LOCATION");
+   }
 
    @Override
    protected Object fetch(){

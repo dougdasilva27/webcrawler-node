@@ -59,6 +59,7 @@ public class MexicoHebCrawler extends Crawler {
          String primaryImage =
             CrawlerUtils.scrapSimplePrimaryImage(
                doc, ".gallery-placeholder img", Arrays.asList("src"), "https", "www.heb.com.mx/");
+
          List<String> secondaryImages = getSecondaryImage(doc);
          String description = crawlDescription(doc);
 
@@ -148,7 +149,8 @@ public class MexicoHebCrawler extends Crawler {
             if (obj instanceof JSONObject) {
                JSONObject jsonImages = (JSONObject) obj;
                String imageLink = jsonImages.optString("full");
-               if (imageLink != null && !imageLink.isEmpty() && !imageLink.contains("image")) {
+               Boolean mainImg= jsonImages.optBoolean("isMain");
+               if (imageLink != null && !imageLink.isEmpty() && !imageLink.contains("image") && !mainImg ) {
                   imageList.add(imageLink.replace("\\", ""));
                }
             }
@@ -159,7 +161,10 @@ public class MexicoHebCrawler extends Crawler {
 
    private String crawlDescription(Document doc) {
       StringBuilder description = new StringBuilder();
-
+      String ingredients = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".additional-info .tab-content .tab-pane.fade.in.active"));
+      if(!ingredients.isEmpty()){
+         return ingredients;
+      }
       Elements descriptions = doc.select(".product-collateral dd.tab-container");
       for (Element e : descriptions) {
          if (e.select("#customer-reviews").isEmpty()) {

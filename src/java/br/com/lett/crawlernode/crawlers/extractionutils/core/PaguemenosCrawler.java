@@ -88,7 +88,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
 
       if (jsonRating != null) {
          JSONObject data = jsonRating.has("data") ? jsonRating.optJSONObject("data") : new JSONObject();
-         JSONObject productReviews = data.has("productSummary") ? data.optJSONObject("productSummary") : new JSONObject();
+         JSONObject productReviews = data.has("productReviews") ? data.optJSONObject("productReviews") : new JSONObject();
          element = productReviews.has("Element") ? productReviews.optJSONObject("Element") : new JSONObject();
       }
 
@@ -110,26 +110,25 @@ public class PaguemenosCrawler extends VTEXNewScraper {
 
       if (reviews != null) {
 
-         JSONArray ratingList = reviews.has("TopOpinions") ? reviews.optJSONArray("TopOpinions") : new JSONArray();
-
+         JSONArray ratingList = (JSONArray) reviews.optQuery( "/RatingHistogram/RatingList");
          if (ratingList != null) {
 
             for (int i = 0; i < ratingList.length(); i++) {
                switch (i) {
                   case 0:
-                     advancedRatingReview.setTotalStar5(((JSONObject) ratingList.get(i)).optInt("Rate", 0));
+                     advancedRatingReview.setTotalStar5(((JSONObject) ratingList.get(i)).optInt("Total", 0));
                      break;
                   case 1:
-                     advancedRatingReview.setTotalStar4(((JSONObject) ratingList.get(i)).optInt("Rate", 0));
+                     advancedRatingReview.setTotalStar4(((JSONObject) ratingList.get(i)).optInt("Total", 0));
                      break;
                   case 2:
-                     advancedRatingReview.setTotalStar3(((JSONObject) ratingList.get(i)).optInt("Rate", 0));
+                     advancedRatingReview.setTotalStar3(((JSONObject) ratingList.get(i)).optInt("Total", 0));
                      break;
                   case 3:
-                     advancedRatingReview.setTotalStar2(((JSONObject) ratingList.get(i)).optInt("Rate", 0));
+                     advancedRatingReview.setTotalStar2(((JSONObject) ratingList.get(i)).optInt("Total", 0));
                      break;
                   case 4:
-                     advancedRatingReview.setTotalStar1(((JSONObject) ratingList.get(i)).optInt("Rate", 0));
+                     advancedRatingReview.setTotalStar1(((JSONObject) ratingList.get(i)).optInt("Total", 0));
                      break;
                   default:
                }
@@ -154,7 +153,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    private JSONObject crawlPageRatings(String internalId) throws UnsupportedEncodingException {
 
       String query = "{\"persistedQuery\":" +
-         "{\"version\":1,\"sha256Hash\":\"4f721042cb5512f59c6aa3030e4a52e79ae1329a53747a6a3bcbff4c66d79f3f\",\"sender\":\"yourviews.yourviewsreviews@0.x\"," +
+         "{\"version\":1,\"sha256Hash\":\"1c9d35bb4f74b0334af671a19fb624c608643f7606fd3de29f5037b2570ee361\",\"sender\":\"yourviews.yourviewsreviews@0.x\"," +
          "\"provider\":\"yourviews.yourviewsreviews@0.x\"}," +
          "\"variables\":\"" + createVariablesBase64(internalId) + "\"}";
 
@@ -174,8 +173,8 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    }
 
    private boolean shouldShowPriceFrom(JSONObject productJson) {
-      JSONArray showPriceFrom =  productJson.optJSONArray("ApresentarPrecoDePor");
-      if(showPriceFrom != null && showPriceFrom.length() > 0) {
+      JSONArray showPriceFrom = productJson.optJSONArray("ApresentarPrecoDePor");
+      if (showPriceFrom != null && showPriceFrom.length() > 0) {
          return (showPriceFrom.getString(0).equals("Sim"));
       }
       return true;
@@ -222,7 +221,28 @@ public class PaguemenosCrawler extends VTEXNewScraper {
             }
          }
       }
-         return offers;
+      return offers;
+   }
+
+   @Override
+   protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid, Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+      if (pricing != null) sales.add(CrawlerUtils.calculateSales(pricing));
+
+      String kitSales = CrawlerUtils.scrapStringSimpleInfo(doc, ".paguemenos-product-details-medicamento-controlado-1-x-containerTexto", false);
+
+      if (kitSales != null && !kitSales.isEmpty()) sales.add(kitSales);
+
+      Object teasers = offerJson.optQuery("/commertialOffer/Teasers");
+
+      if (teasers instanceof JSONArray) {
+         Object teaser = ((JSONArray) teasers).optQuery("/0/<Name>k__BackingField");
+         if (teaser instanceof String) {
+            sales.add((String) teaser);
+         }
+      }
+
+      return sales;
    }
 
    private Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson, boolean showPriceFrom) throws MalformedPricingException {
@@ -237,7 +257,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
          priceFrom = null;
       }
 
-      if(!showPriceFrom) priceFrom = null;
+      if (!showPriceFrom) priceFrom = null;
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
