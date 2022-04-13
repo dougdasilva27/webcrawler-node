@@ -13,7 +13,9 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
 
@@ -26,14 +28,17 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
    protected JSONObject fetchJSONObject(String url, String payload) {
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
+      headers.put("origin", "https://mifarma.com.pe");
+      headers.put("referer", "https://mifarma.com.pe/");
+      headers.put("authority", "5doa19p9r7.execute-api.us-east-1.amazonaws.com");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY)
          )
          .build();
@@ -119,25 +124,34 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
 
 
    private String getPayload() {
-      List<String> ids = new ArrayList<>();
+      StringBuilder sb = new StringBuilder();
       String url = "https://o74e6qkj1f-dsn.algolia.net/1/indexes/" +
          "products/query?x-algolia-agent=Algolia%20for%20JavaScript%20(3.35.1)%3B%20Browser" +
          "&x-algolia-application-id=O74E6QKJ1F&x-algolia-api-key=b65e33077a0664869c7f2544d5f1e332";
 
-
+      String payload = "{\"params\":\"query=" + this.keywordEncoded + "&attributesToRetrieve=%5B%22objectID%22%2C%22name%22%2C%22uri%22%5D&hitsPerPage=10&page=" + (this.currentPage - 1) + "\"}";
 
       JSONObject json = fetchJSONObject(url, payload);
       JSONArray products = json.optJSONArray("hits");
-      for (Object obj : products) {
-         if (obj instanceof JSONObject) {
-            JSONObject product = (JSONObject) obj;
-            String internalPid = product.optString("objectID");
-            if (internalPid != null && !internalPid.isEmpty()) ids.add(internalPid);
+      if (products != null && !products.isEmpty()) {
+         for (int i = 0; i < products.length(); i++) {
+            if (products.get(i) instanceof JSONObject) {
+               JSONObject product = (JSONObject) products.get(i);
+               String internalPid = product.optString("objectID");
+               if (internalPid != null && !internalPid.isEmpty()) {
+                  sb.append("\"").append(internalPid).append("\"");
+               }
+               if (i != products.length() - 1) {
+                  sb.append(",");
+               }
+            }
          }
+         String a = "{\"departmentsFilter\":[],\"categoriesFilter\":[],\"subcategoriesFilter\":[],\"brandsFilter\":[],\"page\":0,\"rows\":8,\"order\":\"ASC\",\"sort\":\"ranking\",\"productsFilter\": [" + sb.toString() + "]}";
+         return "{\"departmentsFilter\":[],\"categoriesFilter\":[],\"subcategoriesFilter\":[],\"brandsFilter\":[],\"page\":0,\"rows\":8,\"order\":\"ASC\",\"sort\":\"ranking\",\"productsFilter\": " + sb.toString() + "}";
+
       }
 
-      String a = "{\"departmentsFilter\":[],\"categoriesFilter\":[],\"subcategoriesFilter\":[],\"brandsFilter\":[],\"page\":0,\"rows\":8,\"order\":\"ASC\",\"sort\":\"ranking\",\"productsFilter\": " + ids.toString() + "}";
-      return "{\"departmentsFilter\":[],\"categoriesFilter\":[],\"subcategoriesFilter\":[],\"brandsFilter\":[],\"page\":0,\"rows\":8,\"order\":\"ASC\",\"sort\":\"ranking\",\"productsFilter\": " + ids.toString() + "}";
+      return "";
 
    }
 
