@@ -29,6 +29,7 @@ import models.pricing.*;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -37,6 +38,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -92,6 +94,7 @@ public class B2WCrawler extends Crawler {
       Map<String, String> listSelectors = new HashMap<>();
       listSelectors.put("selectorSellerName", "p[class^=\"sold-and-delivery__Seller-sc\"]");
       listSelectors.put("selectorSellerId", "a[class^=\"src__ButtonUI-sc\"]");
+      listSelectors.put("selectorSellerId2", "a[class^=\"styles__ButtonUI-sc\"]");
       listSelectors.put("offers", "div[class^=\"src__Divider\"]");
       listSelectors.put("hasPageOffers", "span[class^=\"more-offers__Text-sc\"]");
 
@@ -489,6 +492,9 @@ public class B2WCrawler extends Crawler {
             boolean isBuyBox = sellers.size() > 1;
             String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, listSelectors.get("selectorSellerName"), false);
             String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, listSelectors.get("selectorSellerId"), "href");
+            if (rawSellerId == null) {
+               rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, listSelectors.get("selectorSellerId2"), "href");
+            }
             String sellerId = scrapSellerIdFromURL(rawSellerId);
             if (sellers.size() == 1 && sellerId == null) {
                JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(sellersDoc, "script", "window.__APOLLO_STATE__ =", null, false, true);
@@ -501,12 +507,13 @@ public class B2WCrawler extends Crawler {
             Integer sellersPagePosition = i + 1;
 
             if (sellerId == null) {
-               sellerId = sellerName;
+               byte[] bytes = sellerName.getBytes(StandardCharsets.US_ASCII);
+               sellerId = Base64.getEncoder().encodeToString(bytes);
             }
 
             Pricing pricing = scrapPricingForOffersPage(sellerInfo);
 
-            if (!checkIfHasSellerInOffer(offers, sellerId, pricing)) {
+            if (!checkIfHasSellerInOffer(offers, sellerId, pricing, sellerName)) {
 
                Offer offer = Offer.OfferBuilder.create()
                   .setInternalSellerId(sellerId)
@@ -524,10 +531,12 @@ public class B2WCrawler extends Crawler {
       }
    }
 
-   private boolean checkIfHasSellerInOffer(Offers offers, String sellerId, Pricing pricing) {
+   private boolean checkIfHasSellerInOffer(Offers offers, String sellerId, Pricing pricing, String sellerName) {
       boolean hasSeller = false;
       for (Offer offer : offers.getOffersList()) {
-         hasSeller = (offer.getSlugSellerName().equals(sellerId) || offer.getInternalSellerId().equals(sellerId)) && offer.getPricing().getSpotlightPrice().equals(pricing.getSpotlightPrice());
+         String sellerInOffer = StringUtils.stripAccents(offer.getSlugSellerName().toLowerCase(Locale.ROOT));
+         String seller = StringUtils.stripAccents(sellerName.toLowerCase(Locale.ROOT));
+         hasSeller = (offer.getInternalSellerId().equals(sellerId) || sellerInOffer.equals(seller)) && offer.getPricing().getSpotlightPrice().equals(pricing.getSpotlightPrice());
       }
 
       return hasSeller;
