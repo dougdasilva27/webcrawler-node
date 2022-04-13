@@ -58,9 +58,6 @@ public class BrasilFastshopCrawler extends CrawlerRankingKeywords {
             JSONObject product = products.getJSONObject(i);
 
             String internalPid = crawlinternalPid(product);
-            if (Objects.equals(internalPid, "111498_PRD")) {
-               System.out.println("s");
-            }
             String productUrl = crawlProductUrlFromJson(product, internalPid);
             List<String> internalIds = crawlInternalIds(product);
             String name = crawlName(product);
