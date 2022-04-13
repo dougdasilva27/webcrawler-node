@@ -37,11 +37,14 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY)
          )
-         .setSendUserAgent(true)
+         .setSendUserAgent(false)
          .build();
 
       String json = new JsoupDataFetcher().post(session, request).getBody();
@@ -53,9 +56,8 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
 
       this.log("Página " + this.currentPage);
 
-      String payload = getPayload();
-
       String url = "https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/MFPRD/filtered-products";
+      String payload = getPayload();
 
       JSONObject json = fetchJSONObject(url, payload);
       JSONArray products = json.optJSONArray("rows");
@@ -113,9 +115,9 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
       JSONObject payloadJson = new JSONObject();
       List<String> ids = new ArrayList<>();
 
-      String url = "https://o74e6qkj1f-dsn.algolia.net/1/indexes/products/query?x-algolia-agent=Algolia%20for%20JavaScript%20(3.35.1)%3B%20Browser&x-algolia-application-id=O74E6QKJ1F&x-algolia-api-key=b65e33077a0664869c7f2544d5f1e332";
-
       String payload = "{\"params\":\"query=" + keywordEncoded + "&attributesToRetrieve=%5B%22objectID%22%2C%22name%22%2C%22uri%22%5D&hitsPerPage=" + productsLimit + "\"}";
+
+      String url = "https://o74e6qkj1f-dsn.algolia.net/1/indexes/products/query?x-algolia-agent=Algolia%20for%20JavaScript%20(3.35.1)%3B%20Browser&x-algolia-application-id=O74E6QKJ1F&x-algolia-api-key=b65e33077a0664869c7f2544d5f1e332";
 
       JSONObject json = fetchJSONObject(url, payload);
       JSONArray products = json.optJSONArray("hits");
@@ -138,6 +140,5 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
 
       return "";
    }
-
 
 }
