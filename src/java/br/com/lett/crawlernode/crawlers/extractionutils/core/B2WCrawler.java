@@ -434,7 +434,7 @@ public class B2WCrawler extends Crawler {
       return skuOptions.has("offers") && !skuOptions.optJSONArray("offers").isEmpty();
    }
 
-   private void setOffersForMainPageSeller(Offers offers, JSONObject jsonSeller, Document doc) throws OfferException, MalformedPricingException {
+   protected void setOffersForMainPageSeller(Offers offers, JSONObject jsonSeller, Document doc) throws OfferException, MalformedPricingException {
       // in this case, get only seller from main page
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
       JSONObject offersJson = SaopauloB2WCrawlersUtils.getJson(jsonSeller, "OffersResult");
