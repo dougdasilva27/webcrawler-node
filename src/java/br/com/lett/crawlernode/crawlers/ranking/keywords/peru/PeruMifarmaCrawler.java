@@ -102,7 +102,7 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
       if ("AVAILABLE".equals(status)) {
          Double price = JSONUtils.getDoubleValueFromJSON(product, "priceAllPaymentMethod", true);
          if (price == null || price == 0.0) {
-           price = product.optDouble("price");
+            price = product.optDouble("price");
          }
          priceInCents = CommonMethods.doublePriceToIntegerPrice(price, null);
       }
@@ -120,21 +120,18 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
       JSONObject payloadJson = new JSONObject();
       List<String> ids = new ArrayList<>();
 
-      String payload = "{\"params\":\"query=" + keywordEncoded + "&attributesToRetrieve=%5B%22objectID%22%2C%22name%22%2C%22uri%22%5D&hitsPerPage=" + productsLimit + "\"}";
-
-      String url = "https://o74e6qkj1f-dsn.algolia.net/1/indexes/products/query?x-algolia-agent=Algolia%20for%20JavaScript%20(3.35.1)%3B%20Browser&x-algolia-application-id=O74E6QKJ1F&x-algolia-api-key=b65e33077a0664869c7f2544d5f1e332";
+      String payload = "{\"query\":\"" + keywordEncoded + "\"}";
+      String url = "https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/MFPRD/search-filters";
 
       JSONObject json = fetchJSONObject(url, payload);
-      JSONArray products = json.optJSONArray("hits");
+      JSONArray products = json.optJSONArray("productsId");
       if (products != null && !products.isEmpty()) {
          for (Object obj : products) {
-            if (obj instanceof JSONObject) {
-               JSONObject product = (JSONObject) obj;
-               String internalPid = product.optString("objectID");
-               if (internalPid != null && !internalPid.isEmpty()) ids.add(internalPid);
+            if (obj instanceof String) {
+               ids.add(obj.toString());
             }
          }
-         payloadJson.put("page", "0");
+
          payloadJson.put("rows", products.length());
          payloadJson.put("order", "ASC");
          payloadJson.put("sort", "ranking");
