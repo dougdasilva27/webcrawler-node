@@ -21,7 +21,6 @@ class BrasilRiachueloCrawler(session: Session) : CrawlerRankingKeywords(session)
 
       val headers = mapOf(
          "accept" to "*/*",
-//         "connection" to "keep-alive",
          "x-api-key" to apiKey
       )
 
@@ -45,16 +44,6 @@ class BrasilRiachueloCrawler(session: Session) : CrawlerRankingKeywords(session)
    }
 
    fun fetchJSONObject(url: String, token: String, apiKey: String): JSONObject? {
-//      val payload = JSONObject()
-//      payload.put("attributes", "{}")
-//      payload.put("includeFilters", "true")
-//      payload.put("order", "asc")
-//      payload.put("page", "1")
-//      payload.put("price", "[]")
-//      payload.put("q", this.keywordEncoded)
-//      payload.put("soldOut", "false")
-//      payload.put("sort", "relevance")
-
       val payload = "{\"includeFilters\":true,\"order\":\"asc\",\"q\":\"" + this.keywordEncoded + "\",\"sort\":\"relevance\",\"attributes\":{},\"price\":[],\"page\":" + this.currentPage + ",\"soldOut\":false}";
 
       val headers = mapOf(
