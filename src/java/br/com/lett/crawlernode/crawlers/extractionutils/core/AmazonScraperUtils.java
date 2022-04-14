@@ -13,7 +13,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -79,7 +78,7 @@ public class AmazonScraperUtils {
 
       List<Cookie> cookiesResponse = response.getCookies();
       for (Cookie cookieResponse : cookiesResponse) {
-            cookies.add(setCookie(cookieResponse.getName(), cookieResponse.getValue(), domain, path));
+         cookies.add(setCookie(cookieResponse.getName(), cookieResponse.getValue(), domain, path));
       }
 
       return cookies;
@@ -684,9 +683,15 @@ public class AmazonScraperUtils {
       } else {
          text = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".reviewCountTextLinkedHistogram[title]", "title");
       }
+      String avgText;
 
       if (text != null && text.contains("de")) {
-         String avgText = text.split("de")[0].replaceAll("[^.0-9]", "").trim();
+         if (text.contains(",")) {
+            avgText = text.split("de")[0].replaceAll("[^0-9,]", "").replace(",", ".").trim();
+
+         } else {
+            avgText = text.split("de")[0].replaceAll("[^.0-9]", "").trim();
+         }
 
          if (!avgText.isEmpty()) {
             avgRating = Double.parseDouble(avgText);
