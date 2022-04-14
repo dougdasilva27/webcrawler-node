@@ -686,7 +686,7 @@ public class AmazonScraperUtils {
       }
 
       if (text != null && text.contains("de")) {
-         String avgText = text.split("de")[0].replaceAll("[^0-9,]", "").replace(",", ".").trim();
+         String avgText = text.split("de")[0].replaceAll("[^0-9,]", "").trim();
 
          if (!avgText.isEmpty()) {
             avgRating = Double.parseDouble(avgText);
