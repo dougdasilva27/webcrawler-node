@@ -27,15 +27,11 @@ public class BrasilMegustavegCrawler extends CrawlerRankingKeywords {
       String url = "https://www.megustaveg.com.br/buscar?q=" + this.keywordEncoded + "&pagina=" + currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
-      // chama função de pegar o html
       this.currentDoc = fetchDocument(url, cookies);
 
       Elements products = this.currentDoc.select("ul > .span3 > .listagem-item");
 
       if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts();
-         }
          for (Element e : products) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".info-produto > .hide.trustvox-stars", "data-trustvox-product-code");
             String productUrl = CrawlerUtils.scrapUrl(e, "div > .info-produto > a", "href", "https", "www.megustaveg.com.br");
