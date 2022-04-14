@@ -9,22 +9,19 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlersUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Offer;
 import models.Offers;
-import models.pricing.Pricing;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SaopauloShoptimeCrawler extends B2WCrawler {
 
@@ -121,10 +118,11 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
 
             String urlOffer = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a[class^=\"more-offers\"]", "href");
             String offersPageUrl = "";
+
             if (urlOffer != null) {
                offersPageUrl = urlPageOffers + urlOffer.replace("/parceiros/", "").replaceAll("productSku=([0-9]+)", "productSku=" + internalId);
                sellersDoc = accessOffersPage(offersPageUrl);
-               if (sellersDoc != null){
+               if (sellersDoc != null) {
                   sellersFromHTML = sellersDoc.select(listSelectors.get("offers"));
                   sellerMainFromHTML = sellersDoc.select("div[class^=\"src__MainOffer\"]");
                }
@@ -135,7 +133,6 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
                sellersDoc = accessOffersPage(offersPageUrl);
                sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
             }
-
 
             if (sellerMainFromHTML != null && !sellerMainFromHTML.isEmpty()) {
 
@@ -153,66 +150,10 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
 
          }
 
-        /*
-               caso sellersFromHTML seja vazio significa que fomos bloqueados
-               durante a tentativa de capturar as informações na pagina de sellers
-               ou que o produto em questão não possui pagina de sellers.
-               Nesse caso devemos capturar apenas as informações da pagina principal.
-               */
-
       }
+
       return offers;
    }
 
-
-
-//   protected void setOffersForSellersPage(Offers offers, Elements sellers, Map<String, String> listSelectors, Document sellersDoc) throws MalformedPricingException, OfferException {
-//
-//      if (sellers.size() > 0) {
-//
-//         for (int i = 0; i < sellers.size(); i++) {
-//            Element sellerInfo = sellers.get(i);
-//            // The Business logic is: if we have more than 1 seller is buy box
-//            boolean isBuyBox = sellers.size() > 1;
-//            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, listSelectors.get("selectorSellerName"), false);
-//            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, listSelectors.get("selectorSellerId"), "href");
-//            if (rawSellerId == null) {
-//               rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, listSelectors.get("selectorSellerId2"), "href");
-//            }
-//            String sellerId = scrapSellerIdFromURL(rawSellerId);
-//            if (sellers.size() == 1 && sellerId == null) {
-//               JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(sellersDoc, "script", "window.__APOLLO_STATE__ =", null, false, true);
-//               JSONObject offersJson = SaopauloB2WCrawlersUtils.getJson(jsonSeller, "OffersResult");
-//               String keySeller = JSONUtils.getValueRecursive(offersJson, "seller.__ref", String.class);
-//               JSONObject jsonInfoSeller = jsonSeller.optJSONObject(keySeller);
-//               sellerId = jsonInfoSeller.optString("id");
-//            }
-//            Integer mainPagePosition = i == 0 ? 1 : null;
-//            Integer sellersPagePosition = i + 1;
-//
-//            if (sellerId == null) {
-//               byte[] bytes = sellerName.getBytes(StandardCharsets.US_ASCII);
-//               sellerId = Base64.getEncoder().encodeToString(bytes);
-//            }
-//
-//            Pricing pricing = scrapPricingForOffersPage(sellerInfo);
-//
-//            if (!checkIfHasSellerInOffer(offers, sellerId, pricing, sellerName)) {
-//
-//               Offer offer = Offer.OfferBuilder.create()
-//                  .setInternalSellerId(sellerId)
-//                  .setSellerFullName(sellerName)
-//                  .setMainPagePosition(mainPagePosition)
-//                  .setSellersPagePosition(sellersPagePosition)
-//                  .setPricing(pricing)
-//                  .setIsBuybox(isBuyBox)
-//                  .setIsMainRetailer(false)
-//                  .build();
-//
-//               offers.add(offer);
-//            }
-//         }
-//      }
-//   }
 
 }
