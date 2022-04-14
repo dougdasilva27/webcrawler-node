@@ -97,16 +97,21 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
    }
 
    private Integer getPriceIfAvailable(JSONObject product) {
+      Integer priceInCents = null;
       String status = product.optString("productStatus");
       if ("AVAILABLE".equals(status)) {
-         return CommonMethods.doublePriceToIntegerPrice(product.optDouble("price"), null);
+         Double price = JSONUtils.getDoubleValueFromJSON(product, "priceAllPaymentMethod", true);
+         if (price == null || price == 0.0) {
+           price = product.optDouble("price");
+         }
+         priceInCents = CommonMethods.doublePriceToIntegerPrice(price, null);
       }
-      return null;
+      return priceInCents;
    }
 
    private String scrapUrl(String slug, String internalPid) {
       if (slug != null && !slug.isEmpty()) {
-         return "https://mifarma.com.pe/product/" + slug + "/" + internalPid;
+         return "https://mifarma.com.pe/producto/" + slug + "/" + internalPid;
       }
       return null;
    }
@@ -142,3 +147,6 @@ public class PeruMifarmaCrawler extends CrawlerRankingKeywords {
    }
 
 }
+
+//https://mifarma.com.pe/producto/antitranspirante-dermoaclarant-en-spray-dove-48-ho/011640
+//https://mifarma.com.pe/product/antitranspirante-dermoaclarant-en-spray-dove-48-ho/011640
