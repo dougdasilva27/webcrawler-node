@@ -51,7 +51,16 @@ public class BrasilLojamondelezCrawler extends Crawler {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
    }
+   private final String PASSWORD = getPassword();
+   private final String CNPJ = getCnpj();
 
+   protected String getPassword() {
+      return session.getOptions().optString("password");
+   }
+
+   protected String getCnpj() {
+      return session.getOptions().optString("cnpj");
+   }
    @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();

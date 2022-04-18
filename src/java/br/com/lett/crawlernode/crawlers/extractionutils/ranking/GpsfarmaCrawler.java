@@ -1,5 +1,9 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -7,17 +11,35 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
+import java.util.Collections;
+
 public class GpsfarmaCrawler extends CrawlerRankingKeywords {
 
    public GpsfarmaCrawler(Session session) {
       super(session);
    }
 
+   private String CUSTOMER_LOCATION = session.getOptions().optString("geo_customer_location");
+   private String INVENTORY_SOURCE = session.getOptions().optString("geo_inventory_source");
+
    private String categoryUrl;
 
    @Override
-   protected void extractProductsFromCurrentPage() {
-      this.pageSize = 10;
+   protected void processBeforeFetch() {
+      BasicClientCookie location = new BasicClientCookie("geo_customer_location", CUSTOMER_LOCATION);
+      location.setDomain(".gpsfarma.com");
+      location.setPath("/");
+      this.cookies.add(location);
+
+      BasicClientCookie source = new BasicClientCookie("geo_inventory_source", INVENTORY_SOURCE);
+      source.setDomain(".gpsfarma.com");
+      source.setPath("/");
+      this.cookies.add(source);
+   }
+
+   @Override
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
+      this.pageSize = 12;
       this.log("Página " + this.currentPage);
 
       String url = "https://gpsfarma.com/index.php/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
@@ -42,13 +64,27 @@ public class GpsfarmaCrawler extends CrawlerRankingKeywords {
          if (this.totalProducts == 0) {
             setTotalProducts();
          }
-         for (Element e : products) {
+         for (Element product : products) {
 
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.price-box.price-final_price", "data-product-id");
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "form[data-role=tocart-form]", "data-product-sku");
-            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a.product-item-link", "href");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "div.price-box.price-final_price", "data-product-id");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "form[data-role=tocart-form]", "data-product-sku");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "a.product-item-link", "href");
+            String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-item-name", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".product-image-photo", Collections.singletonList("src"), "https", "covabra.com.br");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "span[data-price-type=finalPrice]", null, false, ',', session, null);
+            boolean isAvailable = product.selectFirst(".stock.unavailable") == null;
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setImageUrl(imgUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit)
                break;
