@@ -70,7 +70,7 @@ class MexicoJustoCrawler(session: Session?) : CrawlerRankingKeywords(session) {
             val name = product?.optString("name")
             val price = getPrice(product)
             val imageUrl = JSONUtils.getValueRecursive(product, "thumbnail.url", String::class.java)
-            val isAvailable = price != 0
+            val isAvailable = price != null
 
             val productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
