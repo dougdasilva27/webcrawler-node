@@ -182,7 +182,6 @@ public class ChileCruzverdeCrawler extends Crawler {
 
    private JSONObject getProductList(String internalId) {
       JSONObject obj = null;
-      int storeId = 1121;
       String url = "https://api.cruzverde.cl/product-service/products/detail/" + internalId + "?inventoryId=" + STORE_ID;
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
