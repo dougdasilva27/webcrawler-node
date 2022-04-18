@@ -60,7 +60,7 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
                categories addNonNull productJson.optString("str_subcategoria", null)
                categories addNonNull productJson.optString("str_tricategoria", null)
 
-               val description = productJson.optString("str_meta_description_ecom_produto")
+               val description = productJson.optString("str_html_descricao_produto")
 
                val name =
                   "${productJson.optString("str_nom_produto", "")} ${
@@ -109,7 +109,7 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
       val offers = Offers()
       val sale = JSONUtils.getDoubleValueFromJSON(model, "mny_perc_desconto", true)
       val sales: MutableList<String> = ArrayList()
-      if (sale != null){
+      if (sale != null) {
          sales.add(sale.toString())
 
       }
