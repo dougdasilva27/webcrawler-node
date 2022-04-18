@@ -74,15 +74,18 @@ public class BrasilAmaroCrawler extends CrawlerRankingKeywords {
             String internalId = product.optString("code");
             String productUrl = product.optString("url");
             String name = product.optString("name");
+            JSONObject priceObj = (JSONObject) product.optQuery("/prices/nowPrice");
+            Integer price = JSONUtils.getPriceInCents(priceObj, "value");
+            String image = (String) product.optQuery("/images/0/url");
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setImageUrl("")
-               .setPriceInCents(1)
-               .setAvailability(true)
+               .setImageUrl(image)
+               .setPriceInCents(price)
+               .setAvailability(price!=null)
                .build();
 
             saveDataProduct(productRanking);
