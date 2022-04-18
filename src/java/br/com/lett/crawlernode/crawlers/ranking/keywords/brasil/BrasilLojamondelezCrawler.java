@@ -2,11 +2,10 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
@@ -27,18 +26,20 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
-
+   private String cookiePHPSESSID = null;
    public BrasilLojamondelezCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
    }
 
    private static final String LOGIN_URL = "https://www.lojamondelez.com.br/Cliente/Logar";
+   private static final String ADMIN_URL = "https://www.lojamondelez.com.br/VendaAssistida/login";
+
    private final String CNPJ = session.getOptions().optString("cnpj");
    private final String PASSWORD =  session.getOptions().optString("password");
+   private final String MASTER_USER =  session.getOptions().optString("master_user");
 
-   @Override
-   protected void processBeforeFetch() {
+   private void loginMasterAccount() {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put("sec-fetch-mode", "cors");
@@ -47,24 +48,52 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       headers.put("x-requested-with", "XMLHttpRequest");
       headers.put("accept", "application/json, text/javascript, */*; q=0.01");
 
-      String payloadString = "usuario_cnpj=" + CNPJ + "&usuario_senha=" + PASSWORD;
+      String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
 
-      Request request = RequestBuilder.create().setUrl(LOGIN_URL).setPayload(payloadString).setHeaders(headers).build();
+      Request request = RequestBuilder.create().setUrl(ADMIN_URL).setPayload(payloadString).setHeaders(headers).build();
       Response response = this.dataFetcher.post(session, request);
 
       List<Cookie> cookiesResponse = response.getCookies();
 
       for (Cookie cookieResponse : cookiesResponse) {
-         BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-         cookie.setDomain(".lojamondelez.com.br");
+         if (cookieResponse.getName().equalsIgnoreCase("PHPSESSID")) {
+            this.cookiePHPSESSID = cookieResponse.getValue();
+         }
+      }
+   }
+
+   @Override
+   protected void processBeforeFetch() {
+      loginMasterAccount();
+
+      StringBuilder payload = new StringBuilder();
+      payload.append("usuario_cnpj=" + this.CNPJ);
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("sec-fetch-mode", "cors");
+      headers.put("origin", "https://www.lojamondelez.com.br");
+      headers.put("sec-fetch-site", "same-origin");
+      headers.put("x-requested-with", "XMLHttpRequest");
+      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
+
+      headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
+
+      Request request = RequestBuilder.create()
+         .setUrl(LOGIN_URL)
+         .setPayload(payload.toString())
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(ProxyCollection.BONANZA,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY))
+         .build();
+
+      this.dataFetcher.post(session, request);
+
+      BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", this.cookiePHPSESSID);
+         cookie.setDomain("www.lojamondelez.com.br");
          cookie.setPath("/");
          this.cookies.add(cookie);
-      }
-
-      BasicClientCookie cookie = new BasicClientCookie("modoGridList", "list");
-      cookie.setDomain("www.lojamondelez.com.br");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
    }
 
 
