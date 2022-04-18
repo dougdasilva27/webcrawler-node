@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -18,14 +19,12 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.commons.lang.WordUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,6 +37,8 @@ public class ChileCruzverdeCrawler extends Crawler {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
    }
+
+   private final int STORE_ID = session.getOptions().optInt("store_id", 1121);
 
    @Override
    public void handleCookiesBeforeFetch() {
@@ -64,7 +65,8 @@ public class ChileCruzverdeCrawler extends Crawler {
          String primaryImage = getPrimaryImage(productList);
          List<String> secondaryImage = getSecondaryImage(productList, primaryImage);
          String description = getDescription(productList);
-         boolean available = getAvaliability(productList);
+         int stock = JSONUtils.getValueRecursive(productList, "productData.stock", Integer.class, 0);
+         boolean available = stock > 0;
          Offers offers = available ? getOffer(productList) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -75,6 +77,7 @@ public class ChileCruzverdeCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImage)
             .setDescription(description)
+            .setStock(stock)
             .setOffers(offers)
             .build();
 
@@ -91,23 +94,33 @@ public class ChileCruzverdeCrawler extends Crawler {
    private CategoryCollection getCategory(JSONObject productList) {
       CategoryCollection categories = new CategoryCollection();
       Object objCategory = productList.query("/productData/category");
-      if (objCategory != null) {
-         categories.add(objCategory.toString());
+      if (objCategory instanceof String && !((String) objCategory).isEmpty()) {
+         String category = WordUtils.capitalize(objCategory.toString().replace("-", " "));
+         categories.add(category);
       }
       return categories;
    }
 
-   private boolean getAvaliability(JSONObject productList) {
-      Object objDescription = productList.query("/productData/stock");
-      return objDescription != null;
-   }
-
    private String getDescription(JSONObject productList) {
+      StringBuilder description = new StringBuilder();
+
       Object objDescription = productList.optQuery("/productData/pageDescription");
-      if (objDescription == null) {
-         return null;
+      if (objDescription instanceof String && !objDescription.toString().isEmpty()) {
+         description.append(objDescription.toString()).append("<br>");
       }
-      return objDescription.toString();
+
+      JSONArray tabs = JSONUtils.getValueRecursive(productList, "productData.tabs", JSONArray.class, new JSONArray());
+
+      for (Object tab : tabs) {
+         JSONObject tabObj = (JSONObject) tab;
+         String title = tabObj.optString("title");
+         String content = tabObj.optString("content");
+         if (title != null && !title.isEmpty() && content != null && !content.isEmpty()) {
+            description.append("<h2>").append(title).append("</h2>").append("<p>").append(content).append("</p>");
+         }
+      }
+
+      return description.toString();
    }
 
    private List<String> getSecondaryImage(JSONObject productList, String primaryImage) {
@@ -147,7 +160,7 @@ public class ChileCruzverdeCrawler extends Crawler {
    private String getBrand(JSONObject productList) {
       String brand = "";
       Object objBrand = productList.optQuery("/productData/brand");
-      if (objBrand != null){
+      if (objBrand != null) {
          brand = objBrand.toString();
       }
       return brand;
@@ -170,7 +183,7 @@ public class ChileCruzverdeCrawler extends Crawler {
    private JSONObject getProductList(String internalId) {
       JSONObject obj = null;
       int storeId = 1121;
-      String url = "https://api.cruzverde.cl/product-service/products/detail/" + internalId + "?inventoryId=" + storeId;
+      String url = "https://api.cruzverde.cl/product-service/products/detail/" + internalId + "?inventoryId=" + STORE_ID;
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .mustSendContentEncoding(true)
@@ -187,7 +200,7 @@ public class ChileCruzverdeCrawler extends Crawler {
    private Offers getOffer(JSONObject productList) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = getPrice(productList);
-      List<String> sales = new ArrayList<>();
+      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -200,49 +213,33 @@ public class ChileCruzverdeCrawler extends Crawler {
          .build());
 
       return offers;
-
    }
 
    private Pricing getPrice(JSONObject productList) throws MalformedPricingException {
-      NumberFormat myFormat = NumberFormat.getInstance();
-      Double price = Double.parseDouble(myFormat.format((productList.optQuery("/productData/price"))));
-      Object holder = productList.optQuery("/productData/prices/price-sale-cl");
-      if (holder == null) {
-         holder = productList.optQuery("/productData/price");
+      Object priceObj = productList.optQuery("/productData/prices");
+
+      if (priceObj instanceof JSONObject) {
+         JSONObject prices = (JSONObject) priceObj;
+         Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(prices, "price-sale-cl", false);
+         Double priceFrom = JSONUtils.getDoubleValueFromJSON(prices, "price-list-cl", false);
+
+         if (spotlightPrice == null && priceFrom != null) {
+            spotlightPrice = priceFrom;
+         }
+
+         if (Objects.equals(priceFrom, spotlightPrice)) {
+            priceFrom = null;
+         }
+
+         CreditCards creditCards = CrawlerUtils.scrapCreditCards(spotlightPrice, cards);
+
+         return Pricing.PricingBuilder.create()
+            .setSpotlightPrice(spotlightPrice)
+            .setPriceFrom(priceFrom)
+            .setCreditCards(creditCards)
+            .build();
       }
 
-      Double priceFrom = Double.parseDouble(myFormat.format((holder)));
-
-      CreditCards creditCards = getCreditCards(price);
-
-      return Pricing.PricingBuilder.create()
-         .setSpotlightPrice(price)
-         .setPriceFrom(priceFrom)
-         .setCreditCards(creditCards)
-         .build();
-
-
-   }
-
-   private CreditCards getCreditCards(Double price) throws MalformedPricingException {
-      CreditCards creditCards = new CreditCards();
-
-      Installments installments = new Installments();
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(price)
-            .build());
-      }
-
-      for (String card : cards) {
-         creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
-      }
-
-      return creditCards;
+      throw new MalformedPricingException("No price found");
    }
 }
