@@ -24,26 +24,46 @@ import org.jsoup.nodes.Document;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
 public class BrasilAmaroCrawler extends CrawlerRankingKeywords {
    public BrasilAmaroCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.JSOUP;
+   }
+
+   @Override
+   protected void processBeforeFetch() {
+      Request request = Request.RequestBuilder.create()
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .setUrl("https://amaro.com/br/pt")
+         .setFollowRedirects(true)
+         .build();
+      Response response = this.dataFetcher.get(session, request);
+      this.cookies.addAll(response.getCookies());
    }
 
    @Override
    public void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
-      String url = "https://cerberus.amaro.pro/search/products?q="+this.keywordEncoded+"&sort=relevance&curr=BRL&lang=pt&currentPage="+this.currentPage+"&pageSize=24&f";
+      String url = "https://cerberus.amaro.pro/search/products?q="+this.keywordWithoutAccents+"&sort=relevance&curr=BRL&lang=pt&currentPage="+this.currentPage+"&pageSize=24";
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
+
+      HashMap<String, String> headers = new HashMap<>();
+      headers.put("authority", "cerberus.amaro.pro");
+      headers.put("content-type", "application/json");
+      headers.put("origin", "https://amaro.com/");
 
       Request request = Request.RequestBuilder.create()
          .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
          .setUrl(url)
+         .setHeaders(headers)
+         .setCookies(this.cookies)
          .build();
-      Response response = new FetcherDataFetcher().get(session, request);
+
       JSONObject jsonObject = JSONUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
       JSONArray products = jsonObject.optJSONArray("products");
 
@@ -60,8 +80,8 @@ public class BrasilAmaroCrawler extends CrawlerRankingKeywords {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setImageUrl(null)
-               .setPriceInCents(null)
+               .setImageUrl("")
+               .setPriceInCents(1)
                .setAvailability(true)
                .build();
 
@@ -75,6 +95,10 @@ public class BrasilAmaroCrawler extends CrawlerRankingKeywords {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
+   }
 
+   @Override
+   protected boolean hasNextPage() {
+      return true;
    }
 }
