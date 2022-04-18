@@ -4,7 +4,13 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -22,88 +28,130 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
 
-  public BrasilLojamondelezCrawler(Session session) {
-    super(session);
-    super.fetchMode = FetchMode.FETCHER;
-  }
+   public BrasilLojamondelezCrawler(Session session) {
+      super(session);
+      super.fetchMode = FetchMode.FETCHER;
+   }
 
-  private static final String LOGIN_URL = "https://secure.lojamondelez.com.br/ckout/api/v2/customer/login";
-  private static final String CNPJ = "33033028004090";
-  private static final String PASSWORD = "monica08";
+   private static final String LOGIN_URL = "https://www.lojamondelez.com.br/Cliente/Logar";
+   private final String CNPJ = session.getOptions().optString("cnpj");
+   private final String PASSWORD =  session.getOptions().optString("password");
 
-  @Override
-  protected void processBeforeFetch() {
-    JSONObject payload = new JSONObject();
-    payload.put("login", CNPJ);
-    payload.put("password", PASSWORD);
+   @Override
+   protected void processBeforeFetch() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("sec-fetch-mode", "cors");
+      headers.put("origin", "https://www.lojamondelez.com.br");
+      headers.put("sec-fetch-site", "same-origin");
+      headers.put("x-requested-with", "XMLHttpRequest");
+      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
 
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
-    headers.put("sec-fetch-mode", "cors");
-    headers.put("origin", "https://secure.lojamondelez.com.br");
-    headers.put("sec-fetch-site", "same-origin");
-    headers.put("x-requested-with", "XMLHttpRequest");
-    headers.put("cookie", "ShopCartMONDELEZ=");
+      String payloadString = "usuario_cnpj=" + CNPJ + "&usuario_senha=" + PASSWORD;
 
-    String payloadString = "jsonData=";
+      Request request = RequestBuilder.create().setUrl(LOGIN_URL).setPayload(payloadString).setHeaders(headers).build();
+      Response response = this.dataFetcher.post(session, request);
 
-    try {
-      payloadString += URLEncoder.encode(payload.toString(), "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-    }
+      List<Cookie> cookiesResponse = response.getCookies();
 
+      for (Cookie cookieResponse : cookiesResponse) {
+         BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
+         cookie.setDomain(".lojamondelez.com.br");
+         cookie.setPath("/");
+         this.cookies.add(cookie);
+      }
 
-    Request request = RequestBuilder.create().setUrl(LOGIN_URL).setPayload(payloadString).setHeaders(headers).build();
-    List<Cookie> cookiesResponse = this.dataFetcher.post(session, request).getCookies();
-
-    for (Cookie cookieResponse : cookiesResponse) {
-      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-      cookie.setDomain(".lojamondelez.com.br");
+      BasicClientCookie cookie = new BasicClientCookie("modoGridList", "list");
+      cookie.setDomain("www.lojamondelez.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
-    }
-  }
+   }
 
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.log("Página " + this.currentPage);
+   @Override
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
+      this.log("Página " + this.currentPage);
 
-    this.pageSize = 24;
-    String url = "https://www.lojamondelez.com.br/Busca/Resultado/?p=" + this.currentPage + "&loja=&q=" + this.keywordEncoded
-        + "&ordenacao=6&limit=24";
+      this.pageSize = 24;
+      String url = "https://www.lojamondelez.com.br/Busca/Resultado/?p=" + this.currentPage + "&loja=&q=" + this.keywordEncoded
+         + "&ordenacao=6&limit=24";
 
-    this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url, this.cookies);
+      this.log("Link onde são feitos os crawlers: " + url);
+      this.currentDoc = fetchDocument(url, this.cookies);
 
-    Elements products = this.currentDoc.select(".card-product");
+      Elements products = this.currentDoc.select(".card-product");
 
-    if (!products.isEmpty()) {
-      if (this.totalProducts == 0) {
-        setTotalProducts();
+      if (!products.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts();
+         }
+
+         int alternativePosition = 1;
+         for (Element product : products) {
+            String productUrl = CrawlerUtils.scrapUrl(product, "> a", "href", "https", "www.lojamondelez.com.br");
+            String internalPid = String.valueOf(CrawlerUtils.scrapIntegerFromHtmlAttr(product, null, "id", null));
+            String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-name", false);
+
+            Elements variations = product.select(".sku-variation-content .picking");
+            if (!variations.isEmpty()) {
+               for (Element variation : variations) {
+                  String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, null, "data-sku-id");
+                  Integer price = CrawlerUtils.scrapIntegerFromHtmlAttr(variation, null, "data-preco-por", null);
+                  String imageUrl = scrapImageUrl(variation);
+                  String variationName = assembleName(name, variation);
+                  boolean available = !variation.classNames().contains("sem-estoque");
+
+                  if(!available) price = null;
+
+                  RankingProduct productRanking = RankingProductBuilder.create()
+                     .setUrl(productUrl)
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setImageUrl(imageUrl)
+                     .setName(variationName)
+                     .setPriceInCents(price)
+                     .setAvailability(available)
+                     .setPosition(alternativePosition)
+                     .build();
+
+                  saveDataProduct(productRanking);
+               }
+            }
+
+            alternativePosition++;
+
+            if (this.arrayProducts.size() == productsLimit)
+               break;
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
 
-      for (Element e : products) {
-        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".card-product button", "data-codigoproduto");
-        String productUrl = CrawlerUtils.scrapUrl(e, "> a", "href", "https", "www.lojamondelez.com.br");
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-        saveDataProduct(internalId, null, productUrl);
-
-        if (this.arrayProducts.size() == productsLimit)
-          break;
+   private String assembleName(String name, Element variation) {
+      String variationName = CrawlerUtils.scrapStringSimpleInfo(variation, ".caixa-com", false);
+      if (variationName != null && !variationName.isEmpty()) {
+         name += " " + variationName;
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
+      return name.trim();
+   }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
+   private String scrapImageUrl(Element variation) {
+      String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, null, "data-foto");
 
-  @Override
-  protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".qtd-produtos", true, 0);
-    this.log("Total da busca: " + this.totalProducts);
-  }
+      if (imageUrl != null && !imageUrl.isEmpty()) {
+         imageUrl = imageUrl.replace("/200x200/", "/1000x1000/");
+      }
+
+      return imageUrl;
+   }
+
+   @Override
+   protected void setTotalProducts() {
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".qtd-produtos", true, 0);
+      this.log("Total da busca: " + this.totalProducts);
+   }
 }
