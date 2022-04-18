@@ -93,7 +93,8 @@ public class BrasilAmaroCrawler extends Crawler {
             CategoryCollection categories = CrawlerUtils.crawlCategories(document, "a[class*=ProductBreadcrumb_link]", true);
             String description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList("div[class*=ProductInformation_apiMessage]"));
             RatingsReviews ratingsReviews = crawlRating(internalPid);
-
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".images-wrap > div:last-child img.gallery_image", Arrays.asList("src"), "https", "amarotech-res.cloudinary.com");
+            List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(document, ".images-wrap > div:not([data-index = '-1']):not([data-index = '0']):not(:last-child) .gallery_image", Arrays.asList("src"), "https", "amarotech-res.cloudinary.com", primaryImage);
             boolean availableToBuy = !document.select("button[id*=add-to-cart-button]").isEmpty();
             Offers offers = availableToBuy ? scrapOffers(document) : new Offers();
 
@@ -105,6 +106,8 @@ public class BrasilAmaroCrawler extends Crawler {
                .setCategories(categories)
                .setDescription(description)
                .setRatingReviews(ratingsReviews)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
                .setOffers(offers)
                .build();
 
@@ -205,8 +208,8 @@ public class BrasilAmaroCrawler extends Crawler {
          .setSendUserAgent(true)
          .build();
       Response response = new FetcherDataFetcher().get(session, request);
-      JSONObject jsonObject = CrawlerUtils.stringToJSONObject(response.getBody());
-      JSONObject aggregationRating = jsonObject.optJSONObject("bottomline");
+      JSONObject jsonObject = JSONUtils.stringToJson(response.getBody());
+      JSONObject aggregationRating = (JSONObject) jsonObject.optQuery("/response/bottomline");
 
       if (aggregationRating != null) {
          AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(aggregationRating);
