@@ -30,9 +30,6 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
          "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjdXN0b21lcklkIjoyOTIyNjAsImRldmljZVVVSUQiOiIzYTc1YjdkNy1mMDhmLTQ4ZmEtOGM5Mi04OTliZjNkZmE1Y2IiLCJpYXQiOjE2MjQ2MjMzODl9.KXv2rXCKSkwERiGywoP6sI5HB_mSgp_sdsjN79qq338";
    }
 
-   //kennedybarcelos@lett.digital
-   //K99168938690
-
    private val password = getPassword()
    private val login = getLogin()
 
@@ -101,8 +98,6 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
       val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
 
-
-
       return CrawlerUtils.stringToJSONObject(dataFetcher[session, request].body)
    }
 
@@ -113,7 +108,6 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
 
    override fun extractInformation(json: JSONObject?): MutableList<Product> {
-
 
       if (json == null) {
          log("Not a product page " + session.originalURL)
@@ -129,13 +123,12 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
       val photos = json.optJSONArray("photos")?.map {
          when (it) {
-              is JSONObject -> {
-                 return@map it.optString("photo_url")
-              }
+            is JSONObject -> {
+               return@map it.optString("photo_url")
+            }
             else -> {}
          }
       }?.toList() as List<String>?
-
 
       val offers = scrapOffers(json)
 
