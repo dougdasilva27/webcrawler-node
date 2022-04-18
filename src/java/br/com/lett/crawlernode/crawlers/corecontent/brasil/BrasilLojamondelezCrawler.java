@@ -40,9 +40,6 @@ public class BrasilLojamondelezCrawler extends Crawler {
    private static final String SELLER_NAME_LOWER = "loja mondelez brasil";
    private static final String LOGIN_URL = "https://www.lojamondelez.com.br/Cliente/Logar";
    private static final String ADMIN_URL = "https://www.lojamondelez.com.br/VendaAssistida/login";
-   private final String CNPJ = session.getOptions().optString("cnpj");
-   private final String PASSWORD =  session.getOptions().optString("password");
-   private final String MASTER_USER =  session.getOptions().optString("master_user");
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
@@ -53,6 +50,10 @@ public class BrasilLojamondelezCrawler extends Crawler {
    }
    private final String PASSWORD = getPassword();
    private final String CNPJ = getCnpj();
+   private final String MASTER_USER =  getMasterUser();
+   protected String getMasterUser() {
+      return session.getOptions().optString("master_user");
+   }
 
    protected String getPassword() {
       return session.getOptions().optString("password");
