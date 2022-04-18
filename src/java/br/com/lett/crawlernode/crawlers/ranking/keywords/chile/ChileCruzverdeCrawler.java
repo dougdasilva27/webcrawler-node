@@ -20,6 +20,9 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.FETCHER;
    }
 
+   private final int STORE_ID = session.getOptions().optInt("store_id", 1121);
+
+
    @Override
    protected void processBeforeFetch() {
       Request request = Request.RequestBuilder.create()
@@ -116,8 +119,7 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
 
    private JSONObject getAvaliPrice(String id) {
       JSONObject obj = null;
-      String storeId = "1121";
-      String url = "https://api.cruzverde.cl/product-service/products/product-summary?ids=" + id + "&ids=" + id + "&fields=stock&fields=prices&fields=promotions&inventoryId=" + storeId;
+      String url = "https://api.cruzverde.cl/product-service/products/product-summary?ids=" + id + "&ids=" + id + "&fields=stock&fields=prices&fields=promotions&inventoryId=" + STORE_ID;
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .mustSendContentEncoding(true)

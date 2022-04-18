@@ -45,9 +45,15 @@ public class ChileCruzverdeCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl("https://api.cruzverde.cl/customer-service/login")
          .build();
-      Response responseApi = new JsoupDataFetcher().post(session, request);
-      this.cookies.addAll(responseApi.getCookies());
+      Response responseApi = this.dataFetcher.post(session, request);
 
+      int tries = 0;
+      while(!responseApi.isSuccess() && tries < 3) {
+         tries++;
+         responseApi = new JsoupDataFetcher().post(session, request);
+      }
+
+      this.cookies.addAll(responseApi.getCookies());
    }
 
    @Override
@@ -93,7 +99,7 @@ public class ChileCruzverdeCrawler extends Crawler {
 
    private CategoryCollection getCategory(JSONObject productList) {
       CategoryCollection categories = new CategoryCollection();
-      Object objCategory = productList.query("/productData/category");
+      Object objCategory = productList.optQuery("/productData/category");
       if (objCategory instanceof String && !((String) objCategory).isEmpty()) {
          String category = WordUtils.capitalize(objCategory.toString().replace("-", " "));
          categories.add(category);
@@ -130,10 +136,12 @@ public class ChileCruzverdeCrawler extends Crawler {
          return null;
       }
       for (Object obj : arrayImg) {
-         JSONObject objJson = (JSONObject) obj;
-         String urlImg = objJson.optString("link");
-         if (!urlImg.equals(primaryImage)) {
-            imgFormat.add(urlImg);
+         if (obj instanceof JSONObject) {
+            JSONObject objJson = (JSONObject) obj;
+            String urlImg = objJson.optString("link");
+            if (!urlImg.equals(primaryImage)) {
+               imgFormat.add(urlImg);
+            }
          }
       }
       return imgFormat;
@@ -183,17 +191,22 @@ public class ChileCruzverdeCrawler extends Crawler {
    private JSONObject getProductList(String internalId) {
       JSONObject obj = null;
       String url = "https://api.cruzverde.cl/product-service/products/detail/" + internalId + "?inventoryId=" + STORE_ID;
+
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .mustSendContentEncoding(true)
          .setCookies(this.cookies)
          .build();
+
+      int tries = 0;
       Response response = this.dataFetcher.get(session, request);
-      if (response != null) {
-         obj = CrawlerUtils.stringToJson(response.getBody());
+
+      while(!response.isSuccess() && tries < 3) {
+         tries++;
+         response = this.dataFetcher.get(session, request);
       }
 
-      return obj;
+      return CrawlerUtils.stringToJson(response.getBody());
    }
 
    private Offers getOffer(JSONObject productList) throws OfferException, MalformedPricingException {
