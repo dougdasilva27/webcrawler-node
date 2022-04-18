@@ -125,6 +125,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       val internalId = json.getInt("id").toString()
 
       val primaryImage = json.optString("image")
+      val description = json.optString("description")
 
       val photos = json.optJSONArray("photos")?.map {
          when (it) {
@@ -142,6 +143,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
          .setUrl(session.originalURL)
          .setInternalId(internalId)
          .setInternalPid(internalId)
+         .setDescription(description)
          .setName(name)
          .setSecondaryImages(photos)
          .setPrimaryImage(primaryImage)
