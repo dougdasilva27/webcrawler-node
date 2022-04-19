@@ -2,12 +2,15 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.models.Request
+import br.com.lett.crawlernode.core.models.RankingProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CrawlerUtils
+import br.com.lett.crawlernode.util.JSONUtils
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.regex.Pattern
 
 class MexicoJustoCrawler(session: Session?) : CrawlerRankingKeywords(session) {
 
@@ -60,11 +63,50 @@ class MexicoJustoCrawler(session: Session?) : CrawlerRankingKeywords(session) {
       val products = apiResp.optQuery("/products/edges") as JSONArray? ?: throw IllegalStateException("Not possible to retrieve products' data")
       for (obj in products) {
          val product = (obj as JSONObject?)?.optJSONObject("node")
-         val urlPath = product?.optString("url")
-         val internalId = urlPath?.split("-")?.last()?.substringBeforeLast("/")
-         val productUrl = HOME_PAGE + urlPath
-         saveDataProduct(internalId, null, productUrl)
-         log("Position: $position - InternalId: $internalId - Url: $productUrl")
+         if (product != null) {
+            val urlPath = product?.optString("url")
+            val internalId = getInternalId(urlPath)
+            val productUrl = HOME_PAGE + urlPath
+            val name = product?.optString("name")
+            val price = getPrice(product)
+            val imageUrl = JSONUtils.getValueRecursive(product, "thumbnail.url", String::class.java)
+            val isAvailable = price != null
+
+            val productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(null)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build()
+
+            saveDataProduct(productRanking)
+         }
       }
    }
+
+
+   private fun getPrice(product: JSONObject?): Int? {
+      val priceJson = product?.optJSONObject("price")
+      var price = 0
+      if (priceJson != null) {
+         price = JSONUtils.getPriceInCents(priceJson, "amount")
+      }
+      return if (price != 0) price else null
+   }
+
+   private fun getInternalId(urlPath: String): String? {
+
+      if (urlPath != null) {
+         val pattern = Pattern.compile("\\/([0-9]*)\\/")
+         val matcher = pattern.matcher(urlPath)
+         if (matcher.find()) {
+            return matcher.group(1)
+         }
+      }
+      return null
+   }
+
 }
