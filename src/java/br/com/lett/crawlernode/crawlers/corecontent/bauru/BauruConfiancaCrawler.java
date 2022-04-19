@@ -73,7 +73,6 @@ public class BauruConfiancaCrawler extends Crawler {
       String imagePath = JSONUtils.getValueRecursive(productJson, "parentProducts/0/primaryFullImageURL", "/", String.class, null);
       String primaryImage = imagePath != null ? "https://www.confianca.com.br" + imagePath : null;
       List<String> secondaryImages = CrawlerUtils.scrapImagesListFromJSONArray(JSONUtils.getValueRecursive(productJson, "parentProducts/0/smallImageURLs", "/", JSONArray.class, new JSONArray()), null, null, "https", "www.confianca.com.br", session);
-      String description = JSONUtils.getValueRecursive(productJson, "parentProducts/0/description", "/", String.class, null);
       CategoryCollection categories = crawlCategories(productJson);
       List<String> eans = List.of(productJson.optString("barcode"));
 
@@ -85,7 +84,6 @@ public class BauruConfiancaCrawler extends Crawler {
          .setCategories(categories)
          .setPrimaryImage(primaryImage)
          .setSecondaryImages(secondaryImages)
-         .setDescription(description)
          .setStock(stock)
          .setOffers(offers)
          .setEans(eans)
