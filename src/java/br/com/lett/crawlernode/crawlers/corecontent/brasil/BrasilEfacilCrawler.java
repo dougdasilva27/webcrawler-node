@@ -61,7 +61,7 @@ public class BrasilEfacilCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=productId]", "value");
          CategoryCollection categories = scrapCategories(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-photo a", Collections.singletonList("href"), "https", "efacil.com.br");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".wrap-thumbnails .thumbnails a", Collections.singletonList("href"), "https", "efacil.com.br", primaryImage);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".wrap-thumbnails .thumbnails a:not(:first-child)", Collections.singletonList("href"), "https", "efacil.com.br", primaryImage);
          String description = scrapDescription(doc);
          boolean available = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-secondary-info #widget_product_info_viewer", false) != null;         Offers offers = available ? scrapOffer(doc, internalPid, internalId) : new Offers();
 
