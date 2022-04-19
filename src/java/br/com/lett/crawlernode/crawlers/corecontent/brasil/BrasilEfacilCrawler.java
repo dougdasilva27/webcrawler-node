@@ -1,12 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import br.com.lett.crawlernode.util.CommonMethods;
 import org.jsoup.Jsoup;
@@ -108,8 +103,7 @@ public class BrasilEfacilCrawler extends Crawler {
    }
 
    private String scrapDescription(Document doc) {
-      return CrawlerUtils.scrapStringSimpleInfo(doc, "#tab1_content div", false);
-
+      return CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#tab1_content div"," #tabContainer"));
    }
 
    private Offers scrapOffer(Document doc, String internalPid, String internalId) throws OfferException, MalformedPricingException {
