@@ -8,8 +8,12 @@ import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.MathUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -43,31 +47,60 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
       Response response = dataFetcher.get(session, request);
 
       currentDoc = Jsoup.parse(response.getBody());
-      Elements products = this.currentDoc.select("li.search-item");
+      JSONArray products = crawlProducts(currentDoc);
 
-      for (Element e : products) {
-         String urlProduct = "https://www.panvel.com" + e.selectFirst(".details").attr("href");
-         String internalId = CommonMethods.getLast(urlProduct.split("-"));
-         String name = CrawlerUtils.scrapStringSimpleInfo(e, "p.name", true);
-         String image = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.image img.ng-star-inserted", "src");
-         int price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "div.price div.deal-price.ng-star-inserted", null, true, ',', session, 0);
-         boolean isAvailable = price != 0;
+      if (!products.isEmpty()) {
+         for (int i = 0; i < products.length(); i++) {
+            JSONObject productJson = products.optJSONObject(i);
 
-         //New way to send products to save data product
-         RankingProduct productRanking = RankingProductBuilder.create()
-            .setUrl(urlProduct.replace("'", "&apos;"))
-            .setInternalId(internalId)
-            .setName(name)
-            .setImageUrl(image)
-            .setPriceInCents(price)
-            .setAvailability(isAvailable)
-            .build();
+            String urlProduct = productJson.optString("link") != null ? "https://www.panvel.com" + productJson.optString("link") : null;
+            String internalId = productJson.optString("panvelCode");
+            String name = productJson.optString("name");
+            String image = productJson.optString("image");
+            Double price = productJson.optJSONObject("discount").optDouble("dealPrice");
+            Integer priceInCents = price != null ? MathUtils.parseInt(price * 100) : 0;
+            boolean isAvailable = priceInCents > 0;
 
-         saveDataProduct(productRanking);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(urlProduct)
+               .setInternalId(internalId)
+               .setName(name)
+               .setImageUrl(image)
+               .setPriceInCents(priceInCents)
+               .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(productRanking);
+
+            if (this.arrayProducts.size() == productsLimit)
+               break;
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
 
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-         + this.arrayProducts.size() + " produtos crawleados");
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private JSONArray crawlProducts(Document doc) {
+      Element serverAppStateScript = doc.selectFirst("#serverApp-state");
+      String serverAppState = serverAppStateScript != null && !serverAppStateScript.childNodes().isEmpty() ? serverAppStateScript.childNodes().get(0).toString() : null;
+
+      if (serverAppState != null) {
+         int startIndex = serverAppState.indexOf(",&q;items&q;:") + ",".length();
+         int lastIndex = serverAppState.indexOf("}]", startIndex);
+
+         String productsString = serverAppState.substring(startIndex, lastIndex) + "}]";
+         String productsStringSanitized = productsString.replace("&q;", "\"");
+
+         JSONObject items = CrawlerUtils.stringToJson("{" + productsStringSanitized + "}");
+         JSONArray products = items.optJSONArray("items");
+
+         return products;
+      } else {
+         return new JSONArray();
+      }
    }
 
    @Override
