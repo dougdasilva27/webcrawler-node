@@ -54,7 +54,7 @@ public class BrasilQueroqueroCrawler extends VTEXNewScraper {
 
 
    @Override
-   protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson) throws MalformedPricingException {
+   protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson, JSONObject jsonSku) throws MalformedPricingException {
       Double principalPrice = comertial.optDouble("Price");
       Double priceFrom = comertial.optDouble("ListPrice");
 
