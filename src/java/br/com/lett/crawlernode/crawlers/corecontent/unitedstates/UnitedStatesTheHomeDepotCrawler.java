@@ -138,7 +138,7 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
    }
 
    private String scrapFirstImage(JSONArray imagesArray) {
-      if (imagesArray != null && imagesArray.length() > 1) {
+      if (imagesArray != null && imagesArray.length() >= 1) {
          Object imageOptions = imagesArray.get(0);
          String primaryImageUrl = JSONUtils.getStringValue((JSONObject) imageOptions, "url");
 
