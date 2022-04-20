@@ -19,7 +19,6 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 
 import java.util.*;
 
@@ -144,8 +143,8 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
          String primaryImageUrl = JSONUtils.getStringValue((JSONObject) imageOptions, "url");
 
          if (primaryImageUrl != null) {
-            primaryImageUrl.replaceAll("<SIZE>", "1000");
-            return primaryImageUrl.replaceAll("<SIZE>", "1000");
+            primaryImageUrl = primaryImageUrl.replaceAll("<SIZE>", "1000");
+            return primaryImageUrl;
          }
       }
       return null;
@@ -251,4 +250,5 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
 
       return categories;
    }
+
 }
