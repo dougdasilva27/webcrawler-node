@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -27,13 +28,17 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class BrasilPeixotoCrawler extends Crawler {
    public BrasilPeixotoCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.FETCHER);
+      config.setFetcher(FetchMode.JSOUP);
    }
-   String Cookie;
+
+   String SESSION_COOKIE = "ASP.NET_SessionId=";
+
+   // DEPRECADO, TEM QUE USAR FETCHRESPONSE E USAR CONFIG.SETPARSER
    @Override
    protected Document fetch() {
       Map<String, String> headers = new HashMap<>();
@@ -46,19 +51,35 @@ public class BrasilPeixotoCrawler extends Crawler {
       headers.put("pragma", "no-cache");
       headers.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36");
       headers.put("x-requested-with", "XMLHttpRequest");
-      headers.put("Cookie", "ASP.NET_SessionId="+Cookie+"; b2bfilfatexp=003RR02-2ED026|58; b2bfilfatexplist=58,59; b2blog=true%230%23BAR+DO+PORTUGUES%23%23204743%2332%230%23-1%23%230%230%2c38%237100624%23%230%230%23; language=pt-BR; loja_id=32");
+      // ESSAS LOCALIDADES ESTÁ FIXA, SE DECIDIR MONITORAR OUTRA FUTURAMENTE? ADAPTAR
+      headers.put("cookie", SESSION_COOKIE + ";b2bfilfatexp=003RR02-2ED026|58;b2bfilfatexplist=58,59;b2blog=true%230%23BAR+DO+PORTUGUES%23%23204743%2332%230%23-1%23%230%230%2c38%237100624%23%230%230%23;language=pt-BR;loja_id=32");
+
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
-        // .setCookies(this.cookies)
+         .setCookies(this.cookies)
          .setHeaders(headers)
-         .setSendUserAgent(false)
+         .setSendUserAgent(true)
          .build();
 
-      Response a = dataFetcher.get(session, request);
+      Response response = dataFetcher.get(session, request);
 
-      String content = a.getBody();
+      this.cookies.addAll(response.getCookies());
 
-      return Jsoup.parse(content);
+      if ("https://www.peixoto.com.br/User/SelecionarFilialUsuario".equals(response.getRedirectUrl())) {
+         Request filialRequest = Request.RequestBuilder.create()
+            .setHeaders(headers)
+            .setCookies(this.cookies)
+            .setFollowRedirects(true)
+            .setUrl("https://www.peixoto.com.br/User/FilialUsuarioSelecionada?id=58&formaPagamento=25&condicaoId=53&antecipado=true")
+            .build();
+         Response filialResponse = this.dataFetcher.get(session, filialRequest);
+
+         this.cookies.addAll(filialResponse.getCookies());
+      } else {
+         return Jsoup.parse(response.getBody());
+      }
+
+      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
 
    @Override
@@ -120,19 +141,12 @@ public class BrasilPeixotoCrawler extends Crawler {
          .setHeaders(headersLogin)
          .setPayload("password=BAR1824&domain_id=167&email=40374650000111")
          .build();
-      Response responseApi = dataFetcher.post(session, request);
+
+      Response responseApi = new FetcherDataFetcher().post(session, request);
       this.cookies.addAll(responseApi.getCookies());
-      Cookie = responseApi.getCookies().get(1).getValue();
 
-      headersLogin.put("cookie", Cookie);
-      request = Request.RequestBuilder.create()
-         .setHeaders(headersLogin)
-        // .setCookies(this.cookies)
-        // .setFollowRedirects(true)
-         .setUrl("https://www.peixoto.com.br/User/FilialUsuarioSelecionada?id=58&formaPagamento=25&condicaoId=53&antecipado=true")
-         .build();
-      responseApi = dataFetcher.get(session, request);
-
+      // TODO: PODE DAR NULL POINTER, ALTERAR O FILTRO PARA VERIFICAR SE O COOKIE ESTÁ NULO
+      SESSION_COOKIE += responseApi.getCookies().stream().filter(c -> c.getName().equals("ASP.NET_SessionId")).findFirst().get().getValue();
    }
 
    private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
@@ -157,7 +171,8 @@ public class BrasilPeixotoCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
 
-      Double spotlightPrice = JSONUtils.getValueRecursive(data, "transactionProducts.0.fullPrice", Double.class);;
+      Double spotlightPrice = JSONUtils.getValueRecursive(data, "transactionProducts.0.fullPrice", Double.class);
+      ;
       Double priceFrom = spotlightPrice;
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
