@@ -41,7 +41,7 @@ public class BrasilExtrabomCrawler extends Crawler {
       String url = session.getOriginalURL() + "?Id_seller=" + sellerId;
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "LettDigital/1.0");
+   //   headers.put("user-agent", "LettDigital/1.0");
       Request request = Request.RequestBuilder.create().setUrl(url)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
