@@ -29,6 +29,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -47,7 +48,10 @@ public class BrasilPeixotoCrawler extends Crawler {
       try {
          Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session,this.cookiesWD, "https://www.peixoto.com.br");
+         ChromeOptions options = new ChromeOptions();
+         options.addArguments("--window-size=1920,1080");
+
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session,this.cookiesWD, "https://www.peixoto.com.br", options);
 
          webdriver.waitLoad(10000);
 
