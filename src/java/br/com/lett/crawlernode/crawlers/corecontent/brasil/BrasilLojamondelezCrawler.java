@@ -81,7 +81,8 @@ public class BrasilLojamondelezCrawler extends Crawler {
       String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
 
       Request request = RequestBuilder.create().setUrl(ADMIN_URL).setPayload(payloadString).setHeaders(headers).build();
-      Response response = this.dataFetcher.post(session, request);
+
+      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
 
       List<Cookie> cookiesResponse = response.getCookies();
 
@@ -116,7 +117,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setHeaders(headers)
          .build();
 
-      Response response = this.dataFetcher.post(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
    }
 
    @Override

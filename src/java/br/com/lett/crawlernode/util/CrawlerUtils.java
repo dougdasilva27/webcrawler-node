@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import javax.xml.crypto.Data;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.Normalizer;
@@ -2371,4 +2372,20 @@ public class CrawlerUtils {
       return eans;
    }
 
+   public static Response retryRequest(Request request, Session session, DataFetcher dataFetcher) {
+      Response response = dataFetcher.post(session, request);
+
+      if (!response.isSuccess()) {
+         response = dataFetcher.post(session, request);
+
+         if (!response.isSuccess()) {
+            int tries = 0;
+            while (!response.isSuccess() && tries < 3) {
+               tries++;
+               response = dataFetcher.post(session, request);
+            }
+         }
+      }
+      return response;
+   }
 }
