@@ -31,6 +31,9 @@ public class BrasilMercadinhosaoluizCrawler extends CrawlerRankingKeywords {
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".vitrine.prateleira.n4colunas >  ul > li:nth-child(odd)");
+      if(products.isEmpty()){
+         products = this.currentDoc.select(".vitrine > ul > li:nth-child(odd)");
+      }
 
       if (!products.isEmpty()) {
          for (Element e : products) {
