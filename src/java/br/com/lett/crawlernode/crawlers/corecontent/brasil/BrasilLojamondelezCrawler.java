@@ -297,7 +297,14 @@ public class BrasilLojamondelezCrawler extends Crawler {
          priceFrom = null;
       }
 
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+      if (spotlightPrice == 0d) {
+         spotlightPrice = null;
+      }
+
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
       CreditCards creditCards = scrapCreditcards(json, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
