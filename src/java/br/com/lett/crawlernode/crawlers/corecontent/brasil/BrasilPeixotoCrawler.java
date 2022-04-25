@@ -3,11 +3,12 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.*;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -23,7 +24,6 @@ import models.pricing.*;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
@@ -33,8 +33,10 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilPeixotoCrawler extends Crawler {
 
@@ -51,7 +53,7 @@ public class BrasilPeixotoCrawler extends Crawler {
          ChromeOptions options = new ChromeOptions();
          options.addArguments("--window-size=1920,1080");
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session,this.cookiesWD, "https://www.peixoto.com.br", options);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session, this.cookiesWD, "https://www.peixoto.com.br", options);
 
          webdriver.waitLoad(10000);
 
@@ -128,26 +130,27 @@ public class BrasilPeixotoCrawler extends Crawler {
       JSONArray arr = new JSONArray();
       List<Product> products = new ArrayList<>();
       String script = CrawlerUtils.scrapScriptFromHtml(doc, "head > script:nth-child(5n-1)");
-     // CrawlerUtils.scrapScriptFromHtml(doc, "head>script[type=\"text/javascript\"]:nth-child(2n)")
-      if(script != null){
+      // CrawlerUtils.scrapScriptFromHtml(doc, "head>script[type=\"text/javascript\"]:nth-child(2n)")
+      if (script != null) {
          script = script.replaceAll("window.data_layer = true;", "");
          script = script.replaceAll("dataLayer = ", "");
          script = script.replaceAll("\r", "");
          script = script.replaceAll("\n", "");
          script = script.replaceAll("\t", "");
          script = script.substring(1, script.length() - 2);
-         arr= JSONUtils.stringToJsonArray(script);
+         arr = JSONUtils.stringToJsonArray(script);
       }
       if (arr.length() > 0) {
          JSONObject data = (JSONObject) arr.get(0);
-         String internalId = JSONUtils.getValueRecursive(data, "transactionProducts.0.sku", String.class);
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_code span", true);
          Integer id = JSONUtils.getValueRecursive(data, "transactionProducts.0.id", Integer.class);
          String internalPid = id != null ? id.toString() : null;
          String name = JSONUtils.getValueRecursive(data, "transactionProducts.0.name", String.class);
          String primaryImage = JSONUtils.getValueRecursive(data, "transactionProducts.0.fullImage", String.class);
          String description = JSONUtils.getValueRecursive(data, "transactionProducts.0.description", String.class);
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,".thumbnails .list a", Arrays.asList("data-src"),"https", "https://www.peixoto.com.br/", primaryImage);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".thumbnails .list a", Arrays.asList("data-src"), "https", "https://www.peixoto.com.br/", primaryImage);
          Boolean stock = JSONUtils.getValueRecursive(data, "transactionProducts.0.available", Boolean.class);
+         List<String> eans = Arrays.asList(JSONUtils.getValueRecursive(data, "transactionProducts.0.sku", String.class));
          Offers offers = stock ? scrapOffers(data) : new Offers();
 
          // Creating the product
@@ -160,8 +163,11 @@ public class BrasilPeixotoCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
+            .setEans(eans)
             .build();
+
          products.add(product);
+
       } else {
          Logging.printLogDebug(logger, session, "Not a product page:   " + this.session.getOriginalURL());
       }
