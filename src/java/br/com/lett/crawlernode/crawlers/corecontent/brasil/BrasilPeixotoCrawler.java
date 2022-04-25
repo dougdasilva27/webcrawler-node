@@ -130,8 +130,7 @@ public class BrasilPeixotoCrawler extends Crawler {
       JSONArray arr = new JSONArray();
       List<Product> products = new ArrayList<>();
       String script = CrawlerUtils.scrapScriptFromHtml(doc, "head > script:nth-child(5n-1)");
-      // CrawlerUtils.scrapScriptFromHtml(doc, "head>script[type=\"text/javascript\"]:nth-child(2n)")
-      if (script != null) {
+      if(script != null){
          script = script.replaceAll("window.data_layer = true;", "");
          script = script.replaceAll("dataLayer = ", "");
          script = script.replaceAll("\r", "");
