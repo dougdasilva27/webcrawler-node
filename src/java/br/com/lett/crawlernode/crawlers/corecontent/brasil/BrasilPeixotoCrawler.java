@@ -197,7 +197,7 @@ public class BrasilPeixotoCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
 
       Double spotlightPrice = JSONUtils.getValueRecursive(data, "transactionProducts.0.fullPrice", Double.class);
-      ;
+
       Double priceFrom = spotlightPrice;
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
