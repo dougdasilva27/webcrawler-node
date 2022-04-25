@@ -89,7 +89,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
       if (serverAppState != null) {
          int startIndex = serverAppState.indexOf(",&q;items&q;:") + ",".length();
-         int lastIndex = serverAppState.indexOf("}]", startIndex);
+         int lastIndex = serverAppState.indexOf("}],&q;showcases&q;", startIndex);
 
          String productsString = serverAppState.substring(startIndex, lastIndex) + "}]";
          String productsStringSanitized = productsString.replace("&q;", "\"");
