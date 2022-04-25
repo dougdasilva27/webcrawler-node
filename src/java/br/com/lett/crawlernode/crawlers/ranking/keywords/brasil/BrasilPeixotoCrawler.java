@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -26,7 +25,9 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
    public BrasilPeixotoCrawler(Session session) {
@@ -77,6 +78,7 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
       }
 
    }
+
    public void getCookiesFromWD(String proxy) {
       try {
          Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
@@ -84,7 +86,7 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
          ChromeOptions options = new ChromeOptions();
          options.addArguments("--window-size=1920,1080");
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session,this.cookiesWD, "https://www.peixoto.com.br", options);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session, this.cookiesWD, "https://www.peixoto.com.br", options);
 
          webdriver.waitLoad(10000);
 
@@ -99,7 +101,6 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
 
          waitForElement(webdriver.driver, ".button.submit");
          webdriver.findAndClick(".button.submit", 15000);
-
 
          waitForElement(webdriver.driver, ".account-link.trocar-filial");
          webdriver.findAndClick(".account-link.trocar-filial", 15000);
