@@ -54,7 +54,7 @@ public class BrasilPeixotoCrawler extends Crawler {
       try {
          Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session,this.cookiesWD, "https://www.peixoto.com.br");
 
          webdriver.waitLoad(10000);
          if (doc.selectFirst(".footer_cookies") != null) {
@@ -91,9 +91,16 @@ public class BrasilPeixotoCrawler extends Crawler {
 
          Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
 
-         this.cookiesWD = cookiesResponse;
 
-         this.cookies.add((org.apache.http.cookie.Cookie) cookiesWD);
+         for (Cookie cookie : cookiesResponse) {
+            BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
+            basicClientCookie.setDomain(cookie.getDomain());
+            basicClientCookie.setPath(cookie.getPath());
+            basicClientCookie.setExpiryDate(cookie.getExpiry());
+            this.cookies.add(basicClientCookie);
+         }
+         webdriver.terminate();
+
          Map<String, String> headers = new HashMap<>();
          Request request = Request.RequestBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -125,7 +132,8 @@ public class BrasilPeixotoCrawler extends Crawler {
       super.extractInformation(doc);
       JSONArray arr = new JSONArray();
       List<Product> products = new ArrayList<>();
-      String script = CrawlerUtils.scrapScriptFromHtml(doc, "head > script:nth-child(24)");
+      String script = CrawlerUtils.scrapScriptFromHtml(doc, "head > script:nth-child(5n-1)");
+     // CrawlerUtils.scrapScriptFromHtml(doc, "head>script[type=\"text/javascript\"]:nth-child(2n)")
       if(script != null){
          script = script.replaceAll("window.data_layer = true;", "");
          script = script.replaceAll("dataLayer = ", "");
