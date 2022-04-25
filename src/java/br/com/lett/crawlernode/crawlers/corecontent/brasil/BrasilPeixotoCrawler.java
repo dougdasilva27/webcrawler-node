@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -12,6 +13,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -26,6 +28,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,45 +49,75 @@ public class BrasilPeixotoCrawler extends Crawler {
    // DEPRECADO, TEM QUE USAR FETCHRESPONSE E USAR CONFIG.SETPARSER
    @Override
    protected Document fetch() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("authority", "www.peixoto.com.br");
-      headers.put("accept", "/");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      headers.put("cache-control", "no-cache");
-      headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
-      headers.put("origin", "www.peixoto.com.br");
-      headers.put("pragma", "no-cache");
-      headers.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36");
-      headers.put("x-requested-with", "XMLHttpRequest");
-      // ESSAS LOCALIDADES ESTÁ FIXA, SE DECIDIR MONITORAR OUTRA FUTURAMENTE? ADAPTAR
-      headers.put("cookie", SESSION_COOKIE + ";b2bfilfatexp=003RR02-2ED026|58;b2bfilfatexplist=58,59;b2blog=true%230%23BAR+DO+PORTUGUES%23%23204743%2332%230%23-1%23%230%230%2c38%237100624%23%230%230%23;language=pt-BR;loja_id=32");
+      Document doc = new Document("");
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setCookies(this.cookies)
-         .setHeaders(headers)
-         .setSendUserAgent(true)
-         .build();
+      try {
+         Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-      Response response = dataFetcher.get(session, request);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
 
-      this.cookies.addAll(response.getCookies());
+         webdriver.waitLoad(10000);
+         if (doc.selectFirst(".footer_cookies") != null) {
+            waitForElement(webdriver.driver, "button#btn_footer_cookies");
+            webdriver.findAndClick("button#btn_footer_cookies", 15000);
 
-      if ("https://www.peixoto.com.br/User/SelecionarFilialUsuario".equals(response.getRedirectUrl())) {
-         Request filialRequest = Request.RequestBuilder.create()
+         }
+         webdriver.waitLoad(10000);
+         Logging.printLogDebug(logger, session, "Sending credentials...");
+
+         waitForElement(webdriver.driver, "#login_username");
+         WebElement username = webdriver.driver.findElement(By.cssSelector("#login_username"));
+         username.sendKeys("40374650000111");
+
+         webdriver.waitLoad(2000);
+         waitForElement(webdriver.driver, "#login_password");
+         WebElement pass = webdriver.driver.findElement(By.cssSelector("#login_password"));
+         pass.sendKeys("BAR1824");
+
+         waitForElement(webdriver.driver, ".button.submit");
+         webdriver.findAndClick(".button.submit", 15000);
+         webdriver.waitLoad(20000);
+         waitForElement(webdriver.driver, ".account-link.trocar-filial");
+         webdriver.findAndClick(".account-link.trocar-filial", 15000);
+         webdriver.waitLoad(15000);
+
+         waitForElement(webdriver.driver, "#popup_content .table-scrollable .row0.first.gradeX.odd .modal-window.blue");
+         webdriver.findAndClick("#popup_content .table-scrollable .row0.first.gradeX.odd .modal-window.blue", 15000);
+         webdriver.waitLoad(15000);
+
+         waitForElement(webdriver.driver, "#popup_content .table-scrollable .row0.first.gradeX.odd  .enviar.blue");
+         webdriver.findAndClick("#popup_content .table-scrollable .row0.first.gradeX.odd  .enviar.blue", 15000);
+         webdriver.waitLoad(15000);
+
+         Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
+
+         this.cookiesWD = cookiesResponse;
+
+         this.cookies.add((org.apache.http.cookie.Cookie) cookiesWD);
+         Map<String, String> headers = new HashMap<>();
+         Request request = Request.RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
             .setHeaders(headers)
-            .setCookies(this.cookies)
-            .setFollowRedirects(true)
-            .setUrl("https://www.peixoto.com.br/User/FilialUsuarioSelecionada?id=58&formaPagamento=25&condicaoId=53&antecipado=true")
+            .setCookies(cookies)
             .build();
-         Response filialResponse = this.dataFetcher.get(session, filialRequest);
 
-         this.cookies.addAll(filialResponse.getCookies());
-      } else {
-         return Jsoup.parse(response.getBody());
+         Response response = this.dataFetcher.get(session, request);
+
+
+//         webdriver.loadUrl(session.getOriginalURL());
+//         webdriver.waitLoad(15000);
+         doc = Jsoup.parse(response.getBody());
+         return doc;
+      } catch (Exception e) {
+         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+         Logging.printLogWarn(logger, "login não realizado");
       }
+      return doc;
+   }
 
-      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+   public static void waitForElement(WebDriver driver, String cssSelector) {
+      WebDriverWait wait = new WebDriverWait(driver, 20);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
    @Override
@@ -87,7 +125,7 @@ public class BrasilPeixotoCrawler extends Crawler {
       super.extractInformation(doc);
       JSONArray arr = new JSONArray();
       List<Product> products = new ArrayList<>();
-      String script = CrawlerUtils.scrapScriptFromHtml(doc, "head > script:nth-child(5n-1)");
+      String script = CrawlerUtils.scrapScriptFromHtml(doc, "head > script:nth-child(24)");
       if(script != null){
          script = script.replaceAll("window.data_layer = true;", "");
          script = script.replaceAll("dataLayer = ", "");
@@ -125,31 +163,31 @@ public class BrasilPeixotoCrawler extends Crawler {
       return products;
    }
 
-   @Override
-   public void handleCookiesBeforeFetch() {
-      Map<String, String> headersLogin = new HashMap<>();
-      headersLogin.put("authority", "www.peixoto.com.br");
-      headersLogin.put("accept", "/");
-      headersLogin.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      headersLogin.put("cache-control", "no-cache");
-      headersLogin.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
-      headersLogin.put("origin", "www.peixoto.com.br");
-      headersLogin.put("pragma", "no-cache");
-      headersLogin.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36");
-      headersLogin.put("x-requested-with", "XMLHttpRequest");
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl("https://www.peixoto.com.br/User/Login")
-         .setHeaders(headersLogin)
-         .setPayload("password=BAR1824&domain_id=167&email=40374650000111")
-         .build();
-
-      Response responseApi = new FetcherDataFetcher().post(session, request);
-      this.cookies.addAll(responseApi.getCookies());
-
-      // TODO: PODE DAR NULL POINTER, ALTERAR O FILTRO PARA VERIFICAR SE O COOKIE ESTÁ NULO
-      SESSION_COOKIE += responseApi.getCookies().stream().filter(c -> c.getName().equals("ASP.NET_SessionId")).findFirst().get().getValue();
-   }
+//   @Override
+//   public void handleCookiesBeforeFetch() {
+//      Map<String, String> headersLogin = new HashMap<>();
+//      headersLogin.put("authority", "www.peixoto.com.br");
+//      headersLogin.put("accept", "/");
+//      headersLogin.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+//      headersLogin.put("cache-control", "no-cache");
+//      headersLogin.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
+//      headersLogin.put("origin", "www.peixoto.com.br");
+//      headersLogin.put("pragma", "no-cache");
+//      headersLogin.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36");
+//      headersLogin.put("x-requested-with", "XMLHttpRequest");
+//
+//      Request request = Request.RequestBuilder.create()
+//         .setUrl("https://www.peixoto.com.br/User/Login")
+//         .setHeaders(headersLogin)
+//         .setPayload("password=BAR1824&domain_id=167&email=40374650000111")
+//         .build();
+//
+//      Response responseApi = new FetcherDataFetcher().post(session, request);
+//      this.cookies.addAll(responseApi.getCookies());
+//
+//      // TODO: PODE DAR NULL POINTER, ALTERAR O FILTRO PARA VERIFICAR SE O COOKIE ESTÁ NULO
+//      SESSION_COOKIE += responseApi.getCookies().stream().filter(c -> c.getName().equals("ASP.NET_SessionId")).findFirst().get().getValue();
+//   }
 
    private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
