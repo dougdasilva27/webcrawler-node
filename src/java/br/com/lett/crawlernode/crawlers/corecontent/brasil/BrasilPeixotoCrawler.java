@@ -85,17 +85,18 @@ public class BrasilPeixotoCrawler extends Crawler {
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
+      JSONArray arr = new JSONArray();
       List<Product> products = new ArrayList<>();
       String script = CrawlerUtils.scrapScriptFromHtml(doc, "head > script:nth-child(5n-1)");
-      script = script.replaceAll("window.data_layer = true;", "");
-      script = script.replaceAll("dataLayer = ", "");
-      script = script.replaceAll("\r", "");
-      script = script.replaceAll("\n", "");
-      script = script.replaceAll("\t", "");
-      script = script.substring(1, script.length() - 2);
-
-      JSONArray arr = JSONUtils.stringToJsonArray(script);
-
+      if(script != null){
+         script = script.replaceAll("window.data_layer = true;", "");
+         script = script.replaceAll("dataLayer = ", "");
+         script = script.replaceAll("\r", "");
+         script = script.replaceAll("\n", "");
+         script = script.replaceAll("\t", "");
+         script = script.substring(1, script.length() - 2);
+         arr= JSONUtils.stringToJsonArray(script);
+      }
       if (arr.length() > 0) {
          JSONObject data = (JSONObject) arr.get(0);
          Integer id = JSONUtils.getValueRecursive(data, "transactionProducts.0.id", Integer.class);
@@ -103,6 +104,7 @@ public class BrasilPeixotoCrawler extends Crawler {
          String name = JSONUtils.getValueRecursive(data, "transactionProducts.0.name", String.class);
          String primaryImage = JSONUtils.getValueRecursive(data, "transactionProducts.0.fullImage", String.class);
          String description = JSONUtils.getValueRecursive(data, "transactionProducts.0.description", String.class);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,".thumbnails .list a", Arrays.asList("data-src"),"https", "https://www.peixoto.com.br/", primaryImage);
          Boolean stock = JSONUtils.getValueRecursive(data, "transactionProducts.0.available", Boolean.class);
          Offers offers = stock ? scrapOffers(data) : new Offers();
 
@@ -113,7 +115,7 @@ public class BrasilPeixotoCrawler extends Crawler {
             .setName(name)
             .setOffers(offers)
             .setPrimaryImage(primaryImage)
-//            .setSecondaryImages(secondaryImages)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .build();
          products.add(product);
