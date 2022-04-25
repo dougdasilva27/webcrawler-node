@@ -85,7 +85,10 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
 
          ChromeOptions options = new ChromeOptions();
          options.addArguments("--window-size=1920,1080");
-
+         options.addArguments("--headless");
+         options.addArguments("--no-sandbox");
+         options.addArguments("--disable-dev-shm-usage");
+         
          webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session, this.cookiesWD, "https://www.peixoto.com.br", options);
 
          webdriver.waitLoad(10000);
