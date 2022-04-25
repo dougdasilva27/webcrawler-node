@@ -20,7 +20,6 @@ public class SmarthintKeyword extends CrawlerRankingKeywords {
    private final String rule = session.getOptions().optString("rule", "");
    private final String searchSort = session.getOptions().optString("searchSort", "0");
 
-
    public SmarthintKeyword(Session session) {
       super(session);
    }
@@ -28,7 +27,7 @@ public class SmarthintKeyword extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
 
-      this.pageSize = 12;
+      this.pageSize = session.getOptions().optInt("pageSize", 12);
 
       JSONObject api = fetchApi();
 
@@ -99,7 +98,7 @@ public class SmarthintKeyword extends CrawlerRankingKeywords {
          .append("shcode=").append(SH_key)
          .append("&term=").append(keywordEncoded)
          .append("&from=").append((this.currentPage - 1) * this.pageSize)
-         .append("&size=").append(this.currentPage * this.pageSize)
+         .append("&size=").append(this.pageSize)
          .append("&searchSort=").append(searchSort);
 
       if (!rule.isEmpty()) {

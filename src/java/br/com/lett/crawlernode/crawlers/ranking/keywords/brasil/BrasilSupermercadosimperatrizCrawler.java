@@ -49,6 +49,8 @@ public class BrasilSupermercadosimperatrizCrawler extends CrawlerRankingKeywords
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".shelf__product-item > .product-item__info > .product-item__title > a", false);
             String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-item__img >div > noscript > img", Collections.singletonList("src"), "https", "www.supermercadosimperatriz.com.br");
             Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".product-item__info > .product-item__price > .product-item__best-price", null, false, ',', session, null);
+
+            if(priceInCents == 0) priceInCents = null;
             boolean available = priceInCents != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
