@@ -7,10 +7,7 @@ import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -39,58 +36,44 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class BrasilPeixotoCrawler extends Crawler {
+
    public BrasilPeixotoCrawler(Session session) {
       super(session);
       config.setFetcher(FetchMode.JSOUP);
+      config.setParser(Parser.HTML);
    }
 
-   String SESSION_COOKIE = "ASP.NET_SessionId=";
-
-   // DEPRECADO, TEM QUE USAR FETCHRESPONSE E USAR CONFIG.SETPARSER
-   @Override
-   protected Document fetch() {
-      Document doc = new Document("");
-
+   public void getCookiesFromWD(String proxy) {
       try {
          Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session,this.cookiesWD, "https://www.peixoto.com.br");
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session,this.cookiesWD, "https://www.peixoto.com.br");
 
          webdriver.waitLoad(10000);
-         if (doc.selectFirst(".footer_cookies") != null) {
-            waitForElement(webdriver.driver, "button#btn_footer_cookies");
-            webdriver.findAndClick("button#btn_footer_cookies", 15000);
-
-         }
-         webdriver.waitLoad(10000);
-         Logging.printLogDebug(logger, session, "Sending credentials...");
 
          waitForElement(webdriver.driver, "#login_username");
          WebElement username = webdriver.driver.findElement(By.cssSelector("#login_username"));
-         username.sendKeys("40374650000111");
+         username.sendKeys(session.getOptions().optString("user"));
 
          webdriver.waitLoad(2000);
          waitForElement(webdriver.driver, "#login_password");
          WebElement pass = webdriver.driver.findElement(By.cssSelector("#login_password"));
-         pass.sendKeys("BAR1824");
+         pass.sendKeys(session.getOptions().optString("pass"));
 
          waitForElement(webdriver.driver, ".button.submit");
          webdriver.findAndClick(".button.submit", 15000);
-         webdriver.waitLoad(20000);
+
+
          waitForElement(webdriver.driver, ".account-link.trocar-filial");
          webdriver.findAndClick(".account-link.trocar-filial", 15000);
-         webdriver.waitLoad(15000);
 
          waitForElement(webdriver.driver, "#popup_content .table-scrollable .row0.first.gradeX.odd .modal-window.blue");
          webdriver.findAndClick("#popup_content .table-scrollable .row0.first.gradeX.odd .modal-window.blue", 15000);
-         webdriver.waitLoad(15000);
 
          waitForElement(webdriver.driver, "#popup_content .table-scrollable .row0.first.gradeX.odd  .enviar.blue");
          webdriver.findAndClick("#popup_content .table-scrollable .row0.first.gradeX.odd  .enviar.blue", 15000);
-         webdriver.waitLoad(15000);
 
          Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
-
 
          for (Cookie cookie : cookiesResponse) {
             BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
@@ -101,25 +84,33 @@ public class BrasilPeixotoCrawler extends Crawler {
          }
          webdriver.terminate();
 
-         Map<String, String> headers = new HashMap<>();
-         Request request = Request.RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setHeaders(headers)
-            .setCookies(cookies)
-            .build();
-
-         Response response = this.dataFetcher.get(session, request);
-
-
-//         webdriver.loadUrl(session.getOriginalURL());
-//         webdriver.waitLoad(15000);
-         doc = Jsoup.parse(response.getBody());
-         return doc;
       } catch (Exception e) {
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+         webdriver.terminate();
+
          Logging.printLogWarn(logger, "login não realizado");
       }
-      return doc;
+   }
+
+   @Override
+   protected Response fetchResponse() {
+
+      List<String> proxies = Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
+
+      int attemp = 0;
+
+      while (this.cookies.isEmpty() && attemp < 3) {
+         getCookiesFromWD(proxies.get(attemp));
+         attemp++;
+      }
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setCookies(cookies)
+         .build();
+
+      return this.dataFetcher.get(session, request);
+
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
@@ -145,8 +136,9 @@ public class BrasilPeixotoCrawler extends Crawler {
       }
       if (arr.length() > 0) {
          JSONObject data = (JSONObject) arr.get(0);
+         String internalId = JSONUtils.getValueRecursive(data, "transactionProducts.0.sku", String.class);
          Integer id = JSONUtils.getValueRecursive(data, "transactionProducts.0.id", Integer.class);
-         String internalId = id != null ? id.toString() : null;
+         String internalPid = id != null ? id.toString() : null;
          String name = JSONUtils.getValueRecursive(data, "transactionProducts.0.name", String.class);
          String primaryImage = JSONUtils.getValueRecursive(data, "transactionProducts.0.fullImage", String.class);
          String description = JSONUtils.getValueRecursive(data, "transactionProducts.0.description", String.class);
@@ -158,6 +150,7 @@ public class BrasilPeixotoCrawler extends Crawler {
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
+            .setInternalPid(internalPid)
             .setName(name)
             .setOffers(offers)
             .setPrimaryImage(primaryImage)
@@ -170,32 +163,6 @@ public class BrasilPeixotoCrawler extends Crawler {
       }
       return products;
    }
-
-//   @Override
-//   public void handleCookiesBeforeFetch() {
-//      Map<String, String> headersLogin = new HashMap<>();
-//      headersLogin.put("authority", "www.peixoto.com.br");
-//      headersLogin.put("accept", "/");
-//      headersLogin.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-//      headersLogin.put("cache-control", "no-cache");
-//      headersLogin.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
-//      headersLogin.put("origin", "www.peixoto.com.br");
-//      headersLogin.put("pragma", "no-cache");
-//      headersLogin.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36");
-//      headersLogin.put("x-requested-with", "XMLHttpRequest");
-//
-//      Request request = Request.RequestBuilder.create()
-//         .setUrl("https://www.peixoto.com.br/User/Login")
-//         .setHeaders(headersLogin)
-//         .setPayload("password=BAR1824&domain_id=167&email=40374650000111")
-//         .build();
-//
-//      Response responseApi = new FetcherDataFetcher().post(session, request);
-//      this.cookies.addAll(responseApi.getCookies());
-//
-//      // TODO: PODE DAR NULL POINTER, ALTERAR O FILTRO PARA VERIFICAR SE O COOKIE ESTÁ NULO
-//      SESSION_COOKIE += responseApi.getCookies().stream().filter(c -> c.getName().equals("ASP.NET_SessionId")).findFirst().get().getValue();
-//   }
 
    private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();

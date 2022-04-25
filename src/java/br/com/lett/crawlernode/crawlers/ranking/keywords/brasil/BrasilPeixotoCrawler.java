@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -9,17 +9,23 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
    public BrasilPeixotoCrawler(Session session) {
@@ -70,31 +76,77 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
       }
 
    }
+   public void getCookiesFromWD(String proxy) {
+      try {
+         Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
+
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session,this.cookiesWD, "https://www.peixoto.com.br");
+
+         webdriver.waitLoad(10000);
+
+         waitForElement(webdriver.driver, "#login_username");
+         WebElement username = webdriver.driver.findElement(By.cssSelector("#login_username"));
+         username.sendKeys(session.getOptions().optString("user"));
+
+         webdriver.waitLoad(2000);
+         waitForElement(webdriver.driver, "#login_password");
+         WebElement pass = webdriver.driver.findElement(By.cssSelector("#login_password"));
+         pass.sendKeys(session.getOptions().optString("pass"));
+
+         waitForElement(webdriver.driver, ".button.submit");
+         webdriver.findAndClick(".button.submit", 15000);
+
+
+         waitForElement(webdriver.driver, ".account-link.trocar-filial");
+         webdriver.findAndClick(".account-link.trocar-filial", 15000);
+
+         waitForElement(webdriver.driver, "#popup_content .table-scrollable .row0.first.gradeX.odd .modal-window.blue");
+         webdriver.findAndClick("#popup_content .table-scrollable .row0.first.gradeX.odd .modal-window.blue", 15000);
+
+         waitForElement(webdriver.driver, "#popup_content .table-scrollable .row0.first.gradeX.odd  .enviar.blue");
+         webdriver.findAndClick("#popup_content .table-scrollable .row0.first.gradeX.odd  .enviar.blue", 15000);
+
+         Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
+
+         for (Cookie cookie : cookiesResponse) {
+            BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
+            basicClientCookie.setDomain(cookie.getDomain());
+            basicClientCookie.setPath(cookie.getPath());
+            basicClientCookie.setExpiryDate(cookie.getExpiry());
+            this.cookies.add(basicClientCookie);
+         }
+         webdriver.terminate();
+
+      } catch (Exception e) {
+         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+         webdriver.terminate();
+
+         Logging.printLogWarn(logger, "login não realizado");
+      }
+   }
+
+   public static void waitForElement(WebDriver driver, String cssSelector) {
+      WebDriverWait wait = new WebDriverWait(driver, 20);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+   }
 
    protected Document fetch(String url) {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", "ASP.NET_SessionId=js0eqm1oyenefe0ch4vj0q3v; b2bfilfatexp=003RR02-2ED026|58; b2bfilfatexplist=58,59; b2blog=true%230%23BAR+DO+PORTUGUES%23%23204743%2332%230%23-1%23%230%230%2c38%237100624%23%230%230%23; language=pt-BR; loja_id=32");
+      List<String> proxies = Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
+
+      int attemp = 0;
+
+      while (this.cookies.isEmpty() && attemp < 3) {
+         getCookiesFromWD(proxies.get(attemp));
+         attemp++;
+      }
+
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
-         .setHeaders(headers)
+         .setCookies(this.cookies)
          .setSendUserAgent(false)
          .build();
 
-      Response a = this.dataFetcher.get(session, request);
-
-      String content = a.getBody();
-
-      return Jsoup.parse(content);
+      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
 
-   @Override
-   protected void processBeforeFetch() {
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl("https://www.peixoto.com.br/User/Login")
-         .setPayload("password=BAR1824&domain_id=167&email=40374650000111")
-         .build();
-      Response responseApi = new JsoupDataFetcher().post(session, request);
-      this.cookies.addAll(responseApi.getCookies());
-   }
 }
