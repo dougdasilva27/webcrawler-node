@@ -74,6 +74,8 @@ public class QueueService {
       queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_ZE_DELIVERY.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_PRODUCT_ZE_DELIVERY.toString());
       queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString());
 
+      logger.info("Test discover queue map: " + queueURLMap);
+
    }
 
    /**
@@ -87,6 +89,9 @@ public class QueueService {
       SendMessageBatchRequest batchMessageBatchRequest = new SendMessageBatchRequest();
       String queueURL = getQueueURL(queueName);
       batchMessageBatchRequest.setQueueUrl(queueURL);
+
+      logger.info("Test discover queue name: " + queueName);
+
       batchMessageBatchRequest.setEntries(entries);
 
       return sqs.sendMessageBatch(batchMessageBatchRequest);
@@ -96,6 +101,7 @@ public class QueueService {
       SendMessageRequest send_msg_request = new SendMessageRequest()
          .withQueueUrl(queueName)
          .withMessageBody(entry);
+
        return sqs.sendMessage(send_msg_request);
 
    }
