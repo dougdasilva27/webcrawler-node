@@ -40,9 +40,9 @@ public class BrasilMercadinhosaoluizCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__head > h2 > .productName", false);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".infos-product > .shell > .desc_product > .productDescription", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image-main", Arrays.asList("src"), "http://", "www.mercadinhossaoluiz.com.br");
-         boolean available = true;
-         //doc.selectFirst("") != null
+         boolean available = getAvaliability(doc);
          Offers offers = available ? scrapOffers(doc) : new Offers();
+
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -63,6 +63,11 @@ public class BrasilMercadinhosaoluizCrawler extends Crawler {
       return products;
    }
 
+   private boolean getAvaliability(Document doc) {
+      Double holder = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product__price > div > .descricao-preco > .valor-de > .skuListPrice", null, true, ',', session);
+      return holder != null;
+   }
+
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".section-product") != null;
    }
@@ -74,7 +79,7 @@ public class BrasilMercadinhosaoluizCrawler extends Crawler {
       if (pricing != null) {
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName("Mercadinho São Luiz")
+            .setSellerFullName("Mercadinhos São Luiz")
             .setSellersPagePosition(1)
             .setIsBuybox(false)
             .setIsMainRetailer(true)
@@ -89,10 +94,11 @@ public class BrasilMercadinhosaoluizCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product__price > div > .descricao-preco > .valor-de > .skuListPrice", null, true, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product__price > div > .descricao-preco > .valor-por > .skuBestPrice", null, true, ',', session);
 
-      if (spotlightPrice == null){
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product__price > div > .descricao-preco > .valor-de > .skuBestPrice", "skuListPrice", false, ',', session);
+      if (spotlightPrice == null || spotlightPrice == 0.0) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product__price > div > .descricao-preco > .valor-de > .skuListPrice", null, true, ',', session);
+      } else if (priceFrom == 0.0 || priceFrom == null) {
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product__price > div > .descricao-preco > .valor-por > .skuBestPrice", null, true, ',', session);
       }
-
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
@@ -103,6 +109,7 @@ public class BrasilMercadinhosaoluizCrawler extends Crawler {
          .setBankSlip(bankSlip)
          .build();
    }
+
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
