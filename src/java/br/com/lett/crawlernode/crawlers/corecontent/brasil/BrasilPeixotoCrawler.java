@@ -50,10 +50,13 @@ public class BrasilPeixotoCrawler extends Crawler {
       try {
          Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-         ChromeOptions options = new ChromeOptions();
-         options.addArguments("--window-size=1920,1080");
+         ChromeOptions chromeOptions = new ChromeOptions();
+         chromeOptions.addArguments("--window-size=1920,1080");
+         chromeOptions.addArguments("--headless");
+         chromeOptions.addArguments("--no-sandbox");
+         chromeOptions.addArguments("--disable-dev-shm-usage");
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session, this.cookiesWD, "https://www.peixoto.com.br", options);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session, this.cookiesWD, "https://www.peixoto.com.br", chromeOptions);
 
          webdriver.waitLoad(10000);
 
