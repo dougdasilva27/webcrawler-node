@@ -11,7 +11,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
+public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
    private static final String BASE_URL = "delivery.supermuffato.com.br/";
 
@@ -19,7 +19,9 @@ public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords
       super(session);
    }
 
-   protected abstract String getCityCode();
+   protected String getCityCode() {
+      return session.getOptions().optString("cityCode");
+   };
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
