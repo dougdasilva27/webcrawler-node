@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.util;
 import br.com.lett.crawlernode.core.session.Session;
 import okhttp3.HttpUrl;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -20,6 +21,7 @@ import java.net.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.Normalizer;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -591,7 +593,20 @@ public class CommonMethods {
       return result;
    }
 
+   public boolean hasLtrBeforeOneMonth(String lrt) {
+      if (lrt != null && !lrt.isEmpty()) {
+         try {
+            Date lrtDate = new SimpleDateFormat("yyyy-M-dd hh:mm:ss").parse(lrt);
+            Date oneMonthAgo = DateUtils.addMonths(new Date(), -1);
+            Logging.printLogDebug(LOGGER, "LTR: " + lrt + " - " + oneMonthAgo + " has more than one month: " + (lrtDate.after(oneMonthAgo)));
+            return lrtDate.before(oneMonthAgo);
 
+         } catch (Exception e) {
+            Logging.printLogError(LOGGER,  "Error parsing lrt date: " + lrt);
+         }
+      }
+      return false;
+   }
 
 
 
