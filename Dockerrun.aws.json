@@ -29,7 +29,7 @@
                     "hostPort": 80
                 }
             ]
-        },
+        }
     ],
     "family": "",
     "volumes": [
