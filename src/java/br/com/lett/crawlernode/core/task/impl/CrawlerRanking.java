@@ -530,7 +530,7 @@ public abstract class CrawlerRanking extends Task {
             queueName = isWebDrive ? QueueName.WEB_SCRAPER_PRODUCT_EQI_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_PRODUCT_EQI.toString();
          } else {
             //to test
-            queueName = isWebDrive ? QueueName.WEB_SCRAPER_PRODUCT_DEV.toString() : QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
+            queueName = isWebDrive ? QueueName.WEB_SCRAPER_PRODUCT_EQI_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_PRODUCT_EQI.toString();
          }
       }
 
