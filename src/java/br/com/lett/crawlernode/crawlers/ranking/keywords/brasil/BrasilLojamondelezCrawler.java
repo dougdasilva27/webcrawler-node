@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -14,6 +15,8 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -50,7 +53,7 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
 
       Request request = RequestBuilder.create().setUrl(ADMIN_URL).setPayload(payloadString).setHeaders(headers).build();
-      Response response = this.dataFetcher.post(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
 
       List<Cookie> cookiesResponse = response.getCookies();
 
@@ -81,13 +84,13 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       Request request = RequestBuilder.create()
          .setUrl(LOGIN_URL)
          .setPayload(payload.toString())
-         .setHeaders(headers)
          .setProxyservice(Arrays.asList(ProxyCollection.BONANZA,
             ProxyCollection.BUY_HAPROXY,
             ProxyCollection.LUMINATI_SERVER_BR_HAPROXY))
+         .setHeaders(headers)
          .build();
 
-      this.dataFetcher.post(session, request);
+      CrawlerUtils.retryRequest(request, session, dataFetcher);
 
       BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", this.cookiePHPSESSID);
       cookie.setDomain("www.lojamondelez.com.br");
@@ -95,6 +98,19 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       this.cookies.add(cookie);
    }
 
+   @Override
+   protected Document fetchDocument(String url, List<Cookie> cookies) {
+      Request request = RequestBuilder
+         .create()
+         .setCookies(cookies)
+         .setUrl(url)
+         .setProxyservice(Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY))
+         .build();
+
+      return Jsoup.parse(new ApacheDataFetcher().get(session, request).getBody());
+   }
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
