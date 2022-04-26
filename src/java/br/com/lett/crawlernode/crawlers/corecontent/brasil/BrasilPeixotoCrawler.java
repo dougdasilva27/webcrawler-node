@@ -149,8 +149,9 @@ public class BrasilPeixotoCrawler extends Crawler {
          String internalPid = id != null ? id.toString() : null;
          String name = JSONUtils.getValueRecursive(data, "transactionProducts.0.name", String.class);
          String primaryImage = JSONUtils.getValueRecursive(data, "transactionProducts.0.fullImage", String.class);
+         primaryImage = primaryImage.replaceAll("peixoto//","peixoto/detalhe/");
          String description = JSONUtils.getValueRecursive(data, "transactionProducts.0.description", String.class);
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".thumbnails .list a", Arrays.asList("data-src"), "https", "https://www.peixoto.com.br/", primaryImage);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".thumbnails .list a", Arrays.asList("data-src"), "https", "https://www.peixoto.com.br", primaryImage);
          Boolean stock = JSONUtils.getValueRecursive(data, "transactionProducts.0.available", Boolean.class);
          List<String> eans = Arrays.asList(JSONUtils.getValueRecursive(data, "transactionProducts.0.sku", String.class));
          Offers offers = stock ? scrapOffers(data) : new Offers();
