@@ -1,32 +1,30 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.*;
-
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
    private String cookiePHPSESSID = null;
+
    public BrasilLojamondelezCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
@@ -34,10 +32,11 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
 
    private static final String LOGIN_URL = "https://www.lojamondelez.com.br/Cliente/Logar";
    private static final String ADMIN_URL = "https://www.lojamondelez.com.br/VendaAssistida/login";
+   private String SITE_ID;
 
    private final String CNPJ = session.getOptions().optString("cnpj");
-   private final String PASSWORD =  session.getOptions().optString("password");
-   private final String MASTER_USER =  session.getOptions().optString("master_user");
+   private final String PASSWORD = session.getOptions().optString("password");
+   private final String MASTER_USER = session.getOptions().optString("master_user");
 
    private void loginMasterAccount() {
       Map<String, String> headers = new HashMap<>();
@@ -91,9 +90,9 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       this.dataFetcher.post(session, request);
 
       BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", this.cookiePHPSESSID);
-         cookie.setDomain("www.lojamondelez.com.br");
-         cookie.setPath("/");
-         this.cookies.add(cookie);
+      cookie.setDomain("www.lojamondelez.com.br");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
    }
 
 
@@ -117,9 +116,9 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
 
          int alternativePosition = 1;
          for (Element product : products) {
-            String productUrl = CrawlerUtils.scrapUrl(product, "> a", "href", "https", "www.lojamondelez.com.br");
             String internalPid = String.valueOf(CrawlerUtils.scrapIntegerFromHtmlAttr(product, null, "id", null));
             String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-name", false);
+            String productUrl = getUrl(product, internalPid, name);
 
             Elements variations = product.select(".sku-variation-content .picking");
             if (!variations.isEmpty()) {
@@ -130,7 +129,7 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
                   String variationName = assembleName(name, variation);
                   boolean available = !variation.classNames().contains("sem-estoque");
 
-                  if(!available) price = null;
+                  if (!available) price = null;
 
                   RankingProduct productRanking = RankingProductBuilder.create()
                      .setUrl(productUrl)
@@ -158,6 +157,19 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String getUrl(Element product, String internalPid, String name) {
+      String productUrl = CrawlerUtils.scrapUrl(product, "> a", "href", "https", "www.lojamondelez.com.br");
+      if (productUrl != null && !productUrl.contains("/Produto/")) {
+         if (SITE_ID == null) {
+            SITE_ID = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".card-footer button", "data-siteid");
+         }
+         productUrl = "https://www.lojamondelez.com.br/Produto/" + name.replace(" ", "-") + "/10-10-" + internalPid + "?site_id=" + SITE_ID;
+      }
+
+      return productUrl;
+
    }
 
    private String assembleName(String name, Element variation) {
