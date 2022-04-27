@@ -56,8 +56,8 @@ public class CuritibaNicheleCrawler extends VTEXOldScraper {
                String paymentCode = paymentJson.optString("paymentSystem");
                JSONObject paymentDiscount = discounts.has(paymentCode) ? discounts.optJSONObject(paymentCode) : null;
                String name = paymentJson.optString("paymentName");
-
-               if (name.toLowerCase().contains("boleto")) {
+               Boolean boleto = name.toLowerCase().contains("boleto");
+               if (boleto != null & boleto ) {
                   if (paymentDiscount != null) {
                      discount = paymentDiscount.optDouble("discount");
                      bankSlipPrice = MathUtils.normalizeTwoDecimalPlaces(bankSlipPrice - (bankSlipPrice * discount));
