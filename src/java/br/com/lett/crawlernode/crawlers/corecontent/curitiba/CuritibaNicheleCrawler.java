@@ -56,8 +56,9 @@ public class CuritibaNicheleCrawler extends VTEXOldScraper {
                String paymentCode = paymentJson.optString("paymentSystem");
                JSONObject paymentDiscount = discounts.has(paymentCode) ? discounts.optJSONObject(paymentCode) : null;
                String name = paymentJson.optString("paymentName");
-               String nameLow = name.toLowerCase();
-               if(nameLow !=null){
+
+               if(name !=null){
+                  String nameLow = name.toLowerCase();
                   Boolean boleto = nameLow.contains("boleto");
                   if (boleto != null & boleto ) {
                      if (paymentDiscount != null) {
