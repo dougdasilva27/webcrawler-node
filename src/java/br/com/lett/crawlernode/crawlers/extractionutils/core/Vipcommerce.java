@@ -123,7 +123,7 @@ public class Vipcommerce extends Crawler {
 
             String internalPid = JSONUtils.getStringValue(productInfo, "id");
             String name = JSONUtils.getStringValue(productInfo, "descricao");
-            String primaryImage = CrawlerUtils.completeUrl(JSONUtils.getStringValue(productInfo, "imagem"), " https://", "s3.amazonaws.com/produtos.vipcommerce.com.br/250x250");
+            String primaryImage = CrawlerUtils.completeUrl(JSONUtils.getStringValue(productInfo, "imagem"), " https://", "s3.amazonaws.com/produtos.vipcommerce.com.br/500x500");
             List<String> secondaryImages = scrapSecondaryImage(jsonData, primaryImage);
             boolean available = productInfo.optBoolean("disponivel");
             Integer stock = JSONUtils.getIntegerValueFromJSON(productInfo, "quantidade_maxima", null);
