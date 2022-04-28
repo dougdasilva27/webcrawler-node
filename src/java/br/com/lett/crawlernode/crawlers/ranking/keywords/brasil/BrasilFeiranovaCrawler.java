@@ -1,6 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -8,17 +8,13 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
-import models.Offers;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilFeiranovaCrawler extends CrawlerRankingKeywords {
 
@@ -30,18 +26,30 @@ public class BrasilFeiranovaCrawler extends CrawlerRankingKeywords {
 
    protected Response fetch() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("content-type", "application/json");
+      headers.put("content-type", "application/json; charset=utf-8");
+      headers.put("Origin", "https://www.feiranovaemcasa.com.br");
+      headers.put("Referer", "https://www.feiranovaemcasa.com.br/");
+      headers.put("Connection", "keep-alive");
+      headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoic29saWRjb24iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJzb2xpZGNvbkBzb2xpZGNvbi5jb20uYnIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjM3NTNiYWEzLTVhZGYtNDY0Ni1hNTY5LTIxMmQxMzlhNjdmYyIsImV4cCI6MTk1NTA0OTg3OSwiaXNzIjoiRG9yc2FsV2ViQVBJIiwiYXVkIjoic29saWRjb24uY29tLmJyIn0.LxDewxZ-V_kXYjcl8sM9Z3nD5vkymfAv4mAWJXGx5o4");
 
-      String initPayload = "{\"Promocao\":false,\"Comprado\":false,\"Produto\": \""+ this.keywordEncoded +"\",\"Favorito\":false}";
+      String initPayload = "{\"Promocao\":false,\"Comprado\":false,\"Produto\": \"" + this.keywordEncoded + "\",\"Favorito\":false}";
 
       Request request = Request.RequestBuilder.create().setUrl("https://ecom.solidcon.com.br/api/v2/shop/produto/empresa/113/filial/329/GetProdutos")
          .setPayload(initPayload)
          .setHeaders(headers)
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
 
-      Response response = this.dataFetcher.post(session, request);
+      Response response;
+      int statusCode = 0;
+      int attemp = 0;
+      do {
+         response = this.dataFetcher.post(session, request);
+         statusCode = response.getLastStatusCode();
+      } while (statusCode != 200 && attemp++ < 3);
+
 
       return response;
    }
@@ -104,7 +112,7 @@ public class BrasilFeiranovaCrawler extends CrawlerRankingKeywords {
       Double priceKg = JSONUtils.getDoubleValueFromJSON(product, "preco", true);
 
       if (product.getBoolean("inFracionado") == true) {
-         Double priceFraction = JSONUtils.getDoubleValueFromJSON(product,"fracionamento", true);
+         Double priceFraction = JSONUtils.getDoubleValueFromJSON(product, "fracionamento", true);
 
          priceKg = priceKg * priceFraction;
       }
@@ -115,7 +123,7 @@ public class BrasilFeiranovaCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected boolean hasNextPage(){
+   protected boolean hasNextPage() {
       return false;
    }
 }

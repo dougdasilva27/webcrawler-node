@@ -103,7 +103,14 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
       headers.put("Cache-Control", "no-cache");
 
       Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
-      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      String response = this.dataFetcher.get(session, request).getBody();
+      Integer count =0;
+      while (response.isEmpty() && count < 3){
+         response = this.dataFetcher.get(session, request).getBody();
+         count ++;
+      }
+
+      return CrawlerUtils.stringToJson(response);
 
    }
 }
