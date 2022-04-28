@@ -178,7 +178,7 @@ public class Vipcommerce extends Crawler {
          image -> {
             if (image instanceof JSONObject) {
                JSONObject json = (JSONObject) image;
-               String secondaryImage = CrawlerUtils.completeUrl(json.optString("filename"), " https://", "s3.amazonaws.com/produtos.vipcommerce.com.br/250x250");
+               String secondaryImage = CrawlerUtils.completeUrl(json.optString("filename"), " https://", "s3.amazonaws.com/produtos.vipcommerce.com.br/500x500");
                if (secondaryImage != null && !secondaryImage.equals(primaryImage)) secondaryImages.add(secondaryImage);
             }
          });
