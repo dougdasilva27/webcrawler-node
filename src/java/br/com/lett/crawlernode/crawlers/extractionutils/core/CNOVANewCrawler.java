@@ -525,7 +525,11 @@ public abstract class CNOVANewCrawler extends Crawler {
       if (id != null) {
          String url = "https://www.pontofrio-imagens.com.br/html/conteudo-produto/73/" + id + "/" + id + ".html";
 
-         description.append(fetchPage(url).getBody());
+         Response response = fetchPage(url);
+         if (response.getLastStatusCode() == 200) {
+            description.append(fetchPage(url).getBody());
+         }
+
       }
 
       return Normalizer.normalize(description.toString(), Normalizer.Form.NFD).replaceAll("[^\n\t\r\\p{Print}]", "");

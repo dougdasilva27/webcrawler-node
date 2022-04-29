@@ -1,12 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import br.com.lett.crawlernode.util.CommonMethods;
 import org.jsoup.Jsoup;
@@ -61,7 +56,7 @@ public class BrasilEfacilCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=productId]", "value");
          CategoryCollection categories = scrapCategories(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-photo a", Collections.singletonList("href"), "https", "efacil.com.br");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".wrap-thumbnails .thumbnails a", Collections.singletonList("href"), "https", "efacil.com.br", primaryImage);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".wrap-thumbnails .thumbnails a:not(:first-child)", Collections.singletonList("href"), "https", "efacil.com.br", primaryImage);
          String description = scrapDescription(doc);
          boolean available = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-secondary-info #widget_product_info_viewer", false) != null;         Offers offers = available ? scrapOffer(doc, internalPid, internalId) : new Offers();
 
@@ -108,8 +103,7 @@ public class BrasilEfacilCrawler extends Crawler {
    }
 
    private String scrapDescription(Document doc) {
-      return CrawlerUtils.scrapStringSimpleInfo(doc, "#tab1_content div", false);
-
+      return CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#tab1_content div"," #tabContainer"));
    }
 
    private Offers scrapOffer(Document doc, String internalPid, String internalId) throws OfferException, MalformedPricingException {

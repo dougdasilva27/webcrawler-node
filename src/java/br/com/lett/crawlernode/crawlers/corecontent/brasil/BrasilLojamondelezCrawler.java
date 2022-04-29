@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -19,7 +20,6 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
-import models.prices.Prices;
 import models.pricing.*;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
@@ -36,11 +36,9 @@ public class BrasilLojamondelezCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.lojamondelez.com.br/";
    private static final String IMAGES_HOST = "images-mondelez.ifcshop.com.br";
-
-   private static final String LOGIN_URL = "https://www.lojamondelez.com.br/Cliente/Logar";
-   private static final String CNPJ = "33033028004090";
-   private static final String PASSWORD = "monica08";
    private static final String SELLER_NAME_LOWER = "loja mondelez brasil";
+   private static final String LOGIN_URL = "https://www.lojamondelez.com.br/Cliente/Logar";
+   private static final String ADMIN_URL = "https://www.lojamondelez.com.br/VendaAssistida/login";
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
@@ -49,7 +47,20 @@ public class BrasilLojamondelezCrawler extends Crawler {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
    }
+   private final String PASSWORD = getPassword();
+   private final String CNPJ = getCnpj();
+   private final String MASTER_USER =  getMasterUser();
+   protected String getMasterUser() {
+      return session.getOptions().optString("master_user");
+   }
 
+   protected String getPassword() {
+      return session.getOptions().optString("password");
+   }
+
+   protected String getCnpj() {
+      return session.getOptions().optString("cnpj");
+   }
    @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
@@ -57,12 +68,35 @@ public class BrasilLojamondelezCrawler extends Crawler {
    }
 
    private String cookiePHPSESSID = null;
+   private void loginMasterAccount() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("sec-fetch-mode", "cors");
+      headers.put("origin", "https://www.lojamondelez.com.br");
+      headers.put("sec-fetch-site", "same-origin");
+      headers.put("x-requested-with", "XMLHttpRequest");
+      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
 
+      String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
+
+      Request request = RequestBuilder.create().setUrl(ADMIN_URL).setPayload(payloadString).setHeaders(headers).build();
+
+      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
+
+      List<Cookie> cookiesResponse = response.getCookies();
+
+      for (Cookie cookieResponse : cookiesResponse) {
+         if (cookieResponse.getName().equalsIgnoreCase("PHPSESSID")) {
+            this.cookiePHPSESSID = cookieResponse.getValue();
+         }
+      }
+   }
    @Override
    public void handleCookiesBeforeFetch() {
+      loginMasterAccount();
+
       StringBuilder payload = new StringBuilder();
-      payload.append("usuario_cnpj=" + CNPJ);
-      payload.append("&usuario_senha=" + PASSWORD);
+      payload.append("usuario_cnpj=" + this.CNPJ);
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
@@ -70,23 +104,25 @@ public class BrasilLojamondelezCrawler extends Crawler {
       headers.put("origin", "https://www.lojamondelez.com.br");
       headers.put("sec-fetch-site", "same-origin");
       headers.put("x-requested-with", "XMLHttpRequest");
+      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
+      headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
 
-      Request request = RequestBuilder.create().setUrl(LOGIN_URL).setPayload(payload.toString()).setHeaders(headers).build();
-      Response response = this.dataFetcher.post(session, request);
+      Request request = RequestBuilder.create()
+         .setUrl(LOGIN_URL)
+         .setPayload(payload.toString())
+         .setProxyservice(Arrays.asList(ProxyCollection.BONANZA,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY))
+         .setHeaders(headers)
+         .build();
 
-      List<Cookie> cookiesResponse = response.getCookies();
-
-      for (Cookie cookieResponse : cookiesResponse) {
-         if (cookieResponse.getName().equalsIgnoreCase("PHPSESSID")) {
-            cookiePHPSESSID = cookieResponse.getValue();
-         }
-      }
+      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
    }
 
    @Override
    protected Object fetch() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", "PHPSESSID=" + cookiePHPSESSID);
+      headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
 
       Request request = RequestBuilder.create()
          .setUrl(session.getOriginalURL())
@@ -112,18 +148,16 @@ public class BrasilLojamondelezCrawler extends Crawler {
          List<String> secondaryImages = scrapImages(doc);
          String primaryImage = secondaryImages.remove(0);
 
-         JSONArray productsArray = getSkusList(productJson);
-
-         for (Object obj : productsArray) {
-            JSONObject skuJson = (JSONObject) obj;
-
-            String internalId = crawlInternalId(skuJson);
+         Elements variations = doc.select(".product-grid-container .sku-variation-content .picking");
+         for (Element obj : variations) {
+            String internalId = crawlInternalId(obj);
             List<String> eans = Arrays.asList(internalId);
-            String name = crawlName(skuJson);
-            if (doc.selectFirst(".product-grid-container .picking-quantity span")!=null) {
-               name = name + " - " + doc.selectFirst(".product-grid-container .picking-quantity span").text();
+            String name = crawlName(productJson);
+            if (obj.selectFirst("div.picking-quantity span") != null) {
+               name = name + " - " + obj.selectFirst(".picking-quantity span").text();
             }
-            Offers offers = isAvailable(skuJson) ? scrapOffers(skuJson, doc) : new Offers();
+
+            Offers offers = isAvailable(obj) ? scrapOffers(obj) : new Offers();
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -167,12 +201,8 @@ public class BrasilLojamondelezCrawler extends Crawler {
       return doc.selectFirst(".container .product-details") != null;
    }
 
-   private String crawlInternalId(JSONObject skuJson) {
-      String internalId = null;
-
-      if (skuJson.has("sku") && !skuJson.isNull("sku")) {
-         internalId = skuJson.get("sku").toString();
-      }
+   private String crawlInternalId(Element obj) {
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(obj, null, "data-sku-id");
 
       return internalId;
    }
@@ -190,8 +220,8 @@ public class BrasilLojamondelezCrawler extends Crawler {
    private String crawlName(JSONObject skuJson) {
       String name = null;
 
-      if (skuJson.has("name") && skuJson.get("name") instanceof String) {
-         name = skuJson.getString("name");
+      if (skuJson.has("productName") && skuJson.get("productName") instanceof String) {
+         name = skuJson.getString("productName");
       }
 
       return name;
@@ -208,29 +238,18 @@ public class BrasilLojamondelezCrawler extends Crawler {
       return images;
    }
 
-   private JSONArray getSkusList(JSONObject productJson) {
-      JSONArray skus = new JSONArray();
+   private boolean isAvailable(Element doc) {
+      String isAvailable = CrawlerUtils.scrapStringSimpleInfo(doc, "div.sem-estoque", false);
 
-      if (productJson.has("productSKUList") && productJson.get("productSKUList") instanceof JSONArray) {
-         skus = productJson.getJSONArray("productSKUList");
-      } else if (productJson.has("productSKUList") && productJson.get("productSKUList") instanceof JSONObject) {
-         JSONObject skusJSON = productJson.getJSONObject("productSKUList");
-
-         for (String key : skusJSON.keySet()) {
-            skus.put(skusJSON.get(key));
-         }
+      if (isAvailable == null) {
+         return true;
       }
-
-      return skus;
+      return false;
    }
 
-   private boolean isAvailable(JSONObject jsonObject) {
-      return !jsonObject.optString("available").equals("no");
-   }
-
-   private Offers scrapOffers(JSONObject json, Document doc) throws MalformedPricingException, OfferException {
+   private Offers scrapOffers(Element doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(json);
+      Pricing pricing = scrapPricing(doc);
       List<String> sales = new ArrayList<>(); //no sales was found
 
 
@@ -247,16 +266,23 @@ public class BrasilLojamondelezCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
-      Double priceFrom = JSONUtils.getDoubleValueFromJSON(json, "old_price", false);
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(json, "price", false);
+   private Pricing scrapPricing(Element doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, null, "data-preco-de", true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, null, "data-preco-por", true, ',', session);
 
       if (spotlightPrice.equals(priceFrom)) {
          priceFrom = null;
       }
 
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditcards(json, spotlightPrice);
+      if (spotlightPrice == 0d) {
+         spotlightPrice = null;
+      }
+
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      CreditCards creditCards = scrapCreditcards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -266,10 +292,10 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditcards(JSONObject json, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditcards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments installments = scrapInstallments(json, spotlightPrice);
+      Installments installments = scrapInstallments(spotlightPrice);
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
@@ -282,26 +308,13 @@ public class BrasilLojamondelezCrawler extends Crawler {
       return creditCards;
    }
 
-   public Installments scrapInstallments(JSONObject json, Double spotlightPrice) throws MalformedPricingException {
+   public Installments scrapInstallments(Double spotlightPrice) throws MalformedPricingException {
       Installments installments = new Installments();
 
-      JSONObject installmentJson = json.optJSONObject("installment");
-
-      if (installmentJson != null) {
-         Integer installmentNumber = JSONUtils.getIntegerValueFromJSON(installmentJson, "count", 1);
-         Double installmentPriceJson = JSONUtils.getDoubleValueFromJSON(installmentJson, "price", false);
-
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(installmentNumber)
-            .setInstallmentPrice(installmentPriceJson)
-            .build());
-
-      } else {
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
-      }
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       return installments;
    }

@@ -21,7 +21,7 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
    protected String getCityCode() {
       return session.getOptions().optString("cityCode");
-   };
+   }
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {

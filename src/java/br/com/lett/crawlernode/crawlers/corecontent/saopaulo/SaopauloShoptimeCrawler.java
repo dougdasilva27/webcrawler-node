@@ -9,8 +9,14 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offers;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -93,4 +99,61 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
 
       return content;
    }
+
+
+   protected Offers scrapOffers(Document doc, String internalId, String internalPid, JSONObject apolloJson) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+
+      if (!allow3PSellers) {
+
+         setOffersForMainPageSeller(offers, apolloJson, doc);
+
+      } else {
+
+         if (!doc.select(listSelectors.get("hasPageOffers")).isEmpty()) {
+
+            Document sellersDoc = null;
+            Elements sellersFromHTML = null;
+            Elements sellerMainFromHTML = null;
+
+            String urlOffer = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a[class^=\"more-offers\"]", "href");
+            String offersPageUrl = "";
+
+            if (urlOffer != null) {
+               offersPageUrl = urlPageOffers + urlOffer.replace("/parceiros/", "").replaceAll("productSku=([0-9]+)", "productSku=" + internalId);
+               sellersDoc = accessOffersPage(offersPageUrl);
+               if (sellersDoc != null) {
+                  sellersFromHTML = sellersDoc.select(listSelectors.get("offers"));
+                  sellerMainFromHTML = sellersDoc.select("div[class^=\"src__MainOffer\"]");
+               }
+            }
+
+            if (sellersFromHTML == null && sellersFromHTML.isEmpty()) {
+               offersPageUrl = urlPageOffers + internalPid + "?productSku=" + internalId;
+               sellersDoc = accessOffersPage(offersPageUrl);
+               sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
+            }
+
+            if (sellerMainFromHTML != null && !sellerMainFromHTML.isEmpty()) {
+
+               setOffersForSellersPage(offers, sellerMainFromHTML, listSelectors, sellersDoc);
+            }
+
+            if (sellersFromHTML != null && !sellersFromHTML.isEmpty()) {
+
+               setOffersForSellersPage(offers, sellersFromHTML, listSelectors, sellersDoc);
+            }
+
+         } else {
+
+            setOffersForMainPageSeller(offers, apolloJson, doc);
+
+         }
+
+      }
+
+      return offers;
+   }
+
+
 }

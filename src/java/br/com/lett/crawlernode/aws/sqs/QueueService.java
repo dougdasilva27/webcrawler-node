@@ -87,6 +87,7 @@ public class QueueService {
       SendMessageBatchRequest batchMessageBatchRequest = new SendMessageBatchRequest();
       String queueURL = getQueueURL(queueName);
       batchMessageBatchRequest.setQueueUrl(queueURL);
+
       batchMessageBatchRequest.setEntries(entries);
 
       return sqs.sendMessageBatch(batchMessageBatchRequest);
@@ -96,6 +97,7 @@ public class QueueService {
       SendMessageRequest send_msg_request = new SendMessageRequest()
          .withQueueUrl(queueName)
          .withMessageBody(entry);
+
        return sqs.sendMessage(send_msg_request);
 
    }

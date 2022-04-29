@@ -23,10 +23,21 @@ public class SupermuffatodeliveryCrawler extends VTEXOldScraper {
 
    private static final String HOME_PAGE = "https://delivery.supermuffato.com.br/";
    private static final List<String> MAIN_SELLER_NAME_LOWER = Arrays.asList("Super Muffato Delivery");
+   protected String CITY_CODE = session.getOptions().optString("cityCode");
 
    public SupermuffatodeliveryCrawler(Session session) {
       super(session);
       config.setFetcher(FetchMode.APACHE);
+   }
+
+   @Override
+   public String handleURLBeforeFetch(String url) {
+      return super.handleURLBeforeFetch(url.split("\\?")[0] + "?sc=" + CITY_CODE);
+   }
+
+   @Override
+   protected JSONObject crawlProductApi(String internalPid, String parameters) {
+      return super.crawlProductApi(internalPid, "&sc=" + CITY_CODE);
    }
 
    @Override

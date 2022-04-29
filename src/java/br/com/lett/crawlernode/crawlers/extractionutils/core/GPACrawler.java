@@ -100,7 +100,7 @@ public class GPACrawler extends Crawler {
          CategoryCollection categories = crawlCategories(jsonSku);
          String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);
-         RatingsReviews ratingsReviews = session.getMarket().getName().contains("extramarketplace")? extractRatingAndReviews(internalId):null;
+         RatingsReviews ratingsReviews = session.getMarket().getName().contains("extramarketplace") ? extractRatingAndReviews(internalId) : null;
          List<String> secondaryImages = crawlSecondaryImages(jsonSku);
 
          String redirectedToURL = session.getRedirectedToURL(productUrl);
@@ -108,22 +108,9 @@ public class GPACrawler extends Crawler {
             productUrl = redirectedToURL;
          }
 
-         StringBuilder description = new StringBuilder();
+         String description = crawlDescription(jsonSku, doc);
 
-         description.append(jsonSku.optString("description"));
-
-         JSONArray attributeGroups = JSONUtils.getValueRecursive(jsonSku,"attributeGroups.0.attributes",JSONArray.class);
-         if (attributeGroups != null) {
-            for (Object o : attributeGroups) {
-               JSONObject attribute = (JSONObject) o;
-               description.append(attribute.opt("label")).append(" ").append(attribute.opt("value"));
-
-            }
-         }
-
-         description.append(scrapLaminaHtml(internalId));
-
-         Offers offers =  scrapOffers(jsonSku);
+         Offers offers = scrapOffers(jsonSku);
 
          Product product =
             ProductBuilder.create()
@@ -150,17 +137,14 @@ public class GPACrawler extends Crawler {
       return products;
    }
 
-   private Document scrapLaminaHtml(String internalId) {
-      int marketId =  session.getMarket().getNumber();
+   private String crawlDescription(JSONObject jsonSku, Document doc) {
+      StringBuilder description = new StringBuilder();
 
-      if(session.getMarket().getName().contains("paodeacucar")){
-         marketId = 4;
-      }
-      else if(session.getMarket().getName().contains("extra")){
-         marketId = 5;
-      }
+      description.append(jsonSku.optString("description"));
 
-      return CrawlerUtils.scrapLettHtml(internalId, session,marketId);
+      description.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div > div.MuiGrid-root.gridstyles-sc-6scn59-0.jAFMvU.MuiGrid-container")));
+
+      return description.toString();
    }
 
    private String crawlInternalId(JSONObject json) {
@@ -380,7 +364,7 @@ public class GPACrawler extends Crawler {
       JSONArray data = JSONUtils.getValueRecursive(jsonSku, "sellInfos", JSONArray.class);
 
       if (data != null) {
-         for(Object o: data) {
+         for (Object o : data) {
             JSONObject sellerinfo = (JSONObject) o;
             Pricing pricing = scrapPricing(sellerinfo);
             String sales = CrawlerUtils.calculateSales(pricing);

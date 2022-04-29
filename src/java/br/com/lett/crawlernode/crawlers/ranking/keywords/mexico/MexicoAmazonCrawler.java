@@ -1,8 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
@@ -23,7 +26,7 @@ public class MexicoAmazonCrawler extends CrawlerRankingKeywords {
    private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
 
@@ -32,7 +35,7 @@ public class MexicoAmazonCrawler extends CrawlerRankingKeywords {
       if (this.currentPage == 1) {
          url = "https://www.amazon.com.mx/s?k=" + this.keywordEncoded.replace(" ", "+") + "&__mk_es_MX=%C3%85M%C3%85%C5%BD%C3%95%C3%91&ref=nb_sb_noss";
       } else {
-         url = "https://www.amazon.com.mx/s?k=" + this.keywordEncoded.replace(" ", "+") + "&page=" + this.currentPage +"&__mk_es_MX=%C3%85M%C3%85%C5%BD%C3%95%C3%91&qid=" + this.storeId + "&ref=sr_pg_" + this.currentPage;
+         url = "https://www.amazon.com.mx/s?k=" + this.keywordEncoded.replace(" ", "+") + "&page=" + this.currentPage + "&__mk_es_MX=%C3%85M%C3%85%C5%BD%C3%95%C3%91&qid=" + this.storeId + "&ref=sr_pg_" + this.currentPage;
       }
       this.log("Link onde são feitos os crawlers: " + url);
 
@@ -43,18 +46,33 @@ public class MexicoAmazonCrawler extends CrawlerRankingKeywords {
       Element result = this.currentDoc.select("#noResultsTitle").first();
 
       if (!products.isEmpty() && result == null) {
-
          for (Element e : products) {
-
             String internalPid = crawlInternalPid(e);
             String internalId = internalPid;
             String productUrl = crawlProductUrl(internalPid);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "img.s-image", "src");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".a-color-base.a-text-normal", true);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "span.a-price .a-offscreen", null, true, '.', session, null);
+            String sponsored = CrawlerUtils.scrapStringSimpleInfo(e, ".s-label-popover-default > .a-color-secondary", true);
+            boolean isSpondored = sponsored != null;
+            boolean isAvailable = price != null;
+
 
             if (internalPid.isEmpty()) {
                continue;
             }
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            RankingProduct objProducts = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setImageUrl(imageUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setInternalId(internalId)
+               .setAvailability(isAvailable)
+               .setIsSponsored(isSpondored)
+               .build();
+
+            saveDataProduct(objProducts);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;

@@ -8,7 +8,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -51,7 +50,7 @@ public class BrasilEmporionestleCrawler extends Crawler {
          String primaryImage = CrawlerUtils.scrapPrimaryImageMagento(imagesArray);
          List<String> secondaryImage = CrawlerUtils.scrapSecondaryImagesMagentoList(imagesArray, primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div[itemprop = description]"));
-         boolean availableToBuy = !doc.select(".stock").isEmpty();
+         boolean availableToBuy = !doc.select(".stock.available").isEmpty();
          Offers offers = availableToBuy ? scrapOffer(doc, internalId) : new Offers();
 
          Product product = ProductBuilder.create()

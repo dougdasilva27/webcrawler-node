@@ -134,7 +134,12 @@ public abstract class VTEXScraper extends Crawler {
 
    protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
       String name = null;
-      if (jsonSku.has("nameComplete")) {
+
+      if(productJson.has("productName")) {
+         name = productJson.optString("productName");
+      }
+      
+      if (jsonSku.has("nameComplete") && jsonSku.opt("nameComplete") != null) {
          name = jsonSku.optString("nameComplete");
       } else if (jsonSku.has("name")) {
          name = jsonSku.optString("name");

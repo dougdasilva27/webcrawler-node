@@ -42,26 +42,46 @@ public class CuritibaNicheleCrawler extends VTEXOldScraper {
    }
 
    @Override
-   protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson) throws MalformedPricingException {
-      Double principalPrice = comertial.optDouble("Price");
-      Double priceFrom = comertial.optDouble("ListPrice");
+   protected BankSlip scrapBankSlip(Double spotlightPrice, JSONObject comertial, JSONObject discounts, boolean mustSetDiscount) throws MalformedPricingException {
+      Double bankSlipPrice = spotlightPrice;
+      Double discount = 0d;
 
-      CreditCards creditCards = scrapCreditCards(comertial, discountsJson, true);
+      JSONObject paymentOptions = comertial.optJSONObject("PaymentOptions");
+      if (paymentOptions != null) {
+         JSONArray cardsArray = paymentOptions.optJSONArray("installmentOptions");
+         if (cardsArray != null) {
+            for (Object o : cardsArray) {
+               JSONObject paymentJson = (JSONObject) o;
 
-      Double spotlightPrice = scrapSpotlightPrice(doc, internalId, principalPrice, comertial, discountsJson);
-      if (priceFrom != null && spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
-         priceFrom = null;
+               String paymentCode = paymentJson.optString("paymentSystem");
+               JSONObject paymentDiscount = discounts.has(paymentCode) ? discounts.optJSONObject(paymentCode) : null;
+               String name = paymentJson.optString("paymentName");
+
+               if(name !=null){
+                  String nameLow = name.toLowerCase();
+                  Boolean boleto = nameLow.contains("boleto");
+                  if (boleto != null & boleto ) {
+                     if (paymentDiscount != null) {
+                        discount = paymentDiscount.optDouble("discount");
+                        bankSlipPrice = MathUtils.normalizeTwoDecimalPlaces(bankSlipPrice - (bankSlipPrice * discount));
+                     }
+                     break;
+                  }
+               }
+
+            }
+         }
       }
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
 
-      return Pricing.PricingBuilder.create()
-         .setSpotlightPrice(spotlightPrice)
-         .setPriceFrom(priceFrom)
-         .setBankSlip(bankSlip)
-         .setCreditCards(creditCards)
+      if (!mustSetDiscount) {
+         discount = null;
+      }
+
+      return BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(bankSlipPrice)
+         .setOnPageDiscount(discount)
          .build();
    }
-
    @Override
    protected CreditCards scrapCreditCards(JSONObject comertial, JSONObject discounts, boolean mustSetDiscount) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
