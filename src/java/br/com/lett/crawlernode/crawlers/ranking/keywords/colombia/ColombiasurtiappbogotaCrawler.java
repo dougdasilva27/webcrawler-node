@@ -78,8 +78,8 @@ public class ColombiasurtiappbogotaCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.completeUrl(internalId, "https", "tienda.surtiapp.com.co/Store/ProductDetail/");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-card__name", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-card__image img", "src");
-            int price = CrawlerUtils.scrapIntegerFromHtml(e, ".product-card__price", true, 0);
-            boolean isAvailable = price != 0;
+            Integer price = CrawlerUtils.scrapIntegerFromHtml(e, ".product-card__price", true, null);
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
