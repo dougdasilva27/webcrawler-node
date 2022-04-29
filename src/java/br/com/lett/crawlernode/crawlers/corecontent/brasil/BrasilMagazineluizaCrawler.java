@@ -39,7 +39,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
    public BrasilMagazineluizaCrawler(Session session) {
       super(session);
-      super.config.setParser(Parser.HTML);
    }
 
    @Override
