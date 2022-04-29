@@ -3,10 +3,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.*;
@@ -25,7 +22,6 @@ import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Pricing.PricingBuilder;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -43,6 +39,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
    public BrasilMagazineluizaCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.HTML);
    }
 
    @Override
@@ -68,6 +65,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
          response = this.dataFetcher.get(session, request);
          doc = Jsoup.parse(response.getBody());
+
          attempts++;
 
          if (attempts == 3) {
@@ -92,14 +90,18 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
+         products.add(crawlProduct(doc));
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         products.add(crawlProduct(doc));
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
       return products;
+   }
+
+   private boolean isProductPage(Document doc) {
+      return doc.select("div.wrapper-product__content").first() != null || doc.select("div[data-testid='mod-mediagallery']").first() != null;
    }
 
    public Product crawlProductFromDefaultLayout(JSONObject skuJsonInfo, Document doc) throws Exception {
@@ -108,7 +110,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       String frontPageName = crawlNameFrontPage(doc, internalId);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
+      List<String> secondaryImages = crawlSecondaryImages(doc, primaryImage);
       boolean availableToBuy = !doc.select(".button__buy-product-detail").isEmpty();
       Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
       String description = crawlDescription(doc, internalId);
@@ -213,7 +215,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       return creditCards;
    }
 
-
    private Installments scrapInstallments(Document doc, String selector) throws MalformedPricingException {
       Installments installments = new Installments();
 
@@ -244,14 +245,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       return installments;
    }
 
-   /*******************************
-    * Product page identification *
-    *******************************/
-   private boolean isProductPage(Document doc) {
-      return doc.select("div.wrapper-product__content").first() != null || doc.select("div[data-testid='mod-mediagallery']").first() != null;
-   }
-
-
    private String crawlInternalId(JSONObject skuJson) {
       String internalId = null;
 
@@ -260,7 +253,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       }
       return internalId;
    }
-
 
    private String crawlNameFrontPage(Document doc, String id) {
       String name = null;
@@ -338,9 +330,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       return primaryImage;
    }
 
-   private String crawlSecondaryImages(Document doc, String primaryImage) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+   private List<String> crawlSecondaryImages(Document doc, String primaryImage) {
+      List<String> secondaryImagesList = new ArrayList<>();
 
       Elements imageThumbs = doc.select(".showcase-product__container-thumbs .showcase-product__thumbs img");
       Elements imageThumbsSpecial = doc.select("img.product-thumbs-carousel__thumb");
@@ -353,7 +344,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
             String image = e.attr("src").replace("88x66", "618x463");
 
             if (!image.equalsIgnoreCase(primaryImage)) {
-               secondaryImagesArray.put(image);
+               secondaryImagesList.add(image);
             }
 
          }
@@ -366,15 +357,11 @@ public class BrasilMagazineluizaCrawler extends Crawler {
             String image = e.attr("src").replace("88x66", "618x463");
 
             //Removed the primary image check. In some cases the primary image appears in secondary images, causing disparities from the website
-            secondaryImagesArray.put(image);
+            secondaryImagesList.add(image);
          }
       }
 
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
+      return secondaryImagesList;
    }
 
    private CategoryCollection crawlCategories(Document document) {
@@ -389,8 +376,25 @@ public class BrasilMagazineluizaCrawler extends Crawler {
    }
 
    private Product crawlProduct(Document document) throws Exception {
-      JSONObject skuJson = new JSONObject();
+      JSONObject skuJson = crawlJsonProduct(document);
       Product product = new Product();
+
+      if (!skuJson.isEmpty()) {
+         product = crawlProductFromDefaultLayout(skuJson, document);
+
+      } else {
+         skuJson = CrawlerUtils.selectJsonFromHtml(document, "#__NEXT_DATA__", null, "", false, false);
+
+         if (!skuJson.isEmpty()) {
+            product = crawlProductFromNewLayout(skuJson, document);
+         }
+      }
+
+      return product;
+   }
+
+   private JSONObject crawlJsonProduct(Document document) {
+      JSONObject skuJson = new JSONObject();
 
       String dataProduct = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".js-header-product[data-product]", "data-product");
       if (dataProduct != null) {
@@ -408,23 +412,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
       }
 
-      if (!skuJson.isEmpty()) {
-         product = crawlProductFromDefaultLayout(skuJson, document);
-
-      } else {
-         skuJson = CrawlerUtils.selectJsonFromHtml(document, "#__NEXT_DATA__", null, "", false, false);
-
-         product = crawlProductFromNewLayout(skuJson, document);
-      }
-
-      return product;
-   }
-
-
-   private JSONObject fetchAdvancedRating(String internalId, int page) {
-      String url = "https://www.magazineluiza.com.br/review/" + internalId + "/?page=" + page;
-      Request request = Request.RequestBuilder.create().setUrl(url).build();
-      return JSONUtils.stringToJson(dataFetcher.get(session, request).getBody());
+      return skuJson;
    }
 
    private RatingsReviews scrapRatingsAlternativeWay(Document doc) {
@@ -498,7 +486,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          .build();
    }
 
-
    private int getNumberStar(Element e) {
       int star = 0;
       Elements elements = e.select(".rating-percent__full .rating-percent__full-star");
@@ -524,7 +511,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "img[data-testid=\"media-gallery-image\"]", Collections.singletonList("src"), "https", "", primaryImage);
       boolean availableToBuy = json.optBoolean("available");
       Offers offers = availableToBuy ? scrapOffersNewLayout(doc, json) : new Offers();
-      RatingsReviews ratingsReviews = new RatingsReviews();
+      RatingsReviews ratingsReviews = scrapRatingsReviews(json);
 
       // Creating the product
       return ProductBuilder.create()
@@ -540,7 +527,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          .setOffers(offers)
          .build();
    }
-
 
    private Offers scrapOffersNewLayout(Document doc, JSONObject json) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
@@ -599,6 +585,19 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   private RatingsReviews scrapRatingsReviews(JSONObject json) {
+      RatingsReviews ratingsReviews = new RatingsReviews();
+
+      JSONObject rating = JSONUtils.getJSONValue(json, "rating");
+
+      ratingsReviews.setTotalRating(rating.optInt("count", 0));
+      ratingsReviews.setAverageOverallRating(rating.optDouble("score", 0.0));
+      ratingsReviews.setTotalWrittenReviews(rating.optInt("count", 0));
+
+      return ratingsReviews;
+
    }
 
 }
