@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -29,67 +30,53 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
 
    private static final String SELLER_FULL_NAME = "Surtiapp Bogota";
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString());
+   private int login = 0;
 
    public ColombiasurtiappbogotaCrawler(Session session) {
       super(session);
-
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
 
    @Override
    public void handleCookiesBeforeFetch() {
-      Request requestCookies = Request.RequestBuilder.create()
-         .setUrl("https://tienda.surtiapp.com.co/Security/Login")
-         .build();
+      if (login == 0) {
+         Map<String, String> Headers = new HashMap<>();
+         Headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+         Request request = Request.RequestBuilder.create()
+            .setUrl("https://tienda.surtiapp.com.co/WithoutLoginB2B/Store/ProductDetail/d7e53433-89a4-ec11-a99b-00155d30fb1f")
+            .setHeaders(Headers)
+            .mustSendContentEncoding(true)
+            .build();
+         Response responseApi = new JsoupDataFetcher().get(session, request);
+         Document document = Jsoup.parse(responseApi.getBody());
 
-      Response responseCookies = dataFetcher.get(session, requestCookies);
-
-      this.cookies.addAll(responseCookies.getCookies());
-
-
-      Document document = Jsoup.parse(responseCookies.getBody());
-
-      String requestVerificationToken = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "input[name=\"__RequestVerificationToken\"]", "value");
-
-      Map<String, String> headers = new HashMap<>();
-
-      headers.put("RequestVerificationToken",requestVerificationToken);
-      headers.put(Header.CONTENT_TYPE,"application/x-www-form-urlencoded");
-      headers.put("Cookie", CommonMethods.cookiesToString(responseCookies.getCookies()));
-
-      String payload = "email=" +
-         session.getOptions().optString("email", "") +
-         "&password=" +
-         session.getOptions().optString("password", "");
-
-
-      Request requestLogin = Request.RequestBuilder.create()
-         .setUrl("https://tienda.surtiapp.com.co/Security/Login?handler=Authenticate")
-         .setHeaders(headers)
-         .setPayload(payload)
-         .build();
-
-    new JsoupDataFetcher().post(session,requestLogin);
-
-
-
-
+         String verificationToken = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".mh__search-bar-wrapper > form > input[type=hidden]", "value");
+         Headers.put("RequestVerificationToken", verificationToken);
+         String payload = "username=1130409480&password=Lett12345.&isMobileLogin=false&RedirectTo=";
+         Request requestLogin = Request.RequestBuilder.create()
+            .setHeaders(Headers)
+            .setCookies(responseApi.getCookies())
+            .setPayload(payload)
+            .mustSendContentEncoding(true)
+            .setUrl("https://tienda.surtiapp.com.co/WithoutLoginB2B/Security/UserAccount?handler=Authenticate")
+            .build();
+         Response responseApiLogin = new JsoupDataFetcher().post(session, requestLogin);
+         this.cookies.addAll(responseApiLogin.getCookies());
+         login++;
+      }
    }
 
    @Override
-   protected Object fetch() {
+   protected Response fetchResponse() {
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", CommonMethods.cookiesToString(this.cookies));
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
-         .setHeaders(headers)
+         .setCookies(this.cookies)
          .build();
       Response response = new JsoupDataFetcher().get(session, request);
 
-      String html = response.getBody();
-
-      return Jsoup.parse(html);
+      return response;
    }
 
    @Override
@@ -204,6 +191,4 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
 
       return sales;
    }
-
-
 }
