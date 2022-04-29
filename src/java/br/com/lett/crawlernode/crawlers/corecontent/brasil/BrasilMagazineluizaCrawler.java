@@ -505,8 +505,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
       String internalId = json.optString("id");
       String name = json.optString("title");
-      CategoryCollection categories = crawlCategories(doc);
-      String description = json.optString("description");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img[data-testid=\"image-selected-thumbnail\"]", Collections.singletonList("src"), "https", "");
       List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "img[data-testid=\"media-gallery-image\"]", Collections.singletonList("src"), "https", "", primaryImage);
       boolean availableToBuy = json.optBoolean("available");
