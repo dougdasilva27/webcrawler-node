@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
@@ -12,6 +14,8 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,8 +23,8 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
 
    public WalmartSuperCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.APACHE;
    }
-
    String store_id = session.getOptions().optString("store_id");
 
    @Override
@@ -102,7 +106,19 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
       headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("Cache-Control", "no-cache");
 
-      Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+         .mustSendContentEncoding(false)
+         .build();
       String response = this.dataFetcher.get(session, request).getBody();
       Integer count =0;
       while (response.isEmpty() && count < 3){
