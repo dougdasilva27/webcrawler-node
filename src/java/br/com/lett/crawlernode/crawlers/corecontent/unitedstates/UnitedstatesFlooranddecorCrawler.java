@@ -55,7 +55,7 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
             webdriver.terminate();
 
-         } while (doc != null && doc.select(".b-pdp_details").isEmpty() && attempts++ < 2);
+         } while (doc != null && doc.select(".b-pdp_details").isEmpty() && attempts++ < 3);
 
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
