@@ -6,14 +6,10 @@ import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -25,7 +21,6 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -46,10 +41,13 @@ public class BrasilLojamondelezCrawler extends Crawler {
    public BrasilLojamondelezCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setParser(Parser.HTML);
    }
+
    private final String PASSWORD = getPassword();
    private final String CNPJ = getCnpj();
-   private final String MASTER_USER =  getMasterUser();
+   private final String MASTER_USER = getMasterUser();
+
    protected String getMasterUser() {
       return session.getOptions().optString("master_user");
    }
@@ -61,6 +59,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
    protected String getCnpj() {
       return session.getOptions().optString("cnpj");
    }
+
    @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
@@ -68,6 +67,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
    }
 
    private String cookiePHPSESSID = null;
+
    private void loginMasterAccount() {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
@@ -79,7 +79,17 @@ public class BrasilLojamondelezCrawler extends Crawler {
 
       String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
 
-      Request request = RequestBuilder.create().setUrl(ADMIN_URL).setPayload(payloadString).setHeaders(headers).build();
+      Request request = RequestBuilder.create()
+         .setUrl(ADMIN_URL)
+         .setPayload(payloadString)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.BONANZA,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
+         .build();
 
       Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
 
@@ -91,6 +101,8 @@ public class BrasilLojamondelezCrawler extends Crawler {
          }
       }
    }
+
+
    @Override
    public void handleCookiesBeforeFetch() {
       loginMasterAccount();
@@ -110,26 +122,35 @@ public class BrasilLojamondelezCrawler extends Crawler {
       Request request = RequestBuilder.create()
          .setUrl(LOGIN_URL)
          .setPayload(payload.toString())
-         .setProxyservice(Arrays.asList(ProxyCollection.BONANZA,
+         .setProxyservice(Arrays.asList(
             ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY))
+            ProxyCollection.BONANZA,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
          .setHeaders(headers)
          .build();
 
-      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
+      CrawlerUtils.retryRequest(request, session, dataFetcher);
    }
 
    @Override
-   protected Object fetch() {
+   protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
 
       Request request = RequestBuilder.create()
          .setUrl(session.getOriginalURL())
+         .setProxyservice(Arrays.asList(ProxyCollection.BONANZA,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+
+         ))
          .setHeaders(headers)
          .build();
 
-      return Jsoup.parse(new ApacheDataFetcher().get(session, request).getBody());
+      return new ApacheDataFetcher().get(session, request);
    }
 
    @Override
@@ -227,11 +248,11 @@ public class BrasilLojamondelezCrawler extends Crawler {
       return name;
    }
 
-   private List<String> scrapImages(Document doc){
+   private List<String> scrapImages(Document doc) {
       List<String> images = new ArrayList<String>();
       Elements imageElements = doc.select("div .product-gallery-thumbnails button");
 
-      if(!imageElements.isEmpty()){
+      if (!imageElements.isEmpty()) {
          imageElements.forEach(e -> images.add(e.select("img").attr("src")));
       }
 

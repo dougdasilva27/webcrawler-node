@@ -52,7 +52,17 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
 
       String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
 
-      Request request = RequestBuilder.create().setUrl(ADMIN_URL).setPayload(payloadString).setHeaders(headers).build();
+      Request request = RequestBuilder.create()
+         .setUrl(ADMIN_URL)
+         .setPayload(payloadString)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.BONANZA,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
+         .build();
       Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
 
       List<Cookie> cookiesResponse = response.getCookies();
@@ -84,9 +94,12 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       Request request = RequestBuilder.create()
          .setUrl(LOGIN_URL)
          .setPayload(payload.toString())
-         .setProxyservice(Arrays.asList(ProxyCollection.BONANZA,
+         .setProxyservice(Arrays.asList(
             ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY))
+            ProxyCollection.BONANZA,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
          .setHeaders(headers)
          .build();
 
@@ -104,9 +117,12 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
          .create()
          .setCookies(cookies)
          .setUrl(url)
-         .setProxyservice(Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+         .setProxyservice(Arrays.asList(
             ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY))
+            ProxyCollection.BONANZA,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
          .build();
 
       return Jsoup.parse(new ApacheDataFetcher().get(session, request).getBody());
