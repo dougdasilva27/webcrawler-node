@@ -2383,6 +2383,9 @@ public class CrawlerUtils {
             while (!response.isSuccess() && tries < 3) {
                tries++;
                response = dataFetcher.post(session, request);
+               if (tries == 3 && !response.isSuccess()) {
+                  Logging.printLogWarn(LOGGER, session, "Request failed 3 times");
+               }
             }
          }
       }
