@@ -9,7 +9,6 @@ import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
@@ -49,10 +48,14 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
    protected Object fetch() {
       Document doc = null;
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY, session, this.cookiesWD, HOME_PAGE);
-         webdriver.waitForElement(".b-pdp_details", 30);
+         int attempts = 0;
+         do {
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY, session, this.cookiesWD, HOME_PAGE);
+            webdriver.waitLoad(30000);
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            webdriver.terminate();
 
-         doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         } while (doc != null && doc.select(".b-pdp_details").isEmpty() && attempts++ < 2);
 
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
