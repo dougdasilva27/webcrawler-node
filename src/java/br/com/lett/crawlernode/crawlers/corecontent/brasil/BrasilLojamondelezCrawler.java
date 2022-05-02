@@ -141,11 +141,11 @@ public class BrasilLojamondelezCrawler extends Crawler {
 
       Request request = RequestBuilder.create()
          .setUrl(session.getOriginalURL())
-         .setProxyservice(Arrays.asList(ProxyCollection.BONANZA,
+         .setProxyservice(Arrays.asList(
             ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.BONANZA,
             ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR
-
          ))
          .setHeaders(headers)
          .build();
