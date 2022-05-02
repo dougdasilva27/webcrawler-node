@@ -46,7 +46,7 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-      Document doc = null;
+      Document doc = new Document(HOME_PAGE);
       try {
          int attempts = 0;
          do {
@@ -55,7 +55,7 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
             webdriver.terminate();
 
-         } while (doc != null && doc.select(".b-pdp_details").isEmpty() && attempts++ < 3);
+         } while (doc.select(".b-pdp_details").isEmpty() && attempts++ < 3);
 
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
