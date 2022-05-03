@@ -149,7 +149,7 @@ public class CornershopCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject jsonSku) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonSku, "price", false);
-      Double priceFrom = JSONUtils.getDoubleValueFromJSON(jsonSku, "original_price", false);
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(jsonSku, "original_price", true);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
