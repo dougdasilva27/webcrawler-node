@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -20,6 +21,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.eclipse.jetty.util.ajax.JSON;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -38,7 +40,7 @@ public class CornershopCrawler extends Crawler {
    private String storeId = getStoreId();
    private final String SELLER_FULL_NAME = getSellerName();
 
-   protected String getStoreId(){
+   protected String getStoreId() {
       return session.getOptions().optString("STORE_ID");
    }
 
@@ -68,10 +70,15 @@ public class CornershopCrawler extends Crawler {
             String urlApi = PRODUCTS_API_URL + storeId + "/products/" + id;
 
             Request request = RequestBuilder.create().setUrl(urlApi).setCookies(cookies).build();
+            Response response = new Response();
 
-            // fetcher is the best option because another services have problem with accents
-            JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
+            int tries = 0;
+            do {
+               response = this.dataFetcher.get(session, request);
+               tries++;
+            } while (tries < 3 && !response.isSuccess());
 
+            JSONArray array = CrawlerUtils.stringToJsonArray(response.getBody());
             if (array.length() > 0) {
                return array.getJSONObject(0);
             }
