@@ -42,8 +42,10 @@ public class BrasilSamsclubCrawler extends VTEXNewScraper {
       StringBuilder description = new StringBuilder();
 
       JSONArray descriptionArray = productJson.optJSONArray("Descrição");
-      for (int i = 0; i < descriptionArray.length(); i++) {
-         description.append(descriptionArray.optString(i));
+      if (descriptionArray != null && !descriptionArray.isEmpty()) {
+         for (int i = 0; i < descriptionArray.length(); i++) {
+            description.append(descriptionArray.optString(i));
+         }
       }
 
       return description.toString();
