@@ -80,7 +80,7 @@ public class BrasilDrogariasoaresCrawler extends Crawler {
    }
 
    private List<String> scrapImages(Document doc) {
-      List<String> rawImages = CrawlerUtils.scrapSecondaryImages(doc, "#gallery img", List.of("src"), "https", "drogariasoares.com.br", null);
+      List<String> rawImages = CrawlerUtils.scrapSecondaryImages(doc, "div.zoom-img-index img", List.of("src"), "https", "drogariasoares.com.br", null);
       return rawImages.stream().map(image -> image.replace("/Mini/", "/Super/")).collect(Collectors.toList());
    }
 
