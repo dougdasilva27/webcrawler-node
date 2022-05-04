@@ -25,7 +25,7 @@ public class BrasilDrogariasoaresCrawler extends Crawler {
       super(session);
    }
 
-   private static final String HOME_PAGE = "https://www.drogariasoares.com.br/";
+   private static final String HOME_PAGE = "https://drogariasoares.com.br/";
    private Set<String> CARDS = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.ELO.toString(), Card.AMEX.toString());
 
    @Override
