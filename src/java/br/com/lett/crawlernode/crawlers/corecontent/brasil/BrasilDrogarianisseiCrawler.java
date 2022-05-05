@@ -26,7 +26,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
    public BrasilDrogarianisseiCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
