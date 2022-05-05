@@ -26,7 +26,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
    public BrasilDrogarianisseiCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
@@ -203,10 +203,10 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          .setUrl(url)
          .setHeaders(headers)
          .setCookies(this.cookies)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
+//         .setProxyservice(Arrays.asList(
+//            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+//            ProxyCollection.BUY_HAPROXY,
+//            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
          .setPayload(payload)
          .build();
 
