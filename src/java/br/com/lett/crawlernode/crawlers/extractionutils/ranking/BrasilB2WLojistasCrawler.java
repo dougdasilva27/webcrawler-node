@@ -17,11 +17,21 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class BrasilAmericanasLojistasCrawler extends CrawlerRankingKeywords {
+public class BrasilB2WLojistasCrawler extends CrawlerRankingKeywords {
 
-   private static final String HOME_PAGE = "www.americanas.com.br";
+   private String store = getStore();
+   private String homePage = getHomePage();
 
-   public BrasilAmericanasLojistasCrawler(Session session) {
+
+   public String getStore() {
+      return session.getOptions().optString("store");
+   }
+
+   public String getHomePage() {
+      return "www." + store + ".com.br";
+   }
+
+   public BrasilB2WLojistasCrawler(Session session) {
       super(session);
    }
 
@@ -62,7 +72,7 @@ public class BrasilAmericanasLojistasCrawler extends CrawlerRankingKeywords {
       if (!products.isEmpty()) {
          for (Element e : products) {
             String internalPid = scraperInternalPid(e);
-            String productUrl = CrawlerUtils.completeUrl("produto/" + internalPid, "https", HOME_PAGE);
+            String productUrl = CrawlerUtils.completeUrl("produto/" + internalPid, "https", homePage);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "[class^=\"TitleUI\"]", true);
             Integer price = CrawlerUtils.scrapIntegerFromHtml(e, "[class^=\"PriceUI\"]", true, 0);
             String imageUrl = scraperImage(internalPid, name);
@@ -99,9 +109,9 @@ public class BrasilAmericanasLojistasCrawler extends CrawlerRankingKeywords {
       String keyword = this.keywordWithoutAccents.replace(" ", "-");
 
       if (this.currentPage == 1) {
-         url = "https://www.americanas.com.br/lojista/" + session.getOptions().optString("lojista") + "?ordenacao=relevance&conteudo=" + keyword;
+         url = "https://www." + store + ".com.br/lojista/" + session.getOptions().optString("lojista") + "?ordenacao=relevance&conteudo=" + keyword;
       } else {
-         url = "https://www.americanas.com.br/lojista/" + session.getOptions().optString("lojista") + "/pagina-" + this.currentPage + "?conteudo=" + keyword + "&ordenacao=relevance";
+         url = "https://www." + store + ".com.br/lojista/" + session.getOptions().optString("lojista") + "/pagina-" + this.currentPage + "?conteudo=" + keyword + "&ordenacao=relevance";
       }
       return url;
    }
@@ -114,7 +124,7 @@ public class BrasilAmericanasLojistasCrawler extends CrawlerRankingKeywords {
 
    private String scraperImage(String internalPid, String name) {
       String slug = name.toLowerCase(Locale.ROOT).replace(" ", "-");
-      return "https://images-americanas.b2w.io/produtos/" + internalPid + "/imagens/" + slug + "/" + internalPid + "_1_large.jpg";
+      return "https://images-" + store + ".b2w.io/produtos/" + internalPid + "/imagens/" + slug + "/" + internalPid + "_1_large.jpg";
    }
 
    private String scraperInternalPid(Element e) {
