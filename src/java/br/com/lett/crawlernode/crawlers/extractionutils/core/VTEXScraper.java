@@ -139,7 +139,7 @@ public abstract class VTEXScraper extends Crawler {
          name = productJson.optString("productName");
       }
       
-      if (jsonSku.has("nameComplete") && jsonSku.opt("nameComplete") != null) {
+      if (name != null && jsonSku.has("nameComplete") && jsonSku.opt("nameComplete") != null) {
          name = jsonSku.optString("nameComplete");
       } else if (jsonSku.has("name")) {
          name = jsonSku.optString("name");
