@@ -209,6 +209,8 @@ public abstract class CrawlerRanking extends Task {
             log("End of pages!");
          }
 
+         logInfo("Total products: " + this.totalProducts);
+
          // função para popular os dados no banco
          if (session instanceof RankingSession) {
             persistRankingData();
@@ -460,7 +462,7 @@ public abstract class CrawlerRanking extends Task {
 
       int counter = 0;
 
-      this.log(this.messages.size() + " possible new products to send to SQS.");
+      this.logInfo(this.messages.size() + " possible new products to send to SQS.");
 
       long sendMessagesStartTime = System.currentTimeMillis();
 
@@ -710,6 +712,10 @@ public abstract class CrawlerRanking extends Task {
 
    public void log(String message) {
       Logging.printLogDebug(logger, session, message);
+   }
+
+   public void logInfo(String message) {
+      Logging.printLogInfo(logger, session, message);
    }
 
    public void logError(String message) {
