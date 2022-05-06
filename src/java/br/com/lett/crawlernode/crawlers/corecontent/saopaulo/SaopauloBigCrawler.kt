@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo
 
 import br.com.lett.crawlernode.core.session.Session
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper
 import models.RatingsReviews
 import org.apache.http.impl.cookie.BasicClientCookie
@@ -8,11 +9,12 @@ import org.json.JSONObject
 import org.jsoup.nodes.Document
 import java.util.regex.Pattern
 
-class SaopauloBigCrawler(session: Session) : VTEXOldScraper(session) {
+class SaopauloBigCrawler(session: Session) : VTEXNewScraper(session) {
    override fun handleCookiesBeforeFetch() {
-      cookies.add(BasicClientCookie("vtex_segment", session.options.optString("vtex_segment")))
+      val cookie = BasicClientCookie("vtex_segment", session.options.optString("vtex_segment"))
+      cookie.domain = if (getHomePage().endsWith("/")) getHomePage().substringAfter("https://").replace("/", "") else getHomePage().substringAfter("https://")
+      cookies.add(cookie)
    }
-
 
    override fun getHomePage(): String {
       return session.options.optString("homePage")
@@ -29,22 +31,28 @@ class SaopauloBigCrawler(session: Session) : VTEXOldScraper(session) {
 
    override fun isMainRetailer(sellerName: String?): Boolean {
       var seller = sellerName ?: ""
-      if(sellerName != null && sellerName.last() == '.') {
+      if (sellerName != null && sellerName.last() == '.') {
          seller = sellerName.substring(0, sellerName.length - 1)
       }
       return super.isMainRetailer(seller)
    }
 
-   override fun scrapPidFromApi(doc: Document?): String? {
-      var internalPid: String? = null
-      val pattern = Pattern.compile("id\":\"(.[0-9]*)\",\"slug")
-      val matcher = pattern.matcher(doc.toString())
-      if (matcher.find()) {
-         internalPid = matcher.group(1)
+   override fun scrapDescription(doc: Document?, productJson: JSONObject?): String {
+      val builder = StringBuilder();
+      builder.append(productJson?.optString("description")).append("</br></br>Informações do produto</br></br>")
 
+      val keys = productJson?.optJSONArray("allSpecifications")?.toList();
+
+      if (keys != null) {
+         for (key in keys) {
+            val keyName = key.toString()
+            val keyValue = productJson.optJSONArray(keyName)?.toList()?.first()?.toString()
+            if (keyValue != null) {
+               builder.append(keyName).append(": ").append(keyValue).append("</br>")
+            }
+         }
       }
-
-      return internalPid
+      return builder.toString()
    }
-
 }
+
