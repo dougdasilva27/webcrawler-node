@@ -20,7 +20,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 
+import java.lang.reflect.Proxy;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Collections;
 
 public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
@@ -32,6 +34,19 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
+   protected Document fetchDocument(String url) {
+      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(url)
+         .mustSendContentEncoding(false)
+         .setSendUserAgent(false)
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .build();
+
+      Response response = CrawlerUtils.retryRequest(request, session, this.dataFetcher, true);
+
+      return Jsoup.parse(response.getBody());
+   }
+
+   @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 16;
       this.log("Página " + this.currentPage);
@@ -39,14 +54,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
       String url = "https://www.panvel.com/panvel/buscarProduto.do?termoPesquisa=" + keywordEncoded + "&paginaAtual=" + currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
-      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(url)
-         .mustSendContentEncoding(false)
-         .setSendUserAgent(false)
-         .setProxyservice(Collections.singletonList(ProxyCollection.BUY))
-         .build();
-      Response response = dataFetcher.get(session, request);
-
-      currentDoc = Jsoup.parse(response.getBody());
+      this.currentDoc = fetchDocument(url);
       JSONArray products = crawlProducts(currentDoc);
 
       if (!products.isEmpty()) {
