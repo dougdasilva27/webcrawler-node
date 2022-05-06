@@ -3,32 +3,24 @@ package br.com.lett.crawlernode.util;
 import br.com.lett.crawlernode.core.session.Session;
 import okhttp3.HttpUrl;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.*;
 import java.io.*;
 import java.net.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.Normalizer;
-import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static br.com.lett.crawlernode.util.CrawlerUtils.stringToJson;
 
 
 /**
@@ -529,7 +521,7 @@ public class CommonMethods {
 
       String result = "";
       int s = between ? str.indexOf(start) + start.length() : str.indexOf(start);
-      int e = between ? str.indexOf(end, s) : str.indexOf(end, s)+end.length();
+      int e = between ? str.indexOf(end, s) : str.indexOf(end, s) + end.length();
 
       if (s >= 0 && s < e && e <= str.length()) {
          result = str.substring(s, e);
@@ -538,15 +530,14 @@ public class CommonMethods {
    }
 
    public static ScraperInformation getScraperInformation(ResultSet resultSet) throws SQLException {
-      ScraperInformation scraperInformation = new ScraperInformation(  resultSet.getString("options_scraper"), resultSet.getString("options"), resultSet.getString("class"), resultSet.getString("name"), resultSet.getBoolean("use_browser"), resultSet.getString("proxies") );
-
+      ScraperInformation scraperInformation = new ScraperInformation(resultSet.getString("options_scraper"), resultSet.getString("options"), resultSet.getString("class"), resultSet.getString("name"), resultSet.getBoolean("use_browser"), resultSet.getString("proxies"));
 
 
       return scraperInformation;
    }
 
    public static Integer doublePriceToIntegerPrice(Double price, Integer defaultValue) {
-      return price != null ? (int) (price * 100) :defaultValue;
+      return price != null ? (int) (price * 100) : defaultValue;
    }
 
    public static Integer stringPriceToIntegerPrice(String priceStr, char decimalSeparator, Integer defaultValue) {
@@ -567,15 +558,16 @@ public class CommonMethods {
    //convert camelcase to normal text
    public static String camelcaseToText(String str) {
       StringBuilder sb = new StringBuilder();
-      for(int i = 0; i < str.length(); i++){
+      for (int i = 0; i < str.length(); i++) {
          char c = str.charAt(i);
-         if(c >= 'A' && c <= 'Z'){
+         if (c >= 'A' && c <= 'Z') {
             sb.append(" ");
          }
          sb.append(c);
       }
       return sb.toString();
    }
+
    /**
     * Transform a object to Double if possible
     *
@@ -584,7 +576,7 @@ public class CommonMethods {
     */
    public static Double objectToDouble(Object object) {
       Double result = null;
-      if(object instanceof Integer) {
+      if (object instanceof Integer) {
          result = (double) (int) object;
       } else if (object instanceof Double) {
          result = (double) object;
@@ -592,24 +584,5 @@ public class CommonMethods {
 
       return result;
    }
-
-   public boolean hasLtrBeforeOneMonth(String lrt) {
-      if (lrt != null && !lrt.isEmpty()) {
-         try {
-            Date lrtDate = new SimpleDateFormat("yyyy-M-dd hh:mm:ss").parse(lrt);
-            Date oneMonthAgo = DateUtils.addMonths(new Date(), -1);
-            Logging.printLogDebug(LOGGER, "LTR: " + lrt + " - " + oneMonthAgo + " has more than one month: " + (lrtDate.after(oneMonthAgo)));
-            return lrtDate.before(oneMonthAgo);
-
-         } catch (Exception e) {
-            Logging.printLogError(LOGGER,  "Error parsing lrt date: " + lrt);
-         }
-      }
-      return false;
-   }
-
-
-
-
 
 }
