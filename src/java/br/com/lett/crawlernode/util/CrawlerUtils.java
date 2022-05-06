@@ -2373,16 +2373,20 @@ public class CrawlerUtils {
    }
 
    public static Response retryRequest(Request request, Session session, DataFetcher dataFetcher) {
-      Response response = dataFetcher.post(session, request);
+      return retryRequest(request, session, dataFetcher, false);
+   }
+
+   public static Response retryRequest(Request request, Session session, DataFetcher dataFetcher, boolean isGet) {
+      Response response = isGet ? dataFetcher.get(session, request) : dataFetcher.post(session, request);
 
       if (!response.isSuccess()) {
-         response = dataFetcher.post(session, request);
+         response = isGet ? dataFetcher.get(session, request) : dataFetcher.post(session, request);
 
          if (!response.isSuccess()) {
             int tries = 0;
             while (!response.isSuccess() && tries < 3) {
                tries++;
-               response = dataFetcher.post(session, request);
+               response = isGet ? dataFetcher.get(session, request) : dataFetcher.post(session, request);
                if (tries == 3 && !response.isSuccess()) {
                   Logging.printLogWarn(LOGGER, session, "Request failed 3 times");
                }
