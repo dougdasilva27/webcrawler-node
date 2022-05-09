@@ -1,7 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -9,7 +7,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -21,7 +18,6 @@ import models.pricing.*;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import software.amazon.awssdk.http.Header;
 
 import java.util.*;
 
@@ -29,67 +25,22 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
 
    private static final String SELLER_FULL_NAME = "Surtiapp Bogota";
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString());
+   private int login = 0;
 
    public ColombiasurtiappbogotaCrawler(Session session) {
       super(session);
-
-   }
-
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      Request requestCookies = Request.RequestBuilder.create()
-         .setUrl("https://tienda.surtiapp.com.co/Security/Login")
-         .build();
-
-      Response responseCookies = dataFetcher.get(session, requestCookies);
-
-      this.cookies.addAll(responseCookies.getCookies());
-
-
-      Document document = Jsoup.parse(responseCookies.getBody());
-
-      String requestVerificationToken = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "input[name=\"__RequestVerificationToken\"]", "value");
-
-      Map<String, String> headers = new HashMap<>();
-
-      headers.put("RequestVerificationToken",requestVerificationToken);
-      headers.put(Header.CONTENT_TYPE,"application/x-www-form-urlencoded");
-      headers.put("Cookie", CommonMethods.cookiesToString(responseCookies.getCookies()));
-
-      String payload = "email=" +
-         session.getOptions().optString("email", "") +
-         "&password=" +
-         session.getOptions().optString("password", "");
-
-
-      Request requestLogin = Request.RequestBuilder.create()
-         .setUrl("https://tienda.surtiapp.com.co/Security/Login?handler=Authenticate")
-         .setHeaders(headers)
-         .setPayload(payload)
-         .build();
-
-    new JsoupDataFetcher().post(session,requestLogin);
-
-
-
-
    }
 
    @Override
-   protected Object fetch() {
+   protected Response fetchResponse() {
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", CommonMethods.cookiesToString(this.cookies));
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
-         .setHeaders(headers)
+         .setCookies(this.cookies)
          .build();
-      Response response = new JsoupDataFetcher().get(session, request);
+      Response response = this.dataFetcher.get(session, request);
 
-      String html = response.getBody();
-
-      return Jsoup.parse(html);
+      return response;
    }
 
    @Override
@@ -112,7 +63,7 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
             String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".product-detail__content--full"));
             int stock = data.optInt("Stock");
             boolean available = stock > 0;
-            Offers offers = available ? scrapOffers(doc) : new Offers();
+            Offers offers = available ? scrapOffers(data) : new Offers();
 
             // Creating the product
             Product product = ProductBuilder.create()
@@ -141,9 +92,9 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
    }
 
 
-   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
+      Pricing pricing = scrapPricing(data);
       List<String> sales = scrapSales(pricing);
 
       offers.add(Offer.OfferBuilder.create()
@@ -160,11 +111,13 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
 
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-detail__price--full", null, true, '.', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-detail__price--old--full del", null, true, '.', session);
+   private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
+      Double spotlightPrice = data.optDouble("NewPrice");
+      Double priceFrom = data.optDouble("Price");
+      if (spotlightPrice == 0) {
+         spotlightPrice = priceFrom;
+      }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
-
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setPriceFrom(priceFrom)
@@ -204,6 +157,4 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
 
       return sales;
    }
-
-
 }
