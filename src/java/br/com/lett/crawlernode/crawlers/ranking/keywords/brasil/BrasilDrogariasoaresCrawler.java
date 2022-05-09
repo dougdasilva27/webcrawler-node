@@ -25,7 +25,7 @@ public class BrasilDrogariasoaresCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       // we put 100 on "pagina" because this site returns all the products on the last page
-      String url = "https://www.drogariasoares.com.br/busca/" + this.keywordWithoutAccents.replace(" ", "-") + "?pagina=100";
+      String url = "https://drogariasoares.com.br/busca/" + this.keywordWithoutAccents.replace(" ", "-") + "?pagina=100";
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
@@ -40,9 +40,9 @@ public class BrasilDrogariasoaresCrawler extends CrawlerRankingKeywords {
 
          for (Element e : products) {
             String internalId = crawlInternalId(e);
-            String productUrl = CrawlerUtils.scrapUrl(e, ".link-prod", "href", "https", "www.drogariasoares.com.br");
+            String productUrl = CrawlerUtils.scrapUrl(e, ".link-prod", "href", "https", "drogariasoares.com.br");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".nome h1", true);
-            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".imagem img", Collections.singletonList("src"), "https", "www.drogariasoares.com.br");
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".imagem img", Collections.singletonList("src"), "https", "drogariasoares.com.br");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".preco .preco-por", null, false, ',', session, null);
             boolean isAvailable = price != null;
 
