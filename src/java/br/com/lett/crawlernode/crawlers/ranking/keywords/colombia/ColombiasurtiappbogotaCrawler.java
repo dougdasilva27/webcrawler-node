@@ -10,6 +10,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -44,9 +45,6 @@ public class ColombiasurtiappbogotaCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      if (login == 0){
-         getCookiesLogin();
-      }
       this.pageSize = 25;
       this.log("Página " + this.currentPage);
 
@@ -55,15 +53,20 @@ public class ColombiasurtiappbogotaCrawler extends CrawlerRankingKeywords {
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url, this.cookies);
 
-      Elements products = this.currentDoc.select(".product-card.product-id-contaniner");
 
+      Elements products = this.currentDoc.select(".product-card.product-id-contaniner");
       if (!products.isEmpty()) {
          for (Element e : products) {
+            String dataJson = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "#card-product","data-json");
+            JSONObject data = dataJson != null && !dataJson.isEmpty() ? CrawlerUtils.stringToJson(dataJson) : null;
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "data-product");
             String productUrl = CrawlerUtils.completeUrl(internalId, "https", "tienda.surtiapp.com.co/Store/ProductDetail/");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-card__name", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-card__image img", "src");
-            Integer price = CrawlerUtils.scrapIntegerFromHtml(e, ".product-card__price", true, null);
+            Integer price = data.optInt("NewPrice");
+            if (price == 0){
+               price = data.optInt("Price");
+            }
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -91,32 +94,6 @@ public class ColombiasurtiappbogotaCrawler extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
          + this.arrayProducts.size() + " produtos crawleados");
-   }
-
-   public void getCookiesLogin() {
-      Map<String, String> Headers = new HashMap<>();
-      Headers.put("Content-Type","application/x-www-form-urlencoded; charset=UTF-8");
-      Request request = Request.RequestBuilder.create()
-         .setUrl("https://tienda.surtiapp.com.co/WithoutLoginB2B/Store/ProductDetail/d7e53433-89a4-ec11-a99b-00155d30fb1f")
-         .setHeaders(Headers)
-         .mustSendContentEncoding(true)
-         .build();
-      Response responseApi =  this.dataFetcher.get(session, request);
-      Document document = Jsoup.parse(responseApi.getBody());
-
-      String verificationToken = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".mh__search-bar-wrapper > form > input[type=hidden]", "value");
-      Headers.put("RequestVerificationToken", verificationToken);
-      String payload = "username=1130409480&password=Lett12345.&isMobileLogin=false&RedirectTo=";
-      Request requestLogin = Request.RequestBuilder.create()
-         .setHeaders(Headers)
-         .setCookies(responseApi.getCookies())
-         .setPayload(payload)
-         .mustSendContentEncoding(true)
-         .setUrl("https://tienda.surtiapp.com.co/WithoutLoginB2B/Security/UserAccount?handler=Authenticate")
-         .build();
-      Response responseApiLogin =  this.dataFetcher.post(session, requestLogin);
-       this.cookies.addAll(responseApiLogin.getCookies());
-      login ++;
    }
 
 }

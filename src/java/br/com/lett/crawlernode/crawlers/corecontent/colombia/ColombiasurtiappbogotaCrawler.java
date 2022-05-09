@@ -31,36 +31,6 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
       super(session);
    }
 
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      if (login == 0) {
-         Map<String, String> Headers = new HashMap<>();
-         Headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-         Request request = Request.RequestBuilder.create()
-            .setUrl("https://tienda.surtiapp.com.co/WithoutLoginB2B/Store/ProductDetail/d7e53433-89a4-ec11-a99b-00155d30fb1f")
-            .setHeaders(Headers)
-            .mustSendContentEncoding(true)
-            .build();
-         Response responseApi = this.dataFetcher.get(session, request);
-         Document document = Jsoup.parse(responseApi.getBody());
-
-         String verificationToken = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".mh__search-bar-wrapper > form > input[type=hidden]", "value");
-         Headers.put("RequestVerificationToken", verificationToken);
-         String payload = "username=1130409480&password=Lett12345.&isMobileLogin=false&RedirectTo=";
-         Request requestLogin = Request.RequestBuilder.create()
-            .setHeaders(Headers)
-            .setCookies(responseApi.getCookies())
-            .setPayload(payload)
-            .mustSendContentEncoding(true)
-            .setUrl("https://tienda.surtiapp.com.co/WithoutLoginB2B/Security/UserAccount?handler=Authenticate")
-            .build();
-         Response responseApiLogin = this.dataFetcher.post(session, requestLogin);
-         this.cookies.addAll(responseApiLogin.getCookies());
-         login++;
-      }
-   }
-
    @Override
    protected Response fetchResponse() {
 
@@ -144,11 +114,10 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
       Double spotlightPrice = data.optDouble("NewPrice");
       Double priceFrom = data.optDouble("Price");
-      CreditCards creditCards = scrapCreditCards(spotlightPrice);
-
       if (spotlightPrice == 0) {
          spotlightPrice = priceFrom;
       }
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setPriceFrom(priceFrom)
