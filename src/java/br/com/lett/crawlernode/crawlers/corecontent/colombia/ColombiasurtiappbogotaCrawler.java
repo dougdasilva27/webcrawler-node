@@ -48,7 +48,7 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
             .setHeaders(Headers)
             .mustSendContentEncoding(true)
             .build();
-         Response responseApi = new JsoupDataFetcher().get(session, request);
+         Response responseApi = this.dataFetcher.get(session, request);
          Document document = Jsoup.parse(responseApi.getBody());
 
          String verificationToken = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".mh__search-bar-wrapper > form > input[type=hidden]", "value");
@@ -61,7 +61,7 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
             .mustSendContentEncoding(true)
             .setUrl("https://tienda.surtiapp.com.co/WithoutLoginB2B/Security/UserAccount?handler=Authenticate")
             .build();
-         Response responseApiLogin = new JsoupDataFetcher().post(session, requestLogin);
+         Response responseApiLogin = this.dataFetcher.post(session, requestLogin);
          this.cookies.addAll(responseApiLogin.getCookies());
          login++;
       }
@@ -74,7 +74,7 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
          .setUrl(session.getOriginalURL())
          .setCookies(this.cookies)
          .build();
-      Response response = new JsoupDataFetcher().get(session, request);
+      Response response = this.dataFetcher.get(session, request);
 
       return response;
    }
@@ -148,8 +148,8 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
-      Double spotlightPrice = data.optDouble("Price");
-      Double priceFrom = data.optDouble("NewPrice");
+      Double spotlightPrice = data.optDouble("NewPrice");
+      Double priceFrom = data.optDouble("Price");
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
