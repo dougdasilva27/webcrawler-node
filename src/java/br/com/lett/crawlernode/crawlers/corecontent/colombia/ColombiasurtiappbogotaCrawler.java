@@ -152,6 +152,9 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
       Double priceFrom = data.optDouble("Price");
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
+      if (spotlightPrice == 0) {
+         spotlightPrice = priceFrom;
+      }
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setPriceFrom(priceFrom)
