@@ -99,7 +99,7 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
             String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".product-detail__content--full"));
             int stock = data.optInt("Stock");
             boolean available = stock > 0;
-            Offers offers = available ? scrapOffers(doc) : new Offers();
+            Offers offers = available ? scrapOffers(data) : new Offers();
 
             // Creating the product
             Product product = ProductBuilder.create()
@@ -128,9 +128,9 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
    }
 
 
-   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
+      Pricing pricing = scrapPricing(data);
       List<String> sales = scrapSales(pricing);
 
       offers.add(Offer.OfferBuilder.create()
@@ -147,9 +147,9 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
 
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-detail__price--full", null, true, '.', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-detail__price--old--full del", null, true, '.', session);
+   private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
+      Double spotlightPrice = data.optDouble("Price");
+      Double priceFrom = data.optDouble("NewPrice");
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
