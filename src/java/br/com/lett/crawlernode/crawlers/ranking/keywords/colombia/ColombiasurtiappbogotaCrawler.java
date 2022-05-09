@@ -1,42 +1,28 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Cookie;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-import software.amazon.awssdk.http.Header;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ColombiasurtiappbogotaCrawler extends CrawlerRankingKeywords {
    private int login = 0;
    List<String> proxies = Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
-   @Override
-   protected void processBeforeFetch() {
-   }
 
    @Override
    protected Document fetchDocument(String url) {
@@ -46,7 +32,7 @@ public class ColombiasurtiappbogotaCrawler extends CrawlerRankingKeywords {
          .setCookies(this.cookies)
          .setProxyservice(proxies)
          .build();
-      String html = new JsoupDataFetcher().get(session, request).getBody();
+      String html =  this.dataFetcher.get(session, request).getBody();
 
       return Jsoup.parse(html);
    }
@@ -54,7 +40,6 @@ public class ColombiasurtiappbogotaCrawler extends CrawlerRankingKeywords {
 
    public ColombiasurtiappbogotaCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
    }
 
    @Override
@@ -108,11 +93,6 @@ public class ColombiasurtiappbogotaCrawler extends CrawlerRankingKeywords {
          + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 20);
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
-   }
-
    public void getCookiesLogin() {
       Map<String, String> Headers = new HashMap<>();
       Headers.put("Content-Type","application/x-www-form-urlencoded; charset=UTF-8");
@@ -121,7 +101,7 @@ public class ColombiasurtiappbogotaCrawler extends CrawlerRankingKeywords {
          .setHeaders(Headers)
          .mustSendContentEncoding(true)
          .build();
-      Response responseApi = new JsoupDataFetcher().get(session, request);
+      Response responseApi =  this.dataFetcher.get(session, request);
       Document document = Jsoup.parse(responseApi.getBody());
 
       String verificationToken = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".mh__search-bar-wrapper > form > input[type=hidden]", "value");
@@ -134,7 +114,7 @@ public class ColombiasurtiappbogotaCrawler extends CrawlerRankingKeywords {
          .mustSendContentEncoding(true)
          .setUrl("https://tienda.surtiapp.com.co/WithoutLoginB2B/Security/UserAccount?handler=Authenticate")
          .build();
-      Response responseApiLogin = new JsoupDataFetcher().post(session, requestLogin);
+      Response responseApiLogin =  this.dataFetcher.post(session, requestLogin);
        this.cookies.addAll(responseApiLogin.getCookies());
       login ++;
    }

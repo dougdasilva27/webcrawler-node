@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -10,7 +7,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -22,7 +18,6 @@ import models.pricing.*;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import software.amazon.awssdk.http.Header;
 
 import java.util.*;
 
@@ -34,7 +29,6 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
 
    public ColombiasurtiappbogotaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
    }
 
 
