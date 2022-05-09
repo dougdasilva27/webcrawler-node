@@ -33,6 +33,7 @@ import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 import enums.QueueName;
 import enums.ScrapersTypes;
 import models.Processed;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -43,6 +44,7 @@ import org.slf4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
@@ -370,8 +372,7 @@ public abstract class CrawlerRanking extends Task {
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
-
-               if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && !p.getUrl().equals(product.getUrl())) {
+               if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && ((!p.getUrl().equals(product.getUrl())) || hasLrtBeforeOneMonth(p.getLrt()))) {
                   saveProductUrlToQueue(product.getUrl());
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + product.getUrl());
                }
@@ -390,6 +391,22 @@ public abstract class CrawlerRanking extends Task {
       }
 
       this.arrayProducts.add(product);
+   }
+
+   public boolean hasLrtBeforeOneMonth(String lrt) {
+      if (lrt != null && !lrt.isEmpty()) {
+         try {
+            Date lrtDate = new SimpleDateFormat("yyyy-M-dd hh:mm:ss").parse(lrt);
+            Date oneMonthAgo = DateUtils.addMonths(new Date(), -1);
+            Logging.printLogDebug(logger, session, lrt + " - " + oneMonthAgo + " has more than one month: " + (lrtDate.before(oneMonthAgo)));
+            return lrtDate.before(oneMonthAgo);
+
+         } catch (Exception e) {
+            Logging.printLogError(logger, session, "Error parsing lrt date: " + lrt);
+         }
+      }
+
+      return false;
    }
 
    private void completeRankingProduct(RankingProduct product, List<Processed> processeds) {
@@ -514,8 +531,7 @@ public abstract class CrawlerRanking extends Task {
          if (session instanceof EqiRankingDiscoverKeywordsSession) {
             queueName = isWebDrive ? QueueName.WEB_SCRAPER_PRODUCT_EQI_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_PRODUCT_EQI.toString();
          } else {
-            queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();
-         }
+            queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();         }
       }
 
 

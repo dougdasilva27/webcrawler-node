@@ -63,7 +63,6 @@ public class QueueService {
 
       queueURLMap.put(QueueName.CORE_DEV.toString(),QUEUE_URL+QueueName.CORE_DEV.toString());
 
-
       //New queues
 
       queueURLMap.put(QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString(),QUEUE_URL+QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString());
@@ -73,6 +72,7 @@ public class QueueService {
       queueURLMap.put(QueueName.PRODUCT_IMAGE_DOWNLOAD_SEED.toString(), QUEUE_URL + QueueName.PRODUCT_IMAGE_DOWNLOAD_SEED.toString());
       queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_ZE_DELIVERY.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_PRODUCT_ZE_DELIVERY.toString());
       queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString());
+      queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_DEV.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_PRODUCT_DEV.toString());
 
    }
 

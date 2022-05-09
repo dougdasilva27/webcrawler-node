@@ -678,6 +678,7 @@ public class Persistence {
       fields.add(processed.MASTER_ID);
       fields.add(processed.STATUS);
       fields.add(processed.URL);
+      fields.add(processed.LRT);
       fields.add(processed.ORIGINAL_NAME);
       fields.add(processed.PRICE);
       fields.add(processed.AVAILABLE);
@@ -706,6 +707,7 @@ public class Persistence {
             Long masterId = record.get(processed.MASTER_ID);
             p.setVoid(record.get(processed.STATUS).equalsIgnoreCase("void"));
             p.setUrl(record.get(processed.URL));
+            p.setLrt(record.get(processed.LRT));
             p.setOriginalName(record.get(processed.ORIGINAL_NAME));
             p.setPrice(record.get(processed.PRICE) != null ? record.get(processed.PRICE).floatValue() : null);
             p.setAvailable(record.get(processed.AVAILABLE));
@@ -746,6 +748,7 @@ public class Persistence {
       fields.add(processed.MASTER_ID);
       fields.add(processed.STATUS);
       fields.add(processed.URL);
+      fields.add(processed.LRT);
       fields.add(processed.ORIGINAL_NAME);
       fields.add(processed.PRICE);
       fields.add(processed.AVAILABLE);
@@ -774,6 +777,7 @@ public class Persistence {
             Long masterId = record.get(processed.MASTER_ID);
             p.setVoid(record.get(processed.STATUS).equalsIgnoreCase("void"));
             p.setUrl(record.get(processed.URL));
+            p.setLrt(record.get(processed.LRT));
             p.setOriginalName(record.get(processed.ORIGINAL_NAME));
             p.setPrice(record.get(processed.PRICE) != null ? record.get(processed.PRICE).floatValue() : null);
             p.setAvailable(record.get(processed.AVAILABLE));
