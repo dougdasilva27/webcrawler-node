@@ -35,7 +35,7 @@ public class BrasilSempreemcasaCrawler extends Crawler {
 
    public BrasilSempreemcasaCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.JSOUP);
+      config.setFetcher(FetchMode.FETCHER);
       lat = session.getOptions().optString("latitude");
       longi = session.getOptions().optString("longitude");
    }
