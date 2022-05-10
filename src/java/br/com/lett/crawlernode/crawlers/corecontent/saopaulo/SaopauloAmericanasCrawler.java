@@ -43,7 +43,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    public SaopauloAmericanasCrawler(Session session) {
       super(session);
-      super.subSellers = Arrays.asList("b2w", "lojas americanas", "lojas americanas mg", "lojas americanas rj", "lojas americanas sp", "lojas americanas rs", "Lojas Americanas");
+      super.subSellers = Arrays.asList("b2w", "lojas americanas", "lojas americanas mg", "lojas americanas rj", "lojas americanas sp", "lojas americanas rs", "Lojas Americanas", "americanas");
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
@@ -181,7 +181,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    private boolean checkIsDescription(String subtitle) {
       String subtitleLowerWithoutAccents = "";
       if (subtitle != null) {
-          subtitleLowerWithoutAccents = StringUtils.stripAccents(subtitle);
+         subtitleLowerWithoutAccents = StringUtils.stripAccents(subtitle);
       }
 
       return subtitleLowerWithoutAccents.toLowerCase(Locale.ROOT).contains("ficha") || subtitleLowerWithoutAccents.toLowerCase(Locale.ROOT).contains("informacoes");
