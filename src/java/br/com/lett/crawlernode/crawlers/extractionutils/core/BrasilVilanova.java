@@ -77,17 +77,16 @@ public class BrasilVilanova extends Crawler {
          options.addArguments("--no-sandbox");
          options.addArguments("--disable-dev-shm-usage");
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session, this.cookiesWD, HOME_PAGE, options);
-         doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         List <String> proxies = Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
 
-         if(doc.select("body").isEmpty()) {
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session, this.cookiesWD, HOME_PAGE, options);
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-            if(doc.select("body").isEmpty()) {
-               webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session, this.cookiesWD, HOME_PAGE, options);
-               doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         int attemp = 0;
+         do{
+            if (attemp != 0){
+               webdriver.terminate();
             }
-         }
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(),  proxies.get(attemp), session, this.cookiesWD, HOME_PAGE, options);
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         } while (doc.select("body").isEmpty() && attemp++ < 3);
 
          webdriver.waitLoad(10000);
 
