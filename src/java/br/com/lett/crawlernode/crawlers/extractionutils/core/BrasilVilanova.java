@@ -26,6 +26,7 @@ import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -70,14 +71,22 @@ public class BrasilVilanova extends Crawler {
 
       try {
          Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
+         ChromeOptions options = new ChromeOptions();
+         options.addArguments("--window-size=1920,1080");
+         options.addArguments("--headless");
+         options.addArguments("--no-sandbox");
+         options.addArguments("--disable-dev-shm-usage");
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
-         doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         List <String> proxies = Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
 
-         if(doc.select("body").isEmpty()) {
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+         int attemp = 0;
+         do{
+            if (attemp != 0){
+               webdriver.terminate();
+            }
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(),  proxies.get(attemp), session, this.cookiesWD, HOME_PAGE, options);
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
-         }
+         } while (doc.select("body").isEmpty() && attemp++ < 3);
 
          webdriver.waitLoad(10000);
 
