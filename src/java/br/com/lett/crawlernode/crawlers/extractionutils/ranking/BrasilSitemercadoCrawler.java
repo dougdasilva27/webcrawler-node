@@ -139,14 +139,14 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       String lojaRede = "";
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("referer", this.homePage);
+      headers.put("referer", "https://www.sitemercado.com.br/");
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("content-type", "application/json");
 
       Request request = RequestBuilder.create()
-         .setUrl(loadUrl).setCookies(cookies)
+         .setUrl(loadUrl)
+         .setCookies(cookies)
          .setHeaders(headers)
-         .setPayload(loadPayload)
          .build();
       Response response = this.dataFetcher.get(session, request);
 
