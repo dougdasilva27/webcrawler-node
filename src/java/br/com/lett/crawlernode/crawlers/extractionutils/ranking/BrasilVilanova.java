@@ -20,6 +20,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -164,13 +165,23 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
 
       try {
          Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
+         ChromeOptions options = new ChromeOptions();
+         options.addArguments("--window-size=1920,1080");
+         options.addArguments("--headless");
+         options.addArguments("--no-sandbox");
+         options.addArguments("--disable-dev-shm-usage");
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.BUY_HAPROXY, session, this.cookiesWD, HOME_PAGE);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.BUY_HAPROXY, session, this.cookiesWD, HOME_PAGE, options);
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
          if (doc.select("body").isEmpty()) {
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, session, this.cookiesWD, HOME_PAGE);
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session, this.cookiesWD, HOME_PAGE, options);
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+            if (doc.select("body").isEmpty()) {
+               webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, session, this.cookiesWD, HOME_PAGE, options);
+               doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            }
          }
 
          webdriver.waitLoad(30000);
