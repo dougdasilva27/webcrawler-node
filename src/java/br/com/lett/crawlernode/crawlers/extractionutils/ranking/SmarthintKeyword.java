@@ -96,7 +96,7 @@ public class SmarthintKeyword extends CrawlerRankingKeywords {
          .append(version)
          .append("/Search/GetPrimarySearch?")
          .append("shcode=").append(SH_key)
-         .append("&term=").append(keywordEncoded)
+         .append("&term=").append(keywordEncoded.replace("+", "%20"))
          .append("&from=").append((this.currentPage - 1) * this.pageSize)
          .append("&size=").append(this.pageSize)
          .append("&searchSort=").append(searchSort);
