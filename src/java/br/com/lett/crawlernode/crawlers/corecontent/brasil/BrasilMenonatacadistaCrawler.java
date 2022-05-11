@@ -1,14 +1,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -19,11 +17,9 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -39,11 +35,12 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
 
    public BrasilMenonatacadistaCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.HTML);
    }
-
    private String cookiePHPSESSID = null;
 
-   private void loginMasterAccount() {
+   @Override
+   public void handleCookiesBeforeFetch() {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/x-www-form-urlencoded");
       headers.put("authority","www.menonatacadista.com.br");
@@ -53,11 +50,11 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
          .setUrl("https://www.menonatacadista.com.br/index.php?route=account/login")
          .setPayload(payloadString)
          .setHeaders(headers)
+         .setFollowRedirects(false)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.BONANZA,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
          ))
          .build();
 
@@ -73,29 +70,7 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
    }
 
    @Override
-   public void handleCookiesBeforeFetch() {
-      loginMasterAccount();
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl("https://www.menonatacadista.com.br/")
-         .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.BONANZA,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
-         ))
-         .build();
-
-      CrawlerUtils.retryRequest(request, session, dataFetcher);
-   }
-
-   @Override
    protected Response fetchResponse() {
-
       Map<String, String> headers = new HashMap<>();
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
 
@@ -103,12 +78,10 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
          .setUrl("https://www.menonatacadista.com.br/")
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.BONANZA,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
          ))
-         .setHeaders(headers)
          .build();
 
       return new ApacheDataFetcher().get(session, request);
