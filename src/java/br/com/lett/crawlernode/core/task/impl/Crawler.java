@@ -280,7 +280,7 @@ public abstract class Crawler extends Task {
          }
 
          for (Product product : products) {
-            if (!(session instanceof EqiCrawlerSession) && !(session instanceof ToBuyCrawlerSession)) {
+            if (!(session instanceof EqiCrawlerSession)) {
                processProduct(product);
             }
          }
