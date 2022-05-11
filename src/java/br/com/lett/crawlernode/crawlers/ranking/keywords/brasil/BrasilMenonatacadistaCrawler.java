@@ -42,10 +42,9 @@ public class BrasilMenonatacadistaCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setFollowRedirects(false)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.BONANZA,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
          ))
          .build();
       Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
@@ -68,10 +67,9 @@ public class BrasilMenonatacadistaCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setUrl(url)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.BONANZA,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
          ))
          .build();
 
