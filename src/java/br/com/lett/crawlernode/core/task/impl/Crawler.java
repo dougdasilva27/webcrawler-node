@@ -264,7 +264,7 @@ public abstract class Crawler extends Task {
       // insights session
       // there is only one product that will be selected
       // by it's internalId, passed by the crawler session
-      if (session instanceof InsightsCrawlerSession) {
+      if (session instanceof InsightsCrawlerSession || session instanceof ToBuyCrawlerSession) {
          insightsProcess(products);
       }
 
@@ -280,7 +280,7 @@ public abstract class Crawler extends Task {
          }
 
          for (Product product : products) {
-            if (!(session instanceof EqiCrawlerSession)) {
+            if (!(session instanceof EqiCrawlerSession) && !(session instanceof ToBuyCrawlerSession)) {
                processProduct(product);
             }
          }
@@ -638,7 +638,7 @@ public abstract class Crawler extends Task {
     * @param product data to send
     */
    private void sendToKinesis(Product product) {
-      if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
+      if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession || session instanceof ToBuyCrawlerSession)) {
          Product p = ProductDTO.convertProductToKinesisFormat(product, session);
 
          long productStartTime = System.currentTimeMillis();
@@ -820,7 +820,7 @@ public abstract class Crawler extends Task {
          }
 
          // only print statistics of void and truco if we are running an Insights session crawling
-         if (session instanceof InsightsCrawlerSession) {
+         if (session instanceof InsightsCrawlerSession || session instanceof ToBuyCrawlerSession) {
             Logging.printLogInfo(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
          }
 

@@ -1,17 +1,11 @@
 package br.com.lett.crawlernode.core.session;
 
+import br.com.lett.crawlernode.core.session.crawler.*;
 import br.com.lett.crawlernode.util.ScraperInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.server.request.Request;
-import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.RatingReviewsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
@@ -28,7 +22,6 @@ public class SessionFactory {
 
    public static Session createSession(Request request, Market market) {
       String scraperType = request.getScraperType();
-
 
       if (ScrapersTypes.CORE.toString().equals(scraperType)) {
          return new InsightsCrawlerSession(request, scraperType, market);
@@ -48,7 +41,9 @@ public class SessionFactory {
          return new EqiCrawlerSession(request, scraperType, market);
       } else if (scraperType.equals(ScrapersTypes.EQI_DISCOVERER.toString())) {
          return new EqiRankingDiscoverKeywordsSession(request, scraperType, market);
-      } else {
+      } else if (scraperType.equals("2_buy")) {
+         return new ToBuyCrawlerSession(request, scraperType, market);
+      }else {
          Logging.printLogDebug(logger, "Scraper type not recognized." + "[" + scraperType + "]");
          return null;
       }
