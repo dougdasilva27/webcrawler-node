@@ -37,7 +37,17 @@ public class BrasilMenonatacadistaCrawler extends CrawlerRankingKeywords {
       headers.put("authority", "www.menonatacadista.com.br");
       String payloadString = "email=paulo.carvalho%40mdlz.com&password=c9d59";
 
-      Request request = Request.RequestBuilder.create().setUrl("https://www.menonatacadista.com.br/index.php?route=account/login").setPayload(payloadString).setHeaders(headers).setFollowRedirects(false).setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.BONANZA, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY)).build();
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.menonatacadista.com.br/index.php?route=account/login")
+         .setPayload(payloadString)
+         .setHeaders(headers)
+         .setFollowRedirects(false)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.BONANZA,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
+         ))
+         .build();
       Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
 
       List<Cookie> cookiesResponse = response.getCookies();
@@ -54,7 +64,15 @@ public class BrasilMenonatacadistaCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
 
-      Request request = Request.RequestBuilder.create().setHeaders(headers).setUrl(url).setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.BONANZA, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY)).build();
+      Request request = Request.RequestBuilder.create()
+         .setHeaders(headers)
+         .setUrl(url)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.BONANZA,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
+         ))
+         .build();
 
       return Jsoup.parse(new ApacheDataFetcher().get(session, request).getBody());
    }
@@ -82,7 +100,15 @@ public class BrasilMenonatacadistaCrawler extends CrawlerRankingKeywords {
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "div.image img ", Arrays.asList("src"), "https", "www.menonatacadista.com.br");
             boolean isAvailable = price != null;
 
-            RankingProduct productRanking = RankingProductBuilder.create().setUrl(productUrl).setInternalId(internalId).setInternalPid(internalId).setImageUrl(imageUrl).setName(name).setPriceInCents(price).setAvailability(isAvailable).build();
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalId)
+               .setImageUrl(imageUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
             saveDataProduct(productRanking);
 

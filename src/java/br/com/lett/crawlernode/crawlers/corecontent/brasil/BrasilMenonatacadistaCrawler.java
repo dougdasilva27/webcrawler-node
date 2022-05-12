@@ -27,7 +27,10 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
 
    private final String HOME_PAGE = "https://www.menonatacadista.com.br/";
    private static final String SELLER_FULL_NAME = "Menon Atacadista";
-   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.ELO.toString(), Card.AMEX.toString(), Card.DINERS.toString(), Card.DISCOVER.toString(), Card.JCB.toString(), Card.AURA.toString(), Card.HIPERCARD.toString());
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(),
+      Card.MASTERCARD.toString(), Card.ELO.toString(),
+      Card.AMEX.toString(), Card.DINERS.toString(),
+      Card.DISCOVER.toString(), Card.JCB.toString(), Card.AURA.toString(), Card.HIPERCARD.toString());
 
    public BrasilMenonatacadistaCrawler(Session session) {
       super(session);
@@ -43,7 +46,17 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
       headers.put("authority", "www.menonatacadista.com.br");
       String payloadString = "email=paulo.carvalho%40mdlz.com&password=c9d59";
 
-      Request request = Request.RequestBuilder.create().setUrl("https://www.menonatacadista.com.br/index.php?route=account/login").setPayload(payloadString).setFollowRedirects(false).setHeaders(headers).setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.BONANZA, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY)).build();
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.menonatacadista.com.br/index.php?route=account/login")
+         .setPayload(payloadString)
+         .setFollowRedirects(false)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.BONANZA,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
+         ))
+         .build();
 
       Response response = new FetcherDataFetcher().post(session, request);
 
@@ -62,7 +75,15 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
 
-      Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setHeaders(headers).setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.BONANZA, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY)).setHeaders(headers).build();
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.BONANZA,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
+         ))
+         .build();
 
       return new FetcherDataFetcher().get(session, request);
    }
@@ -80,12 +101,20 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.breadcrumb a", false);
          JSONArray imagesArray = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "a.thumbnail img", Arrays.asList("src"), "https", "www.menonatacadista.com.br");
-         //List<String> secondaryImage = CrawlerUtils.scrapSecondaryImagesMagentoList(imagesArray, primaryImage);
+
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div.text"));
          boolean availableToBuy = doc.select("button[id=button-out]").isEmpty();
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalId).setName(name).setCategories(categories).setPrimaryImage(primaryImage).setOffers(offers).setDescription(description)
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalId)
+            .setName(name)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setOffers(offers)
+            .setDescription(description)
 
             .build();
 
@@ -107,7 +136,15 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
       Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(pricing);
 
-      offers.add(Offer.OfferBuilder.create().setUseSlugNameAsInternalSellerId(true).setSellerFullName(SELLER_FULL_NAME).setMainPagePosition(1).setSales(sales).setIsBuybox(false).setIsMainRetailer(true).setPricing(pricing).build());
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setSales(sales)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .build());
 
       return offers;
 
@@ -123,10 +160,8 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-
       Installments installments = new Installments();
       installments.add(Installment.InstallmentBuilder.create().setInstallmentNumber(1).setInstallmentPrice(spotlightPrice).build());
-
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create().setBrand(card).setInstallments(installments).setIsShopCard(false).build());
@@ -137,7 +172,6 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
 
    private List<String> scrapSales(Pricing pricing) {
       List<String> sales = new ArrayList<>();
-
       String saleDiscount = CrawlerUtils.calculateSales(pricing);
 
       if (saleDiscount != null) {
