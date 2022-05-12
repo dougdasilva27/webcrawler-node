@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -15,7 +16,10 @@ import models.Offers;
 import models.pricing.CreditCards;
 import models.pricing.Pricing;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
@@ -32,17 +36,17 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
    public List<Product> extractInformation(Document document) throws Exception {
       super.extractInformation(document);
       List<Product> products = new ArrayList<>();
-      if(!isProductPage(document)) {
+      if (!isProductPage(document)) {
          Logging.printLogDebug(logger, session, "Not a product page" + session.getOriginalURL());
          return products;
       }
       // Get all product information
-      String productName = CrawlerUtils.scrapStringSimpleInfo(document,".base", false);
-      String productInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document,".price-box.price-final_price", "data-product-id");
+      String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".base", false);
+      String productInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".price-box.price-final_price", "data-product-id");
       String productInternalPid = productInternalId;
-      String productDescription = CrawlerUtils.scrapStringSimpleInfo(document,".product.attribute.description .value", false);
+      String productDescription = CrawlerUtils.scrapStringSimpleInfo(document, ".product.attribute.description .value", false);
       String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".image-container img", Arrays.asList("src"), "", "");
-      List<String> productSecondaryImages = ImageCapture(document, productPrimaryImage);
+      List<String> productSecondaryImages = ImageCapture(document);
 
       ProductBuilder builder = ProductBuilder.create().setUrl(session.getOriginalURL());
       Product product = ProductBuilder.create()
@@ -76,8 +80,8 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document document, String id) throws MalformedPricingException {
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(document,"#product-price-" + id, "data-price-amount", true, '.', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, "#old-price-" + id, "data-price-amount", true,  '.', session );
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(document, "#product-price-" + id, "data-price-amount", true, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, "#old-price-" + id, "data-price-amount", true, '.', session);
       CreditCards creditCards = CrawlerUtils.scrapCreditCards(price, cards);
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(price)
@@ -86,36 +90,21 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
          .build();
    }
 
-   private List<String> ImageCapture (Document document, String productPrimaryImage) throws Exception {
-      int count = 0;
-      int statusCode;
-      int number = 2;
+   private List<String> ImageCapture(Document document) throws Exception {
+      String script = CrawlerUtils.scrapScriptFromHtml(document, ".product.media [type]");
+      JSONArray arr = JSONUtils.stringToJsonArray(script);
+      JSONArray images = JSONUtils.getValueRecursive(arr, "0.[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class);
       List<String> productSecondaryImagesList = new ArrayList<>();
-      do{
-         String newUrlImage = productPrimaryImage.replaceAll(".jpg", "");
-         statusCode = ImageRequest(newUrlImage + "-0" + number + ".jpg");
-         if(statusCode == 200){
-            productSecondaryImagesList.add(newUrlImage + "-0" + number + ".jpg");
-            count++;
-            number++;
+      for (Object i : images) {
+         JSONObject imageObj = (JSONObject) i;
+         String url = JSONUtils.getStringValue(imageObj, "full");
+         Boolean isMain = imageObj.optBoolean("isMain");
+         if (!isMain) {
+            productSecondaryImagesList.add(url);
          }
-      }while (statusCode == 200);
-      return productSecondaryImagesList;
-   }
 
-   private int ImageRequest (String imageUrl) throws Exception{
-      int statusCode = 200;
-      try {
-         URL url = new URL(imageUrl);
-         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-         if (connection.getResponseCode() != statusCode){
-            return 404;
-         }
-         return statusCode;
-      } catch (Exception e) {
-         return 404;
       }
+      return productSecondaryImagesList;
    }
 
    private boolean isProductPage(Document document) {
