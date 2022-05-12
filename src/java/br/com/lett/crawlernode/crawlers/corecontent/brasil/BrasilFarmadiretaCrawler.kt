@@ -59,7 +59,8 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
       val secondaryCategory = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#SubCategoriaProduto", "value")
       val primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".img-zoom #imgProduto", "src")
       val description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ficha-produto"))
-      val offers = scrapOffers(doc)
+      val available = doc.select(".produto-esgotado-avise").isEmpty()
+      val offers = if (available) scrapOffers(doc) else Offers();
 
       val product = ProductBuilder()
          .setUrl(session.originalURL)
@@ -83,7 +84,7 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
 
-      val offersElement = doc.select(".dgf-single-escolha > label")
+      val offersElement = doc.select(".dgf-single-info")
 
       if (!offersElement.isEmpty()) {
          for (offer in offersElement) {
@@ -101,16 +102,18 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
                .setBankSlip(bankSlip)
                .build()
 
-            offers.add(Offer.OfferBuilder.create()
+            offers.add(
+               Offer.OfferBuilder.create()
                   .setPricing(pricing)
                   .setIsMainRetailer(true)
                   .setIsBuybox(true)
                   .setUseSlugNameAsInternalSellerId(true)
                   .setSellerFullName(SELLER_NAME)
                   .setSales(scrapSales(offer))
-                  .build())
+                  .build()
+            )
          }
-      }else{
+      } else {
          val spotlightPrice: Double = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span .por", null, false, ',', session)
          val bankSlip = spotlightPrice.toBankSlip()
          val priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span .de", null, false, ',', session)
@@ -125,14 +128,16 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
             .setBankSlip(bankSlip)
             .build()
 
-         offers.add(Offer.OfferBuilder.create()
-            .setPricing(pricing)
-            .setIsMainRetailer(true)
-            .setIsBuybox(true)
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_NAME)
-            .setSales(null)
-            .build())
+         offers.add(
+            Offer.OfferBuilder.create()
+               .setPricing(pricing)
+               .setIsMainRetailer(true)
+               .setIsBuybox(true)
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(SELLER_NAME)
+               .setSales(null)
+               .build()
+         )
       }
 
       return offers
@@ -140,7 +145,7 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
 
    private fun scrapSales(offerElement: Element): List<String> {
       val sales: MutableList<String> = ArrayList()
-      val salesDiscount = CrawlerUtils.scrapStringSimpleInfo(offerElement,"div .dgf-tag", false)?.substringBefore('%') ?: "0"
+      val salesDiscount = CrawlerUtils.scrapStringSimpleInfo(offerElement, "div .dgf-tag", false)?.substringBefore('%') ?: "0"
       sales.add(salesDiscount)
       return sales
    }
