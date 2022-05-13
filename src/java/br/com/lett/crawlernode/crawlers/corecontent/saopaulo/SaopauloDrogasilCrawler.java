@@ -40,13 +40,13 @@ import org.jsoup.nodes.Document;
 
 public class SaopauloDrogasilCrawler extends Crawler {
 
-   private static final String SELLER_FULL_NAME = "Drogasil (São Paulo)";
+   private static String SELLER_FULL_NAME = "Drogasil (São Paulo)";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.ELO.toString(), Card.HIPERCARD.toString(), Card.HIPER.toString(),
       Card.DINERS.toString(), Card.DISCOVER.toString(), Card.AURA.toString());
 
    // I could'nt find another selector for this description
    private static final String SMALL_DESCRIPTION_SELECTOR = ".sc-fzqNJr.hXQgjp";
-
+   private static Boolean isMainSeller = true;
    public SaopauloDrogasilCrawler(Session session) {
       super(session);
    }
@@ -153,12 +153,14 @@ public class SaopauloDrogasilCrawler extends Crawler {
          Pricing pricing = scrapPricing(data);
          List<String> sales = scrapSales(pricing, data);
 
+         SELLER_FULL_NAME = isMainSeller(data);
+
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
             .setSellerFullName(SELLER_FULL_NAME)
             .setMainPagePosition(1)
             .setIsBuybox(false)
-            .setIsMainRetailer(true)
+            .setIsMainRetailer(isMainSeller)
             .setPricing(pricing)
             .setSales(sales)
             .build());
@@ -169,7 +171,26 @@ public class SaopauloDrogasilCrawler extends Crawler {
       return offers;
 
    }
+   private String isMainSeller (JSONObject data) {
+      JSONArray attributes = data.optJSONArray("custom_attributes");
+      String seller_name;
 
+      for (Object attribute : attributes) {
+         seller_name = JSONUtils.getValueRecursive(attribute, "attribute_code", String.class);
+
+         if (Objects.equals(seller_name, "cd_grupo_pbm_univers")) {
+            seller_name = JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
+            if (Objects.equals(seller_name, "DI") || Objects.equals(seller_name, "ND")) {
+               return SELLER_FULL_NAME;
+            } else {
+               isMainSeller = false;
+               return seller_name;
+            }
+
+         }
+      }
+      return SELLER_FULL_NAME;
+   }
    private List<String> scrapSales(Pricing pricing, JSONObject data) {
       List<String> sales = new ArrayList<>();
       sales.add(CrawlerUtils.calculateSales(pricing));
