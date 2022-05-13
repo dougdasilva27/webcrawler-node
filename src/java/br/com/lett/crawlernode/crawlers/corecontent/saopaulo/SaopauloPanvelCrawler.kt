@@ -32,7 +32,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          .create()
          .setCookies(cookies)
          .setUrl(session.originalURL)
-         .setProxyservice(listOf(ProxyCollection.BUY))
+         .setProxyservice(listOf(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY))
          .build()
 
       val response = dataFetcher[session, request]
@@ -43,7 +43,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
    override fun extractInformation(doc: Document): List<Product> {
       super.extractInformation(doc)
       val products: MutableList<Product> = ArrayList()
-      if (isProductPage(doc) && """.*p-\d*""".toRegex().matches(session.originalURL)) {
+      if (isProductPage(doc)) {
          val internalId = URL(session.originalURL).path.substringAfterLast("-")
 
          val json = unescapeHtml(doc.selectFirst("#serverApp-state").data()).toJson()
