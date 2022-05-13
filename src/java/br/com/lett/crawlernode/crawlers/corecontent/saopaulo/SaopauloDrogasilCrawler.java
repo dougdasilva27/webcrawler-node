@@ -180,7 +180,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
          if (Objects.equals(seller_name, "cd_grupo_pbm_univers")) {
             seller_name = JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
-            if (Objects.equals(seller_name, "DI")) {
+            if (Objects.equals(seller_name, "DI") || Objects.equals(seller_name, "ND")) {
                return SELLER_FULL_NAME;
             } else {
                isMainSeller = false;
