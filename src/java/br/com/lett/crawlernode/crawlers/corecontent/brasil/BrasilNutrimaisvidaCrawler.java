@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -7,14 +10,17 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
@@ -47,6 +53,7 @@ public class BrasilNutrimaisvidaCrawler extends Crawler {
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#ProductPhotoImg", Arrays.asList("src"), "https", "://nutrimaisvida.com.br/");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".img-responsive.hidden-xs",
             Arrays.asList("src"), "https", "://nutrimaisvida.com.br/", primaryImage);
+         RatingsReviews ratingsReviews = crawlRating(internalId);
          boolean available = CrawlerUtils.scrapStringSimpleInfo(doc, ".proBoxInfo.col-xs-12.col-sm-12.col-md-6.col-lg-6 > div.wrap-title > span > span", false).contains("Disponível");
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
@@ -57,6 +64,7 @@ public class BrasilNutrimaisvidaCrawler extends Crawler {
             .setName(name)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
+            .setRatingReviews(ratingsReviews)
             .setDescription(description)
             .setOffers(offers)
             .build();
@@ -134,5 +142,42 @@ public class BrasilNutrimaisvidaCrawler extends Crawler {
 
       return creditCards;
 
+   }
+   private RatingsReviews crawlRating(String internalId) {
+      String url = "https://api-cdn.yotpo.com/v1/widget/C3WJEQUAevWXtzD53PwS4IFnSgbOtw3MkvQXWmJj/products/" + internalId + "/reviews";
+      RatingsReviews ratingsReviews = new RatingsReviews();
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setSendUserAgent(true)
+         .build();
+      Response response = new FetcherDataFetcher().get(session, request);
+      JSONObject jsonObject = JSONUtils.stringToJson(response.getBody());
+      JSONObject aggregationRating = (JSONObject) jsonObject.optQuery("/response/bottomline");
+
+      if (aggregationRating != null) {
+         AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(aggregationRating);
+
+         ratingsReviews.setTotalRating(aggregationRating.optInt("total_review"));
+         ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
+         ratingsReviews.setAverageOverallRating(aggregationRating.optDouble("average_score", 0d));
+      }
+      return ratingsReviews;
+   }
+   private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject reviews) {
+
+      JSONObject reviewValue = reviews.optJSONObject("star_distribution");
+
+      if (reviewValue != null) {
+         return new AdvancedRatingReview.Builder()
+            .totalStar1(reviewValue.optInt("1"))
+            .totalStar2(reviewValue.optInt("2"))
+            .totalStar3(reviewValue.optInt("3"))
+            .totalStar4(reviewValue.optInt("4"))
+            .totalStar5(reviewValue.optInt("5"))
+            .build();
+      }
+
+      return new AdvancedRatingReview();
    }
 }
