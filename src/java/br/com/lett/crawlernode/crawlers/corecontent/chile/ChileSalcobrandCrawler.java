@@ -51,8 +51,7 @@ public class ChileSalcobrandCrawler extends Crawler {
          for (String internalId : skusPrices.keySet()) {
 
             String name = crawlName(doc, internalId);
-            Integer stock = scrapStock(internalId, skusStock);
-            boolean available = stock > 0;
+            boolean available = scrapStock(internalId, skusStock);
             Float price = crawlPrice(skusPrices, internalId);
             Prices prices = crawlPrices(skusPrices, internalId);
             String primaryImage =
@@ -74,7 +73,7 @@ public class ChileSalcobrandCrawler extends Crawler {
                   .setSecondaryImages(secondaryImages)
                   .setDescription(description)
                   .setRatingReviews(ratingsReviews)
-                  .setStock(stock)
+                  .setStock(available ? 1 : 0)
                   .build();
 
             products.add(product);
@@ -88,19 +87,19 @@ public class ChileSalcobrandCrawler extends Crawler {
 
    }
 
-   private Integer scrapStock(String internalId, JSONArray skusStock) {
-      Integer stock = 0;
+   private Boolean scrapStock(String internalId, JSONArray skusStock) {
+      boolean hasStock = false;
 
       for (Object obj : skusStock) {
          JSONObject skuStock = (JSONObject) obj;
 
          if (skuStock.has(internalId)) {
-            stock = CrawlerUtils.getIntegerValueFromJSON(skuStock, internalId, 0);
+            hasStock = skuStock.optBoolean(internalId, false);
             break;
          }
       }
 
-      return stock;
+      return hasStock;
    }
 
    /**
