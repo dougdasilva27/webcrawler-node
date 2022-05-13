@@ -8,9 +8,12 @@ import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Parser;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.config.Config;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -57,7 +60,7 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
@@ -76,8 +79,21 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
             JSONObject product = (JSONObject) e;
             String internalPid = product.optString("sku");
             String productUrl = "https://preunic.cl/products/" + product.optString("product_slug") + "?default_sku=" + internalPid;
+            String name = product.optString("brand") + product.optString("name");
+            String stock = product.getString("state");
+            Boolean isAvailable = stock.equals("active");
+            String imgUrl = isAvailable ? product.optString("catalog_image_url") : null;
 
-            saveDataProduct(null, internalPid, productUrl);
+            Integer price = product.optInt("offer_price");
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+            saveDataProduct(productRanking);
 
             this.log(
                "Position: " + this.position +
