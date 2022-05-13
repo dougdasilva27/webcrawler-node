@@ -11,11 +11,9 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 import models.prices.Prices;
@@ -209,7 +207,7 @@ public class ChileSalcobrandCrawler extends Crawler {
       name.append(CrawlerUtils.scrapStringSimpleInfo(doc, ".product-content .info", false));
 
       Element selectElement = doc.selectFirst("#variant_id option[sku=" + internalId + "]");
-      if (selectElement != null) {
+      if (selectElement != null && !name.toString().toLowerCase(Locale.ROOT).contains(selectElement.text().toLowerCase(Locale.ROOT))) {
          name.append(" ").append(selectElement.text().trim());
          Element quantityNameElement = doc.selectFirst(".input-group .first option[data-values-ids~=" + selectElement.val() + "]");
 
