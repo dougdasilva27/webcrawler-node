@@ -1,7 +1,11 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
+
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -10,11 +14,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import models.prices.Prices;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -23,6 +22,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /**
  * Date: 04/12/2018
@@ -35,12 +36,35 @@ public class ChileLidersuperCrawler extends Crawler {
 
    public ChileLidersuperCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setParser(br.com.lett.crawlernode.core.models.Parser.HTML);
+
    }
 
    @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
+
+   @Override
+   protected Response fetchResponse() {
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("authority", "www.lider.cl");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL())
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .setSendUserAgent(true)
+         .mustSendContentEncoding(true)
+         .build();
+
+      return this.dataFetcher.get(session, request);
    }
 
    @Override
