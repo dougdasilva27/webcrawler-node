@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
@@ -105,7 +106,7 @@ public class MrestoqueunidasulCrawler extends Crawler {
          Logging.printLogDebug(
             logger, session, "Product page identified: " + session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product__grid .product__button", "data-product");
+         String internalId = scrapInternalId(doc);
          String internalPid = scrapPid(doc);
          String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product__images__grid img", "alt");
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:nth-child(2)):not(:first-child) a");
@@ -137,6 +138,22 @@ public class MrestoqueunidasulCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapInternalId(Document doc) {
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product__grid .product__button", "data-product");
+
+      if (internalId == null || internalId.isEmpty()) {
+         String productSlug = CommonMethods.getLast(session.getOriginalURL().split("/"));
+         if (productSlug != null && !productSlug.isEmpty()) {
+            String alternativeInternalId = CommonMethods.getLast(productSlug.split("-"));
+            if (alternativeInternalId != null && !alternativeInternalId.isEmpty()) {
+               internalId = alternativeInternalId;
+            }
+         }
+      }
+
+      return internalId;
    }
 
    private boolean isProductPage(Document doc) {
