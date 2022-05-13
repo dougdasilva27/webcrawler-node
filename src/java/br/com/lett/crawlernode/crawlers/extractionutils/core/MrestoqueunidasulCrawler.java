@@ -85,7 +85,7 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setCookies(cookies)
          .build();
 
-      Response response = this.dataFetcher.get(session, requestProduct);
+      Response response = CrawlerUtils.retryRequest(requestProduct, session, this.dataFetcher, true);
 
       return Jsoup.parse(response.getBody());
 
@@ -105,7 +105,7 @@ public class MrestoqueunidasulCrawler extends Crawler {
          Logging.printLogDebug(
             logger, session, "Product page identified: " + session.getOriginalURL());
 
-         String internalId = scrapInternalId(doc);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product__grid .product__button", "data-product");
          String internalPid = scrapPid(doc);
          String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product__images__grid img", "alt");
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:nth-child(2)):not(:first-child) a");
@@ -141,18 +141,6 @@ public class MrestoqueunidasulCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return !doc.select("#product-detail").isEmpty();
-   }
-
-   private String scrapInternalId(Document doc) {
-
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".flex.flex--column.margin-top--m a", "href");
-      Pattern pattern = Pattern.compile("id\\/(.*)\\/basket");
-      Matcher matcher = pattern.matcher(internalId);
-      if (matcher.find()) {
-         return matcher.group(1);
-      }
-
-      return null;
    }
 
    private List<String> scrapEan(Document doc) {
