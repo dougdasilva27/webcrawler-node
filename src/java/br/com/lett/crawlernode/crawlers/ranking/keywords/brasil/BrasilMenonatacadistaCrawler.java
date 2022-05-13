@@ -16,6 +16,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -24,10 +26,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BrasilMenonatacadistaCrawler extends CrawlerRankingKeywords {
-   public BrasilMenonatacadistaCrawler(Session session) {
+   public BrasilMenonatacadistaCrawler(Session session) throws UnsupportedEncodingException {
       super(session);
    }
 
+   private final String PASSWORD = getPassword();
+   private final String LOGIN = getLogin();
+   protected String getLogin() throws UnsupportedEncodingException {
+      String encodeLogin = session.getOptions().optString("email");
+      return URLEncoder.encode(encodeLogin, "UTF-8");
+   }
+   protected String getPassword() {
+      return session.getOptions().optString("password");
+   }
    private String cookiePHPSESSID = null;
 
    @Override
@@ -35,7 +46,7 @@ public class BrasilMenonatacadistaCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/x-www-form-urlencoded");
       headers.put("authority", "www.menonatacadista.com.br");
-      String payloadString = "email=paulo.carvalho%40mdlz.com&password=c9d59";
+      String payloadString = "email="+this.LOGIN+"&password="+this.PASSWORD;
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.menonatacadista.com.br/index.php?route=account/login")

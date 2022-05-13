@@ -16,9 +16,10 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.apache.http.cookie.Cookie;
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,11 +33,20 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
       Card.AMEX.toString(), Card.DINERS.toString(),
       Card.DISCOVER.toString(), Card.JCB.toString(), Card.AURA.toString(), Card.HIPERCARD.toString());
 
-   public BrasilMenonatacadistaCrawler(Session session) {
+   public BrasilMenonatacadistaCrawler(Session session) throws UnsupportedEncodingException {
       super(session);
       super.config.setParser(Parser.HTML);
    }
 
+   private final String PASSWORD = getPassword();
+   private final String LOGIN = getLogin();
+   protected String getLogin() throws UnsupportedEncodingException {
+      String encodeLogin = session.getOptions().optString("email");
+      return URLEncoder.encode(encodeLogin, "UTF-8");
+   }
+   protected String getPassword() {
+      return session.getOptions().optString("password");
+   }
    private String cookiePHPSESSID = null;
 
    @Override
@@ -44,7 +54,7 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/x-www-form-urlencoded");
       headers.put("authority", "www.menonatacadista.com.br");
-      String payloadString = "email=paulo.carvalho%40mdlz.com&password=c9d59";
+      String payloadString = "email="+this.LOGIN+"&password="+this.PASSWORD;
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.menonatacadista.com.br/index.php?route=account/login")
@@ -99,7 +109,6 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
          String internalId = getcodeId(code);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-title", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.breadcrumb a", false);
-         JSONArray imagesArray = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "a.thumbnail img", Arrays.asList("src"), "https", "www.menonatacadista.com.br");
 
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div.text"));
