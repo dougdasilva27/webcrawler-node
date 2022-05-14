@@ -57,7 +57,7 @@ public class BrasilConfiancaCrawler extends Crawler {
          JSONObject productJson = JSONUtils.getValueRecursive(json, "items/0", "/", JSONObject.class, new JSONObject());
 
          String internalPid = productJson.optString("barcode");
-         String name = productJson.optString("displayName");
+         String name = JSONUtils.getValueRecursive(productJson, "parentProducts.0.displayName", String.class);
          Integer stock = crawlStock(internalId, locationId);
          boolean isAvailable = stock != null && stock > 0;
          Offers offers = isAvailable ? crawlOffers(productJson) : null;
