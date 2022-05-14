@@ -200,7 +200,7 @@ public class BrasilAmaroCrawler extends Crawler {
    }
 
    private RatingsReviews crawlRating(String internalPid) {
-      String url = "https://api-cdn.yotpo.com/v1/widget/0eU0TYNuFzWbeD60wD2lB7UWnCbAkVtX3vwtaEH0/products/" + internalPid + "/reviews";
+      String url = "https://api-cdn.yotpo.com/v1/widget/C3WJEQUAevWXtzD53PwS4IFnSgbOtw3MkvQXWmJj/products/" + internalPid + "/reviews";
       RatingsReviews ratingsReviews = new RatingsReviews();
 
       Request request = Request.RequestBuilder.create()

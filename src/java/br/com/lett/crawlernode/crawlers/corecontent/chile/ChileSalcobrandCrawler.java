@@ -11,11 +11,9 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 import models.prices.Prices;
@@ -51,8 +49,7 @@ public class ChileSalcobrandCrawler extends Crawler {
          for (String internalId : skusPrices.keySet()) {
 
             String name = crawlName(doc, internalId);
-            Integer stock = scrapStock(internalId, skusStock);
-            boolean available = stock > 0;
+            boolean available = scrapStock(internalId, skusStock);
             Float price = crawlPrice(skusPrices, internalId);
             Prices prices = crawlPrices(skusPrices, internalId);
             String primaryImage =
@@ -74,7 +71,7 @@ public class ChileSalcobrandCrawler extends Crawler {
                   .setSecondaryImages(secondaryImages)
                   .setDescription(description)
                   .setRatingReviews(ratingsReviews)
-                  .setStock(stock)
+                  .setStock(available ? 1 : 0)
                   .build();
 
             products.add(product);
@@ -88,19 +85,19 @@ public class ChileSalcobrandCrawler extends Crawler {
 
    }
 
-   private Integer scrapStock(String internalId, JSONArray skusStock) {
-      Integer stock = 0;
+   private Boolean scrapStock(String internalId, JSONArray skusStock) {
+      boolean hasStock = false;
 
       for (Object obj : skusStock) {
          JSONObject skuStock = (JSONObject) obj;
 
          if (skuStock.has(internalId)) {
-            stock = CrawlerUtils.getIntegerValueFromJSON(skuStock, internalId, 0);
+            hasStock = skuStock.optBoolean(internalId, false);
             break;
          }
       }
 
-      return stock;
+      return hasStock;
    }
 
    /**
@@ -210,7 +207,7 @@ public class ChileSalcobrandCrawler extends Crawler {
       name.append(CrawlerUtils.scrapStringSimpleInfo(doc, ".product-content .info", false));
 
       Element selectElement = doc.selectFirst("#variant_id option[sku=" + internalId + "]");
-      if (selectElement != null) {
+      if (selectElement != null && !name.toString().toLowerCase(Locale.ROOT).contains(selectElement.text().toLowerCase(Locale.ROOT))) {
          name.append(" ").append(selectElement.text().trim());
          Element quantityNameElement = doc.selectFirst(".input-group .first option[data-values-ids~=" + selectElement.val() + "]");
 

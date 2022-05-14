@@ -26,8 +26,8 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       // monta a url com a keyword e a página
-      String url = "https://api-gateway-prod.drogasil.com.br/search/v1/store/DROGASIL/product/search/live?term=" + this.keywordEncoded + "&limit="
-         + this.pageSize + "&offset=" + this.arrayProducts.size();
+      String url = "https://api-gateway-prod.drogasil.com.br/search/v2/store/DROGASIL/channel/SITE/product/search/live?term=" + this.keywordEncoded + "&limit="
+         + this.pageSize + "&offset=" + this.arrayProducts.size() + "&sort_by=relevance:desc";
 
       this.log("Link onde são feitos os crawlers: " + url);
 
@@ -47,9 +47,9 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
             if (o instanceof JSONObject) {
                JSONObject productInfo = (JSONObject) o;
                String internalId = productInfo.optString("sku");
-               String productUrl = productInfo.optString("urlKey");
+               String productUrl = completetUrl("urlKey", productInfo);
                String name = productInfo.optString("name");
-               String imageUrl = productInfo.optString("image");
+               String imageUrl = completetUrl("image", productInfo);
                int price = CommonMethods.doublePriceToIntegerPrice(productInfo.optDouble("valueTo"), 0);
                boolean isAvailable = price != 0;
 
@@ -83,5 +83,16 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
    protected void setTotalProducts(JSONObject gridinfo) {
       this.totalProducts = JSONUtils.getValueRecursive(gridinfo, "metadata.totalCount", Integer.class);
       this.log("Total da busca: " + this.totalProducts);
+   }
+
+   protected String completetUrl(String jsonKey, JSONObject product) {
+      String url = product.optString(jsonKey);
+      if (url.startsWith("//")) {
+         url = "https:" + url;
+      } else if (url.startsWith("www.")) {
+         url = "https://" + url;
+      }
+
+      return url;
    }
 }

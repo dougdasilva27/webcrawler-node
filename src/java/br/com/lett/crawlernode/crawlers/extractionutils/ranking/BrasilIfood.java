@@ -13,6 +13,9 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class BrasilIfood extends CrawlerRankingKeywords {
 
@@ -83,8 +86,35 @@ public class BrasilIfood extends CrawlerRankingKeywords {
    }
 
    protected JSONObject fetch(String url) {
+      JSONObject json = new JSONObject();
+      JSONObject defaultInternalId = new JSONObject();
+      defaultInternalId.put("recommendation_filter", "internal_search");
+      defaultInternalId.put("model_id", "ifood-ml-discovery-default-sort-items");
+      defaultInternalId.put("engine", "sagemaker");
+      defaultInternalId.put("force_recommendation_disabled", true);
+      JSONObject marketInternal = new JSONObject();
+      marketInternal.put("recommendation_filter", "internal_search");
+      marketInternal.put("model_id", "search-bumblebee-endpoint");
+      marketInternal.put("engine", "sagemaker");
+      marketInternal.put("query_rewriter_model_id", "ifood-ml-r5d4-v2");
+      marketInternal.put("backend_experiment_id", "v5");
+      marketInternal.put("query_rewriter_rule", "groceries-context");
+      marketInternal.put("force_recommendation_disabled", false);
+      JSONObject similarSearch = new JSONObject();
+      similarSearch.put("backend_experiment_id", "v5");
+      similarSearch.put("query_rewriter_model_id", "search-marvin-curated-endpoint");
+      similarSearch.put("force_recommendation_disabled", true);
+      marketInternal.put("similar_search", similarSearch);
+      json.put("default_internal", defaultInternalId);
+      json.put("market_internal", marketInternal);
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("item_experiment_details", json.toString());
+      headers.put("item_experiment_variant", "market_internal");
+
       Request request = RequestBuilder.create()
          .setUrl(url)
+         .setHeaders(headers)
          .build();
 
       String content = this.dataFetcher.get(session, request).getBody();

@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.LinxImpulseRanking;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -15,6 +16,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -37,12 +39,12 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
 
       if (products != null && !products.isEmpty()) {
          String productIds = mountUrlid(products);
-         fetchPrice(productIds);
+         pricesJson = fetchPrice(productIds);
          this.totalProducts = data.optInt("size");
          for (Object object : products) {
             JSONObject product = (JSONObject) object;
-            String productUrl = crawlProductUrl(product);
             internalPid = crawlInternalPid(product);
+            String productUrl = crawlProductUrl(internalPid, pricesJson);
 
             String name = product.optString("name");
             String image = crawlImage(product);
@@ -139,10 +141,10 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
       }
    }
 
-   protected void fetchPrice(String id) {
+   protected JSONArray fetchPrice(String id) {
       String url = "https://www.compra-agora.com/api/productLookup/" + id;
       Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", "CPL=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJpbmZyYWNvbW1lcmNlLmNvbS5iciIsInN1YiI6IkluZnJhY29tbWVyY2UiLCJhdWQiOiJjb21wcmEtYWdvcmEuY29tIiwiaWF0IjoxNjQ0MjQ5MTY2LCJkYXRhIjp7InVpZCI6IlRvYndGUmdjS3pOckNzZXhuUnozWnk3a3JwNEJ3T2VUTGxpRmtBNzR1czQ9In19.ob8UfpN1WMPTagamtSsoco1cllnNTSRwNeKrbI2Q9oc2HNjUL56VVEUc8vuz_jUtYEQ3RZAJZJLf5vSV_wXT6V9dkrGP2L7BilB3JamV56muHBqOjA3Xhii6qGFQePgAvNoZaCrw75-pIDSwzfqEzXDYoNqxkBQfVvTG-FCKTKtbVZqcTNXAcNjA80dp9AydpkCi712NxGITCnigZVFaktWl3B3NuBFd44oE-qKI5JCp6IwbM0ptgBHjAT8i43AmLsdS_-JCPcBjbBTFgS_27KNQ26dvuuZjdSwzKHYSxvUO2rI7Vz_4TVFHdaNA-MSfPksfzZT_B_HnX7FkC-imoA; PHPSESSID=7hslf6eioumlusjacjolnn8cf1; ccw=2 3 61 94 147; usrfgpt=367359160001371644248354");
+      headers.put("Cookie", session.getOptions().optString("cookie"));
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -151,10 +153,31 @@ public class BrasilCompreAgoraCrawler extends LinxImpulseRanking {
 
       Response response = dataFetcher.get(session, request);
 
-      pricesJson = CrawlerUtils.stringToJsonArray(response.getBody());
+      return CrawlerUtils.stringToJsonArray(response.getBody());
    }
 
+   protected String crawlProductUrl(String id, JSONArray productsApi) {
+      String url = "";
+      for (Object product : productsApi) {
+         Number productIdTest = JSONUtils.getValueRecursive(product, "productId", Number.class);
 
+         if (productIdTest != null) {
+            if (Objects.equals(productIdTest.toString(), id)) {
+               url = JSONUtils.getValueRecursive(product, "product_url", String.class);
+            }
+         }
+      }
+
+      if (url.startsWith("//")) {
+         url = "https:" + url;
+      } else if (url.startsWith("www.")) {
+         url = "https://" + url;
+      } else if(!url.startsWith(this.homePage)) {
+         url = this.homePage + url;
+      }
+
+      return url;
+   }
    protected String mountUrlid(JSONArray products){
       String url="";
       for (Object object : products) {

@@ -42,8 +42,8 @@ public class BrasilCompreAgoraCrawler extends Crawler {
    @Override
    protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
-      // data de expiração Tue Feb 07 2023 18:15:20 GMT-0300 (Horário Padrão de Brasília) está no código para diminuir a quantidade de requests
-      headers.put("Cookie", "CPL=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJpbmZyYWNvbW1lcmNlLmNvbS5iciIsInN1YiI6IkluZnJhY29tbWVyY2UiLCJhdWQiOiJjb21wcmEtYWdvcmEuY29tIiwiaWF0IjoxNjQ0MjY2MjUxLCJkYXRhIjp7InVpZCI6IlRvYndGUmdjS3pOckNzZXhuUnozWnk3a3JwNEJ3T2VUTGxpRmtBNzR1czQ9In19.Bg1fSs0ugvcJlgSrUfVfNxb0oLyX8BkgWP4aT3cFWl6TR4jLz_Bm4nZ9zDOat7VHfM3zQ5-rngxmwCshHueTbTNjCVrrD7BeXZC9zGv2tu5lig_NR0odF4yBhKzXqxqvyxSdHnJUUJiy6w7ySn24U8vOOBWBaYhBdzqv11hCB5s1vsfGd0P8UVZidS11oilOEm0P2SwUOiCx5SL88MNuKl2QsRTWyjnB_sd7VBbu3DR5OLXamhV5RWh0YR_-MuClpIeFu6bntThPsqyK9pR8SJnJTQk9_5MAipWu2CmqGZvphJzLhfauGsxaz7Bo0-OX8_59_pe8tki80TU7GX5-VA; PHPSESSID=elc3tvs7psd3751ik8ddasuiu3; ccw=2 3 61 94 147; usrfgpt=367359160001371644268077");
+      headers.put("Cookie", session.getOptions().optString("cookie"));
+
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
          .setHeaders(headers)
