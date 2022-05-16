@@ -310,7 +310,7 @@ public abstract class Crawler extends Task {
 
       // if the product is void run the active void analysis
       Product activeVoidResultProduct = crawledProduct;
-      if (crawledProduct.isVoid()) {
+      if (crawledProduct.isVoid() && !(session instanceof ToBuyCrawlerSession)) {
          Logging.printLogDebug(logger, session, "Product is void...going to start the active void.");
          activeVoidResultProduct = activeVoid(crawledProduct);
       }

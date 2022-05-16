@@ -41,7 +41,7 @@ public class SessionFactory {
          return new EqiCrawlerSession(request, scraperType, market);
       } else if (scraperType.equals(ScrapersTypes.EQI_DISCOVERER.toString())) {
          return new EqiRankingDiscoverKeywordsSession(request, scraperType, market);
-      } else if (scraperType.equals("2_buy")) {
+      } else if (scraperType.equals(ScrapersTypes.TO_BUY.toString())) {
          return new ToBuyCrawlerSession(request, scraperType, market);
       }else {
          Logging.printLogDebug(logger, "Scraper type not recognized." + "[" + scraperType + "]");
