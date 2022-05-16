@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
@@ -85,7 +86,7 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setCookies(cookies)
          .build();
 
-      Response response = this.dataFetcher.get(session, requestProduct);
+      Response response = CrawlerUtils.retryRequest(requestProduct, session, this.dataFetcher, true);
 
       return Jsoup.parse(response.getBody());
 
@@ -139,20 +140,24 @@ public class MrestoqueunidasulCrawler extends Crawler {
       return products;
    }
 
-   private boolean isProductPage(Document doc) {
-      return !doc.select("#product-detail").isEmpty();
-   }
-
    private String scrapInternalId(Document doc) {
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product__grid .product__button", "data-product");
 
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".flex.flex--column.margin-top--m a", "href");
-      Pattern pattern = Pattern.compile("id\\/(.*)\\/basket");
-      Matcher matcher = pattern.matcher(internalId);
-      if (matcher.find()) {
-         return matcher.group(1);
+      if (internalId == null || internalId.isEmpty()) {
+         String productSlug = CommonMethods.getLast(session.getOriginalURL().split("/"));
+         if (productSlug != null && !productSlug.isEmpty()) {
+            String alternativeInternalId = CommonMethods.getLast(productSlug.split("-"));
+            if (alternativeInternalId != null && !alternativeInternalId.isEmpty()) {
+               internalId = alternativeInternalId;
+            }
+         }
       }
 
-      return null;
+      return internalId;
+   }
+
+   private boolean isProductPage(Document doc) {
+      return !doc.select("#product-detail").isEmpty();
    }
 
    private List<String> scrapEan(Document doc) {
