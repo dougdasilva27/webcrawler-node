@@ -502,7 +502,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
       JSONObject json = JSONUtils.getValueRecursive(skuJsonInfo, "props.pageProps.data.product", JSONObject.class);
 
-      String internalId = json.optString("id");
+      String internalId = crawlInternalIdNewLayout(json);
       String name = json.optString("title");
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
@@ -545,6 +545,16 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          .build());
 
       return offers;
+   }
+
+   private String crawlInternalIdNewLayout(JSONObject json) {
+      String internalId = json.optString("variationId");
+      if (internalId == null || internalId.isEmpty()) {
+         internalId = json.optString("id");
+      }
+
+      return internalId;
+
    }
 
    private Pricing scrapPricingNewLayout(JSONObject json) throws MalformedPricingException {
