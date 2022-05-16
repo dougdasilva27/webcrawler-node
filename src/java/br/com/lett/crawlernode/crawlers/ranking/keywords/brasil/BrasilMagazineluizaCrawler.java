@@ -71,8 +71,9 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
                   .build()
             ).build();
 
-         Response response = new JsoupDataFetcher().get(session, request);
+         Response response = new ApacheDataFetcher().get(session, request);
          doc = Jsoup.parse(response.getBody());
+
          attempts++;
 
          if (attempts == 3) {
@@ -88,6 +89,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
    }
 
    private boolean isBlockedPage(Document doc) {
+
       return doc.toString().contains("We are sorry") || doc.selectFirst("div") == null;
    }
 
