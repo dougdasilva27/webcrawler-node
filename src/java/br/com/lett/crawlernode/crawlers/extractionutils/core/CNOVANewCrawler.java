@@ -122,7 +122,7 @@ public abstract class CNOVANewCrawler extends Crawler {
          )
          .build();
 
-      return this.dataFetcher.get(session, request);
+      return CrawlerUtils.retryRequest(request, session, dataFetcher, true);
    }
 
    @Override
