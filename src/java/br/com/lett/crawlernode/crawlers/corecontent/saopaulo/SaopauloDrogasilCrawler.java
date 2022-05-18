@@ -53,8 +53,8 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
       if (sellersArray != null && !sellersArray.isEmpty()) {
          for (Object o : sellersArray) {
-            String proxy = (String) o;
-            sellersList.add(proxy);
+            String seller = (String) o;
+            sellersList.add(seller);
          }
       }
       return sellersList;
