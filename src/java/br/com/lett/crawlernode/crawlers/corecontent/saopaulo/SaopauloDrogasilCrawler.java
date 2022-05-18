@@ -43,10 +43,23 @@ public class SaopauloDrogasilCrawler extends Crawler {
    private static String SELLER_FULL_NAME = "Drogasil (São Paulo)";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.ELO.toString(), Card.HIPERCARD.toString(), Card.HIPER.toString(),
       Card.DINERS.toString(), Card.DISCOVER.toString(), Card.AURA.toString());
-
    // I could'nt find another selector for this description
    private static final String SMALL_DESCRIPTION_SELECTOR = ".sc-fzqNJr.hXQgjp";
    private static Boolean isMainSeller = true;
+
+   private List<String> getSellers() {
+      JSONArray sellersArray = session.getOptions().optJSONArray("sellers");
+      List<String> sellersList = new ArrayList<>();
+
+      if (sellersArray != null && !sellersArray.isEmpty()) {
+         for (Object o : sellersArray) {
+            String proxy = (String) o;
+            sellersList.add(proxy);
+         }
+      }
+      return sellersList;
+   }
+   private List<String> SELLERS = getSellers();
    public SaopauloDrogasilCrawler(Session session) {
       super(session);
    }
@@ -180,13 +193,13 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
          if (Objects.equals(seller_name, "cd_grupo_pbm_univers")) {
             seller_name = JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
-            if (Objects.equals(seller_name, "DI") || Objects.equals(seller_name, "ND")) {
-               return SELLER_FULL_NAME;
-            } else {
+
+            if (SELLERS.contains(seller_name)) {
                isMainSeller = false;
                return seller_name;
+            } else {
+               return SELLER_FULL_NAME;
             }
-
          }
       }
       return SELLER_FULL_NAME;
