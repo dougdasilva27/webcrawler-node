@@ -52,7 +52,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      Document doc = fetchDocument(HOME_PAGE + this.keywordEncoded);
+      Document doc = fetchDocument(HOME_PAGE + this.keywordEncoded.replace("+", "%20"));
       JSONObject searchResult = fetchSearchApi(doc);
 
       if (searchResult != null && searchResult.has("products")) {
@@ -167,17 +167,17 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
 
       variables.put("from", arrayProducts.size());
       variables.put("to", (arrayProducts.size() + this.pageSize) - 1);
-      variables.put("query", this.keywordEncoded);
+      variables.put("query", this.keywordEncoded.replace("+", " "));
 
       JSONArray selectedFacets = new JSONArray();
       JSONObject obj = new JSONObject();
       obj.put("key", "ft");
-      obj.put("value", this.keywordEncoded);
+      obj.put("value", this.keywordEncoded.replace("+", " "));
 
       selectedFacets.put(obj);
 
       variables.put("selectedFacets", selectedFacets);
-      variables.put("fullText", this.keywordEncoded);
+      variables.put("fullText", this.keywordEncoded.replace("+", " "));
 
       if (redirect != null && !redirect.isEmpty()) {
          String query = getRedirectQuery(redirect);
