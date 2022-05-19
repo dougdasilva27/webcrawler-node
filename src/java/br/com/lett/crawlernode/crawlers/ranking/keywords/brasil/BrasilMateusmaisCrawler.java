@@ -35,16 +35,16 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
          JSONArray productsList = reponseJson.getJSONArray("results");
 
          for (Object productObject : productsList) {
-            if(productObject instanceof JSONObject){
+            if (productObject instanceof JSONObject) {
                JSONObject product = (JSONObject) productObject;
                String internalId = product.optString("id");
-               String productUrl = crawurl(product);
-               String name = crawmame(product);
-               String imageUrl = crawimg(product);
+               String productUrl = "https://mateusmais.com.br/produto/2857c51e-ffc9-4365-b39a-0156cfc032b9/" + internalId;
+               String name = product.optString("name");
+               String imageUrl = product.optString("image");
                Integer price = null;
                boolean isAvailable = crawisavailable(product);
                if (isAvailable == true) {
-                  crawprice(productsList);
+                  price = crawprice(product);
                }
 
                RankingProduct productRanking = RankingProductBuilder.create()
@@ -67,53 +67,30 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
-
+      hasNextPage(reponseJson);
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
    }
 
-   private boolean crawisavailable(JSONArray productsList) {
-      String holder;
-      Object obj = productsList.optQuery("available");
-      if (obj != null) {
-         holder = obj.toString();
-         if (holder.contains("true")) {
-            return true;
-         }
+   private boolean crawisavailable(JSONObject productsList) {
+
+      String holder = productsList.optString("available");
+      if (holder.contains("true")) {
+         return true;
       }
       return false;
    }
 
-   private Integer crawprice(JSONArray productsList) {
+   private Integer crawprice(JSONObject productsList) {
       Integer numb = null;
-      Object obj = productsList.optQuery("low_price");
+      String obj = productsList.optString("low_price").replace(".", "");
       if (obj != null) {
-         obj = productsList.optQuery("price");
-         numb = Integer.valueOf(obj.toString());
+         obj = productsList.optString("price").replace(".", "");
+         numb = Integer.parseInt(obj);
       } else {
-         numb = Integer.valueOf(obj.toString());
+         numb = Integer.parseInt(obj);
       }
       return numb;
-   }
-
-   private String crawimg(JSONArray productsList) {
-      Object obj = productsList.optQuery("image");
-      if (obj != null) {
-         return obj.toString();
-      }
-      return null;
-   }
-
-   private String crawmame(JSONArray productsList) {
-      Object obj = productsList.optQuery("name");
-      if (obj != null) {
-         return obj.toString();
-      }
-      return null;
-   }
-
-   private String crawurl(String internalId) {
-      return "https://mateusmais.com.br/produto/2857c51e-ffc9-4365-b39a-0156cfc032b9/" + internalId;
    }
 
    private String crawid(JSONObject productsList) {
@@ -139,9 +116,8 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
 
    }
 
-   @Override
-   protected boolean hasNextPage() {
-      Element page = this.currentDoc.selectFirst("#os-content > div > div > span > span > ul > li");
+   protected boolean hasNextPage(JSONObject reponseJson) {
+      String page = reponseJson.optString("next");
       return page != null;
    }
 }
