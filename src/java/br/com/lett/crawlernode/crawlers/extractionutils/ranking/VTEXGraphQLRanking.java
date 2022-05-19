@@ -14,6 +14,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import javax.swing.text.StyledEditorKit;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -68,9 +69,9 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
             String url = HOME_PAGE + product.optString("linkText") + "/p";
             String name = product.optString("productName");
             String imgUrl = JSONUtils.getValueRecursive(product, "items.0.images.0.imageUrl", String.class, null);
-            int price = scrapPrice(product);
-            int stock = JSONUtils.getValueRecursive(product, "items.0.sellers.0.commertialOffer.AvailableQuantity", Integer.class, 0);
-            boolean available = stock > 0;
+            Integer price = scrapPrice(product);
+            Integer stock = JSONUtils.getValueRecursive(product, "items.0.sellers.0.commertialOffer.AvailableQuantity", Integer.class, 0);
+            Boolean available = stock > 0;
 
             try {
                RankingProduct productRanking = RankingProductBuilder.create()
@@ -93,7 +94,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
       }
    }
 
-   private int scrapPrice(JSONObject product) {
+   private Integer scrapPrice(JSONObject product) {
       Integer price = null;
       JSONObject sellingPrice = JSONUtils.getValueRecursive(product, "priceRange.sellingPrice", JSONObject.class, null);
       if (sellingPrice != null) {
