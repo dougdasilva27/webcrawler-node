@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -19,6 +20,8 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.apache.commons.lang.WordUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
@@ -41,30 +44,28 @@ public class BrasilMateusmaisCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       String idUrl = getUrlid();
-      JSONObject reponseJson = getProduct(idUrl);
+      JSONObject productList = getProduct(idUrl);
       List<Product> products = new ArrayList<>();
 
-      if (isProductPage(doc)) {
+      if (productList != null && !productList.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".yotpo.yotpo-main-widget ", "data-product-id");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".proBoxInfo.col-xs-12.col-sm-12.col-md-6.col-lg-6 > div.wrap-title > h1", false);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".col-md-6.col-lg-6 > div.description.velaGroup > p:nth-child(3)"));
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#ProductPhotoImg", Arrays.asList("src"), "https", "://nutrimaisvida.com.br/");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".img-responsive.hidden-xs",
-            Arrays.asList("src"), "https", "://nutrimaisvida.com.br/", primaryImage);
-         RatingsReviews ratingsReviews = crawlRating(internalId);
-         boolean available = CrawlerUtils.scrapStringSimpleInfo(doc, ".proBoxInfo.col-xs-12.col-sm-12.col-md-6.col-lg-6 > div.wrap-title > span > span", false).contains("Disponível");
-         Offers offers = available ? scrapOffers(doc) : new Offers();
+         String internalId = productList.optString("id");
+         String name = productList.optString("name");
+         String description = productList.optString("description");
+         String primaryImage = productList.optString("image");
+         CategoryCollection categories = getCategory(productList);
+         String brand = productList.optString("brand");
+         boolean available = productList.optBoolean("available");
+         Offers offers = available ? scrapOffers(productList) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalId)
-            .setName(name)
+            .setName(brand + " " + name)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setRatingReviews(ratingsReviews)
+            .setCategories(categories)
             .setDescription(description)
             .setOffers(offers)
             .build();
@@ -79,6 +80,15 @@ public class BrasilMateusmaisCrawler extends Crawler {
       return products;
    }
 
+   private CategoryCollection getCategory(JSONObject productList) {
+      CategoryCollection categories = new CategoryCollection();
+      String objCategory = productList.optString("category");
+      if (objCategory != null && !objCategory.isEmpty()) {
+         String category = WordUtils.capitalize(objCategory);
+         categories.add(category);
+      }
+      return categories;
+   }
    private String getUrlid() {
       String id = null;
 
@@ -96,9 +106,9 @@ public class BrasilMateusmaisCrawler extends Crawler {
       return doc.selectFirst(".proBoxPrimaryInner") != null;
    }
 
-   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(JSONObject productList) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
+      Pricing pricing = scrapPricing(productList);
 
       if (pricing != null) {
          offers.add(Offer.OfferBuilder.create()
@@ -114,12 +124,12 @@ public class BrasilMateusmaisCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+   private Pricing scrapPricing(JSONObject productList) throws MalformedPricingException {
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".formAddToCart.clearfix > .formAddToCart__proPrice.clearfix > .priceProduct.priceCompare", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#ProductPrice", null, false, ',', session);
+      Double priceFrom = productList.optDouble("price");
+      Double spotlightPrice = productList.optDouble("low_price");
 
-      if (spotlightPrice == null) {
+      if (spotlightPrice.isNaN() ){
          spotlightPrice = priceFrom;
       }
 
@@ -155,43 +165,6 @@ public class BrasilMateusmaisCrawler extends Crawler {
 
       return creditCards;
 
-   }
-   private RatingsReviews crawlRating(String internalId) {
-      String url = "https://api-cdn.yotpo.com/v1/widget/C3WJEQUAevWXtzD53PwS4IFnSgbOtw3MkvQXWmJj/products/" + internalId + "/reviews";
-      RatingsReviews ratingsReviews = new RatingsReviews();
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setSendUserAgent(true)
-         .build();
-      Response response = new FetcherDataFetcher().get(session, request);
-      JSONObject jsonObject = JSONUtils.stringToJson(response.getBody());
-      JSONObject aggregationRating = (JSONObject) jsonObject.optQuery("/response/bottomline");
-
-      if (aggregationRating != null) {
-         AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(aggregationRating);
-
-         ratingsReviews.setTotalRating(aggregationRating.optInt("total_review"));
-         ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
-         ratingsReviews.setAverageOverallRating(aggregationRating.optDouble("average_score", 0d));
-      }
-      return ratingsReviews;
-   }
-   private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject reviews) {
-
-      JSONObject reviewValue = reviews.optJSONObject("star_distribution");
-
-      if (reviewValue != null) {
-         return new AdvancedRatingReview.Builder()
-            .totalStar1(reviewValue.optInt("1"))
-            .totalStar2(reviewValue.optInt("2"))
-            .totalStar3(reviewValue.optInt("3"))
-            .totalStar4(reviewValue.optInt("4"))
-            .totalStar5(reviewValue.optInt("5"))
-            .build();
-      }
-
-      return new AdvancedRatingReview();
    }
 
    private JSONObject getProduct(String internalId) {
