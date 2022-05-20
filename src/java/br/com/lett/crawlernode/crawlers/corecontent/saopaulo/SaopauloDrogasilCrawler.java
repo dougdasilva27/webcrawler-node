@@ -45,7 +45,6 @@ public class SaopauloDrogasilCrawler extends Crawler {
       Card.DINERS.toString(), Card.DISCOVER.toString(), Card.AURA.toString());
    // I could'nt find another selector for this description
    private static final String SMALL_DESCRIPTION_SELECTOR = ".sc-fzqNJr.hXQgjp";
-   private static Boolean isMainSeller = true;
 
    private List<String> getSellers() {
       JSONArray sellersArray = session.getOptions().optJSONArray("sellers");
@@ -108,7 +107,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
                "extension_attributes.stock_item.is_in_stock",
                Boolean.class);
             RatingsReviews ratingsReviews = crawlRating(internalId);
-            Offers offers = available != null && available ? scrapOffers(data) : new Offers();
+            Offers offers = available != null && available ? scrapOffers(data, doc) : new Offers();
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -160,20 +159,20 @@ public class SaopauloDrogasilCrawler extends Crawler {
       return name.toString();
    }
 
-   private Offers scrapOffers(JSONObject data) {
+   private Offers scrapOffers(JSONObject data, Document doc) {
       Offers offers = new Offers();
       try {
          Pricing pricing = scrapPricing(data);
          List<String> sales = scrapSales(pricing, data);
 
-         SELLER_FULL_NAME = isMainSeller(data);
+         String mainSeller = isMainSeller(doc);
 
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
+            .setSellerFullName(mainSeller)
             .setMainPagePosition(1)
             .setIsBuybox(false)
-            .setIsMainRetailer(isMainSeller)
+            .setIsMainRetailer(mainSeller.equals(SELLER_FULL_NAME))
             .setPricing(pricing)
             .setSales(sales)
             .build());
@@ -184,24 +183,13 @@ public class SaopauloDrogasilCrawler extends Crawler {
       return offers;
 
    }
-   private String isMainSeller (JSONObject data) {
-      JSONArray attributes = data.optJSONArray("custom_attributes");
-      String seller_name;
+   private String isMainSeller(Document doc) {
+      String isMarketPlace = CrawlerUtils.scrapStringSimpleInfo(doc, "div[class*='SoldAndDelivered'] a", true);
 
-      for (Object attribute : attributes) {
-         seller_name = JSONUtils.getValueRecursive(attribute, "attribute_code", String.class);
-
-         if (Objects.equals(seller_name, "cd_grupo_pbm_univers")) {
-            seller_name = JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
-
-            if (SELLERS.contains(seller_name)) {
-               isMainSeller = false;
-               return seller_name;
-            } else {
-               return SELLER_FULL_NAME;
-            }
-         }
+      if (isMarketPlace != null && !isMarketPlace.isEmpty()) {
+         return isMarketPlace;
       }
+
       return SELLER_FULL_NAME;
    }
    private List<String> scrapSales(Pricing pricing, JSONObject data) {
