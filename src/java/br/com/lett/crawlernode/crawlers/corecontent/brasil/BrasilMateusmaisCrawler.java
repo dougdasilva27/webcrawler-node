@@ -25,10 +25,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,10 +47,11 @@ public class BrasilMateusmaisCrawler extends Crawler {
       if (productList != null && !productList.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = productList.optString("id");
+         String internalId = productList.optString("sku");
          String name = productList.optString("name");
          String description = productList.optString("description");
          String primaryImage = productList.optString("image");
+         List<String> eans = Collections.singletonList(productList.optString("barcode"));
          CategoryCollection categories = getCategory(productList);
          String brand = productList.optString("brand");
          boolean available = productList.optBoolean("available");
@@ -66,6 +64,7 @@ public class BrasilMateusmaisCrawler extends Crawler {
             .setName(brand + " " + name)
             .setPrimaryImage(primaryImage)
             .setCategories(categories)
+            .setEans(eans)
             .setDescription(description)
             .setOffers(offers)
             .build();
@@ -134,7 +133,7 @@ public class BrasilMateusmaisCrawler extends Crawler {
       }
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      CreditCards creditCards = CrawlerUtils.scrapCreditCards(spotlightPrice, cards);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
@@ -144,16 +143,15 @@ public class BrasilMateusmaisCrawler extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+   public static CreditCards scrapCreditCards(Double spotlightPrice, Set<String> cards) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
-      }
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
@@ -164,7 +162,6 @@ public class BrasilMateusmaisCrawler extends Crawler {
       }
 
       return creditCards;
-
    }
 
    private JSONObject getProduct(String internalId) {

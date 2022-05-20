@@ -38,7 +38,7 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
             if (productObject instanceof JSONObject) {
                JSONObject product = (JSONObject) productObject;
                String internalId = product.optString("sku");
-               String productUrl = "https://mateusmais.com.br/produto/2857c51e-ffc9-4365-b39a-0156cfc032b9/" + internalId;
+               String productUrl = "https://mateusmais.com.br/produto/2857c51e-ffc9-4365-b39a-0156cfc032b9/" + product.optString("id");
                String name = product.optString("name");
                String imageUrl = product.optString("image");
                Integer price = null;
@@ -84,7 +84,7 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
    private Integer crawprice(JSONObject productsList) {
       Integer numb = null;
       String obj = productsList.optString("low_price").replace(".", "");
-      if (obj != null) {
+      if (obj.isEmpty()) {
          obj = productsList.optString("price").replace(".", "");
          numb = Integer.parseInt(obj);
       } else {
