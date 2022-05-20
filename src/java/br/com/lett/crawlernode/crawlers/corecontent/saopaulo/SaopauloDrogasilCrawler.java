@@ -186,7 +186,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
    private String isMainSeller(Document doc) {
       String isMarketPlace = CrawlerUtils.scrapStringSimpleInfo(doc, "div[class*='SoldAndDelivered'] a", true);
 
-      if (isMarketPlace != null) {
+      if (isMarketPlace != null && !isMarketPlace.isEmpty()) {
          return isMarketPlace;
       }
 
