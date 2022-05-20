@@ -39,7 +39,7 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
                JSONObject product = (JSONObject) productObject;
                String internalId = product.optString("sku");
                String productUrl = "https://mateusmais.com.br/produto/2857c51e-ffc9-4365-b39a-0156cfc032b9/" + product.optString("id");
-               String name = product.optString("name");
+               String name = product.optString("name") + " "+ product.optString("measure")+ product.optString("measure_type");
                String imageUrl = product.optString("image");
                Integer price = null;
                boolean isAvailable = crawisavailable(product);

@@ -48,7 +48,7 @@ public class BrasilMateusmaisCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = productList.optString("sku");
-         String name = productList.optString("name");
+         String name = productList.optString("name") + " "+ productList.optString("measure") + productList.optString("measure_type");;
          String description = productList.optString("description");
          String primaryImage = productList.optString("image");
          List<String> eans = Collections.singletonList(productList.optString("barcode"));
@@ -141,27 +141,6 @@ public class BrasilMateusmaisCrawler extends Crawler {
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
-   }
-
-   public static CreditCards scrapCreditCards(Double spotlightPrice, Set<String> cards) throws MalformedPricingException {
-      CreditCards creditCards = new CreditCards();
-
-      Installments installments = new Installments();
-      installments.add(Installment.InstallmentBuilder.create()
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(spotlightPrice)
-         .build());
-
-
-      for (String card : cards) {
-         creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
-      }
-
-      return creditCards;
    }
 
    private JSONObject getProduct(String internalId) {
