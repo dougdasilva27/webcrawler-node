@@ -11,6 +11,8 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilCobasiCrawler extends CrawlerRankingKeywords {
 
@@ -20,7 +22,7 @@ public class BrasilCobasiCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      this.pageSize = 35;
+      this.pageSize = 20;
 
       this.log("Página " + this.currentPage);
 
@@ -30,7 +32,7 @@ public class BrasilCobasiCrawler extends CrawlerRankingKeywords {
 
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".neemu-products-container .nm-product-item");
+      Elements products = this.currentDoc.select("div.ProductListItem");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -38,12 +40,12 @@ public class BrasilCobasiCrawler extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String internalPid = crawlInternalPid(e);
-            String productUrl = crawlProductUrl(e);
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".nm-product-name", false);
-            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".nm-product-img", Collections.singletonList("src"), "https", "cobasi.com.br");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".nm-price-container .nm-price-value", null, true, ',', session, 0);
-            boolean isAvailable = price != 0;
+            String productUrl = CrawlerUtils.scrapUrl(e, "div.ProductListItem a", "href", "https", "www.cobasi.com.br");
+            String internalPid = crawlInternalPid(productUrl);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "div.ProductListItem div[class*=Title]", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "div.ProductListItem img[decoding*=async]", Collections.singletonList("src"), "https", "cobasi.com.br");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "div[class*=PriceBox] span[data-testid*=product-price]", null, true, ',', session, null);
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -71,7 +73,7 @@ public class BrasilCobasiCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      Element totalElement = this.currentDoc.select(".neemu-total-products-container").first();
+      Element totalElement = this.currentDoc.select("div[class*=TotalDescription]").first();
 
       if (totalElement != null) {
          String total = totalElement.ownText().replaceAll("[^0-9]", "").trim();
@@ -84,23 +86,14 @@ public class BrasilCobasiCrawler extends CrawlerRankingKeywords {
       }
    }
 
-   private String crawlInternalPid(Element e) {
-      return CommonMethods.getLast(e.attr("id").split("-"));
-   }
-
-   private String crawlProductUrl(Element e) {
-      String productUrl = null;
-
-      Element url = e.select(".nm-product-info a").first();
-
-      if (url != null) {
-         productUrl = url.attr("href");
-
-         if (!productUrl.startsWith("http")) {
-            productUrl = "https:" + productUrl;
-         }
+   private String crawlInternalPid(String url) {
+      String id = null;
+      Pattern pattern = Pattern.compile("-([0-9]+)\\/p");
+      Matcher matcher = pattern.matcher(url);
+      if (matcher.find()) {
+         id = matcher.group(1);
       }
-
-      return productUrl;
+      return id;
    }
+
 }

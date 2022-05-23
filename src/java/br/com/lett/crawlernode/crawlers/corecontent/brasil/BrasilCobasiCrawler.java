@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -9,20 +12,14 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.*;
 
 import java.util.*;
 
-import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Marketplace;
-import models.Offer;
-import models.Offers;
-import models.RatingsReviews;
+import models.*;
 import models.prices.Prices;
 import models.pricing.*;
 import org.json.JSONArray;
@@ -30,7 +27,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-//the first crawler make with github copilot
+//the first crawler made with github copilot
 public class BrasilCobasiCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.cobasi.com.br/";
@@ -66,6 +63,7 @@ public class BrasilCobasiCrawler extends Crawler {
 
             JSONObject variant = (JSONObject) o;
             Offers offers = scrapOffer(productsObj, variant);
+            RatingsReviews ratingsReviews = crawlRating(productsObj);
 
 
             Product product = ProductBuilder.create()
@@ -78,6 +76,7 @@ public class BrasilCobasiCrawler extends Crawler {
                .setSecondaryImages(secondaryImages)
                .setDescription(productsObj.optString("description"))
                .setOffers(offers)
+               .setRatingReviews(ratingsReviews)
                .setEans(Collections.singletonList(variant.optString("ean")))
                .build();
 
@@ -113,16 +112,10 @@ public class BrasilCobasiCrawler extends Crawler {
 
 
    private Pricing scrapPricing(JSONObject jsonObject) throws MalformedPricingException {
-      Double spotlightPrice = jsonObject.optDouble("bestPrice");
-      Double priceFrom = jsonObject.optDouble("price");
-
-      if (spotlightPrice == null && priceFrom != null) {
-         priceFrom = priceFrom / 100;
-         spotlightPrice = priceFrom;
+      Double spotlightPrice = jsonObject.optDouble("price");
+      Double priceFrom = jsonObject.optDouble("listPrice");
+      if(priceFrom == 0){
          priceFrom = null;
-      } else if (spotlightPrice.equals(priceFrom)) {
-         priceFrom = null;
-         spotlightPrice = spotlightPrice / 100;
       }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
@@ -172,6 +165,36 @@ public class BrasilCobasiCrawler extends Crawler {
       String categories = (String) jsonObject.query("/categories/0");
       categoryCollection.addAll(Arrays.asList(categories));
       return categoryCollection;
+   }
+
+   private RatingsReviews crawlRating(JSONObject jsonObject) {
+      JSONObject aggregationRating = (JSONObject) jsonObject.optQuery("/productRating");
+      RatingsReviews ratingsReviews = new RatingsReviews();
+
+      if (aggregationRating != null) {
+         AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(aggregationRating);
+
+         ratingsReviews.setTotalRating(aggregationRating.optInt("total_opinions"));
+         ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
+         ratingsReviews.setAverageOverallRating(aggregationRating.optDouble("avg", 0d));
+      }
+      return ratingsReviews;
+   }
+   private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject reviews) {
+
+      JSONObject reviewValue = reviews.optJSONObject("stars");
+
+      if (reviewValue != null) {
+         return new AdvancedRatingReview.Builder()
+            .totalStar1(reviewValue.optInt("1"))
+            .totalStar2(reviewValue.optInt("2"))
+            .totalStar3(reviewValue.optInt("3"))
+            .totalStar4(reviewValue.optInt("4"))
+            .totalStar5(reviewValue.optInt("5"))
+            .build();
+      }
+
+      return new AdvancedRatingReview();
    }
 
 
