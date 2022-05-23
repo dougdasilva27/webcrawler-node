@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -153,6 +154,7 @@ public class BrasilBigboxdeliveryCrawler extends Crawler {
          for (Object o : prices) {
             JSONObject price = (JSONObject) o;
             Pricing pricing = scrapPricing(price);
+            String sales = CrawlerUtils.calculateSales(pricing);
 
             if (pricing != null) {
                offers.add(Offer.OfferBuilder.create()
@@ -162,6 +164,7 @@ public class BrasilBigboxdeliveryCrawler extends Crawler {
                   .setIsBuybox(false)
                   .setIsMainRetailer(true)
                   .setPricing(pricing)
+                  .setSales(Collections.singletonList(sales))
                   .build());
             }
          }
