@@ -28,7 +28,7 @@ public class BrasilBigboxdeliveryCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.log("Página " + this.currentPage);
 
-      this.pageSize = 16;
+      this.pageSize = 24;
 
       JSONArray products = scrapProductInfoFromAPI();
 
@@ -78,7 +78,7 @@ public class BrasilBigboxdeliveryCrawler extends CrawlerRankingKeywords {
       JSONArray products = new JSONArray();
 
 
-      String url = "https://www.bigboxdelivery.com.br/apiv3/search?page="+this.currentPage+"&N=18&search="+this.keywordEncoded+"&store_id=5e77b54b231a5bdbf395b06a";
+      String url = "https://www.bigboxdelivery.com.br/apiv3/search?page="+this.currentPage+"&N="+this.pageSize+"&search="+this.keywordEncoded+"&custom_domain=bigboxdelivery.com.br";
 
       Request request = Request.RequestBuilder.create().setUrl(url).build();
       String response = this.dataFetcher.get(session,request).getBody();
