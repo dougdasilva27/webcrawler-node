@@ -26,7 +26,7 @@ import java.util.Set;
 
 public class MerqueoCrawler extends Crawler {
 
-   String zoneId =    session.getOptions().optString("zoneId");
+   String zoneId = session.getOptions().optString("zoneId");
    private static final String SELLER_FULL_NAME = "Merqueo";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AMEX.toString());
@@ -53,7 +53,7 @@ public class MerqueoCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = String.valueOf(data.optInt("id"));
-         String name = attributes.optString("name");
+         String name = scrapName(attributes);
 
          Offers offers = crawlOffers(attributes);
 
@@ -79,6 +79,20 @@ public class MerqueoCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapName(JSONObject attributes) {
+      StringBuilder slugString = new StringBuilder();
+
+      String slug = attributes.optString("slug");
+      if (!slug.isEmpty()) {
+         String[] slugSplit = slug.split("-");
+         for (int i = 0; i < slugSplit.length; i++) {
+            slugString.append(slugSplit[i].substring(0, 1).toUpperCase()).append(slugSplit[i].substring(1));
+            slugString.append(" ");
+         }
+      }
+      return slugString.toString();
    }
 
 
@@ -149,7 +163,7 @@ public class MerqueoCrawler extends Crawler {
 
       Double spotLightprice = attributes.optDouble("special_price", 0);
       spotLightprice = spotLightprice == 0d ? null : spotLightprice;
-      Double priceFrom =  attributes.optDouble("price", 0);
+      Double priceFrom = attributes.optDouble("price", 0);
       priceFrom = priceFrom == 0d ? null : priceFrom;
 
       if (spotLightprice == null && priceFrom != null) {
