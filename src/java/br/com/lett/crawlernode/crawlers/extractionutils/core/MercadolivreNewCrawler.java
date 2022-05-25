@@ -193,8 +193,8 @@ public class MercadolivreNewCrawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-reviews__rating__summary__label", true, 0);
-      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ui-pdp-reviews__rating__summary__average", null, true, '.', session);
+      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-review-view__rating__summary__label", true, 0);
+      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ui-review-view__rating__summary__average", null, true, '.', session);
       AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
 
       ratingReviews.setInternalId(internalId);
@@ -214,11 +214,11 @@ public class MercadolivreNewCrawler {
       Integer star4 = 0;
       Integer star5 = 0;
 
-      Elements reviews = doc.select(".ui-vpp-rating li");
+      Elements reviews = doc.select(".ui-review-view__comments__review-comment");
 
       for (Element review : reviews) {
 
-         Element elementStarNumber = review.selectFirst(".ui-vpp-rating__level__text");
+         Element elementStarNumber = review.selectFirst(".andes-visually-hidden");
 
          if (elementStarNumber != null) {
             String stringStarNumber = elementStarNumber.text().replaceAll("[^0-9]", "").trim();
