@@ -70,9 +70,8 @@ public class MercadolivreNewCrawler {
       boolean availableToBuy = isAvailable(doc);
       Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
       boolean mustAddProductUnavailable = !availableToBuy && checkIfMustScrapProductUnavailable(doc);
-      boolean mustAddProduct = availableToBuy && checkIfMustScrapProduct(offers);
 
-      if (mustAddProduct || mustAddProductUnavailable) {
+      if (!offers.isEmpty() || mustAddProductUnavailable) {
 
          JSONObject initialState = selectJsonFromHtml(doc);
          JSONObject schema = initialState != null ? JSONUtils.getValueRecursive(initialState, "schema.0", JSONObject.class) : null;
@@ -126,6 +125,12 @@ public class MercadolivreNewCrawler {
          availableToBuy = false;
       }
 
+      String adPaused = CrawlerUtils.scrapStringSimpleInfo(doc, ".andes-message__text.andes-message__text--warning", true);
+
+      if (adPaused != null && adPaused.contains("Anúncio pausado")) {
+         availableToBuy = false;
+      }
+
       return availableToBuy;
    }
 
@@ -161,27 +166,10 @@ public class MercadolivreNewCrawler {
       return secondaryImages;
    }
 
-   private boolean checkIfMustScrapProduct(Offers offers) {
-      boolean mustAddProduct = this.allow3PSellers;
-      if (!allow3PSellers) {
-         List<Offer> offersList = offers.getOffersList();
-         for (Offer offer : offersList) {
-            if (offer.getIsMainRetailer()) {
-               mustAddProduct = true;
-               break;
-            }
-         }
-      }
-
-      return mustAddProduct;
-   }
 
    private boolean checkIfMustAddProductInOffers(boolean isMainSeller) {
-      return isMainSeller && !allow3PSellers || allow3PSellers;
+      return isMainSeller || allow3PSellers;
    }
-   // adiciona offer se:
-   // for mainsseller e não permitir 3p ou se permitir 3p
-
 
    private boolean checkIfMustScrapProductUnavailable(Document doc) {
       boolean mustAddProductUnavailable = this.allow3PSellers;
@@ -330,7 +318,6 @@ public class MercadolivreNewCrawler {
          hasMainOffer = true;
       }
 
-
       scrapSellersPage(offers, doc, hasMainOffer);
 
       return offers;
@@ -387,17 +374,21 @@ public class MercadolivreNewCrawler {
                for (Element e : offersElements) {
                   String sellerName = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-pdp-action-modal__link", false);
                   if (hasMainOffer && sellerName != null && !mainOfferFound && spotlightSellerName.toLowerCase(Locale.ROOT).contains(sellerName.toLowerCase(Locale.ROOT))) {
-                     Offer offerMainPage = offers.getOffersList().get(0);
-                     offerMainPage.setSellersPagePosition(sellersPagePosition);
-                     offerMainPage.setIsBuybox(true);
+                     Offer offerMainPage = offers.getSellerByName(sellerName.replaceAll(" ", "-"));
+                     if (offerMainPage != null) {
+                        offerMainPage.setMainPagePosition(sellersPagePosition);
+                     }
+
                      mainOfferFound = true;
+                     sellersPagePosition++;
+
                   } else {
-                     Pricing pricing = scrapPricing(e);
-                     List<String> sales = scrapSales(e);
                      boolean sellerNameIsMainRetailer = checkIsMainRetailerToOneSeller(sellerName);
                      String currentSeller = sellerName;
                      if (sellerNameIsMainRetailer && !mainSellerNameLower.isEmpty()) currentSeller = mainSellerNameLower;
                      if (checkIfMustAddProductInOffers(sellerNameIsMainRetailer)) {
+                        Pricing pricing = scrapPricing(e);
+                        List<String> sales = scrapSales(e);
                         offers.add(OfferBuilder.create()
                            .setUseSlugNameAsInternalSellerId(true)
                            .setSellerFullName(currentSeller)
@@ -407,10 +398,10 @@ public class MercadolivreNewCrawler {
                            .setPricing(pricing)
                            .setSales(sales)
                            .build());
+                        sellersPagePosition++;
+
                      }
                   }
-
-                  sellersPagePosition++;
 
                }
             } else {
@@ -420,6 +411,7 @@ public class MercadolivreNewCrawler {
          } while (nextUrl != null);
       } else {
          if (offers.isEmpty()) {
+
             Pricing pricing = scrapPricing(doc);
             List<String> sales = scrapSales(doc);
 
@@ -449,8 +441,14 @@ public class MercadolivreNewCrawler {
    }
 
    private Pricing scrapPricing(Element doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "del.price-tag", null, false, ',', session);
       Double spotlightPrice = findSpotlightPrice(doc);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "del.price-tag", null, false, ',', session);
+      if (priceFrom == null) {
+         priceFrom = scrapPricingFromSellersPage(doc);
+         if (priceFrom == spotlightPrice) {
+            priceFrom = null;
+         }
+      }
 
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       BankSlip bankTicket = BankSlipBuilder.create()
@@ -474,17 +472,33 @@ public class MercadolivreNewCrawler {
          price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.ui-pdp-price span.price-tag-amount", null, false, ',', session);
       }
       if (price == null) { // for when called to scrap price on a sellers page
-         price = scrapPricingFromSellersPage(doc);
+         price = scrapSpotlightPricingFromSellersPage(doc);
       }
 
       return price;
    }
 
-   private Double scrapPricingFromSellersPage(Element doc) {
-      Integer priceFraction = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__fraction", false, 0);
-      Integer priceCents = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__cents", false, 0);
+   private Double scrapSpotlightPricingFromSellersPage(Element doc) {
+      Integer priceFraction = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price__second-line .andes-money-amount__fraction", false, 0);
+      Integer priceCents = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price__second-line .andes-money-amount__cents", false, 0);
+
+      if (priceFraction == 0) {
+         priceFraction = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__fraction", false, 0);
+         priceCents = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__cents", false, 0);
+      }
+
       return priceFraction + (double) priceCents / 100;
    }
+
+   private Double scrapPricingFromSellersPage(Element doc) {
+
+      Integer priceFraction = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__fraction", false, 0);
+      Integer priceCents = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__cents", false, 0);
+
+
+      return priceFraction + (double) priceCents / 100;
+   }
+
 
    private CreditCards scrapCreditCards(Element doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
