@@ -19,6 +19,9 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
+   String marketCode = session.getOptions().optString("marketId");
+
+
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 30;
@@ -38,8 +41,8 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
             if (productObject instanceof JSONObject) {
                JSONObject product = (JSONObject) productObject;
                String internalId = product.optString("sku");
-               String productUrl = "https://mateusmais.com.br/produto/2857c51e-ffc9-4365-b39a-0156cfc032b9/" + product.optString("id");
-               String name = product.optString("name") + " "+ product.optString("measure")+ product.optString("measure_type");
+               String productUrl = "https://mateusmais.com.br/produto/" + marketCode + "/" + product.optString("id");
+               String name = product.optString("name") + " " + product.optString("measure") + product.optString("measure_type");
                String imageUrl = product.optString("image");
                Integer price = null;
                boolean isAvailable = crawisavailable(product);
@@ -102,7 +105,7 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
    }
 
    private JSONObject getProductList() {
-      String url = "https://app.mateusmais.com.br/market/2857c51e-ffc9-4365-b39a-0156cfc032b9/product/?page=" + currentPage + "&market=2857c51e-ffc9-4365-b39a-0156cfc032b9&search=" + keywordEncoded;
+      String url = "https://app.mateusmais.com.br/market/" + marketCode + "/product/?page=" + currentPage + "&market=" + marketCode + "&search=" + keywordEncoded;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
