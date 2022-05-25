@@ -116,7 +116,7 @@ public class ChileLidersuperCrawler extends Crawler {
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = new ArrayList<>();
+      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -133,7 +133,7 @@ public class ChileLidersuperCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .old-price .price", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#productPrice p[itemprop=\"highPrice\"]", null, false, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#productPrice .price", null, false, ',', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
