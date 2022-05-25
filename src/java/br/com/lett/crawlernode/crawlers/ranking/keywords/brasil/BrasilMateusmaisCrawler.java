@@ -8,9 +8,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Element;
 
 import java.io.UnsupportedEncodingException;
 
@@ -47,7 +47,7 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
                Integer price = null;
                boolean isAvailable = crawisavailable(product);
                if (isAvailable == true) {
-                  price = crawprice(product);
+                  price = crawlPrice(product);
                }
 
                RankingProduct productRanking = RankingProductBuilder.create()
@@ -84,16 +84,14 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
       return false;
    }
 
-   private Integer crawprice(JSONObject productsList) {
-      Integer numb = null;
-      String obj = productsList.optString("low_price").replace(".", "");
-      if (obj.isEmpty()) {
-         obj = productsList.optString("price").replace(".", "");
-         numb = Integer.parseInt(obj);
+   private Integer crawlPrice(JSONObject productsList) {
+      Integer price = null;
+      if (productsList.isNull("low_price")) {
+         price = JSONUtils.getPriceInCents(productsList, "price");
       } else {
-         numb = Integer.parseInt(obj);
+         price = JSONUtils.getPriceInCents(productsList, "low_price");
       }
-      return numb;
+      return price;
    }
 
    private String crawid(JSONObject productsList) {

@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.MalformedUrlException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -39,6 +40,14 @@ public class BrasilMateusmaisCrawler extends Crawler {
    }
 
    String marketCode = session.getOptions().optString("marketId");
+
+   @Override
+   protected Object fetch() {
+      if (!session.getOriginalURL().contains(marketCode)) {
+         throw new MalformedUrlException("URL não corresponde a localidade do market");
+      }
+      return super.fetch();
+   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
