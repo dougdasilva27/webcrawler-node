@@ -14,7 +14,13 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
 import models.prices.Prices;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -23,22 +29,19 @@ import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
 
+import javax.print.Doc;
 import java.util.*;
 
-/**
- * Date: 04/12/2018
- *
- * @author Gabriel Dornelas
- */
 public class ChileLidersuperCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.lider.cl/supermercado/";
+   private static final String SELLER_NAME_LOWER = "lider";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString());
 
    public ChileLidersuperCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.JSOUP);
       super.config.setParser(br.com.lett.crawlernode.core.models.Parser.HTML);
-
    }
 
    @Override
@@ -64,7 +67,9 @@ public class ChileLidersuperCrawler extends Crawler {
          .mustSendContentEncoding(true)
          .build();
 
-      return this.dataFetcher.get(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher, true);
+
+      return response;
    }
 
    @Override
@@ -76,31 +81,25 @@ public class ChileLidersuperCrawler extends Crawler {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=productID]", true);
          String name = scrapName(doc);
-         Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "#productPrice .price", true);
-         Prices prices = crawlPrices(price);
-         Integer stock = crawlStock(internalId);
-         boolean available = stock > 0;
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a > span");
          List<String> images = crawlImages(internalId);
          String primaryImage = !images.isEmpty() ? images.get(0) : null;
-         String secondaryImages = crawlSecondaryImages(images);
+         List<String> secondaryImages = crawlSecondaryImages(images);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-features"));
-
+         boolean available = isAvailable(doc) == true;
+         Offers offers = available ? scrapOffers(doc) : new Offers();
          JSONObject jsonEan = selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]");
          List<String> eans = scrapEans(jsonEan);
-         // Creating the product
+
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setName(name)
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(available)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            .setStock(stock)
+            .setOffers(offers)
             .setEans(eans)
             .build();
 
@@ -114,6 +113,62 @@ public class ChileLidersuperCrawler extends Crawler {
 
    }
 
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = new ArrayList<>();
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_NAME_LOWER)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+
+      return offers;
+   }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .old-price .price", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#productPrice .price", null, false, ',', session);
+
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
    private List<String> scrapEans(JSONObject jsonEan) {
       List<String> eans = new ArrayList<>();
 
@@ -166,7 +221,14 @@ public class ChileLidersuperCrawler extends Crawler {
    private List<String> crawlImages(String id) {
       List<String> images = new ArrayList<>();
 
-      Request request = RequestBuilder.create().setUrl("https://wlmstatic.lider.cl/contentassets/galleries/" + id + ".xml").setCookies(cookies).build();
+      Request request = RequestBuilder.create()
+         .setUrl("https://wlmstatic.lider.cl/contentassets/galleries/" + id + ".xml")
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .setCookies(cookies)
+         .build();
       Document docXml = Jsoup.parse(this.dataFetcher.get(session, request).getBody(), "", Parser.xmlParser());
 
       Elements items = docXml.getElementsByTag("image");
@@ -188,66 +250,27 @@ public class ChileLidersuperCrawler extends Crawler {
       return images;
    }
 
-   private String crawlSecondaryImages(List<String> images) {
-      String secondaryImages = null;
+   private List<String> crawlSecondaryImages(List<String> images) {
+      List<String> secondaryImages2 = new ArrayList<>();
 
       if (images.size() > 1) {
          JSONArray imagesArray = new JSONArray();
 
          for (int i = 1; i < images.size(); i++) {
             imagesArray.put(images.get(i));
-         }
-
-         if (imagesArray.length() > 0) {
-            secondaryImages = imagesArray.toString();
+            secondaryImages2.add(images.get(i));
          }
       }
 
-      return secondaryImages;
+      return secondaryImages2;
    }
 
-   private Integer crawlStock(String id) {
-      Integer stock = 0;
+   private Boolean isAvailable(Document doc) {
+      String noStock = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "p#pdp-no-stock", "class");
 
-      Request request = RequestBuilder.create()
-         .setUrl(
-            "https://www.lider.cl/supermercado/includes/inventory/inventoryInformation.jsp?productNumber=" + id + "&useProfile=true&consolidate=true")
-         .setCookies(cookies).build();
-      JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
-
-      if (array.length() > 0) {
-         JSONObject skuJson = array.getJSONObject(0);
-
-         if (skuJson.has("stockLevel")) {
-            String text = skuJson.get("stockLevel").toString().replaceAll("[^0-9]", "");
-
-            if (!text.isEmpty()) {
-               stock = Integer.parseInt(text);
-            }
-         }
+      if (noStock.equals("agotado")) {
+         return false;
       }
-
-      return stock;
+      return true;
    }
-
-   /**
-    * In the time when this crawler was made, this market hasn't installments informations
-    *
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-         installmentPriceMap.put(1, price);
-
-         prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      }
-
-      return prices;
-   }
-
 }
