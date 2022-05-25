@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -11,9 +13,12 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,9 +26,25 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
 
    public ChileLidersuperCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.JSOUP;
    }
 
+   @Override
+   protected Document fetchDocument(String url) {
+
+      Map<String, String> headers = new HashMap<>();
+
+      Request request = Request.RequestBuilder.create().setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
+         .setCookies(cookies)
+         .build();
+
+      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher, true);
+
+      return Jsoup.parse(response.getBody());
+   }
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
@@ -35,27 +56,16 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      StringBuilder payload = new StringBuilder();
-      payload.append("productNumbers=");
-      Elements products = this.currentDoc.select("#content-prod-boxes div[prod-number]");
-      products.forEach(p -> {
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(p, ".box-product.product-item-box", "prod-number");
-         if (internalId != null) {
-            payload.append(internalId).append("%2C");
-         }
-      });
 
-      JSONArray jsonArray = fetchAvaibility(payload);
+      Elements products = this.currentDoc.select("#content-prod-boxes div[prod-number]");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
             setTotalProducts();
          }
 
-         for (Object o : jsonArray) {
-            JSONObject product = (JSONObject) o;
-            String internalId = product.optString("productNumber");
-            Element e = this.currentDoc.selectFirst("." + internalId);
+         for (Element e : products) {
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div", "prod-number");
             String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-details a", "href"), "https:", "www.lider.cl");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-description", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".photo-container img", "src");
@@ -66,7 +76,7 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
                .setInternalId(internalId)
                .setName(name)
                .setPriceInCents(price)
-               .setAvailability(setAvailability(product))
+               .setAvailability(isAvailable(e))
                .setImageUrl(imageUrl)
                .build();
 
@@ -120,4 +130,12 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       }
    }
 
+   private Boolean isAvailable(Element doc) {
+      String noStock = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "button.btn-agotado", "class");
+
+      if (noStock.equals("btn btn-info btn-block btn-agotado")) {
+         return false;
+      }
+      return true;
+   }
 }
