@@ -176,6 +176,13 @@ public class MercadolivreNewCrawler {
       return mustAddProduct;
    }
 
+   private boolean checkIfMustAddProductInOffers(boolean isMainSeller) {
+     return isMainSeller && !allow3PSellers || allow3PSellers;
+   }
+   // adiciona offer se:
+   // for mainsseller e não permitir 3p ou se permitir 3p
+
+
    private boolean checkIfMustScrapProductUnavailable(Document doc) {
       boolean mustAddProductUnavailable = this.allow3PSellers;
       String seller = scrapSeller(doc);
@@ -298,12 +305,12 @@ public class MercadolivreNewCrawler {
 
 
       if (sellersVariations == null) {
-         isMainRetailer = checkIsMainRetalerToOneSeller(sellerFullName);
+         isMainRetailer = checkIsMainRetailerToOneSeller(sellerFullName);
       } else {
-         isMainRetailer = isMainRetaler(sellerFullName);
+         isMainRetailer = isMainRetailer(sellerFullName);
       }
 
-      if (sellerFullName != null && !sellerFullName.isEmpty()) {
+      if (checkIfMustAddProductInOffers(isMainRetailer)) {
          Pricing pricing = scrapPricing(doc);
          List<String> sales = scrapSales(doc);
 
@@ -324,17 +331,17 @@ public class MercadolivreNewCrawler {
       }
 
 
-      scrapSellersPage(offers, doc, hasMainOffer);
+      scrapSellersPage(offers, doc, hasMainOffer, isMainRetailer);
 
       return offers;
    }
 
-   private boolean isMainRetaler(String sellerFullName) {
+   private boolean isMainRetailer(String sellerFullName) {
       boolean isMainRetailer = false;
-      sellerFullName = StringUtils.stripAccents(sellerFullName);
+      sellerFullName = StringUtils.stripAccents(sellerFullName.toLowerCase(Locale.ROOT));
 
       for (String sellerName : sellersVariations) {
-         sellerName = StringUtils.stripAccents(sellerName);
+         sellerName = StringUtils.stripAccents(sellerName.toLowerCase(Locale.ROOT));
          if (sellerName.equalsIgnoreCase(sellerFullName)) {
             isMainRetailer = true;
          }
@@ -342,11 +349,11 @@ public class MercadolivreNewCrawler {
       return isMainRetailer;
    }
 
-   private boolean checkIsMainRetalerToOneSeller(String sellerFullName) {
+   private boolean checkIsMainRetailerToOneSeller(String sellerFullName) {
       boolean isMainRetailer = false;
       if (sellerFullName != null) {
-         String mainSellerNameLowerWithoutAccents = StringUtils.stripAccents(mainSellerNameLower);
-         sellerFullName = StringUtils.stripAccents(sellerFullName);
+         String mainSellerNameLowerWithoutAccents = StringUtils.stripAccents(mainSellerNameLower.toLowerCase(Locale.ROOT));
+         sellerFullName = StringUtils.stripAccents(sellerFullName.toLowerCase(Locale.ROOT));
          if (mainSellerNameLowerWithoutAccents.equalsIgnoreCase(sellerFullName) || sellerFullName.contains(mainSellerNameLowerWithoutAccents)) {
             isMainRetailer = true;
          }
@@ -355,7 +362,7 @@ public class MercadolivreNewCrawler {
       return isMainRetailer;
    }
 
-   private void scrapSellersPage(Offers offers, Document doc, boolean hasMainOffer) throws OfferException, MalformedPricingException {
+   private void scrapSellersPage(Offers offers, Document doc, boolean hasMainOffer, boolean isMainRetailer) throws OfferException, MalformedPricingException {
       String sellersPageUrl = CrawlerUtils.scrapUrl(doc, ".ui-pdp-other-sellers__link", "href", "https", "www.mercadolivre.com.br");
       if (sellersPageUrl == null) {
          sellersPageUrl = CrawlerUtils.scrapUrl(doc, ".ui-pdp-products__list a", "href", "https", "www.mercadolivre.com.br");
@@ -379,16 +386,16 @@ public class MercadolivreNewCrawler {
             if (!offersElements.isEmpty()) {
                for (Element e : offersElements) {
                   String sellerName = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-pdp-action-modal__link", false);
-                  if (hasMainOffer && sellerName != null && !mainOfferFound && spotlightSellerName.equalsIgnoreCase(sellerName)) {
+                  if (hasMainOffer && sellerName != null && !mainOfferFound && spotlightSellerName.equalsIgnoreCase(sellerName) && checkIfMustAddProductInOffers(isMainRetailer(sellerName))) {
                      Offer offerMainPage = offers.getSellerByName(sellerName);
                      offerMainPage.setSellersPagePosition(sellersPagePosition);
                      offerMainPage.setIsBuybox(true);
                      mainOfferFound = true;
 
-                  } else {
+                  } else if (checkIfMustAddProductInOffers(isMainRetailer)) {
                      Pricing pricing = scrapPricing(e);
                      List<String> sales = scrapSales(e);
-                     boolean isMainRetaler = checkIsMainRetalerToOneSeller(sellerName);
+                     boolean isMainRetaler = checkIsMainRetailerToOneSeller(sellerName);
                      String currentSeller = sellerName;
                      if (isMainRetaler && !mainSellerNameLower.isEmpty()) currentSeller = mainSellerNameLower;
                      offers.add(OfferBuilder.create()
@@ -410,7 +417,7 @@ public class MercadolivreNewCrawler {
 
          } while (nextUrl != null);
       } else {
-         if (offers.isEmpty()) {
+         if (offers.isEmpty() && checkIfMustAddProductInOffers(isMainRetailer)) {
             Pricing pricing = scrapPricing(doc);
             List<String> sales = scrapSales(doc);
 
