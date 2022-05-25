@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.MalformedUrlException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -33,8 +34,19 @@ public class BrasilMateusmaisCrawler extends Crawler {
    private static final String SELLER_NAME_LOWER = "mateusmais";
    private static final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.DINERS.toString(), Card.AMEX.toString(), Card.ELO.toString());
+
    public BrasilMateusmaisCrawler(Session session) {
       super(session);
+   }
+
+   String marketCode = session.getOptions().optString("marketId");
+
+   @Override
+   protected Object fetch() {
+      if (!session.getOriginalURL().contains(marketCode)) {
+         throw new MalformedUrlException("URL não corresponde a localidade do market");
+      }
+      return super.fetch();
    }
 
    @Override
@@ -48,7 +60,8 @@ public class BrasilMateusmaisCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = productList.optString("sku");
-         String name = productList.optString("name") + " "+ productList.optString("measure") + productList.optString("measure_type");;
+         String name = productList.optString("name") + " " + productList.optString("measure") + productList.optString("measure_type");
+         ;
          String description = productList.optString("description");
          String primaryImage = productList.optString("image");
          List<String> eans = Collections.singletonList(productList.optString("barcode"));
@@ -88,10 +101,11 @@ public class BrasilMateusmaisCrawler extends Crawler {
       }
       return categories;
    }
+
    private String getUrlid() {
       String id = null;
 
-      String regex = "9/(.*)";
+      String regex = marketCode + "/(.*)";
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
       final Matcher matcher = pattern.matcher(session.getOriginalURL());
 
@@ -128,7 +142,7 @@ public class BrasilMateusmaisCrawler extends Crawler {
       Double priceFrom = productList.optDouble("price");
       Double spotlightPrice = productList.optDouble("low_price");
 
-      if (spotlightPrice.isNaN() ){
+      if (spotlightPrice.isNaN()) {
          spotlightPrice = priceFrom;
       }
 
@@ -144,7 +158,7 @@ public class BrasilMateusmaisCrawler extends Crawler {
    }
 
    private JSONObject getProduct(String internalId) {
-      String url = "https://app.mateusmais.com.br/market/2857c51e-ffc9-4365-b39a-0156cfc032b9/product/" + internalId;
+      String url = "https://app.mateusmais.com.br/market/" + marketCode + "/product/" + internalId;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
