@@ -177,7 +177,7 @@ public class MercadolivreNewCrawler {
    }
 
    private boolean checkIfMustAddProductInOffers(boolean isMainSeller) {
-     return isMainSeller && !allow3PSellers || allow3PSellers;
+      return isMainSeller && !allow3PSellers || allow3PSellers;
    }
    // adiciona offer se:
    // for mainsseller e não permitir 3p ou se permitir 3p
@@ -331,7 +331,7 @@ public class MercadolivreNewCrawler {
       }
 
 
-      scrapSellersPage(offers, doc, hasMainOffer, isMainRetailer);
+      scrapSellersPage(offers, doc, hasMainOffer);
 
       return offers;
    }
@@ -362,7 +362,20 @@ public class MercadolivreNewCrawler {
       return isMainRetailer;
    }
 
-   private void scrapSellersPage(Offers offers, Document doc, boolean hasMainOffer, boolean isMainRetailer) throws OfferException, MalformedPricingException {
+   private boolean hasOfferEquals(Offers offers, Pricing pricing, String sellerName) {
+      boolean hasSeller = false;
+      for (Offer offer : offers.getOffersList()) {
+         String sellerInOffer = StringUtils.stripAccents(offer.getSellerFullName().toLowerCase(Locale.ROOT));
+         String seller = StringUtils.stripAccents(sellerName.toLowerCase(Locale.ROOT));
+         hasSeller = sellerInOffer.equalsIgnoreCase(seller) && offer.getPricing().getSpotlightPrice().equals(pricing.getSpotlightPrice());
+         if (hasSeller) break;
+      }
+
+      return hasSeller;
+   }
+
+
+   private void scrapSellersPage(Offers offers, Document doc, boolean hasMainOffer) throws OfferException, MalformedPricingException {
       String sellersPageUrl = CrawlerUtils.scrapUrl(doc, ".ui-pdp-other-sellers__link", "href", "https", "www.mercadolivre.com.br");
       if (sellersPageUrl == null) {
          sellersPageUrl = CrawlerUtils.scrapUrl(doc, ".ui-pdp-products__list a", "href", "https", "www.mercadolivre.com.br");
@@ -386,30 +399,33 @@ public class MercadolivreNewCrawler {
             if (!offersElements.isEmpty()) {
                for (Element e : offersElements) {
                   String sellerName = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-pdp-action-modal__link", false);
-                  if (hasMainOffer && sellerName != null && !mainOfferFound && spotlightSellerName.equalsIgnoreCase(sellerName) && checkIfMustAddProductInOffers(isMainRetailer(sellerName))) {
-                     Offer offerMainPage = offers.getSellerByName(sellerName);
+                  if (hasMainOffer && sellerName != null && !mainOfferFound && spotlightSellerName.equalsIgnoreCase(sellerName)) {
+                     Offer offerMainPage = offers.getOffersList().get(0);
                      offerMainPage.setSellersPagePosition(sellersPagePosition);
                      offerMainPage.setIsBuybox(true);
                      mainOfferFound = true;
-
-                  } else if (checkIfMustAddProductInOffers(isMainRetailer)) {
+                  } else {
                      Pricing pricing = scrapPricing(e);
                      List<String> sales = scrapSales(e);
-                     boolean isMainRetaler = checkIsMainRetailerToOneSeller(sellerName);
+                     boolean sellerNameIsMainRetailer = checkIsMainRetailerToOneSeller(sellerName);
                      String currentSeller = sellerName;
-                     if (isMainRetaler && !mainSellerNameLower.isEmpty()) currentSeller = mainSellerNameLower;
-                     offers.add(OfferBuilder.create()
-                        .setUseSlugNameAsInternalSellerId(true)
-                        .setSellerFullName(currentSeller)
-                        .setSellersPagePosition(sellersPagePosition)
-                        .setIsBuybox(true)
-                        .setIsMainRetailer(isMainRetaler)
-                        .setPricing(pricing)
-                        .setSales(sales)
-                        .build());
+                     if (sellerNameIsMainRetailer && !mainSellerNameLower.isEmpty()) currentSeller = mainSellerNameLower;
+                     if (checkIfMustAddProductInOffers(sellerNameIsMainRetailer) && !hasOfferEquals(offers, pricing, currentSeller)) {
+                        offers.add(OfferBuilder.create()
+                           .setUseSlugNameAsInternalSellerId(true)
+                           .setSellerFullName(currentSeller)
+                           .setSellersPagePosition(sellersPagePosition)
+                           .setIsBuybox(true)
+                           .setIsMainRetailer(sellerNameIsMainRetailer)
+                           .setPricing(pricing)
+                           .setSales(sales)
+                           .build());
+
+                     }
                   }
 
                   sellersPagePosition++;
+
                }
             } else {
                break;
@@ -417,7 +433,7 @@ public class MercadolivreNewCrawler {
 
          } while (nextUrl != null);
       } else {
-         if (offers.isEmpty() && checkIfMustAddProductInOffers(isMainRetailer)) {
+         if (offers.isEmpty() && allow3PSellers) {
             Pricing pricing = scrapPricing(doc);
             List<String> sales = scrapSales(doc);
 
