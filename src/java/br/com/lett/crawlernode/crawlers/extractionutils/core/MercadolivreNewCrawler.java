@@ -214,11 +214,11 @@ public class MercadolivreNewCrawler {
       Integer star4 = 0;
       Integer star5 = 0;
 
-      Elements reviews = doc.select(".ui-review-view__comments__review-comment");
+      Elements reviews = doc.select(".ui-vpp-rating li");
 
       for (Element review : reviews) {
 
-         Element elementStarNumber = review.selectFirst(".andes-visually-hidden");
+         Element elementStarNumber = review.selectFirst(".ui-vpp-rating__level__text");
 
          if (elementStarNumber != null) {
             String stringStarNumber = elementStarNumber.text().replaceAll("[^0-9]", "").trim();
