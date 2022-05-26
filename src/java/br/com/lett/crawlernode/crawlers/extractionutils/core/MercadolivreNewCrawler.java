@@ -403,7 +403,7 @@ public class MercadolivreNewCrawler {
 
          } while (nextUrl != null);
       } else {
-         if (offers.isEmpty()) {
+         if (offers.isEmpty() && allow3PSellers) {
 
             Pricing pricing = scrapPricing(doc);
             List<String> sales = scrapSales(doc);
