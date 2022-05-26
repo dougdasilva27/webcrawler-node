@@ -81,7 +81,6 @@ public class PedidosyaCrawler extends Crawler {
       headers.put("referer", session.getOriginalURL());
 
       Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setCookies(cookies).setProxyservice(proxies)
-         //  .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").mustUseMovingAverage(true).build())
          .setSendUserAgent(true)
          .build();
 
