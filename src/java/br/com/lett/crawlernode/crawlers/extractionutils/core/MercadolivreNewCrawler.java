@@ -125,9 +125,9 @@ public class MercadolivreNewCrawler {
          availableToBuy = false;
       }
 
-      String adPaused = CrawlerUtils.scrapStringSimpleInfo(doc, ".andes-message__text.andes-message__text--warning", true);
+      String adStatus = CrawlerUtils.scrapStringSimpleInfo(doc, ".andes-message__text.andes-message__text--warning", true);
 
-      if (adPaused != null && adPaused.contains("Anúncio pausado")) {
+      if (adStatus != null && adStatus.contains("Anúncio pausado")) {
          availableToBuy = false;
       }
 
@@ -164,11 +164,6 @@ public class MercadolivreNewCrawler {
          }
       }
       return secondaryImages;
-   }
-
-
-   private boolean checkIfMustAddProductInOffers(boolean isMainSeller) {
-      return isMainSeller || allow3PSellers;
    }
 
    private boolean checkIfMustScrapProductUnavailable(Document doc) {
@@ -298,7 +293,7 @@ public class MercadolivreNewCrawler {
          isMainRetailer = isMainRetailer(sellerFullName);
       }
 
-      if (checkIfMustAddProductInOffers(isMainRetailer)) {
+      if (isMainRetailer || allow3PSellers) {
          Pricing pricing = scrapPricing(doc);
          List<String> sales = scrapSales(doc);
 
@@ -359,7 +354,7 @@ public class MercadolivreNewCrawler {
 
          int sellersPagePosition = 1;
          boolean mainOfferFound = false;
-         String spotlightSellerName = offers.size() > 0 ? offers.getOffersList().get(0).getSellerFullName() : "";
+         String spotlightSellerName = hasMainOffer ? offers.getOffersList().get(0).getSellerFullName() : null;
 
          do {
             Request request = RequestBuilder.create()
@@ -374,19 +369,16 @@ public class MercadolivreNewCrawler {
                for (Element e : offersElements) {
                   String sellerName = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-pdp-action-modal__link", false);
                   if (hasMainOffer && sellerName != null && !mainOfferFound && spotlightSellerName.toLowerCase(Locale.ROOT).contains(sellerName.toLowerCase(Locale.ROOT))) {
-                     Offer offerMainPage = offers.getSellerByName(sellerName.replaceAll(" ", "-"));
-                     if (offerMainPage != null) {
-                        offerMainPage.setMainPagePosition(sellersPagePosition);
-                     }
-
+                     Offer offerMainPage = offers.getSellerByName(spotlightSellerName);
+                     offerMainPage.setMainPagePosition(sellersPagePosition);
                      mainOfferFound = true;
-                     sellersPagePosition++;
+
 
                   } else {
                      boolean sellerNameIsMainRetailer = checkIsMainRetailerToOneSeller(sellerName);
                      String currentSeller = sellerName;
                      if (sellerNameIsMainRetailer && !mainSellerNameLower.isEmpty()) currentSeller = mainSellerNameLower;
-                     if (checkIfMustAddProductInOffers(sellerNameIsMainRetailer)) {
+                     if (sellerNameIsMainRetailer || allow3PSellers) {
                         Pricing pricing = scrapPricing(e);
                         List<String> sales = scrapSales(e);
                         offers.add(OfferBuilder.create()
@@ -398,10 +390,11 @@ public class MercadolivreNewCrawler {
                            .setPricing(pricing)
                            .setSales(sales)
                            .build());
-                        sellersPagePosition++;
 
                      }
                   }
+
+                  sellersPagePosition++;
 
                }
             } else {
