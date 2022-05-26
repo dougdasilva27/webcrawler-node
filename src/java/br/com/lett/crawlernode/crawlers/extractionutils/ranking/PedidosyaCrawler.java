@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -44,8 +45,10 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
       String url = " https://www.pedidosya.com.ar/mobile/v3/catalogues/" + catalogues + "/search?max=50&offset=0&partnerId=" + storeId + "&query=" + this.keywordEncoded + "&sort=default";
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("authority", "www.pedidosya.com.ar");
       headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
+
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
@@ -54,18 +57,41 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
          .build();
       Response resp = new FetcherDataFetcher().get(session, request);
       if (!resp.isSuccess()) {
-         resp = new JsoupDataFetcher().get(session, request);
+         resp = retryRequest(request);
       }
       return CrawlerUtils.stringToJson(resp.getBody());
    }
 
+   private Response retryRequest(Request request) {
+      Response response = new JsoupDataFetcher().get(session, request);
+
+      if (!response.isSuccess()) {
+         int tries = 0;
+         while (!response.isSuccess() && tries < 3) {
+            tries++;
+            if (tries % 2 == 0) {
+               response = new ApacheDataFetcher().get(session, request);
+            } else {
+               response = this.dataFetcher.get(session, request);
+            }
+         }
+      }
+
+      return response;
+   }
+
    @Override
    protected void processBeforeFetch() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("authority", "www.pedidosya.com.ar");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+
       Request request = Request.RequestBuilder.create().setUrl("https://www.pedidosya.com.ar").setProxyservice(
-         proxies).build();
+         proxies).setHeaders(headers).setSendUserAgent(true).build();
       Response response = this.dataFetcher.get(session, request);
       if (!response.isSuccess()) {
-         response = new JsoupDataFetcher().get(session, request);
+         response = retryRequest(request);
       }
       this.cookies = response.getCookies();
    }
