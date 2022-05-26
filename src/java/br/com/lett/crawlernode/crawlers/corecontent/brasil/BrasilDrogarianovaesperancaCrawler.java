@@ -62,13 +62,13 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
          String internalId = crawlInternalId(doc);
          String internalPid = null;
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-head h1", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imgProduto", List.of("src"), "https", "drogarianovaesperanca.com.br");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div[class*=produto-info-titulo]", true);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure[class*=img-principal] img", List.of("data-src"), "https", "www.drogarianovaesperanca.com.br");
          List<String> secondaryImages = scrapSecondaryImages(doc, primaryImage);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "span[property=itemListElement]:not(:last-child)", true);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, List.of(".ficha-produto", ".tabs-produto #tabs", ".aviso-medicamento"));
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "[property=itemListElement]:not(:last-child)", true);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, List.of("div[align=justify]", ".tabs-produto #tabs", ".aviso-medicamento"));
          List<String> eans = crawlEan(doc);
-         boolean availableToBuy = doc.selectFirst(".produto-esgotado-avise") == null;
+         boolean availableToBuy = doc.selectFirst("div.dg-produto-acoes-aviseme") == null;
 
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
@@ -94,7 +94,7 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
    }
 
    private List<String> scrapSecondaryImages(Document doc, String primaryImage) {
-      List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "#thumbs-produto img", List.of("src"), "https", "drogarianovaesperanca.com.br", primaryImage);
+      List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "div[class*=img-listagem] img", List.of("data-src"), "https", "www.drogarianovaesperanca.com.br", primaryImage);
       secondaryImages = secondaryImages.stream().map(image -> image.replace("100x100", "1000x1000")).collect(Collectors.toList());
       return secondaryImages;
    }
@@ -160,8 +160,8 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".preco-por", null, false, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".preco-de", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[class*=preco-por]", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[class*=preco-de]", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       BankSlip bankSlip =  BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build();
 
