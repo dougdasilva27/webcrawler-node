@@ -261,7 +261,10 @@ public class ChileLidersuperCrawler extends Crawler {
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
          .setCookies(cookies)
          .build();
-      Document docXml = Jsoup.parse(this.dataFetcher.get(session, request).getBody(), "", Parser.xmlParser());
+
+      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher, true);
+
+      Document docXml = Jsoup.parse(response.getBody(), "", Parser.xmlParser());
 
       Elements items = docXml.getElementsByTag("image");
       for (Element e : items) {
@@ -295,14 +298,5 @@ public class ChileLidersuperCrawler extends Crawler {
       }
 
       return secondaryImages2;
-   }
-
-   private Boolean isAvailable(Document doc) {
-      String noStock = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "p#pdp-no-stock", "class");
-
-      if (noStock.equals("agotado")) {
-         return false;
-      }
-      return true;
    }
 }
