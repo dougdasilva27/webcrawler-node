@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -22,9 +21,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
-import org.openqa.selenium.Cookie;
 
 import java.util.*;
 
@@ -38,29 +35,22 @@ public class PedidosyaCrawler extends Crawler {
    @Override
    public void handleCookiesBeforeFetch() {
       String url = "https://www.pedidosya.com.ar";
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("authority", "www.pedidosya.com.ar");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setProxyservice(proxies)
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").mustUseMovingAverage(true).build())
+         .setHeaders(headers)
+         .setSendUserAgent(true)
          .build();
-      Response response = this.dataFetcher.get(session, request);
+      Response response = new JsoupDataFetcher().get(session, request);
+
       if (!response.isSuccess()) {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY, session, this.cookiesWD, url);
-
-         webdriver.waitForElement("#location__search__form", 90);
-
-         Set<Cookie> webdriverCookies = webdriver.driver.manage().getCookies();
-
-         for (Cookie cookie : webdriverCookies) {
-            BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
-            basicClientCookie.setDomain(cookie.getDomain());
-            basicClientCookie.setPath(cookie.getPath());
-            basicClientCookie.setExpiryDate(cookie.getExpiry());
-            this.cookies.add(basicClientCookie);
-         }
-         webdriver.terminate();
-         return;
+         response = retryRequest(request);
       }
+
       this.cookies = response.getCookies();
    }
 
@@ -68,11 +58,12 @@ public class PedidosyaCrawler extends Crawler {
    private static final String MAINSELLER = "Pedidos Ya";
 
    private final List<String> proxies = Arrays.asList(
+      ProxyCollection.LUMINATI_SERVER_BR,
+      ProxyCollection.BUY,
       ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-      ProxyCollection.BUY_HAPROXY);
+      ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY);
 
 
    @Override
@@ -86,26 +77,33 @@ public class PedidosyaCrawler extends Crawler {
       headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
       headers.put("authority", "www.pedidosya.com.ar");
       headers.put("accept", "application/json, text/plain, */*");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("referer", session.getOriginalURL());
 
       Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setCookies(cookies).setProxyservice(proxies)
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").mustUseMovingAverage(true).build())
+         .setSendUserAgent(true)
          .build();
 
       Response response = this.dataFetcher.get(session, request);
 
       if (!response.isSuccess()) {
-         response = new JsoupDataFetcher().get(session, request);
+         response = retryRequest(request);
+      }
 
-         if (!response.isSuccess()) {
-            int tries = 0;
-            while (!response.isSuccess() && tries < 3) {
-               tries++;
-               if (tries % 2 == 0) {
-                  response = new JsoupDataFetcher().get(session, request);
-               } else {
-                  response = this.dataFetcher.get(session, request);
-               }
+      return response;
+   }
+
+   private Response retryRequest(Request request) {
+     Response response = new JsoupDataFetcher().get(session, request);
+
+      if (!response.isSuccess()) {
+         int tries = 0;
+         while (!response.isSuccess() && tries < 3) {
+            tries++;
+            if (tries % 2 == 0) {
+               response = new ApacheDataFetcher().get(session, request);
+            } else {
+               response = this.dataFetcher.get(session, request);
             }
          }
       }
