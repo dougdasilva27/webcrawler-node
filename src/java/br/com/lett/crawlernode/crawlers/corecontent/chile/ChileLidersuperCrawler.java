@@ -86,7 +86,8 @@ public class ChileLidersuperCrawler extends Crawler {
          String primaryImage = !images.isEmpty() ? images.get(0) : null;
          List<String> secondaryImages = crawlSecondaryImages(images);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-features"));
-         boolean available = isAvailable(doc) == true;
+         Integer stock = crawlStock(internalId);
+         boolean available = stock > 0;
          Offers offers = available ? scrapOffers(doc) : new Offers();
          JSONObject jsonEan = selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]");
          List<String> eans = scrapEans(jsonEan);
@@ -113,6 +114,37 @@ public class ChileLidersuperCrawler extends Crawler {
 
    }
 
+   private Integer crawlStock(String id) {
+      Integer stock = 0;
+
+      Request request = RequestBuilder.create()
+         .setUrl(
+            "https://www.lider.cl/supermercado/includes/inventory/inventoryInformation.jsp?productNumber=" + id + "&useProfile=true&consolidate=true")
+         .setCookies(cookies)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
+         .setSendUserAgent(true)
+         .mustSendContentEncoding(true)
+         .build();
+
+      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
+
+      JSONArray array = CrawlerUtils.stringToJsonArray(response.getBody());
+
+      if (array.length() > 0) {
+         JSONObject skuJson = array.getJSONObject(0);
+
+         if (skuJson.has("stockLevel")) {
+            String text = skuJson.get("stockLevel").toString().replaceAll("[^0-9]", "");
+
+            if (!text.isEmpty()) {
+               stock = Integer.parseInt(text);
+            }
+         }
+      }
+
+      return stock;
+   }
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
