@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -20,6 +21,7 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.apache.commons.lang.WordUtils;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -42,8 +44,21 @@ public class ChileCruzverdeCrawler extends Crawler {
 
    @Override
    public void handleCookiesBeforeFetch() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("sec-fetch-mode", "cors");
+      headers.put("origin", "https://cruzverde.cl");
+      headers.put("sec-fetch-site", "same-origin");
+      headers.put("x-requested-with", "XMLHttpRequest");
+      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
+
       Request request = Request.RequestBuilder.create()
          .setUrl("https://api.cruzverde.cl/customer-service/login")
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
          .build();
       Response responseApi = this.dataFetcher.post(session, request);
 

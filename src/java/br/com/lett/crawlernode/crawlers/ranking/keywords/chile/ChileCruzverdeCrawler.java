@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -10,8 +11,13 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
 
@@ -25,9 +31,23 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void processBeforeFetch() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("sec-fetch-mode", "cors");
+      headers.put("origin", "https://cruzverde.cl");
+      headers.put("sec-fetch-site", "same-origin");
+      headers.put("x-requested-with", "XMLHttpRequest");
+      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
       Request request = Request.RequestBuilder.create()
          .setUrl("https://api.cruzverde.cl/customer-service/login")
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
          .build();
+
       Response responseApi = new JsoupDataFetcher().post(session, request);
       this.cookies.addAll(responseApi.getCookies());
    }
@@ -84,6 +104,13 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
    }
 
    private JSONObject getProductList() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("sec-fetch-mode", "cors");
+      headers.put("origin", "https://cruzverde.cl");
+      headers.put("sec-fetch-site", "same-origin");
+      headers.put("x-requested-with", "XMLHttpRequest");
+      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
 
       String url = "https://api.cruzverde.cl/product-service/products/search?limit=" + pageSize + "&offset=" + this.arrayProducts.size() + "&sort=&q=" + keywordEncoded;
 
@@ -91,6 +118,12 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
          .setUrl(url)
          .mustSendContentEncoding(true)
          .setCookies(this.cookies)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
          .build();
       Response response = this.dataFetcher.get(session, request);
       if (response != null) {
