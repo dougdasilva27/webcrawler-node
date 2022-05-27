@@ -1,7 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -20,30 +24,67 @@ import org.jsoup.select.Elements;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
 
    public ChileLidersuperCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.JSOUP;
+   }
+
+   private final List<String> proxies = Arrays.asList(
+      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY);
+
+   @Override
+   protected void processBeforeFetch() {
+      String url = "https://www.lider.cl/supermercado";
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("authority", "https://www.lider.cl");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(proxies)
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
+         .setSendUserAgent(false)
+         .build();
+      Response response = this.dataFetcher.get(session, request);
+
+      if (!response.isSuccess()) {
+         response = retryRequest(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), this.dataFetcher));
+      }
+
+      this.cookies = response.getCookies();
    }
 
    @Override
    protected Document fetchDocument(String url) {
-
       Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("authority", "www.lider.cl");
+      headers.put("referer", "https://www.lider.cl/supermercado/");
+      headers.put("cookie", "cookieSearchTerms=" + keywordEncoded + ";" + CommonMethods.cookiesToString(cookies));
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
 
-      Request request = Request.RequestBuilder.create().setUrl(url)
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setSendUserAgent(false)
+         .setProxyservice(proxies)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
-         .setCookies(cookies)
          .build();
 
-      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher, true);
+      Response response = new JsoupDataFetcher().get(session, request);
+
+      if (!response.isSuccess()) {
+         response = retryRequest(request, List.of(new ApacheDataFetcher(), new FetcherDataFetcher(), this.dataFetcher));
+      }
 
       return Jsoup.parse(response.getBody());
+
    }
 
    @Override
@@ -51,21 +92,34 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       this.pageSize = 15;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.lider.cl/supermercado/search?No=" + this.arrayProducts.size() + "&Ntt=" + this.keywordEncoded
-         + "&isNavRequest=Yes&Nrpp=40&page=" + this.currentPage;
+      String url = "https://www.lider.cl/supermercado/search?Ntt=" + keywordEncoded + "&ost=" + keywordEncoded + "";
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select("#content-prod-boxes div[prod-number]");
+      StringBuilder payload = new StringBuilder();
+      payload.append("productNumbers=");
+
+      Elements products = this.currentDoc.select(".product-item-box");
+
+      products.forEach(p -> {
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(p, ".box-product.product-item-box", "prod-number");
+         if (internalId != null) {
+            payload.append(internalId).append("%2C");
+         }
+      });
+
+      JSONArray jsonArray = fetchAvaibility(payload);
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
             setTotalProducts();
          }
 
-         for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div", "prod-number");
+         for (Object o : jsonArray) {
+            JSONObject product = (JSONObject) o;
+            String internalId = product.optString("productNumber");
+            Element e = this.currentDoc.selectFirst("." + internalId);
             String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-details a", "href"), "https:", "www.lider.cl");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-description", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".photo-container img", "src");
@@ -76,7 +130,7 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
                .setInternalId(internalId)
                .setName(name)
                .setPriceInCents(price)
-               .setAvailability(isAvailable(e))
+               .setAvailability(setAvailability(product))
                .setImageUrl(imageUrl)
                .build();
 
@@ -101,21 +155,50 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
    }
 
    protected JSONArray fetchAvaibility(StringBuilder payload) {
+
       String url = "https://www.lider.cl/supermercado/includes/inventory/inventoryInformation.jsp";
       payload.append("&useProfile=true&consolidate=true");
       Map<String, String> headers = new HashMap<>();
-      headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
+      headers.put("authority", "www.lider.cl");
+      headers.put("referer", "https://www.lider.cl/supermercado/search?Ntt=" + keywordEncoded + "&ost=" + keywordEncoded + "");
+      headers.put("cookie", CommonMethods.cookiesToString(cookies));
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
+         .setProxyservice(proxies)
          .setPayload(payload.toString())
          .build();
 
-      String content = dataFetcher.post(session, request).getBody();
+      Response response = new JsoupDataFetcher().post(session, request);
 
-      return CrawlerUtils.stringToJsonArray(content);
+      if (!response.isSuccess()) {
+         response = retryRequest(request, List.of(new JsoupDataFetcher(), new ApacheDataFetcher(), this.dataFetcher));
+      }
+
+
+      return CrawlerUtils.stringToJsonArray(response.getBody());
    }
 
+   private Response retryRequest(Request request, List<DataFetcher> dataFetcherList) {
+      Response response = dataFetcherList.get(0).get(session, request);
+
+      if (!response.isSuccess()) {
+         int tries = 0;
+         while (!response.isSuccess() && tries < 3) {
+            tries++;
+            if (tries % 2 == 0) {
+               response = dataFetcherList.get(1).get(session, request);
+            } else {
+               response = dataFetcherList.get(2).get(session, request);
+            }
+         }
+      }
+
+      return response;
+   }
 
    @Override
    protected void setTotalProducts() {
@@ -130,12 +213,4 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       }
    }
 
-   private Boolean isAvailable(Element doc) {
-      String noStock = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "button.btn-agotado", "class");
-
-      if (noStock.equals("btn btn-info btn-block btn-agotado")) {
-         return false;
-      }
-      return true;
-   }
 }

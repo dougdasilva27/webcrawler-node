@@ -19,7 +19,6 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
-import models.prices.Prices;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -29,7 +28,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
 
-import javax.print.Doc;
 import java.util.*;
 
 public class ChileLidersuperCrawler extends Crawler {
@@ -145,6 +143,7 @@ public class ChileLidersuperCrawler extends Crawler {
 
       return stock;
    }
+
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
@@ -181,6 +180,7 @@ public class ChileLidersuperCrawler extends Crawler {
          .setBankSlip(bankSlip)
          .build();
    }
+
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
@@ -201,6 +201,7 @@ public class ChileLidersuperCrawler extends Crawler {
 
       return creditCards;
    }
+
    private List<String> scrapEans(JSONObject jsonEan) {
       List<String> eans = new ArrayList<>();
 
