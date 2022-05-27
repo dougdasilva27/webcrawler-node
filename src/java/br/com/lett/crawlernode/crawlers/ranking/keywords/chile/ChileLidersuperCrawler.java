@@ -34,9 +34,10 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
    }
 
    private final List<String> proxies = Arrays.asList(
-      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY);
 
    @Override
@@ -48,10 +49,14 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
-         .setProxyservice(proxies)
+         .setProxyservice(Arrays.asList(
+               ProxyCollection.BUY,
+               ProxyCollection.LUMINATI_SERVER_BR,
+               ProxyCollection.BUY_HAPROXY))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
          .setSendUserAgent(false)
          .build();
+
       Response response = this.dataFetcher.get(session, request);
 
       if (!response.isSuccess()) {

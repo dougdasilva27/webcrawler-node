@@ -3,6 +3,10 @@ package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -12,6 +16,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -47,7 +52,32 @@ public class ChileLidersuperCrawler extends Crawler {
       String href = session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
+   @Override
+   public void handleCookiesBeforeFetch() {
+      String url = "https://www.lider.cl/supermercado";
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("authority", "www.lider.cl");
+      headers.put("cookie", CommonMethods.cookiesToString(cookies));
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
+         .setSendUserAgent(false)
+         .build();
+      Response response = this.dataFetcher.get(session, request);
 
+      if (!response.isSuccess()) {
+         response = retryRequest(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), this.dataFetcher));
+      }
+
+
+      this.cookies = response.getCookies();
+   }
    @Override
    protected Response fetchResponse() {
 
@@ -114,6 +144,12 @@ public class ChileLidersuperCrawler extends Crawler {
 
    private Integer crawlStock(String id) {
       Integer stock = 0;
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
+      headers.put("authority", "www.lider.cl");
+      headers.put("cookie", CommonMethods.cookiesToString(cookies));
+      headers.put("referer", session.getOriginalURL());
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
 
       Request request = RequestBuilder.create()
          .setUrl(
@@ -121,8 +157,7 @@ public class ChileLidersuperCrawler extends Crawler {
          .setCookies(cookies)
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
-         .setSendUserAgent(true)
-         .mustSendContentEncoding(true)
+         .setHeaders(headers)
          .build();
 
       Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
@@ -299,5 +334,22 @@ public class ChileLidersuperCrawler extends Crawler {
       }
 
       return secondaryImages2;
+   }
+   private Response retryRequest(Request request, List<DataFetcher> dataFetcherList) {
+      Response response = dataFetcherList.get(0).get(session, request);
+
+      if (!response.isSuccess()) {
+         int tries = 0;
+         while (!response.isSuccess() && tries < 3) {
+            tries++;
+            if (tries % 2 == 0) {
+               response = dataFetcherList.get(1).get(session, request);
+            } else {
+               response = dataFetcherList.get(2).get(session, request);
+            }
+         }
+      }
+
+      return response;
    }
 }
