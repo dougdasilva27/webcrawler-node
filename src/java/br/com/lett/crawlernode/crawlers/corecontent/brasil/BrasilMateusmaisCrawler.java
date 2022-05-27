@@ -1,74 +1,75 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.exceptions.MalformedUrlException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
-import models.RatingsReviews;
-import models.pricing.*;
+import models.pricing.BankSlip;
+import models.pricing.CreditCards;
+import models.pricing.Pricing;
 import org.apache.commons.lang.WordUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilMateusmaisCrawler extends Crawler {
+
    private static final String SELLER_NAME_LOWER = "mateusmais";
    private static final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.DINERS.toString(), Card.AMEX.toString(), Card.ELO.toString());
 
    public BrasilMateusmaisCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.JSON);
    }
 
    String marketCode = session.getOptions().optString("marketId");
 
    @Override
-   protected Object fetch() {
+   protected Response fetchResponse() {
       if (!session.getOriginalURL().contains(marketCode)) {
          throw new MalformedUrlException("URL não corresponde a localidade do market");
       }
-      return super.fetch();
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://app.mateusmais.com.br/market/" + marketCode + "/product/" + CommonMethods.getLast(session.getOriginalURL().split("/")))
+         .build();
+
+      return this.dataFetcher.get(session, request);
+
    }
 
    @Override
-   public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
-      String idUrl = getUrlid();
-      JSONObject productList = getProduct(idUrl);
+   public List<Product> extractInformation(JSONObject productJson) throws Exception {
+      super.extractInformation(productJson);
       List<Product> products = new ArrayList<>();
 
-      if (productList != null && !productList.isEmpty()) {
+      if (productJson != null && !productJson.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = productList.optString("sku");
-         String name = productList.optString("name") + " " + productList.optString("measure") + productList.optString("measure_type");
+         String internalId = productJson.optString("sku");
+         String name = productJson.optString("name") + " " + productJson.optString("measure") + productJson.optString("measure_type");
          ;
-         String description = productList.optString("description");
-         String primaryImage = productList.optString("image");
-         List<String> eans = Collections.singletonList(productList.optString("barcode"));
-         CategoryCollection categories = getCategory(productList);
-         String brand = productList.optString("brand");
-         boolean available = productList.optBoolean("available");
-         Offers offers = available ? scrapOffers(productList) : new Offers();
+         String description = productJson.optString("description");
+         String primaryImage = productJson.optString("image");
+         List<String> eans = Collections.singletonList(productJson.optString("barcode"));
+         CategoryCollection categories = getCategory(productJson);
+         String brand = productJson.optString("brand");
+         boolean available = productJson.optBoolean("available");
+         Offers offers = available ? scrapOffers(productJson) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -83,7 +84,6 @@ public class BrasilMateusmaisCrawler extends Crawler {
             .build();
 
          products.add(product);
-
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -100,23 +100,6 @@ public class BrasilMateusmaisCrawler extends Crawler {
          categories.add(category);
       }
       return categories;
-   }
-
-   private String getUrlid() {
-      String id = null;
-
-      String regex = marketCode + "/(.*)";
-      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-      final Matcher matcher = pattern.matcher(session.getOriginalURL());
-
-      if (matcher.find()) {
-         id = matcher.group(1);
-      }
-      return id;
-   }
-
-   private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".proBoxPrimaryInner") != null;
    }
 
    private Offers scrapOffers(JSONObject productList) throws OfferException, MalformedPricingException {
@@ -157,18 +140,4 @@ public class BrasilMateusmaisCrawler extends Crawler {
          .build();
    }
 
-   private JSONObject getProduct(String internalId) {
-      String url = "https://app.mateusmais.com.br/market/" + marketCode + "/product/" + internalId;
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .mustSendContentEncoding(true)
-         .build();
-      Response response = this.dataFetcher.get(session, request);
-      if (response != null) {
-         return CrawlerUtils.stringToJson(response.getBody());
-      }
-      return null;
-
-   }
 }
