@@ -2,6 +2,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -41,6 +44,15 @@ public class ChileLidersuperCrawler extends Crawler {
       super.config.setParser(br.com.lett.crawlernode.core.models.Parser.HTML);
    }
 
+   private final List<String> proxies = Arrays.asList(
+      ProxyCollection.LUMINATI_SERVER_BR,
+      ProxyCollection.BUY,
+      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY);
+
+
    @Override
    public void handleCookiesBeforeFetch() {
       String url = "https://www.lider.cl/supermercado";
@@ -50,10 +62,16 @@ public class ChileLidersuperCrawler extends Crawler {
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
+         .setProxyservice(proxies)
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
          .setSendUserAgent(false)
          .build();
       Response response = this.dataFetcher.get(session, request);
+
+      if (!response.isSuccess()) {
+         response = retryRequest(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), this.dataFetcher));
+      }
+
 
       this.cookies = response.getCookies();
    }
@@ -70,19 +88,25 @@ public class ChileLidersuperCrawler extends Crawler {
 
       Map<String, String> headers = new HashMap<>();
       headers.put("authority", "www.lider.cl");
+      headers.put("referer", session.getOriginalURL());
+      headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL())
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .setProxyservice(proxies)
          .setSendUserAgent(true)
          .mustSendContentEncoding(true)
          .build();
 
-      return new JsoupDataFetcher().get(session, request);
+      Response response = this.dataFetcher.get(session, request);
+
+      if (!response.isSuccess()) {
+         response = retryRequest(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), this.dataFetcher));
+      }
+
+      return response;
+
    }
 
    @Override
@@ -240,15 +264,16 @@ public class ChileLidersuperCrawler extends Crawler {
          .setUrl(
             "https://www.lider.cl/supermercado/includes/inventory/inventoryInformation.jsp")
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .setProxyservice(proxies)
          .setPayload(payload)
          .build();
 
-      Response response = new JsoupDataFetcher().post(session, request);
+      Response response = new ApacheDataFetcher().post(session, request);
+
+      if (!response.isSuccess()) {
+         response = retryRequest(request, List.of(new JsoupDataFetcher(), new ApacheDataFetcher(), this.dataFetcher));
+      }
+
       JSONArray array = CrawlerUtils.stringToJsonArray(response.getBody());
 
       if (array.length() > 0) {
@@ -265,6 +290,25 @@ public class ChileLidersuperCrawler extends Crawler {
 
       return stock;
    }
+
+   private Response retryRequest(Request request, List<DataFetcher> dataFetcherList) {
+      Response response = dataFetcherList.get(0).get(session, request);
+
+      if (!response.isSuccess()) {
+         int tries = 0;
+         while (!response.isSuccess() && tries < 3) {
+            tries++;
+            if (tries % 2 == 0) {
+               response = dataFetcherList.get(1).get(session, request);
+            } else {
+               response = dataFetcherList.get(2).get(session, request);
+            }
+         }
+      }
+
+      return response;
+   }
+
 
    /**
     * In the time when this crawler was made, this market hasn't installments informations

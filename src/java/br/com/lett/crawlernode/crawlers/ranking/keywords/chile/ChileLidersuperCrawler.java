@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
@@ -22,14 +24,22 @@ import org.jsoup.select.Elements;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
 
    public ChileLidersuperCrawler(Session session) {
       super(session);
-      //super.fetchMode = FetchMode.FETCHER;
    }
+
+   private final List<String> proxies = Arrays.asList(
+      ProxyCollection.LUMINATI_SERVER_BR,
+      ProxyCollection.BUY,
+      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY);
 
    @Override
    protected void processBeforeFetch() {
@@ -40,10 +50,15 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
+         .setProxyservice(proxies)
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
          .setSendUserAgent(false)
          .build();
       Response response = this.dataFetcher.get(session, request);
+
+      if (!response.isSuccess()) {
+         response = retryRequest(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), this.dataFetcher));
+      }
 
       this.cookies = response.getCookies();
    }
@@ -60,9 +75,14 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setSendUserAgent(false)
+         .setProxyservice(proxies)
          .setHeaders(headers)
          .build();
-      Response response = new FetcherDataFetcher().get(session, request);
+      Response response = new JsoupDataFetcher().get(session, request);
+
+      if (!response.isSuccess()) {
+         response = retryRequest(request, List.of(new ApacheDataFetcher(), new FetcherDataFetcher(), this.dataFetcher));
+      }
 
       return Jsoup.parse(response.getBody());
 
@@ -149,19 +169,37 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .setProxyservice(proxies)
          .setPayload(payload.toString())
          .build();
 
       Response response = new JsoupDataFetcher().post(session, request);
 
+      if (!response.isSuccess()) {
+         response = retryRequest(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), this.dataFetcher));
+      }
+
+
       return CrawlerUtils.stringToJsonArray(response.getBody());
    }
 
+   private Response retryRequest(Request request, List<DataFetcher> dataFetcherList) {
+      Response response = dataFetcherList.get(0).get(session, request);
+
+      if (!response.isSuccess()) {
+         int tries = 0;
+         while (!response.isSuccess() && tries < 3) {
+            tries++;
+            if (tries % 2 == 0) {
+               response = dataFetcherList.get(1).get(session, request);
+            } else {
+               response = dataFetcherList.get(2).get(session, request);
+            }
+         }
+      }
+
+      return response;
+   }
 
    @Override
    protected void setTotalProducts() {
