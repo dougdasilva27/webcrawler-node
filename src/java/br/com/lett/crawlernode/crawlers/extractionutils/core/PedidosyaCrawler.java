@@ -3,7 +3,10 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -43,12 +46,13 @@ public class PedidosyaCrawler extends Crawler {
          .setUrl(url)
          .setProxyservice(proxies)
          .setHeaders(headers)
-         .setSendUserAgent(true)
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
+         .setSendUserAgent(false)
          .build();
-      Response response = new JsoupDataFetcher().get(session, request);
+      Response response = new ApacheDataFetcher().get(session, request);
 
       if (!response.isSuccess()) {
-         response = retryRequest(request);
+         response = retryRequest(request, List.of(new JavanetDataFetcher(), new ApacheDataFetcher(), this.dataFetcher));
       }
 
       this.cookies = response.getCookies();
@@ -74,36 +78,40 @@ public class PedidosyaCrawler extends Crawler {
 
       String url = "https://www.pedidosya.com.ar/mobile/v1/products/" + internalId + "?restaurantId=" + storeId + "&businessType=GROCERIES";
       Map<String, String> headers = new HashMap<>();
-      headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
+      headers.put("cookie", CommonMethods.cookiesToString(cookies));
       headers.put("authority", "www.pedidosya.com.ar");
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("referer", session.getOriginalURL());
 
-      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setCookies(cookies).setProxyservice(proxies)
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(proxies)
          .setSendUserAgent(true)
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
          .build();
 
-      Response response = this.dataFetcher.get(session, request);
+      Response response = new ApacheDataFetcher().get(session, request);
 
       if (!response.isSuccess()) {
-         response = retryRequest(request);
+         response = retryRequest(request, List.of(this.dataFetcher, new JavanetDataFetcher(), new JsoupDataFetcher()));
       }
 
       return response;
    }
 
-   private Response retryRequest(Request request) {
-     Response response = new JsoupDataFetcher().get(session, request);
+   private Response retryRequest(Request request, List<DataFetcher> dataFetcherList) {
+      Response response = dataFetcherList.get(0).get(session, request);
 
       if (!response.isSuccess()) {
          int tries = 0;
          while (!response.isSuccess() && tries < 3) {
             tries++;
             if (tries % 2 == 0) {
-               response = new ApacheDataFetcher().get(session, request);
+               response = dataFetcherList.get(1).get(session, request);
             } else {
-               response = this.dataFetcher.get(session, request);
+               response = dataFetcherList.get(2).get(session, request);
             }
          }
       }

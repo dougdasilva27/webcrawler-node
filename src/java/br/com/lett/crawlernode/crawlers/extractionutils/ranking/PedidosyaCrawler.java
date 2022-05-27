@@ -2,9 +2,8 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.*;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -29,50 +28,33 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.FETCHER;
    }
 
-   List<String> proxies = Arrays.asList(
+   private final List<String> proxies = Arrays.asList(
+      ProxyCollection.LUMINATI_SERVER_BR,
+      ProxyCollection.BUY,
       ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-      ProxyCollection.BUY_HAPROXY);
+      ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY);
+
    String storeId = session.getOptions().optString("store_id");
    String type = session.getOptions().optString("type");
    String city = session.getOptions().optString("city");
    String market = session.getOptions().optString("market");
    String catalogues = session.getOptions().optString("catalogues");
 
-   private JSONObject getInfoFromAPI() {
-      String url = " https://www.pedidosya.com.ar/mobile/v3/catalogues/" + catalogues + "/search?max=50&offset=0&partnerId=" + storeId + "&query=" + this.keywordEncoded + "&sort=default";
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "application/json, text/plain, */*");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      headers.put("authority", "www.pedidosya.com.ar");
-      headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setProxyservice(proxies)
-         .setSendUserAgent(true)
-         .build();
-      Response resp = new FetcherDataFetcher().get(session, request);
-      if (!resp.isSuccess()) {
-         resp = retryRequest(request);
-      }
-      return CrawlerUtils.stringToJson(resp.getBody());
-   }
 
-   private Response retryRequest(Request request) {
-      Response response = new JsoupDataFetcher().get(session, request);
+   private Response retryRequest(Request request, List<DataFetcher> dataFetcherList) {
+      Response response = dataFetcherList.get(0).get(session, request);
 
       if (!response.isSuccess()) {
          int tries = 0;
          while (!response.isSuccess() && tries < 3) {
             tries++;
             if (tries % 2 == 0) {
-               response = new ApacheDataFetcher().get(session, request);
+               response = dataFetcherList.get(1).get(session, request);
             } else {
-               response = this.dataFetcher.get(session, request);
+               response = dataFetcherList.get(2).get(session, request);
             }
          }
       }
@@ -86,14 +68,46 @@ public class PedidosyaCrawler extends CrawlerRankingKeywords {
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
       headers.put("authority", "www.pedidosya.com.ar");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      String url = "https://www.pedidosya.com.ar";
 
-      Request request = Request.RequestBuilder.create().setUrl("https://www.pedidosya.com.ar").setProxyservice(
-         proxies).setHeaders(headers).setSendUserAgent(true).build();
-      Response response = this.dataFetcher.get(session, request);
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(proxies)
+         .setHeaders(headers)
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
+         .setSendUserAgent(false)
+         .build();
+      Response response = new ApacheDataFetcher().get(session, request);
+
       if (!response.isSuccess()) {
-         response = retryRequest(request);
+         response = retryRequest(request, List.of(this.dataFetcher, new JavanetDataFetcher(), new JsoupDataFetcher()));
       }
       this.cookies = response.getCookies();
+   }
+
+   private JSONObject getInfoFromAPI() {
+      String url = "https://www.pedidosya.com.ar/mobile/v3/catalogues/" + catalogues + "/search?max=50&offset=0&partnerId=" + storeId + "&query=" + this.keywordEncoded + "&sort=default";
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "application/json, text/plain, */*");
+      headers.put("referer", "https://www.pedidosya.com.ar/restaurantes/buenos-aires/pedidosya-market-belgrano-menu/buscar");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("authority", "www.pedidosya.com.ar");
+      headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(proxies)
+         .setSendUserAgent(true)
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
+         .build();
+
+      Response resp = new ApacheDataFetcher().get(session, request);
+
+      if (!resp.isSuccess()) {
+         resp = retryRequest(request, List.of(this.dataFetcher, new JavanetDataFetcher(), new JsoupDataFetcher()));
+      }
+      return CrawlerUtils.stringToJson(resp.getBody());
    }
 
    @Override
