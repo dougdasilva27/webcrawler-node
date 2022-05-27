@@ -15,7 +15,7 @@ class BrasilSodimacCrawler(session: Session?) : SodimacCrawler(session) {
       var priceFrom: Double? = null
 
       if (doc.selectFirst("div.sub") != null) {
-         priceFrom = doc.selectFirst("div.sub div.price").toDoubleComma()!!
+         priceFrom = doc.selectFirst("div.m2 div.price").toDoubleComma()!!
       }
 
       val bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null)

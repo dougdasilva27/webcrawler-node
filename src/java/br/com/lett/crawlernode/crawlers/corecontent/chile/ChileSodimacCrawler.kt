@@ -14,8 +14,8 @@ class ChileSodimacCrawler(session: Session?): SodimacCrawler(session) {
       val spotlightPrice = doc.selectFirst("div.main div.price").toDoubleDot()
       var priceFrom: Double? = null
 
-      if (doc.selectFirst("div.sub") != null) {
-         priceFrom = doc.selectFirst("div.sub div.price").toDoubleDot()
+      if (doc.selectFirst("div.m2") != null) {
+         priceFrom = doc.selectFirst("div.m2 div.price").toDoubleDot()
       }
 
       val bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null)

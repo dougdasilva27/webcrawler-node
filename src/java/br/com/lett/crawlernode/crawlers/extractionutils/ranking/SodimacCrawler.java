@@ -21,11 +21,11 @@ public class SodimacCrawler extends CrawlerRankingKeywords {
    private String urlCategory = null;
 
    public String getBaseUrl() {
-      return "https://www.sodimac.cl/sodimac-cl/";
+      return session.getOptions().optString("baseUrl");
    }
 
    public char getPriceFormat() {
-      return ',';
+      return session.getOptions().optString("priceFormat").charAt(0);
    }
 
    @Override
@@ -60,8 +60,8 @@ public class SodimacCrawler extends CrawlerRankingKeywords {
             String productPid = productId;
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-title", true);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image > div > img", Collections.singletonList("data-src"), "https", "sodimac.scene7.com");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price", null, false, getPriceFormat(), session, 0);
-            boolean isAvailable = price != 0;
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price", null, false, getPriceFormat(), session, null);
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)

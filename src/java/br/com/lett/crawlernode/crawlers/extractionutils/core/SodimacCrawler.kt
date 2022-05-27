@@ -122,12 +122,6 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
 
       val sales = scrapSales(json)
 
-      //in memorian - advanced kotlin (this can be useful if the price by unit, like m², must be captured)
-      //      val pricesList = json.optJSONArray("price").groupBy {
-      //         it as JSONObject
-      //         it.optString("unit")
-      //      }
-
       val pricing: Pricing = scrapPricing(doc)
 
       offers.add(OfferBuilder.create()
@@ -161,7 +155,7 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
       var priceFrom: Double? = null
 
       if (doc.selectFirst("div.sub") != null) {
-         priceFrom = doc.selectFirst("div.sub div.price").toDoubleComma()!!
+         priceFrom = doc.selectFirst("div.m2 div.price").toDoubleComma()!!
       }
 
       val bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null)
