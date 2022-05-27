@@ -144,18 +144,20 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
 
       for (badgeKey in badges.keySet()) {
          val badge = badges.optJSONObject(badgeKey);
-         sales.add(badge.optString("type") + ": " + badge.optString("value"))
+         if (badge.optString("type") != null && badge.optString("value") != null) {
+            sales.add(badge.optString("type") + ": " + badge.optString("value"))
+         }
       }
 
       return sales
    }
 
    open fun scrapPricing(doc: Document): Pricing {
-      val spotlightPrice = doc.selectFirst("div.main div.price").toDoubleComma()!!
+      val spotlightPrice = doc.selectFirst("div.main div.price")?.toDoubleComma()!!
       var priceFrom: Double? = null
 
-      if (doc.selectFirst("div.sub") != null) {
-         priceFrom = doc.selectFirst("div.m2 div.price").toDoubleComma()!!
+      if (doc.selectFirst("div.m2") != null) {
+         priceFrom = doc.selectFirst("div.m2 div.price")?.toDoubleComma()!!
       }
 
       val bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null)
@@ -249,7 +251,7 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
       for (result in results) {
          val resultObject = result as JSONObject
          val locale = JSONUtils.getStringValue(resultObject, "ContentLocale")
-         if (locale != null && locale.equals("pt_BR", ignoreCase = true)) { // this happen because fastshop only show reviews from brasil
+         if (locale != null && locale.equals("pt_BR", ignoreCase = true)) {
             totalReviewCount++
          }
       }

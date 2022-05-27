@@ -11,11 +11,10 @@ import org.jsoup.nodes.Document
 class BrasilSodimacCrawler(session: Session?) : SodimacCrawler(session) {
 
    override fun scrapPricing(doc: Document): Pricing {
-      val spotlightPrice = doc.selectFirst("div.main div.price").toDoubleComma()!!
+      val spotlightPrice = doc.selectFirst("div.main div.price")?.toDoubleComma()!!
       var priceFrom: Double? = null
-
-      if (doc.selectFirst("div.sub") != null) {
-         priceFrom = doc.selectFirst("div.m2 div.price").toDoubleComma()!!
+      if (doc.selectFirst("div.m2") != null) {
+         priceFrom = doc.selectFirst("div.m2 div.price")?.toDoubleComma()!!
       }
 
       val bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null)
