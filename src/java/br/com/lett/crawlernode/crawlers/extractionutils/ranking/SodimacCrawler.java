@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
+package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
@@ -10,21 +10,28 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 import java.util.Collections;
 
-public class BrasilSodimacCrawler extends CrawlerRankingKeywords {
-   public BrasilSodimacCrawler(Session session) {
+public class SodimacCrawler extends CrawlerRankingKeywords {
+   public SodimacCrawler(Session session) {
       super(session);
    }
 
    private Boolean isCategory = false;
    private String urlCategory = null;
 
+   public String getBaseUrl() {
+      return session.getOptions().optString("baseUrl");
+   }
+
+   public char getPriceFormat() {
+      return session.getOptions().optString("priceFormat").charAt(0);
+   }
+
    @Override
    public void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 28;
-      String url = "https://www.sodimac.com.br/sodimac-br/search?Ntt="+this.keywordEncoded+"&currentpage=" + this.currentPage;
+      String url = getBaseUrl() + "search?Ntt="+this.keywordEncoded+"&currentpage=" + this.currentPage;
       if(this.currentPage > 1 && isCategory) {
          url = urlCategory + "&currentpage=" + this.currentPage;
       }
@@ -48,13 +55,13 @@ public class BrasilSodimacCrawler extends CrawlerRankingKeywords {
             setTotalProducts();
          }
          for (Element e : products) {
-            String productUrl = CrawlerUtils.scrapUrl(e, "#title-pdp-link", "href", "https", "sodimac.com.br");
+            String productUrl = CrawlerUtils.scrapUrl(e, "#title-pdp-link", "href", "https", session.getOptions().optString("homePage"));
             String productId = e.attr("data-key");
             String productPid = productId;
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-title", true);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image > div > img", Collections.singletonList("data-src"), "https", "sodimac.scene7.com");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price", null, false, ',', session, 0);
-            boolean isAvailable = price != 0;
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price", null, false, getPriceFormat(), session, null);
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
