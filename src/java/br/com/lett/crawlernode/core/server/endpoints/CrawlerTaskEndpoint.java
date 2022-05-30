@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.server.request.checkers.CrawlerTaskRequestCh
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.ToBuyCrawlerSession;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
@@ -75,7 +76,7 @@ public class CrawlerTaskEndpoint extends HttpServlet {
          Logging.printLogDebug(logger, "TASK RESPONSE STATUS: " + ServerCrawler.HTTP_STATUS_CODE_SERVER_ERROR);
       }
 
-      if (task instanceof Crawler && task.getSession() instanceof InsightsCrawlerSession) {
+      if (task instanceof Crawler && (task.getSession() instanceof InsightsCrawlerSession || task.getSession() instanceof ToBuyCrawlerSession)) {
 
          if (executionParameters.isSendToKinesisCatalog()) {
             try {

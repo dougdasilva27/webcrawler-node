@@ -35,7 +35,7 @@ public class TaskFactory {
     */
    public static Task createTask(Session session, String className) {
 
-      if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession || session instanceof EqiCrawlerSession) {
+      if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession || session instanceof EqiCrawlerSession || session instanceof ToBuyCrawlerSession) {
          return createCrawlerTask(session, className);
       } else if (session instanceof RankingKeywordsSession || session instanceof RankingDiscoverKeywordsSession || session instanceof EqiRankingDiscoverKeywordsSession
          || session instanceof TestRankingKeywordsSession) {
