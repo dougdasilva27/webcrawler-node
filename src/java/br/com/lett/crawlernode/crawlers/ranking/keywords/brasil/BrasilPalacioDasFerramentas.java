@@ -50,7 +50,7 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "a h1", false);
             String imgUrl = scrapImgUrl(e);
             Integer price = scrapPrice(e);
-            boolean isAvailable = price != 0;
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -107,10 +107,13 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
    }
    private Integer scrapPrice(Element e) {
       String priceDescription = CrawlerUtils.scrapStringSimpleInfo(e, "h2", false);
+      Integer price;
 
-      if (priceDescription != null) {
+      if (priceDescription != null && !priceDescription.isEmpty()) {
          priceDescription = priceDescription.replaceAll("[^0-9]", "");
-         return Integer.parseInt(priceDescription);
+         price = !priceDescription.equals("") ? Integer.parseInt(priceDescription) : null;
+
+         return price;
       }
 
       return null;
