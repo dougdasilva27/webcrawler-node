@@ -61,13 +61,11 @@ public class BrasilMateusmaisCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = productJson.optString("sku");
-         String name = productJson.optString("name") + " " + productJson.optString("measure") + productJson.optString("measure_type");
-         ;
+         String name = crawlName(productJson);
          String description = productJson.optString("description");
          String primaryImage = productJson.optString("image");
          List<String> eans = Collections.singletonList(productJson.optString("barcode"));
          CategoryCollection categories = getCategory(productJson);
-         String brand = productJson.optString("brand");
          boolean available = productJson.optBoolean("available");
          Offers offers = available ? scrapOffers(productJson) : new Offers();
 
@@ -75,7 +73,7 @@ public class BrasilMateusmaisCrawler extends Crawler {
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalId)
-            .setName(brand + " " + name)
+            .setName(name)
             .setPrimaryImage(primaryImage)
             .setCategories(categories)
             .setEans(eans)
@@ -90,6 +88,38 @@ public class BrasilMateusmaisCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String crawlName(JSONObject productJson) {
+      StringBuilder productName = new StringBuilder();
+      String measure;
+      String name = productJson.optString("name");
+      Integer measureInt = productJson.optInt("measure", 0);
+      if (measureInt != 0) {
+         measure = measureInt.toString();
+      } else {
+         Double measureDouble = productJson.optDouble("measure", 0.0);
+         measure = measureDouble.toString();
+      }
+      String measureType = productJson.optString("measure_type");
+      String brand = productJson.optString("brand");
+
+      if (brand != null && !brand.isEmpty()) {
+         productName.append(brand).append(" ");
+      }
+
+      if (name != null && !name.isEmpty()) {
+         productName.append(name).append(" ");
+         if (!measure.equals("0") && !measure.equals("0.0")) {
+            productName.append(measure);
+            if (measureType != null && !measureType.isEmpty()) {
+               productName.append(measureType);
+            }
+         }
+      }
+
+      return productName.toString();
+
    }
 
    private CategoryCollection getCategory(JSONObject productList) {
