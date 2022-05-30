@@ -27,6 +27,7 @@ import java.util.Set;
 
 public class BrasilMateusmaisCrawler extends Crawler {
 
+   private String marketCode = session.getOptions().optString("marketId");
    private static final String SELLER_NAME_LOWER = "mateusmais";
    private static final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.DINERS.toString(), Card.AMEX.toString(), Card.ELO.toString());
@@ -35,8 +36,6 @@ public class BrasilMateusmaisCrawler extends Crawler {
       super(session);
       super.config.setParser(Parser.JSON);
    }
-
-   String marketCode = session.getOptions().optString("marketId");
 
    @Override
    protected Response fetchResponse() {
