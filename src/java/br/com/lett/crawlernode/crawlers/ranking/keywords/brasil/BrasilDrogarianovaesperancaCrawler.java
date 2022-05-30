@@ -51,6 +51,7 @@ public class BrasilDrogarianovaesperancaCrawler extends CrawlerRankingKeywords {
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e,"span[class*=preco-por]", null, false, ',', session, null);
 
             boolean isAvailable = CrawlerUtils.scrapStringSimpleInfo(e, "span.dg-icon-avise-me", false) == null;
+            if (isAvailable == false) {price = null;}
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
