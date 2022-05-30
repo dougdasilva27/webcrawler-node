@@ -5,7 +5,7 @@ import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.Session;
 
-public class ToBuyCrawlerSession  extends Session {
+public class ToBuyCrawlerSession extends Session {
 
    /**
     * Processed id associated with the sku being crawled
