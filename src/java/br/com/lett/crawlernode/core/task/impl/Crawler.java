@@ -820,7 +820,7 @@ public abstract class Crawler extends Task {
          }
 
          // only print statistics of void and truco if we are running an Insights session crawling
-         if (session instanceof InsightsCrawlerSession || session instanceof ToBuyCrawlerSession) {
+         if (session instanceof InsightsCrawlerSession) {
             Logging.printLogInfo(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
          }
 
