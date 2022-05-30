@@ -19,8 +19,6 @@ import java.util.*;
 
 public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
    protected Integer PRODUCTS_PER_PAGE = 24;
-
-
    private static final String HOME_PAGE = "https://www.palaciodasferramentas.com.br";
 
    public BrasilPalacioDasFerramentas(Session session) {
@@ -130,17 +128,18 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
       headers.put("Accept","*/*");
       headers.put("Accept-Encoding","gzip, deflate, br");
       headers.put("Connection","keep-alive");
+      headers.put("authority", "www.palaciodasferramentas.com.br");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY,
-            ProxyCollection.LUMINATI_SERVER_BR,
+         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .setSendUserAgent(false)
          .build();
 
-      Response response = this.dataFetcher.get(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher, true);
 
       return Jsoup.parse(response.getBody());
    }
