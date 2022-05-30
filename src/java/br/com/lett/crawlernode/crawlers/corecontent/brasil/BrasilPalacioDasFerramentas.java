@@ -126,14 +126,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double priceFrom = convertPrice(doc, "[itemprop=\"offers\"] li.de strong", null);
       Double spotlightPrice = convertPrice(doc, "[itemprop=\"offers\"] li.por strong", null);
-      String priceBankSlipString = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "li.price [itemprop=\"price\"]", "content");
-      Double priceBankSlip = null;
-
-      if (priceBankSlipString != null) {
-         priceBankSlipString = priceBankSlipString.replace("R$", "").trim();
-
-         priceBankSlip = MathUtils.parseDoubleWithComma(priceBankSlipString);
-      }
+      Double priceBankSlip = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li.price [itemprop=\"price\"]", "content", false, '.', session);
 
       if (Objects.equals(priceFrom, spotlightPrice)) priceFrom = null;
 
