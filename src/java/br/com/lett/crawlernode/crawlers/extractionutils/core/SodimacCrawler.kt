@@ -153,11 +153,11 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
    }
 
    open fun scrapPricing(doc: Document): Pricing {
-      val spotlightPrice = doc.selectFirst("div.main div.price")?.toDoubleComma()!!
+      val spotlightPrice = doc.selectFirst("div.main div.price")?.toDoubleDot()!!
       var priceFrom: Double? = null
 
       if (doc.selectFirst("div.m2") != null) {
-         priceFrom = doc.selectFirst("div.m2 div.price")?.toDoubleComma()!!
+         priceFrom = doc.selectFirst("div.m2 div.price")?.toDoubleDot()!!
       }
 
       val bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null)
