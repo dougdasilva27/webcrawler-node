@@ -695,7 +695,7 @@ public abstract class Crawler extends Task {
 
             List<Integer> marketsDownloadImagesNotAlowed = Arrays.asList(158, 184, 363, 382, 383, 384, 400, 403, 486, 1188, 1220, 1285, 1285, 1287, 1371, 1372, 1373, 1381, 1384, 1387, 1388, 1479, 1480, 1487, 1491, 1511, 1512, 1513, 1514, 1515, 1516, 1517, 1518, 1519, 1520, 1521, 1522, 1523, 1524, 1525, 1527, 1528, 1529, 1530, 1531, 1532, 1534, 1535, 1536, 1537, 1538, 1542, 1545, 1546, 1547, 1548, 1549, 1550, 1551, 1552, 1554, 1555, 1556, 1557, 1558, 1559, 1653, 1743, 1890, 1909, 1910, 1911, 2004, 2005, 2010, 2036, 2037, 2038, 2041, 2078, 2123, 2124, 2126, 2216, 2219, 2220, 2221, 2223, 2715, 2716, 2717, 2718, 2720, 2721, 2722, 2745, 2746, 2747, 2748, 2749, 2759, 2767, 2768, 2769, 2770, 2772, 2773, 2774, 2775, 2776, 2779, 2780, 2781, 2782, 2783);
 
-            if (!marketsDownloadImagesNotAlowed.contains(session.getMarket().getId())) {
+            if (!marketsDownloadImagesNotAllowed.contains(session.getMarket().getId())) {
                scheduleImages(persistenceResult, newProcessedProduct);
             }
             if (session instanceof SeedCrawlerSession) {
