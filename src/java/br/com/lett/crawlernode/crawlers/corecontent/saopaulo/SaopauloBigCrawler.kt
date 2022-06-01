@@ -2,15 +2,21 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo
 
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper
+import br.com.lett.crawlernode.exceptions.MalformedUrlException
 import models.RatingsReviews
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.json.JSONObject
 import org.jsoup.nodes.Document
-import java.util.regex.Pattern
 
 class SaopauloBigCrawler(session: Session) : VTEXNewScraper(session) {
    override fun handleCookiesBeforeFetch() {
+      val market = if(getHomePage().lowercase().contains("bompreco.com.br")) "bompreco" else "big"
+
+      if(!session.originalURL.lowercase().contains(market)) {
+         throw MalformedUrlException("URL não corresponde ao market $market")
+      }
+
+
       val cookie = BasicClientCookie("vtex_segment", session.options.optString("vtex_segment"))
       cookie.domain = if (getHomePage().endsWith("/")) getHomePage().substringAfter("https://").replace("/", "") else getHomePage().substringAfter("https://")
       cookies.add(cookie)
