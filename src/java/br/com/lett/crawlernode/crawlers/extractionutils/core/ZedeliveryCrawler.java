@@ -1,8 +1,11 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -50,16 +53,33 @@ public class ZedeliveryCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
-   private List<String> proxies = Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY);
+   private List<String> proxies = Arrays.asList(
+      ProxyCollection.BUY,
+      ProxyCollection.LUMINATI_SERVER_BR,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY);
 
+   @Override
+   public void handleCookiesBeforeFetch() {
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.ze.delivery/produtos")
+         .setProxyservice(proxies)
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
+         .setSendUserAgent(false)
+         .build();
+      Response response = new ApacheDataFetcher().get(session, request);
+
+
+      this.cookies = response.getCookies();
+   }
 
    /**
     * Replicating the first api call of the web, that is used to validate the UUID Making a call
     * sending an address: postal code 05426-100 Address is hard coded in payload
     */
    private JSONObject validateUUID() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("content-type", "application/json");
 
       String initPayload = "{\n" +
          "  \"operationName\": \"setDeliveryOption\",\n" +
@@ -87,32 +107,45 @@ public class ZedeliveryCrawler extends Crawler {
 
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
          .setPayload(initPayload)
-         .setHeaders(headers)
+         .setHeaders(getHeaders())
          //coloquei o proxy para afetar todos os ze deliveries 
          .setProxyservice(proxies)
-         .mustSendContentEncoding(false)
+         .setCookies(cookies)
+         .setSendUserAgent(true)
+         .mustSendContentEncoding(true)
          .build();
 
       Response response = new JsoupDataFetcher().post(session, request);
+
       visitorId = response.getHeaders().get("x-visitorid");
+      if (!response.isSuccess() || visitorId == null) {
+         response = retryRequest(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher()));
+         visitorId = response.getHeaders().get("x-visitorid");
+      }
+
       if (visitorId == null || visitorId.isEmpty()) {
          Logging.printLogError(logger, "FAILED TO GET VISITOR ID");
       }
       return CrawlerUtils.stringToJson(response.getBody());
    }
 
+   private Map<String, String> getHeaders() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("content-type", "application/json");
+      headers.put("Origin", "https://www.ze.delivery");
+      headers.put("Referer", "https://www.ze.delivery/");
+      headers.put("x-request-origin", "WEB");
+
+      return headers;
+   }
+
    @Override
    protected Response fetchResponse() {
-      Map<String, String> headers = new HashMap<>();
       JSONObject apiJson = validateUUID();
+      Map<String, String> headers = getHeaders();
       if (!apiJson.isEmpty()) {
-
-         headers.put("Accept", "*/*");
-         headers.put("Accept-Encoding", "gzip, deflate, br");
-         headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-         headers.put("content-type", "application/json");
-         headers.put("Origin", "https://www.ze.delivery");
-         headers.put("Referer", "https://www.ze.delivery/");
          headers.put("x-visitorid", visitorId);
       }
 
@@ -121,19 +154,38 @@ public class ZedeliveryCrawler extends Crawler {
          .setUrl(API_URL)
          .setHeaders(headers)
          .setPayload(payload)
+         .setCookies(cookies)
          .setProxyservice(proxies)
          .setSendUserAgent(false)
-         .mustSendContentEncoding(false)
+         .mustSendContentEncoding(true)
          .build();
 
-      Response response = new FetcherDataFetcher().post(session, request);
-
-      if (!response.isSuccess()) {
-         response = new JsoupDataFetcher().post(session, request);
+      Response response = new JsoupDataFetcher().post(session, request);
+      if (!response.isSuccess() || CrawlerUtils.stringToJson(response.getBody()).has("errors")) {
+         response = retryRequest(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher()));
       }
 
       return response;
    }
+
+   private Response retryRequest(Request request, List<DataFetcher> dataFetcherList) {
+      Response response = dataFetcherList.get(0).get(session, request);
+
+      if (!response.isSuccess()) {
+         int tries = 0;
+         while (!response.isSuccess() && tries < 3) {
+            tries++;
+            if (tries % 2 == 0) {
+               response = dataFetcherList.get(1).get(session, request);
+            } else {
+               response = dataFetcherList.get(0).get(session, request);
+            }
+         }
+      }
+
+      return response;
+   }
+
 
    private String getIdFromUrl() {
       String id = null;
