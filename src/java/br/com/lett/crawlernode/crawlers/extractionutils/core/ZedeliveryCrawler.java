@@ -1,35 +1,30 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.models.*;
-import models.pricing.*;
-import org.apache.commons.lang3.StringUtils;
-import org.jooq.util.derby.sys.Sys;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
-import models.pricing.BankSlip.BankSlipBuilder;
-import models.pricing.CreditCard.CreditCardBuilder;
-import models.pricing.Installment.InstallmentBuilder;
-import org.jsoup.nodes.Element;
+import models.pricing.*;
+import org.json.JSONObject;
+
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ZedeliveryCrawler extends Crawler {
 
@@ -42,7 +37,7 @@ public class ZedeliveryCrawler extends Crawler {
 
    public ZedeliveryCrawler(Session session) {
       super(session);
-      config.setParser(Parser.HTML);
+      config.setParser(Parser.JSON);
    }
 
    public String getSellerName() {
@@ -54,6 +49,9 @@ public class ZedeliveryCrawler extends Crawler {
       String href = session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
+
+   private List<String> proxies = Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY);
+
 
    /**
     * Replicating the first api call of the web, that is used to validate the UUID Making a call
@@ -91,7 +89,7 @@ public class ZedeliveryCrawler extends Crawler {
          .setPayload(initPayload)
          .setHeaders(headers)
          //coloquei o proxy para afetar todos os ze deliveries 
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+         .setProxyservice(proxies)
          .mustSendContentEncoding(false)
          .build();
 
@@ -108,54 +106,64 @@ public class ZedeliveryCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       JSONObject apiJson = validateUUID();
       if (!apiJson.isEmpty()) {
-         JSONObject userAddress = JSONUtils.getValueRecursive(apiJson, "data.manageCheckout.checkout.deliveryOption.address", JSONObject.class, null);
-         JSONObject deliveryOptions = JSONUtils.getValueRecursive(apiJson, "data.manageCheckout.checkout.deliveryOption", JSONObject.class, null);
-
-         if (userAddress != null && deliveryOptions != null) {
-            String cookie = "visitorId=%22" + visitorId +
-               "%22; userAddress=" + URLEncoder.encode(userAddress.toString(), StandardCharsets.UTF_8) +
-               "; deliveryOptions=" + URLEncoder.encode(deliveryOptions.toString(), StandardCharsets.UTF_8) + ";";
-            headers.put("cookie", cookie);
-         } else {
-            Logging.printLogError(logger, "FAILED TO GET DELIVERY OPTIONS");
-         }
 
          headers.put("Accept", "*/*");
          headers.put("Accept-Encoding", "gzip, deflate, br");
-         headers.put("Connection", "keep-alive");
+         headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+         headers.put("content-type", "application/json");
+         headers.put("Origin", "https://www.ze.delivery");
+         headers.put("Referer", "https://www.ze.delivery/");
+         headers.put("x-visitorid", visitorId);
       }
+
+      String payload = "{\"operationName\":\"loadProduct\",\"variables\":{\"id\":\"" + getIdFromUrl() + "\",\"isVisitor\":false},\"query\":\"query loadProduct($id: ID, $isVisitor: Boolean!) {\\n  loadProduct(id: $id, isVisitor: $isVisitor) {\\n    id\\n    displayName\\n    description\\n    isRgb\\n    price {\\n      min\\n      max\\n    }\\n    images\\n    category {\\n      id\\n      displayName\\n    }\\n    brand {\\n      id\\n      displayName\\n    }\\n    applicableDiscount {\\n      discountType\\n      finalValue\\n      presentedDiscountValue\\n    }\\n  }\\n}\\n\"}";
       Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
+         .setUrl(API_URL)
          .setHeaders(headers)
+         .setPayload(payload)
+         .setProxyservice(proxies)
          .setSendUserAgent(false)
+         .mustSendContentEncoding(false)
          .build();
 
-      return this.dataFetcher.get(session, request);
+      Response response = new FetcherDataFetcher().post(session, request);
+
+      if (!response.isSuccess()) {
+         response = new JsoupDataFetcher().post(session, request);
+      }
+
+      return response;
+   }
+
+   private String getIdFromUrl() {
+      String id = null;
+      Pattern pattern = Pattern.compile("produto\\/([0-9]+)\\/");
+      Matcher matcher = pattern.matcher(session.getOriginalURL());
+      if (matcher.find()) {
+         id = matcher.group(1);
+      }
+      return id;
    }
 
    @Override
-   public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
+   public List<Product> extractInformation(JSONObject jsonObject) throws Exception {
+      super.extractInformation(jsonObject);
       List<Product> products = new ArrayList<>();
+      JSONObject productJson = JSONUtils.getValueRecursive(jsonObject, "data.loadProduct", JSONObject.class, new JSONObject());
 
-      if (doc.selectFirst("#add-product") != null) {
+      if (productJson != null && !productJson.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String scriptId = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
-         JSONObject jsonId = new JSONObject(scriptId.substring(1, scriptId.length() - 1));
-         String internalId = JSONUtils.getValueRecursive(jsonId, "query.id", String.class);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.css-aibq80-productTitle", false);
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "[name=description]", false);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.css-11x3awa-Breadcrumb li a");
-         boolean available = doc.selectFirst("#add-product") != null;
-         Offers offers = available ? scrapOffers(doc) : new Offers();
-         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
+
+         String internalId = productJson.optString("id");
+         String name = productJson.optString("displayName");
+         String description = productJson.optString("description");
+         Offers offers = scrapOffers(productJson);
+         String primaryImage = JSONUtils.getValueRecursive(productJson, "images.0", String.class, null);
 
          Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalId)
             .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
             .setPrimaryImage(primaryImage)
             .setDescription(description)
             .setOffers(offers)
@@ -168,9 +176,9 @@ public class ZedeliveryCrawler extends Crawler {
       return products;
    }
 
-   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+   private Offers scrapOffers(JSONObject productJson) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
+      Pricing pricing = scrapPricing(productJson);
       List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
       offers.add(new Offer.OfferBuilder()
@@ -186,13 +194,28 @@ public class ZedeliveryCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".css-1jqrnd2-priceText", null, true, ',', session);
+   private Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
+      JSONObject dataPrice = JSONUtils.getJSONValue(productJson, "price");
+      JSONObject applicableDiscount = JSONUtils.getJSONValue(productJson, "applicableDiscount");
+      Double spotlightPrice = null;
+      Double priceFrom = null;
+
+      if (!applicableDiscount.isEmpty()) {
+         spotlightPrice = JSONUtils.getDoubleValueFromJSON(applicableDiscount, "finalValue", true);
+      }
+      if (!dataPrice.isEmpty()) {
+         priceFrom = JSONUtils.getDoubleValueFromJSON(dataPrice, "min", true);
+         if (spotlightPrice == null) {
+            spotlightPrice = priceFrom;
+            priceFrom = null;
+         }
+      }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .build();
    }
