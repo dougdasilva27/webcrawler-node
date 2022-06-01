@@ -31,7 +31,6 @@ public class ZedeliveryCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.ze.delivery";
    private static final String API_URL = "https://api.ze.delivery/public-api";
    private String visitorId;
-   private String internalId;
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
@@ -117,8 +116,7 @@ public class ZedeliveryCrawler extends Crawler {
          headers.put("x-visitorid", visitorId);
       }
 
-      internalId = getIdFromUrl();
-      String payload = "{\"operationName\":\"loadProduct\",\"variables\":{\"id\":\"" + internalId + "\",\"isVisitor\":false},\"query\":\"query loadProduct($id: ID, $isVisitor: Boolean!) {\\n  loadProduct(id: $id, isVisitor: $isVisitor) {\\n    id\\n    displayName\\n    description\\n    isRgb\\n    price {\\n      min\\n      max\\n    }\\n    images\\n    category {\\n      id\\n      displayName\\n    }\\n    brand {\\n      id\\n      displayName\\n    }\\n    applicableDiscount {\\n      discountType\\n      finalValue\\n      presentedDiscountValue\\n    }\\n  }\\n}\\n\"}";
+      String payload = "{\"operationName\":\"loadProduct\",\"variables\":{\"id\":\"" + getIdFromUrl() + "\",\"isVisitor\":false},\"query\":\"query loadProduct($id: ID, $isVisitor: Boolean!) {\\n  loadProduct(id: $id, isVisitor: $isVisitor) {\\n    id\\n    displayName\\n    description\\n    isRgb\\n    price {\\n      min\\n      max\\n    }\\n    images\\n    category {\\n      id\\n      displayName\\n    }\\n    brand {\\n      id\\n      displayName\\n    }\\n    applicableDiscount {\\n      discountType\\n      finalValue\\n      presentedDiscountValue\\n    }\\n  }\\n}\\n\"}";
       Request request = Request.RequestBuilder.create()
          .setUrl(API_URL)
          .setHeaders(headers)
@@ -156,6 +154,7 @@ public class ZedeliveryCrawler extends Crawler {
       if (productJson != null && !productJson.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
+         String internalId = productJson.optString("id");
          String name = productJson.optString("displayName");
          String description = productJson.optString("description");
          Offers offers = scrapOffers(productJson);
