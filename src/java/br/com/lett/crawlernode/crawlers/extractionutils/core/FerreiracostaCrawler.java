@@ -1,8 +1,12 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -31,12 +35,11 @@ public class FerreiracostaCrawler extends Crawler {
 
    public FerreiracostaCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.HTML);
    }
 
    @Override
-   public Object fetch(){
-
-
+   protected Response fetchResponse() {
       String location = session.getOptions().optString("location");
 
       Map<String,String> headers = new HashMap<>();
@@ -61,11 +64,23 @@ public class FerreiracostaCrawler extends Crawler {
          " AWSALBCORS=AWQren+oPEAFGXDRiJutL5+sy0hpn5zZBAoiHwI5wCsthQh1UcN4sz5hYfT2hEfrlKuY45Vz5J0qEsHDS9JBbMDsPqDb7l12m63zMvEokIrgKyyLHS5mFcV8YyT+;" +
          " RT=s=1631798388140&r=https%3A%2F%2Fwww.ferreiracosta.com%2FProduto%2F408846%2Flavadora-de-roupa-brastemp-12kg-branca-127v-bwk12abana");
 
-      Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setHeaders(headers).setCookies(this.cookies).build();
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setHeaders(headers)
+         .setCookies(this.cookies)
+         .setProxyservice(List.of(
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .build();
       Response resp = this.dataFetcher.get(session,request);
 
-      return Jsoup.parse(resp.getBody());
+      if (!resp.isSuccess()) {
+         resp = new JsoupDataFetcher().get(session,request);
+      }
 
+      return resp;
    }
 
    @Override
