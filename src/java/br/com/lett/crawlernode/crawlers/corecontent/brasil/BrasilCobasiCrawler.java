@@ -64,17 +64,22 @@ public class BrasilCobasiCrawler extends Crawler {
             JSONObject variant = (JSONObject) o;
             Offers offers = scrapOffer(productsObj, variant);
             RatingsReviews ratingsReviews = crawlRating(productsObj);
-
+            String name1 = CommonMethods.camelcaseToText(productsObj.optString("name"));
+            String name2 =variant.optString("name");
+            String name = (!name1.isEmpty() ? name1:"") + (!name2.isEmpty() ? " " + name2:"");
+            String descriptionSort = CrawlerUtils.scrapStringSimpleInfo(doc,".styles__ProductInformations-sc-1rue5eb-8.cnACxw", false);
+            String descriptionfull = CrawlerUtils.scrapStringSimpleInfo(doc,"#panel2d-content .MuiAccordionDetails-root.styles__AccordionDetails-sc-1cpb5wa-5.gVuviu", false);
+            String description = (!descriptionSort.isEmpty()? descriptionSort:"") + (!descriptionfull.isEmpty()? " " + descriptionfull:"");
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(productsObj.optString("id"))
                .setInternalPid(productsObj.optString("id"))
-               .setName(CommonMethods.camelcaseToText(productsObj.optString("name")) + variant.optString("name"))
+               .setName(name)
                .setCategories(categoryCollection)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
-               .setDescription(productsObj.optString("description"))
+               .setDescription(description)
                .setOffers(offers)
                .setRatingReviews(ratingsReviews)
                .setEans(Collections.singletonList(variant.optString("ean")))
