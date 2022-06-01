@@ -66,7 +66,6 @@ public class ZedeliveryCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.ze.delivery/produtos")
          .setProxyservice(proxies)
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
          .setSendUserAgent(false)
          .build();
       Response response = new ApacheDataFetcher().get(session, request);
