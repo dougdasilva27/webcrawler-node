@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.fortaleza;
 
 import java.util.*;
 
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Parser;
 import org.json.JSONObject;
 import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -31,6 +33,7 @@ public class FortalezaObomvizinhoCrawler extends Crawler {
 
    public FortalezaObomvizinhoCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.JSON);
    }
 
    private static final String HOME_PAGE = "https://loja.obomvizinho.com.br/loja/";
@@ -86,10 +89,9 @@ public class FortalezaObomvizinhoCrawler extends Crawler {
    }
 
    @Override
-   protected JSONObject fetch() {
-
+   protected Response fetchResponse() {
       if (!getStoreIdFromUrl().equals(getStoreId())) {
-         return new JSONObject();
+         return new Response();
       }
 
       String url = "https://www.merconnect.com.br/mapp/v1/markets/" + getStoreId() + "/items/" + getProductIdFromUrl();
@@ -99,9 +101,9 @@ public class FortalezaObomvizinhoCrawler extends Crawler {
          .setHeaders(getHeaders())
          .build();
 
-      String content = this.dataFetcher.get(session, request).getBody();
+      Response content = this.dataFetcher.get(session, request);
 
-      return CrawlerUtils.stringToJson(content);
+      return content;
    }
 
    @Override
@@ -118,7 +120,7 @@ public class FortalezaObomvizinhoCrawler extends Crawler {
          String internalPid = productJson.optString("mix_id");
          String name = productJson.optString("description");
          String primaryImage = productJson.optString("image");
-         String description = productJson.optString("short_description");
+         String description = productJson.optString("aditional_info");
 
          int stock = productJson.optInt("stock");
 
