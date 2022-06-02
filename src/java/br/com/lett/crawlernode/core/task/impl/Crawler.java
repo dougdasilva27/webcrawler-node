@@ -542,6 +542,11 @@ public abstract class Crawler extends Task {
       return resp;
    }
 
+   protected Document fetchMiranha(Session session,String name, String bucket) {
+      Document doc = S3Service.fetchHtml(session,name,bucket);
+      return doc;
+   }
+
    /**
     * Get only the product with the desired internalId.
     *

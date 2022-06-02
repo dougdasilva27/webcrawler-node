@@ -6,13 +6,18 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPInputStream;
 
 import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.services.s3.model.*;
 import org.apache.commons.io.FileUtils;
 import org.joda.time.DateTime;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonClientException;
@@ -21,10 +26,6 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
@@ -250,5 +251,37 @@ public class S3Service {
          }
       }
    }
+
+   public static Document fetchHtml(Session session, String name, String bucket) {
+      String content = null;
+      try {
+         S3Object fileObj = s3clientCrawlerSessions.getObject(new GetObjectRequest(bucket, name));
+         Scanner fileIn = new Scanner(new GZIPInputStream(fileObj.getObjectContent()));
+         if (fileIn.hasNextLine()) {
+            content = fileIn.nextLine();
+         }
+         if (null != fileIn) {
+            while (fileIn.hasNextLine()) {
+               content += fileIn.nextLine();
+            }
+         }
+         Document doc = Jsoup.parse(content);
+         return doc;
+      } catch (AmazonS3Exception s3Exception) {
+         if (s3Exception.getStatusCode() == 404) {
+            Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
+            return null;
+         } else {
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(s3Exception));
+            return null;
+         }
+      } catch (Exception e) {
+         Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+         return null;
+      }
+
+
+   }
+
 
 }
