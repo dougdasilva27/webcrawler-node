@@ -65,7 +65,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
             JSONObject product = (JSONObject) object;
 
             String internalId = JSONUtils.getValueRecursive(product, "items.0.itemId", String.class, null);
-            String internalPid = product.optString("productId");
+            String internalPid = crawInternalPid(product);
             String url = HOME_PAGE + product.optString("linkText") + "/p";
             String name = product.optString("productName");
             String imgUrl = JSONUtils.getValueRecursive(product, "items.0.images.0.imageUrl", String.class, null);
@@ -92,6 +92,10 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
       } else {
          log("keyword sem resultado");
       }
+   }
+
+   protected String crawInternalPid(JSONObject product) {
+      return product.optString("productId");
    }
 
    private Integer scrapPrice(JSONObject product) {
