@@ -73,7 +73,7 @@ public class BrasilCobasiCrawler extends Crawler {
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
-               .setInternalId(productsObj.optString("id"))
+               .setInternalId(variant.optString("id"))
                .setInternalPid(productsObj.optString("id"))
                .setName(name)
                .setCategories(categoryCollection)
