@@ -12,6 +12,8 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -34,7 +36,9 @@ public class BrasilAdegaOnlineCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".ProductMeta__Title", false);
+         String countryName = scrapCountry(doc);
+         String title = CrawlerUtils.scrapStringSimpleInfo(doc, ".ProductMeta__Title", false);
+         String name = title != null && countryName != null ? title + " " + countryName : title;
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=\"store_product_id\"]", "value");
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-short-description", false);
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
@@ -60,6 +64,19 @@ public class BrasilAdegaOnlineCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".Product__Wrapper") != null;
+   }
+
+   private String scrapCountry(Document doc) {
+      Elements box = doc.select(".box-specification strong");
+
+      for (Element info : box) {
+         String infoType = CrawlerUtils.scrapStringSimpleInfo(info, null, true);
+         if (infoType != null && infoType.equals("PAÍS:")) {
+            return CrawlerUtils.scrapStringSimpleInfo(info, "span", false);
+         }
+      }
+
+      return null;
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
