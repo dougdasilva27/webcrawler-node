@@ -70,11 +70,17 @@ public class BrasilCobasiCrawler extends Crawler {
             String descriptionSort = CrawlerUtils.scrapStringSimpleInfo(doc,".styles__ProductInformations-sc-1rue5eb-8.cnACxw", false);
             String descriptionfull = CrawlerUtils.scrapStringSimpleInfo(doc,"#panel2d-content .MuiAccordionDetails-root.styles__AccordionDetails-sc-1cpb5wa-5.gVuviu", false);
             String description = (!descriptionSort.isEmpty()? descriptionSort:"") + (!descriptionfull.isEmpty()? " " + descriptionfull:"");
-
+            String id = variant.optString("id");
+            String pid = productsObj.optString("id");
+            String scripStr = CrawlerUtils.scrapScriptFromHtml(doc, ".styles__Wrapper-sc-1i0ham3-0.bHBbfr script");
+            JSONArray script = JSONUtils.stringToJsonArray(scripStr);
+            String regex = "p?idsku="+pid;
+            String update = "p?idsku="+id;
+            String url = session.getOriginalURL().replaceAll(regex, update);
             Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(variant.optString("id"))
-               .setInternalPid(productsObj.optString("id"))
+               .setUrl(url)
+               .setInternalId(id)
+               .setInternalPid(pid)
                .setName(name)
                .setCategories(categoryCollection)
                .setPrimaryImage(primaryImage)
