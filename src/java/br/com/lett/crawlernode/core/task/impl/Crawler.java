@@ -585,7 +585,7 @@ public abstract class Crawler extends Task {
          return product;
       }
 
-      Logging.printLogInfo(logger, session, "The previous processed is not void, starting active void attempts...");
+      Logging.printLogDebug(logger, session, "The previous processed is not void, starting active void attempts...");
 
       // starting the active void iterations
       // until a maximum number of attempts, we will rerun the extract
@@ -602,7 +602,7 @@ public abstract class Crawler extends Task {
          currentProduct = filter(products, session.getInternalId());
 
          if (!currentProduct.isVoid()) {
-            Logging.printLogInfo(logger, session, "Product is not void anymore, active void works after " + session.getVoidAttempts() + "! Finishing.");
+            Logging.printLogDebug(logger, session, "Product is not void anymore, active void works after " + session.getVoidAttempts() + "! Finishing.");
             break;
          }
       }
@@ -610,7 +610,7 @@ public abstract class Crawler extends Task {
       // if we ended with a void product after all the attempts
       // we must set void status of the existent processed product to true
       if (currentProduct.isVoid()) {
-         Logging.printLogInfo(logger, session, "Product still void. Finishing active void.");
+         Logging.printLogDebug(logger, session, "Product still void. Finishing active void.");
 
          // set previous processed as void
          if (previousProcessedProduct != null && !previousProcessedProduct.isVoid()) {
