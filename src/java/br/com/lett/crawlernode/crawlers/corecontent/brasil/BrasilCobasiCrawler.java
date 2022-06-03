@@ -64,24 +64,23 @@ public class BrasilCobasiCrawler extends Crawler {
             JSONObject variant = (JSONObject) o;
             Offers offers = scrapOffer(productsObj, variant);
             RatingsReviews ratingsReviews = crawlRating(productsObj);
-            String name1 = CommonMethods.camelcaseToText(productsObj.optString("name"));
-            String name2 =variant.optString("name");
-            String name = (!name1.isEmpty() ? name1:"") + (!name2.isEmpty() ? " " + name2:"");
+            String scripStr = CrawlerUtils.scrapScriptFromHtml(doc, ".styles__Wrapper-sc-1i0ham3-0.bHBbfr script");
+            JSONArray script = JSONUtils.stringToJsonArray(scripStr);
+            String name =  JSONUtils.getValueRecursive(script,"0.name", String.class);
+            String nameVariant =variant.optString("name");
+            String fullName = (!name.isEmpty() ? name:"") + (!nameVariant.isEmpty() ? " " + nameVariant:"");
             String descriptionSort = CrawlerUtils.scrapStringSimpleInfo(doc,".styles__ProductInformations-sc-1rue5eb-8.cnACxw", false);
             String descriptionfull = CrawlerUtils.scrapStringSimpleInfo(doc,"#panel2d-content .MuiAccordionDetails-root.styles__AccordionDetails-sc-1cpb5wa-5.gVuviu", false);
             String description = (!descriptionSort.isEmpty()? descriptionSort:"") + (!descriptionfull.isEmpty()? " " + descriptionfull:"");
             String id = variant.optString("id");
             String pid = productsObj.optString("id");
-            String scripStr = CrawlerUtils.scrapScriptFromHtml(doc, ".styles__Wrapper-sc-1i0ham3-0.bHBbfr script");
-            JSONArray script = JSONUtils.stringToJsonArray(scripStr);
-            String regex = "p?idsku="+pid;
-            String update = "p?idsku="+id;
-            String url = session.getOriginalURL().replaceAll(regex, update);
+            String[] urlarr = session.getOriginalURL().split("=");
+            String url = urlarr[0] + "=" + id;
             Product product = ProductBuilder.create()
                .setUrl(url)
                .setInternalId(id)
                .setInternalPid(pid)
-               .setName(name)
+               .setName(fullName)
                .setCategories(categoryCollection)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
@@ -125,6 +124,8 @@ public class BrasilCobasiCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject jsonObject) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonObject, "price", false);
       Double priceFrom = JSONUtils.getDoubleValueFromJSON(jsonObject, "listPrice", false);
+      spotlightPrice = spotlightPrice/100.0;
+      priceFrom = priceFrom/100.0;
       if(priceFrom == 0){
          priceFrom = null;
       }
