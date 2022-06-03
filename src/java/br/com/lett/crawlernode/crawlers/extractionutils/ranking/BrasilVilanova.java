@@ -172,11 +172,11 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
          options.addArguments("--no-sandbox");
          options.addArguments("--disable-dev-shm-usage");
 
-         List <String> proxies = Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
+         List<String> proxies = Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
          int attemp = 0;
-         do{
-            if (attemp != 0){
+         do {
+            if (attemp != 0) {
                webdriver.terminate();
             }
             webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attemp), session, this.cookiesWD, HOME_PAGE, options);
