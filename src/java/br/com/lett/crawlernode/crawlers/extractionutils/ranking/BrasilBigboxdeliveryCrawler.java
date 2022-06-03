@@ -77,8 +77,7 @@ public class BrasilBigboxdeliveryCrawler extends CrawlerRankingKeywords {
    private JSONArray scrapProductInfoFromAPI(){
       JSONArray products = new JSONArray();
 
-
-      String url = "https://www.bigboxdelivery.com.br/apiv3/search?page="+this.currentPage+"&N="+this.pageSize+"&search="+this.keywordEncoded+"&custom_domain=bigboxdelivery.com.br";
+      String url = "https://www.bigboxdelivery.com.br/apiv3/search?page="+this.currentPage+"&N="+this.pageSize+"&search="+this.keywordEncoded+"&store_id=" +STORE_ID;
 
       Request request = Request.RequestBuilder.create().setUrl(url).build();
       String response = this.dataFetcher.get(session,request).getBody();
