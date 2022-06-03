@@ -227,7 +227,7 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
          webdriver.waitLoad(5000);
 
          waitForElement(webdriver.driver, "#realizar-login");
-         webdriver.findAndClick("#realizar-login", 15000);
+         webdriver.findAndClick("#realizar-login", 20000);
 
          webdriver.waitForElement(".product-price", 15);
          Logging.printLogDebug(logger, session, "awaiting product page");
