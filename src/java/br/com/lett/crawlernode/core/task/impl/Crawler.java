@@ -543,7 +543,7 @@ public abstract class Crawler extends Task {
    }
 
    protected Document fetchMiranha( ) {
-      Document doc = S3Service.fetchHtml(session, session.getFileS3Miranha(), GlobalConfigurations.executionParameters.getBucketMiranha());
+      return S3Service.fetchHtml(session, session.getFileS3Miranha(), GlobalConfigurations.executionParameters.getBucketMiranha());
       return doc;
    }
 
