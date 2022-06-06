@@ -268,7 +268,6 @@ public class S3Service {
             Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
          } else {
             Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(s3Exception));
-            return null;
          }
       } catch (Exception e) {
          Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
