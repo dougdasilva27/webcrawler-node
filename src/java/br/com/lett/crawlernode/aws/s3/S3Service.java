@@ -252,23 +252,18 @@ public class S3Service {
       try {
          S3Object fileObj = s3clientCrawlerSessions.getObject(new GetObjectRequest(bucket, name));
          Scanner fileIn = new Scanner(new GZIPInputStream(fileObj.getObjectContent()));
-         if (fileIn.hasNextLine()) {
-            contentBuilder.append(fileIn.nextLine());
-
-         }
          while (fileIn.hasNextLine()) {
             contentBuilder.append(fileIn.nextLine()).append("\n");
          }
          fileIn.close();
-
-        return Jsoup.parse(contentBuilder.toString());
-         return doc;
+         return Jsoup.parse(contentBuilder.toString());
       } catch (AmazonS3Exception s3Exception) {
          if (s3Exception.getStatusCode() == 404) {
             Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
          } else {
             Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(s3Exception));
          }
+         return null;
       } catch (Exception e) {
          Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
          return null;
