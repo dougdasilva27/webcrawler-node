@@ -261,7 +261,7 @@ public class S3Service {
          }
          fileIn.close();
 
-         Document doc = Jsoup.parse(contentBuilder.toString());
+        return Jsoup.parse(contentBuilder.toString());
          return doc;
       } catch (AmazonS3Exception s3Exception) {
          if (s3Exception.getStatusCode() == 404) {
