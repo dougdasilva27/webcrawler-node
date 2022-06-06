@@ -32,7 +32,7 @@ public class TestCrawlerSession extends Session {
 
    private List<Product> products;
 
-   public TestCrawlerSession(String url, Market market, ScraperInformation scraperInformation) {
+   public TestCrawlerSession(String url, Market market, ScraperInformation scraperInformation, String fileMiranha) {
       super(market);
 
       // initialize counters
@@ -50,6 +50,7 @@ public class TestCrawlerSession extends Session {
       // setting URL and originalURL
       this.originalURL = url;
 
+      this.fileS3Miranha = fileMiranha;
 
       this.options = getSessionOptions(scraperInformation);
 

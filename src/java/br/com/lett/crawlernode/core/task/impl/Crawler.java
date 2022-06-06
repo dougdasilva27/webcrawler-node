@@ -542,8 +542,8 @@ public abstract class Crawler extends Task {
       return resp;
    }
 
-   protected Document fetchMiranha(Session session,String name, String bucket) {
-      Document doc = S3Service.fetchHtml(session,name,bucket);
+   protected Document fetchMiranha( ) {
+      Document doc = S3Service.fetchHtml(session, session.getFileS3Miranha(), GlobalConfigurations.executionParameters.getBucketMiranha());
       return doc;
    }
 

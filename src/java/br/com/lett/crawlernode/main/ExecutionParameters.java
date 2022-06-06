@@ -22,6 +22,7 @@ public class ExecutionParameters {
    private int hikariCpConnectionTimeout;
    private int hikariCpIdleTimeout;
 
+   private String bucketMiranha;
    private int threads;
    private String queueUrlFirstPart;
    private String fetcherUrl;
@@ -60,6 +61,7 @@ public class ExecutionParameters {
       forceImageUpdate = getEnvForceImgUpdate();
       environment = getEnvEnvironment();
       tmpImageFolder = getEnvTmpImagesFolder();
+      bucketMiranha = getBucketMiranha();
       kinesisStream = getEnvKinesisStream();
       kinesisStreamCatalog = getEnvKinesisStreamCatalog();
       kinesisStreamRanking = getEnvKinesisStreamRanking();
@@ -175,6 +177,13 @@ public class ExecutionParameters {
 
    private String getEnvFetcherUrl() {
       return System.getenv(EnvironmentVariables.FETCHER_URL);
+   }
+   public String getBucketMiranha() {
+      return System.getenv(EnvironmentVariables.BUCKET_MIRANHA);
+   }
+
+   public void setBucketMiranha(String bucketMiranha) {
+      this.bucketMiranha = bucketMiranha;
    }
 
    private String getEnvTmpImagesFolder() {

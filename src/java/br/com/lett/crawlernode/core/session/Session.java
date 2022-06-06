@@ -90,6 +90,8 @@ public class Session {
 
    protected String scraperType;
 
+   protected String fileS3Miranha;
+
    /**
     * Default empty constructor
     */
@@ -123,6 +125,7 @@ public class Session {
       supplierId = request.getSupplierId();
       webDriver = request.isUseBrowser();
       scraperType = request.getScraperType();
+      fileS3Miranha = request.getFileS3Miranha();
 
       this.options = request.getOptions();
 
@@ -345,5 +348,13 @@ public class Session {
 
    public String getScraperType() {
       return scraperType;
+   }
+
+   public String getFileS3Miranha() {
+      return fileS3Miranha;
+   }
+
+   public void setFileS3Miranha(String fileS3Miranha) {
+      this.fileS3Miranha = fileS3Miranha;
    }
 }
