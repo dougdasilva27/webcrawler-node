@@ -61,9 +61,6 @@ public class SaopauloDrogasilCrawler extends Crawler {
    private List<String> SELLERS = getSellers();
    public SaopauloDrogasilCrawler(Session session) {
       super(session);
-   //   https://s3.console.aws.amazon.com/s3/object/lett-crawler-miranha?region=us-east-1&prefix=c365cdc0-5b19-4eea-95cb-2b0bb41794e2+%281%29.tar.gz
-    //  Document test = fetchMiranha( session, "5da9283c-eee4-450f-a881-ca2b9a9fcd18.tar.gz", "lett-crawler-miranha");
-      Document test = fetchMiranha( session, "01/06/2022/sessionId.tar.gz", "lett-crawler-miranha");
    }
 
    @Override
