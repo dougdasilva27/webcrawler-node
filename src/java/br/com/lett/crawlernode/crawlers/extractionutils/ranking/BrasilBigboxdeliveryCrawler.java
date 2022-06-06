@@ -45,9 +45,11 @@ public class BrasilBigboxdeliveryCrawler extends CrawlerRankingKeywords {
             String name = product.optString("name");
             String imageUrl = "https://assets.instabuy.com.br/ib.item.image.big/b-" + scrapImage(product.optJSONArray("images"));
             String priceString = String.valueOf(product.optDouble("min_price_valid"));
-            int price = MathUtils.parseInt(priceString);
+            Integer price = MathUtils.parseInt(priceString);
             boolean isAvailable = product.optBoolean("available_stock");
-
+            if(isAvailable == false){
+               price = null;
+            }
             //New way to send products to save data product
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
