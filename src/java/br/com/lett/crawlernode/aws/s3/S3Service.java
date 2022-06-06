@@ -266,7 +266,6 @@ public class S3Service {
       } catch (AmazonS3Exception s3Exception) {
          if (s3Exception.getStatusCode() == 404) {
             Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
-            return null;
          } else {
             Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(s3Exception));
             return null;
