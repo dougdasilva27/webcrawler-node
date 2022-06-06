@@ -122,10 +122,8 @@ public class BrasilCobasiCrawler extends Crawler {
 
 
    private Pricing scrapPricing(JSONObject jsonObject) throws MalformedPricingException {
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonObject, "price", false);
-      Double priceFrom = JSONUtils.getDoubleValueFromJSON(jsonObject, "listPrice", false);
-      spotlightPrice = spotlightPrice/100.0;
-      priceFrom = priceFrom/100.0;
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonObject, "bestPriceFormated", false);
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(jsonObject, "listPriceFormated", false);
       if(priceFrom == 0){
          priceFrom = null;
       }
