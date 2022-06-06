@@ -259,6 +259,7 @@ public class S3Service {
          while (fileIn.hasNextLine()) {
             contentBuilder.append(fileIn.nextLine()).append("\n");
          }
+         fileIn.close();
 
          Document doc = Jsoup.parse(contentBuilder.toString());
          return doc;
