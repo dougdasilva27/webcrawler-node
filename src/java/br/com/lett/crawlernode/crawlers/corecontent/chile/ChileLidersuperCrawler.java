@@ -69,9 +69,7 @@ public class ChileLidersuperCrawler extends Crawler {
             webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, session);
             webdriver.waitLoad(10000);
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
-            webdriver.terminate();
-
+            
          } while (doc.select(".product-info").isEmpty() && attempts++ < 3);
 
       } catch (Exception e) {
