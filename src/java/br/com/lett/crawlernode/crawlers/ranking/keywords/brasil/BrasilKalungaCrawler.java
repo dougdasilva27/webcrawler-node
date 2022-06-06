@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -30,16 +31,10 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
    public JSONObject crawlApi(String url) {
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("content-type", "application/x-www-form-urlencoded, application/json");
+      headers.put("content-type", "application/json;charset=utf-8");
 
-      String payload = null;
-      try {
-         payload = URLEncoder.encode("{\"termo\":\"" + this.keywordEncoded + "\",\"pagina\":" + this.currentPage + ",\"ordenacao\":1,\"fitroBusca\":[[]],\"classificacao\":null,\"grupo\":null}", "UTF-8");
-         payload = "json_str=" + payload;
-      } catch (UnsupportedEncodingException e) {
-         e.printStackTrace();
-      }
-
+      String payload = "{\"termo\":\"" + this.keywordEncoded + "\",\"pagina\":" + this.currentPage + ",\"ordenacao\":1,\"fitroBusca\":[[]],\"classificacao\":null,\"grupo\":null}";
+      
       Request request = RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
