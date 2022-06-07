@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -61,6 +62,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
    private List<String> SELLERS = getSellers();
    public SaopauloDrogasilCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.MIRANHA);
    }
 
    @Override
