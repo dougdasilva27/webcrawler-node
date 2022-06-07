@@ -77,7 +77,7 @@ public class BrasilVilanova extends Crawler {
          options.addArguments("--no-sandbox");
          options.addArguments("--disable-dev-shm-usage");
 
-         List <String> proxies = Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
+         List<String> proxies = Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
          int attemp = 0;
          do{
@@ -122,7 +122,7 @@ public class BrasilVilanova extends Crawler {
          webdriver.waitLoad(4000);
 
          waitForElement(webdriver.driver, "#realizar-login");
-         webdriver.findAndClick("#realizar-login", 15000);
+         webdriver.findAndClick("#realizar-login", 20000);
 
          webdriver.waitForElement(".product-details-body", 10000);
          Logging.printLogDebug(logger, session, "awaiting product page");
