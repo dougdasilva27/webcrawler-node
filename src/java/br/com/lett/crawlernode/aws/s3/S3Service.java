@@ -250,12 +250,14 @@ public class S3Service {
    public static Document fetchHtml(Session session, String name, String bucket) {
       StringBuilder contentBuilder = new StringBuilder();
       try {
+         Logging.printLogInfo(logger, session, "Downloading HTML from S3 bucket " + bucket);
          S3Object fileObj = s3clientCrawlerSessions.getObject(new GetObjectRequest(bucket, name));
          Scanner fileIn = new Scanner(new GZIPInputStream(fileObj.getObjectContent()));
          while (fileIn.hasNextLine()) {
             contentBuilder.append(fileIn.nextLine()).append("\n");
          }
          fileIn.close();
+         Logging.printLogInfo(logger, session, "HTML downloaded successfully!");
          return Jsoup.parse(contentBuilder.toString());
       } catch (AmazonS3Exception s3Exception) {
          if (s3Exception.getStatusCode() == 404) {
