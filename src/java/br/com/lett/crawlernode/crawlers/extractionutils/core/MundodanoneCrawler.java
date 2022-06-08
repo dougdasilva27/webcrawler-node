@@ -242,9 +242,9 @@ public class MundodanoneCrawler extends Crawler {
 
       JSONObject saleJson = JSONUtils.getValueRecursive(productJson, "price_tiers.0", JSONObject.class);
       if (saleJson != null) {
-         Integer discount = JSONUtils.getValueRecursive(saleJson, "discount.percent_off", Integer.class);
+         Integer discount = Math.toIntExact(Math.round(JSONUtils.getValueRecursive(saleJson, "discount.percent_off", Double.class)));
          Integer quantity = saleJson.optInt("quantity");
-         Double priceDiscount = JSONUtils.getValueRecursive(productJson, "final_price.value", Double.class);
+         Double priceDiscount = JSONUtils.getValueRecursive(saleJson, "final_price.value", Double.class);
          StringBuilder stringBuilder = new StringBuilder();
          if (discount != null || quantity != 0 || priceDiscount != null ){
             stringBuilder.append(discount);
