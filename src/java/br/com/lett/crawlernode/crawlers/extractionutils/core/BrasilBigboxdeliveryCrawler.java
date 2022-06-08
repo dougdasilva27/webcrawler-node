@@ -173,8 +173,10 @@ public class BrasilBigboxdeliveryCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject price) throws MalformedPricingException {
-      Double priceFrom = price.has("promo_price") ? price.optDouble("promo_price") : null;
-      Double spotlightPrice = price.optDouble("price");
+      Double priceFrom = CrawlerUtils.getDoubleValueFromJSON(price, "price", true, true);
+      Double spotlightPrice = CrawlerUtils.getDoubleValueFromJSON(price, "promo_price", true, true);
+
+      if(spotlightPrice == null){ spotlightPrice = priceFrom;}
 
       CreditCards creditCards = CrawlerUtils.scrapCreditCards(spotlightPrice, cards);
 
