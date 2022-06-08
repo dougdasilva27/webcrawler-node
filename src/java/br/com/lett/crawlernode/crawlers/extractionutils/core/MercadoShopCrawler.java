@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -74,6 +75,8 @@ public class MercadoShopCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
+         Map<String, Document> variations = getVariationsHtmls(doc);
+
          JSONObject initialState = selectJsonFromHtml(doc);
          JSONObject schema = initialState != null ? JSONUtils.getValueRecursive(initialState, "schema.0", JSONObject.class) : null;
          if (schema != null) {
@@ -93,7 +96,7 @@ public class MercadoShopCrawler extends Crawler {
             String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-description", ".ui-pdp-specs"));
 
             boolean availableToBuy = isAvailable(doc);
-            //Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
+            Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -104,10 +107,12 @@ public class MercadoShopCrawler extends Crawler {
                .setCategories(categories)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
-               //.setOffers(offers)
+               .setOffers(offers)
                .build();
-            products.add(product);
+               products.add(product);
+
          }
+
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -118,6 +123,38 @@ public class MercadoShopCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return !doc.select("h1.ui-pdp-title").isEmpty();
+   }
+
+   private Map<String, Document> getVariationsHtmls(Document doc) {
+      Map<String, Document> variations = new HashMap<>();
+
+      String originalUrl = session.getOriginalURL();
+      variations.putAll(getSizeVariationsHmtls(doc, originalUrl));
+
+      Elements colors = doc.select(".ui-pdp-variations .ui-pdp-variations__picker a");
+      return variations;
+   }
+
+   private Map<String, Document> getSizeVariationsHmtls(Document doc, String urlColor) {
+      Map<String, Document> variations = new HashMap<>();
+      variations.put(urlColor, doc);
+
+      Elements sizes = doc.select(".ui-pdp-variations .ui-pdp-variations__picker a");
+      for (Element e : sizes) {
+         String url = homePage + e.attr("href");
+         Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+         Document docSize = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+
+         String variationId = CrawlerUtils.scrapStringSimpleInfoByAttribute(docSize, "input[name=variation]", "value");
+         if (sizes.size() > 1 && (variationId == null || variationId.trim().isEmpty())) {
+            continue;
+         } 
+
+         String redirectUrl = session.getRedirectedToURL(url);
+         variations.put(redirectUrl != null ? redirectUrl : url, docSize);
+      }
+
+      return variations;
    }
 
    public JSONObject selectJsonFromHtml(Document doc) {
@@ -202,7 +239,7 @@ public class MercadoShopCrawler extends Crawler {
    }
 
    private boolean isAvailable(Document doc) {
-      return !doc.select(".ui-pdp-stock-information__title").isEmpty();
+      return !doc.select("h1.ui-pdp-title").isEmpty();
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
@@ -214,6 +251,7 @@ public class MercadoShopCrawler extends Crawler {
          .setUseSlugNameAsInternalSellerId(true)
          .setSellerFullName(sellerName)
          .setMainPagePosition(1)
+         .setIsMainRetailer(true)
          .setIsBuybox(false)
          .setPricing(pricing)
          .setSales(sales)
@@ -245,6 +283,7 @@ public class MercadoShopCrawler extends Crawler {
 
       return priceFraction + (double) priceCents / 100;
    }
+
    private Double scrapPriceFrom(Element doc) {
       Integer priceFraction = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price__second-line .andes-money-amount__fraction", false, 0);
       Integer priceCents = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price__second-line .andes-money-amount__cents", false, 0);
@@ -285,6 +324,7 @@ public class MercadoShopCrawler extends Crawler {
 
       return installments;
    }
+
    public Installments scrapInstallments(Element doc) throws MalformedPricingException {
 
       Installments installments = scrapInstallments(doc, ".ui-pdp-payment--md .ui-pdp-media__title");
