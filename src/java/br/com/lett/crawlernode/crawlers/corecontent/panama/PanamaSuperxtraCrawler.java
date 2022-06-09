@@ -33,7 +33,7 @@ public class PanamaSuperxtraCrawler extends Crawler {
    public PanamaSuperxtraCrawler(Session session) {
       super(session);
       super.config.setParser(Parser.JSON);
-      this.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
@@ -67,7 +67,7 @@ public class PanamaSuperxtraCrawler extends Crawler {
          .mustSendContentEncoding(true)
          .build();
 
-      Response response = new ApacheDataFetcher().post(session, request);
+      Response response = this.dataFetcher.post(session, request);
 
       if (!response.isSuccess()){
          response = new FetcherDataFetcher().post(session, request);
