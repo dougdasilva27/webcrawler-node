@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.panama;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -30,8 +32,8 @@ public class PanamaSuperxtraCrawler extends Crawler {
 
    public PanamaSuperxtraCrawler(Session session) {
       super(session);
-      this.config.setFetcher(FetchMode.JSOUP);
       super.config.setParser(Parser.JSON);
+      this.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
@@ -40,9 +42,10 @@ public class PanamaSuperxtraCrawler extends Crawler {
       headers.put("content-type", "application/json");
       headers.put("authority", "deadpool.instaleap.io");
       headers.put("accept", "*/*");
+      headers.put("content-type", "application/json");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("origin", "https://domicilio.superxtra.com");
       headers.put("accept-encoding", "gzip, deflate, br");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36");
       headers.put("referer", session.getOriginalURL());
 
       String productSlug = CommonMethods.getLast(session.getOriginalURL().split("/"));
@@ -55,13 +58,22 @@ public class PanamaSuperxtraCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_MX,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
             ))
-         .setCookies(cookies)
+         .setSendUserAgent(false)
+         .mustSendContentEncoding(true)
          .build();
 
-      return CrawlerUtils.retryRequest(request, session, this.dataFetcher, false);
+      Response response = new ApacheDataFetcher().post(session, request);
+
+      if (!response.isSuccess()){
+         response = new FetcherDataFetcher().post(session, request);
+      }
+
+      return response;
 
    }
 
