@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
@@ -23,7 +24,14 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -114,18 +122,58 @@ public class ZedeliveryCrawler extends Crawler {
          .mustSendContentEncoding(true)
          .build();
 
-      Response response = new JsoupDataFetcher().post(session, request);
-
-      visitorId = response.getHeaders().get("x-visitorid");
-      if (!response.isSuccess() || visitorId == null) {
-         response = retryRequest(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher()));
-         visitorId = response.getHeaders().get("x-visitorid");
-      }
+      Response response = null;
+//      Response response = new JsoupDataFetcher().post(session, request);
+//
+//      visitorId = response.getHeaders().get("x-visitorid");
+//      if (!response.isSuccess() || visitorId == null) {
+//         response = retryRequest(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher()));
+//         visitorId = response.getHeaders().get("x-visitorid");
+//      }
 
       if (visitorId == null || visitorId.isEmpty()) {
          Logging.printLogError(logger, "FAILED TO GET VISITOR ID");
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.ze.delivery/produtos", ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, session);
+
+            waitForElement(webdriver.driver, "#age-gate-button-yes");
+            WebElement age = webdriver.driver.findElement(By.cssSelector("#age-gate-button-yes"));
+            webdriver.clickOnElementViaJavascript(age);
+            waitForElement(webdriver.driver, ".css-9p2h2j-DeliveryOptionsCard");
+            WebElement locate = webdriver.driver.findElement(By.cssSelector(".css-9p2h2j-DeliveryOptionsCard"));
+            webdriver.clickOnElementViaJavascript(locate);
+            waitForElement(webdriver.driver, "#address-search-input-address");
+
+         WebElement cep = webdriver.driver.findElement(By.cssSelector("#address-search-input-address"));
+         cep.sendKeys("51020-041");
+         waitForElement(webdriver.driver, ".css-lc8mlj");
+         WebElement address = webdriver.driver.findElement(By.cssSelector(".css-lc8mlj"));
+         webdriver.clickOnElementViaJavascript(address);
+         WebElement numberAddress = webdriver.driver.findElement(By.cssSelector("#address-details-input-number"));
+         numberAddress.sendKeys("44");
+         WebElement numberAddressCompl = webdriver.driver.findElement(By.cssSelector("#address-details-input-complement"));
+         numberAddressCompl.sendKeys("44");
+         WebElement finish = webdriver.driver.findElement(By.cssSelector("#address-details-input-number"));
+         webdriver.clickOnElementViaJavascript(finish);
+
+         webdriver.waitLoad(15000);
+
+
+         Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
+
+         for (Cookie cookie : cookiesResponse) {
+           if (cookie.getName() == "visitorId"){
+              visitorId = cookie.getValue();
+           }
+           
+         }
+
       }
       return CrawlerUtils.stringToJson(response.getBody());
+   }
+
+   public static void waitForElement(WebDriver driver, String cssSelector) {
+      WebDriverWait wait = new WebDriverWait(driver, 20);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
    private Map<String, String> getHeaders() {
