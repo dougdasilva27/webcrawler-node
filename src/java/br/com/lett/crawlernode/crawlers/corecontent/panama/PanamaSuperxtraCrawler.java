@@ -2,12 +2,11 @@ package br.com.lett.crawlernode.crawlers.corecontent.panama;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -33,18 +32,20 @@ public class PanamaSuperxtraCrawler extends Crawler {
 
    public PanamaSuperxtraCrawler(Session session) {
       super(session);
-      this.config.setFetcher(FetchMode.JSOUP);
+      super.config.setParser(Parser.JSON);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
-   protected JSONObject fetch() {
+   protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
       headers.put("authority", "deadpool.instaleap.io");
       headers.put("accept", "*/*");
+      headers.put("content-type", "application/json");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("origin", "https://domicilio.superxtra.com");
       headers.put("accept-encoding", "gzip, deflate, br");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36");
       headers.put("referer", session.getOriginalURL());
 
       String productSlug = CommonMethods.getLast(session.getOriginalURL().split("/"));
@@ -57,14 +58,22 @@ public class PanamaSuperxtraCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_MX,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
             ))
-         .setCookies(cookies)
+         .setSendUserAgent(false)
          .build();
 
       Response response = this.dataFetcher.post(session, request);
-      return JSONUtils.stringToJson(response.getBody());
+
+      if (!response.isSuccess()){
+         response = new FetcherDataFetcher().post(session, request);
+      }
+
+      return response;
+
    }
 
    @Override
@@ -84,6 +93,7 @@ public class PanamaSuperxtraCrawler extends Crawler {
          String name = productJson.optString("name");
          CategoryCollection categories = scrapCategories(productJson);
          List<String> images = scrapImages(productJson);
+         String description = productJson.optString("description");
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
          Offers offers = scrapOffers(productJson);
 
@@ -91,6 +101,7 @@ public class PanamaSuperxtraCrawler extends Crawler {
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalPid)
+            .setDescription(description)
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
