@@ -23,10 +23,6 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -131,11 +127,6 @@ public class ZedeliveryCrawler extends Crawler {
       }
 
       return CrawlerUtils.stringToJson(response.getBody());
-   }
-
-   public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 20);
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
    private Map<String, String> getHeaders() {
