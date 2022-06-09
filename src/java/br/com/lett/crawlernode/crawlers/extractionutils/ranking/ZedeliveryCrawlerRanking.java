@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -14,9 +16,14 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
@@ -65,17 +72,23 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
          .mustSendContentEncoding(false)
          .build();
 
-      do {
-         Response response = new JsoupDataFetcher().post(session, request);
-         visitorId = response.getHeaders().get("x-visitorid");
-         attemp++;
-      } while (visitorId == null || visitorId.isEmpty() && attemp < 3);
 
+      Response response = new JsoupDataFetcher().post(session, request);
+      if (!response.isSuccess() || CrawlerUtils.stringToJson(response.getBody()).has("errors")) {
+         response = retryRequest(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher()));
+      }
+      visitorId = response.getHeaders().get("x-visitorid");
 
-      if (visitorId.isEmpty()) {
+      if (visitorId == null || visitorId.isEmpty()) {
          Logging.printLogError(logger, "FAILED TO GET VISITOR ID");
+
       }
 
+   }
+
+   public static void waitForElement(WebDriver driver, String cssSelector) {
+      WebDriverWait wait = new WebDriverWait(driver, 20);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
    protected JSONObject fetch() {
@@ -104,7 +117,29 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
          .build();
 
       Response response = new JsoupDataFetcher().post(session, request);
+      if (!response.isSuccess() || CrawlerUtils.stringToJson(response.getBody()).has("errors")) {
+         response = retryRequest(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher()));
+      }
+
       return CrawlerUtils.stringToJson(response.getBody());
+   }
+
+   private Response retryRequest(Request request, List<DataFetcher> dataFetcherList) {
+      Response response = dataFetcherList.get(0).get(session, request);
+
+      if (!response.isSuccess()) {
+         int tries = 0;
+         while (!response.isSuccess() && tries < 3) {
+            tries++;
+            if (tries % 2 == 0) {
+               response = dataFetcherList.get(1).get(session, request);
+            } else {
+               response = dataFetcherList.get(0).get(session, request);
+            }
+         }
+      }
+
+      return response;
    }
 
    @Override
