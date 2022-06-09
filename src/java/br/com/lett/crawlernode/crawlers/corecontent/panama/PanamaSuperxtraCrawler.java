@@ -4,10 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -34,10 +31,11 @@ public class PanamaSuperxtraCrawler extends Crawler {
    public PanamaSuperxtraCrawler(Session session) {
       super(session);
       this.config.setFetcher(FetchMode.JSOUP);
+      super.config.setParser(Parser.JSON);
    }
 
    @Override
-   protected JSONObject fetch() {
+   protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
       headers.put("authority", "deadpool.instaleap.io");
@@ -63,8 +61,8 @@ public class PanamaSuperxtraCrawler extends Crawler {
          .setCookies(cookies)
          .build();
 
-      Response response = this.dataFetcher.post(session, request);
-      return JSONUtils.stringToJson(response.getBody());
+      return CrawlerUtils.retryRequest(request, session, this.dataFetcher, false);
+
    }
 
    @Override
@@ -84,6 +82,7 @@ public class PanamaSuperxtraCrawler extends Crawler {
          String name = productJson.optString("name");
          CategoryCollection categories = scrapCategories(productJson);
          List<String> images = scrapImages(productJson);
+         String description = productJson.optString("description");
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
          Offers offers = scrapOffers(productJson);
 
@@ -91,6 +90,7 @@ public class PanamaSuperxtraCrawler extends Crawler {
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalPid)
+            .setDescription(description)
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
