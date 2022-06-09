@@ -64,7 +64,6 @@ public class PanamaSuperxtraCrawler extends Crawler {
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
             ))
          .setSendUserAgent(false)
-         .mustSendContentEncoding(true)
          .build();
 
       Response response = this.dataFetcher.post(session, request);
