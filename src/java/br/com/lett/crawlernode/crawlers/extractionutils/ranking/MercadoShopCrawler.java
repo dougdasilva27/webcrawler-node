@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
@@ -15,7 +14,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.session.Session;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -61,18 +59,7 @@ public class MercadoShopCrawler extends CrawlerRankingKeywords {
 
          for (Element e : products) {
             String productUrl = CrawlerUtils.scrapUrl(e, "a.ui-search-result__content, .ui-search-item__group--title a[title]", "href", "https", homePage);
-
             String internalPid = crawPid(productUrl);
-//            String internalPid = null;
-//            if (productUrl != null) {
-//               if (productUrl.startsWith(homePage)) {
-//                  productUrl = productUrl != null ? productUrl.split("\\?")[0] : null;
-//                  internalPid = CommonMethods.getLast(productUrl.split("/"));
-//               } else {
-//                  internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "input[name=itemId]", "value");
-//               }
-//            }
-
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-search-item__title", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".slick-slide.slick-active img", "data-src");
             int price = CommonMethods.doublePriceToIntegerPrice(CrawlerUtils.scrapDoublePriceFromHtml(e, ".ui-search-price__second-line .price-tag-amount", null, false, ',', session), 0);
@@ -92,26 +79,14 @@ public class MercadoShopCrawler extends CrawlerRankingKeywords {
 
             if (this.arrayProducts.size() == productsLimit)
                break;
-
          }
+
       } else {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-   }
-
-
-   private int getPrice(Element e) {
-      int price = 0;
-      Double a = CrawlerUtils.scrapDoublePriceFromHtml(e, ".ui-search-price__second-line .price-tag-amount", null, false, ',', session);
-
-      if (a == null) {
-         a = CrawlerUtils.scrapDoublePriceFromHtml(e, ".ui-search-price__second-line .price-tag-amount", null, false, ',', session);
-
-      }
-      return CommonMethods.doublePriceToIntegerPrice(a, 0);
    }
 
    private Document fetch(String url) {
@@ -153,12 +128,12 @@ public class MercadoShopCrawler extends CrawlerRankingKeywords {
          regex = "/([A-Z]*-[0-9]*)-";
          pattern = Pattern.compile(regex, Pattern.MULTILINE);
          matcher = pattern.matcher(url);
-         if(matcher.find()){
-            String aux = matcher.group(1).replaceAll("-","");
+         if (matcher.find()) {
+            String aux = matcher.group(1).replaceAll("-", "");
             return aux;
          }
       }
-   return null;
+      return null;
    }
 
 }

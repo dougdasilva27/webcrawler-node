@@ -54,40 +54,26 @@ public class MercadoShopCrawler extends Crawler {
    protected Document fetchDoc(String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
-
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
          .build();
       Response response = this.dataFetcher.get(session, request);
+
       return Jsoup.parse(response.getBody());
    }
-//   @Override
-//   protected Object fetch() {
-//      Map<String, String> headers = new HashMap<>();
-//      headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
-//
-//      Request request = Request.RequestBuilder.create()
-//         .setUrl(session.getOriginalURL())
-//         .setCookies(cookies)
-//         .setHeaders(headers)
-//         .build();
-//      Response response = this.dataFetcher.get(session,request);
-//      return Jsoup.parse(response.getBody());
-//   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       doc = fetchDoc(session.getOriginalURL());
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
-//.ui-pdp-variations__picker .ui-pdp-thumbnail__label
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          Elements variants = doc.select(".ui-pdp-thumbnail.ui-pdp-variations--thumbnail");
-         if (variants.size() > 0) { //ui-pdp-variations
+         if (variants.size() > 0) {
             for (Element variant : variants) {
                String variantUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, ".ui-pdp-thumbnail.ui-pdp-variations--thumbnail", "href");
                variantUrl = homePage + variantUrl;
@@ -121,16 +107,6 @@ public class MercadoShopCrawler extends Crawler {
       return true;
    }
 
-   //   private AtomicBoolean checkProductAlreadyAdd(String url, List<Product> products){
-//      AtomicBoolean contaisUrl = new AtomicBoolean(false);
-//      products.forEach(product -> {
-//         contaisUrl.set(product.getUrl().equals(url));
-//      });
-//
-//      return contaisUrl;
-//
-//   }
-//
    private boolean isProductPage(Document doc) {
       return !doc.select("h1.ui-pdp-title").isEmpty();
    }
@@ -171,7 +147,6 @@ public class MercadoShopCrawler extends Crawler {
    }
 
    public JSONObject selectJsonFromHtml(Document doc) {
-
       if (doc == null)
          throw new IllegalArgumentException("Argument doc cannot be null");
       String token = "window.__PRELOADED_STATE__";
@@ -230,7 +205,7 @@ public class MercadoShopCrawler extends Crawler {
 
          for (Element e : variationsElements) {
             String colorOrVolts = e.ownText().trim();
-            if (!productName.contains(colorOrVolts)){
+            if (!productName.contains(colorOrVolts)) {
                name.append(" ").append(e.ownText().trim());
             }
          }
