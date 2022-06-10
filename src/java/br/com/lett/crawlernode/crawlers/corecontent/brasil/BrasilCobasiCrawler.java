@@ -75,7 +75,7 @@ public class BrasilCobasiCrawler extends Crawler {
             String id = variant.optString("id");
             String pid = productsObj.optString("id");
             String[] urlarr = session.getOriginalURL().split("=");
-            String url = urlarr[0] + "=" + id;
+            String url = urlarr[0].contains("?idsku")? urlarr[0] + "=" + id : urlarr[0] + "?idsku=" + id;
             Product product = ProductBuilder.create()
                .setUrl(url)
                .setInternalId(id)
