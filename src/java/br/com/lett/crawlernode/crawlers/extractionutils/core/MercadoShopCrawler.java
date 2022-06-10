@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.exceptions.MalformedUrlException;
 import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -29,7 +30,7 @@ public class MercadoShopCrawler extends Crawler {
 
    public MercadoShopCrawler(Session session) {
       super(session);
-      config.setParser(Parser.HTML);
+      super.config.setParser(Parser.HTML);
    }
 
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.HIPERCARD.toString());
@@ -62,6 +63,15 @@ public class MercadoShopCrawler extends Crawler {
       Response response = this.dataFetcher.get(session, request);
 
       return Jsoup.parse(response.getBody());
+   }
+
+   @Override
+   protected Response fetchResponse() {
+      String href = session.getOriginalURL().toLowerCase();
+      if(!href.startsWith(homePage)) {
+         throw new MalformedUrlException("URL não corresponde ao market");
+      }
+      return super.fetchResponse();
    }
 
    @Override
@@ -276,8 +286,12 @@ public class MercadoShopCrawler extends Crawler {
    }
 
    private Double scrapPriceFrom(Element doc) {
-      Integer priceFraction = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price__second-line .andes-money-amount__fraction", false, 0);
-      Integer priceCents = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price__second-line .andes-money-amount__cents", false, 0);
+      Integer priceFraction = CrawlerUtils.scrapIntegerFromHtml(doc, ".andes-money-amount.ui-pdp-price__part.ui-pdp-price__original-value.andes-money-amount--previous  .andes-money-amount__fraction", false, 0);
+      Integer priceCents = CrawlerUtils.scrapIntegerFromHtml(doc, ".andes-money-amount.ui-pdp-price__part.ui-pdp-price__original-value.andes-money-amount--previous .andes-money-amount__cents ", false, 0);
+
+      if (priceFraction == 0){
+         return null;
+      }
 
       return priceFraction + (double) priceCents / 100;
    }
