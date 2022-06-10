@@ -80,7 +80,6 @@ public class BrasilPolskastoreCrawler extends Crawler {
       return !doc.select(".product-colum-right").isEmpty();
    }
 
-
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
@@ -99,7 +98,6 @@ public class BrasilPolskastoreCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".PrecoPrincipal span", null, true, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precode", null, true, ',', session);
       Double bankslip = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#preco .preco-avista.precoAvista span span", null, true, ',', session);

@@ -36,8 +36,8 @@ public class BrasilPolskastoreCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product a", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-name", true);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".image a", Collections.singletonList("href"), "https", "polskastore.com.br");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price-off", null, true, ',', session, 0);
-            boolean isAvailable = price != 0;
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price-off", null, true, ',', session, null);
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
