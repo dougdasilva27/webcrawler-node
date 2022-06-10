@@ -62,7 +62,16 @@ public class MercadoShopCrawler extends CrawlerRankingKeywords {
          for (Element e : products) {
             String productUrl = CrawlerUtils.scrapUrl(e, "a.ui-search-result__content, .ui-search-item__group--title a[title]", "href", "https", homePage);
 
-            productUrl = productUrl != null ? productUrl.split("\\?")[0] : null;
+            String internalPid = crawPid(productUrl);
+//            String internalPid = null;
+//            if (productUrl != null) {
+//               if (productUrl.startsWith(homePage)) {
+//                  productUrl = productUrl != null ? productUrl.split("\\?")[0] : null;
+//                  internalPid = CommonMethods.getLast(productUrl.split("/"));
+//               } else {
+//                  internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "input[name=itemId]", "value");
+//               }
+//            }
 
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-search-item__title", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".slick-slide.slick-active img", "data-src");
@@ -72,7 +81,7 @@ public class MercadoShopCrawler extends CrawlerRankingKeywords {
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalId(null)
-               //.setInternalPid(internalPid)
+               .setInternalPid(internalPid)
                .setName(name)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
@@ -131,6 +140,25 @@ public class MercadoShopCrawler extends CrawlerRankingKeywords {
    protected void setTotalProducts() {
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".ui-search-search-result__quantity-results", true, 0);
       this.log("Total da busca: " + this.totalProducts);
+   }
+
+   private String crawPid(String url) {
+      String regex = "p/([A-Z0-9]*)?";
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(url);
+
+      if (matcher.find()) {
+         return matcher.group(1);
+      } else {
+         regex = "/([A-Z]*-[0-9]*)-";
+         pattern = Pattern.compile(regex, Pattern.MULTILINE);
+         matcher = pattern.matcher(url);
+         if(matcher.find()){
+            String aux = matcher.group(1).replaceAll("-","");
+            return aux;
+         }
+      }
+   return null;
    }
 
 }
