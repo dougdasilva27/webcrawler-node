@@ -32,7 +32,7 @@ public class BrasilPolskastoreCrawler extends CrawlerRankingKeywords {
 
       if (!products.isEmpty()) {
          for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".list-variants ", "data-id");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".list-variants ", "data-id");
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product a", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-name", true);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".image a", Collections.singletonList("href"), "https", "polskastore.com.br");
@@ -41,8 +41,8 @@ public class BrasilPolskastoreCrawler extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(null)
-               .setInternalPid(internalPid)
+               .setInternalId(internalId)
+               .setInternalPid(null)
                .setImageUrl(imgUrl)
                .setName(name)
                .setPriceInCents(price)
