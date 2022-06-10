@@ -229,7 +229,10 @@ public class MercadoShopCrawler extends Crawler {
       if (!variationsElements.isEmpty()) {
 
          for (Element e : variationsElements) {
-            name.append(" ").append(e.ownText().trim());
+            String colorOrVolts = e.ownText().trim();
+            if (!productName.contains(colorOrVolts)){
+               name.append(" ").append(e.ownText().trim());
+            }
          }
 
       } else if (!doc.select(".andes-dropdown__popover ul li").isEmpty()) {
