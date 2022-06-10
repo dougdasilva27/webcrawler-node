@@ -1,11 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
@@ -18,12 +17,14 @@ import models.Offers;
 import models.pricing.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHeaders;
+import org.apache.kafka.common.protocol.types.Field;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,17 +33,16 @@ public class MercadoShopCrawler extends Crawler {
 
    public MercadoShopCrawler(Session session) {
       super(session);
+      config.setParser(Parser.HTML);
    }
 
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.HIPERCARD.toString());
-
    private final String sellerName = getSellerName();
-   private final String homePage = getHomePage();
-
    protected String getSellerName() {
       return session.getOptions().optString("Seller");
    }
 
+   private final String homePage = getHomePage();
    protected String getHomePage() {
       return session.getOptions().optString("HomePage");
    }
@@ -53,66 +53,59 @@ public class MercadoShopCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(homePage));
    }
 
-   @Override
-   protected Object fetch() {
+   protected Document fetchDoc(String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
 
       Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
+         .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
          .build();
-
-      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+      Response response = this.dataFetcher.get(session,request);
+      return Jsoup.parse(response.getBody());
    }
+//   @Override
+//   protected Object fetch() {
+//      Map<String, String> headers = new HashMap<>();
+//      headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
+//
+//      Request request = Request.RequestBuilder.create()
+//         .setUrl(session.getOriginalURL())
+//         .setCookies(cookies)
+//         .setHeaders(headers)
+//         .build();
+//      Response response = this.dataFetcher.get(session,request);
+//      return Jsoup.parse(response.getBody());
+//   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
+      doc = fetchDoc(session.getOriginalURL());
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-         Map<String, Document> variations = getVariationsHtmls(doc);
-
          JSONObject initialState = selectJsonFromHtml(doc);
          JSONObject schema = initialState != null ? JSONUtils.getValueRecursive(initialState, "schema.0", JSONObject.class) : null;
          if (schema != null) {
             String internalPid = schema.optString("productID");
-            String internalId;
-            Element variationElement = doc.selectFirst("input[name='variation']");
-            if (variationElement != null && (!doc.select(".ui-pdp-variations .ui-pdp-variations__picker:not(.ui-pdp-variations__picker-single) a").isEmpty() || !doc.select(".andes-dropdown__popover ul li").isEmpty())) {
-               internalId = internalPid + '_' + variationElement.attr("value");
+            Elements variants = doc.select(".ui-pdp-thumbnail.ui-pdp-variations--thumbnail");
+            if (variants.size() > 0 ) {
+               for (Element variant : variants){
+                  String variantUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, ".ui-pdp-thumbnail.ui-pdp-variations--thumbnail", "href");
+                  variantUrl = homePage + variantUrl;
+                  Document variantDoc = fetchDoc(variantUrl);
+                  Product p = addProduct(variantDoc, internalPid, variantUrl);
+                  products.add(p);
+               }
             } else {
-               internalId = schema.optString("sku");
+               Product p = addProduct(doc, internalPid, session.getOriginalURL());
+               products.add(p);
             }
 
-            String name = scrapName(doc);
-            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
-            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:", "http2.mlstatic.com");
-            List<String> secondaryImages = crawlImages(primaryImage, doc);
-            String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-description", ".ui-pdp-specs"));
-
-            boolean availableToBuy = isAvailable(doc);
-            Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
-
-            Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setDescription(description)
-               .setCategories(categories)
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setOffers(offers)
-               .build();
-               products.add(product);
-
          }
-
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -125,36 +118,34 @@ public class MercadoShopCrawler extends Crawler {
       return !doc.select("h1.ui-pdp-title").isEmpty();
    }
 
-   private Map<String, Document> getVariationsHtmls(Document doc) {
-      Map<String, Document> variations = new HashMap<>();
-
-      String originalUrl = session.getOriginalURL();
-      variations.putAll(getSizeVariationsHmtls(doc, originalUrl));
-
-      Elements colors = doc.select(".ui-pdp-variations .ui-pdp-variations__picker a");
-      return variations;
-   }
-
-   private Map<String, Document> getSizeVariationsHmtls(Document doc, String urlColor) {
-      Map<String, Document> variations = new HashMap<>();
-      variations.put(urlColor, doc);
-
-      Elements sizes = doc.select(".ui-pdp-variations .ui-pdp-variations__picker a");
-      for (Element e : sizes) {
-         String url = homePage + e.attr("href");
-         Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-         Document docSize = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-
-         String variationId = CrawlerUtils.scrapStringSimpleInfoByAttribute(docSize, "input[name=variation]", "value");
-         if (sizes.size() > 1 && (variationId == null || variationId.trim().isEmpty())) {
-            continue;
-         } 
-
-         String redirectUrl = session.getRedirectedToURL(url);
-         variations.put(redirectUrl != null ? redirectUrl : url, docSize);
+   private Product addProduct(Document doc, String internalPid, String url) throws MalformedProductException, MalformedPricingException, OfferException {
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"input[name='variation']", "value");
+      if (internalId != null) {
+         internalId = internalPid + '_' + internalId;
+      } else{
+         internalId = internalPid;
       }
+      String name = scrapName(doc);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-description", ".ui-pdp-specs"));
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:", "http2.mlstatic.com");
+      List<String> secondaryImages = crawlImages(primaryImage, doc);
 
-      return variations;
+      boolean availableToBuy = isAvailable(doc);
+      Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
+
+      Product product = ProductBuilder.create()
+         .setUrl(url)
+         .setInternalId(internalId)
+         .setInternalPid(internalPid)
+         .setName(name)
+         .setDescription(description)
+         .setCategories(categories)
+         .setPrimaryImage(primaryImage)
+         .setSecondaryImages(secondaryImages)
+         .setOffers(offers)
+         .build();
+      return product;
    }
 
    public JSONObject selectJsonFromHtml(Document doc) {
