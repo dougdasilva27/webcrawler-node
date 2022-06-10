@@ -5,7 +5,6 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -24,7 +23,7 @@ public class BrasilPolskastoreCrawler extends CrawlerRankingKeywords {
 
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.polskastore.com.br/loja/busca.php?loja=765507&palavra_busca=" + this.keywordEncoded +"&pg=" + this.currentPage;
+      String url = "https://www.polskastore.com.br/loja/busca.php?loja=765507&palavra_busca=" + this.keywordEncoded + "&pg=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
@@ -33,17 +32,16 @@ public class BrasilPolskastoreCrawler extends CrawlerRankingKeywords {
 
       if (!products.isEmpty()) {
          for (Element e : products) {
-            String internalPid = crawlInternalPid(e);
-            String internalId = null;
-            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product.variant.nb.show-down a", "href");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".list-variants ", "data-id");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product a", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-name", true);
-            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".image a", Collections.singletonList("href"), "https", "polskastore.com.br" );
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".image a", Collections.singletonList("href"), "https", "polskastore.com.br");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price-off", null, true, ',', session, 0);
             boolean isAvailable = price != 0;
-//pesquisar particionamento dynamo - tf novo
+
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalId)
+               .setInternalId(null)
                .setInternalPid(internalPid)
                .setImageUrl(imgUrl)
                .setName(name)
@@ -68,21 +66,7 @@ public class BrasilPolskastoreCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return !this.currentDoc.select(".ProductItem").isEmpty();
+      return !this.currentDoc.select(".page-next.page-link").isEmpty();
    }
 
-   private String crawlInternalPid(Element e) {
-      String internalPid = null;
-      String idElement = e.attr("id");
-
-      if (idElement != null) {
-         String id = CommonMethods.getLast(idElement.split("ProductItem_"));
-
-         if (!id.isEmpty()) {
-            internalPid = id;
-         }
-      }
-
-      return internalPid;
-   }
 }
