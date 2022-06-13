@@ -505,7 +505,7 @@ public class B2WCrawler extends Crawler {
             Integer mainPagePosition = i == 0 ? 1 : null;
             Integer sellersPagePosition = i + 1;
 
-            if (sellerId == null) {
+            if (sellerId == null || sellerId.isEmpty()) {
                byte[] bytes = sellerName.getBytes(StandardCharsets.US_ASCII);
                sellerId = Base64.getEncoder().encodeToString(bytes);
             }
