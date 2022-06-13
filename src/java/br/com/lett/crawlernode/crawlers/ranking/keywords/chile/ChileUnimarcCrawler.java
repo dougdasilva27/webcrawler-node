@@ -23,38 +23,35 @@ import java.util.Map;
 public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
 
    private static final String HOME_PAGE = "https://www.unimarc.cl/";
+   private  Integer page;
+   private  Integer endPage;
 
    public ChileUnimarcCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.APACHE;
-      pageSize = 24;
+      totalProducts = -1;
    }
-
-   @Override
-   protected void processBeforeFetch() {
-      BasicClientCookie vtexSegment = new BasicClientCookie("vtex_segment", "eyJjYW1wYWlnbnMiOm51bGwsImNoYW5uZWwiOiIxIiwicHJpY2VUYWJsZXMiOm51bGwsInJlZ2lvbklkIjpudWxsLCJ1dG1fY2FtcGFpZ24iOm51bGwsInV0bV9zb3VyY2UiOm51bGwsInV0bWlfY2FtcGFpZ24iOm51bGwsImN1cnJlbmN5Q29kZSI6IkNMUCIsImN1cnJlbmN5U3ltYm9sIjoiJCIsImNvdW50cnlDb2RlIjoiQ0hMIiwiY3VsdHVyZUluZm8iOiJlcy1DTCIsImFkbWluX2N1bHR1cmVJbmZvIjoiZXMtQ0wiLCJjaGFubmVsUHJpdmFjeSI6InB1YmxpYyJ9");
-      vtexSegment.setPath("/");
-      this.cookies.add(vtexSegment);
-   }
-
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      String url = HOME_PAGE + keywordEncoded.replace("+", "%20") + "?q_=" +
-         keywordEncoded.replace("+", "%20") + "&__pickRuntime=page,queryData&map=ft&page=" + currentPage;
+
+      Integer toPage = (totalProducts == -1 || totalProducts > (currentPage*50)) ? currentPage*50 : totalProducts;
+      String url = "https://bff-unimarc-web.unimarc.cl/bff-api/products/intelligence-search/"+keywordEncoded.replace("+", "%20")+"/?from="+(this.currentPage-1)*50+"&to="+ toPage +"&hideUnavailableItems=1";
+
 
       JSONArray products = fetchProducts(url);
+
 
       for (Object object : products) {
 
          JSONObject product = (JSONObject) object;
-         String productUrl = HOME_PAGE + product.optString("linkText") + "/p";
+         String productUrl = HOME_PAGE + product.optString("detailUrl");
          String internalPid = product.optString("productId");
-         String name = product.optString("productName");
-         Number numberPrice = JSONUtils.getValueRecursive(product, "priceRange.sellingPrice.lowPrice", Number.class);
+         String name = product.optString("name");
+         Number numberPrice = JSONUtils.getValueRecursive(product, "sellers.0.price", Number.class);
          Double doublePrice = numberPrice != null ? numberPrice.doubleValue() : null;
          Integer price = doublePrice != null ? (int) (doublePrice * 100) : null;
-         String imageUrl = JSONUtils.getValueRecursive(product, "items.0.images.0.imageUrl", String.class);
+         String imageUrl = JSONUtils.getValueRecursive(product, "images.0", String.class);
 
          RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(productUrl)
@@ -66,7 +63,9 @@ public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
             .build();
 
          saveDataProduct(productRanking);
-
+         if (this.arrayProducts.size() == productsLimit) {
+            break;
+         }
 
       }
    }
@@ -97,13 +96,14 @@ public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
 
       Response response = dataFetcher.get(session, request);
       JSONObject jsonResponse = CrawlerUtils.stringToJson(response.getBody());
-      String data = JSONUtils.getValueRecursive(jsonResponse, "queryData.0.data", String.class);
-      JSONObject jsonData = CrawlerUtils.stringToJson(data);
-      return JSONUtils.getValueRecursive(jsonData, "productSearch.products", JSONArray.class);
-   }
+      String totalString = JSONUtils.getValueRecursive(jsonResponse,"data.resources", String.class);
+      totalProducts = Integer.parseInt(totalString);
+      return   JSONUtils.getValueRecursive(jsonResponse,"data.availableProducts", JSONArray.class);
 
+   }
    @Override
    protected boolean hasNextPage() {
-      return ((arrayProducts.size() - 1) % pageSize - currentPage) < 0;
+      return ((currentPage-1)*50)< totalProducts;
    }
+
 }
