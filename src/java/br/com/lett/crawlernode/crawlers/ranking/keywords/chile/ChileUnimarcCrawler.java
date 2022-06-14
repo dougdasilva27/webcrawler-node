@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
 
-   private static final String HOME_PAGE = "https://www.unimarc.cl/";
+   private static final String HOME_PAGE = "https://www.unimarc.cl";
    private  Integer page;
    private  Integer endPage;
 
@@ -45,14 +45,15 @@ public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
       for (Object object : products) {
 
          JSONObject product = (JSONObject) object;
-         String productUrl = HOME_PAGE + product.optString("detailUrl");
+         String urlEnd = product.optString("detailUrl");
+         urlEnd = urlEnd.replaceAll("\\/p","");
+         String productUrl = HOME_PAGE +"/product"+ urlEnd;
          String internalPid = product.optString("productId");
          String name = product.optString("name");
          Number numberPrice = JSONUtils.getValueRecursive(product, "sellers.0.price", Number.class);
          Double doublePrice = numberPrice != null ? numberPrice.doubleValue() : null;
          Integer price = doublePrice != null ? (int) (doublePrice * 100) : null;
          String imageUrl = JSONUtils.getValueRecursive(product, "images.0", String.class);
-
          RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(productUrl)
             .setInternalPid(internalPid)
