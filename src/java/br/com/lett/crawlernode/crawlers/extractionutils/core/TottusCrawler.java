@@ -133,8 +133,8 @@ public abstract class TottusCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price.medium.cmrPrice", null, false, '.', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price.medium.currentPrice", null, false, '.', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price.medium.cmrPrice", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price.medium.currentPrice", null, false, ',', session);
       if (spotlightPrice == null) {
          spotlightPrice = priceFrom;
          priceFrom = null;
