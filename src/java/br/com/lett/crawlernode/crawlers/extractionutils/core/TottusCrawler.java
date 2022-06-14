@@ -90,7 +90,7 @@ public abstract class TottusCrawler extends Crawler {
 
    private List<String> crawlSecondaryImage(Document doc) {
       List<String> secondaryImagesList = new ArrayList<>();
-      Elements secondaryImages = doc.select(".product-gallery-thumbnails-item img");
+      Elements secondaryImages = doc.select(".product-gallery-mobile-nav img");
       for (Element e : secondaryImages) {
          String image = e.attr("src");
          if (image != null) {
@@ -98,7 +98,10 @@ public abstract class TottusCrawler extends Crawler {
 
          }
       }
-      secondaryImagesList.remove(0);
+
+      if (!secondaryImagesList.isEmpty()) {
+         secondaryImagesList.remove(0);
+      }
       return secondaryImagesList;
    }
 
