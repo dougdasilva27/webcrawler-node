@@ -33,7 +33,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
    public SaopauloPanvelCrawler(Session session) {
       super(session);
-      fetchMode = FetchMode.JSOUP;
+      fetchMode = FetchMode.FETCHER;
    }
 
 
@@ -50,7 +50,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
          .setUrl("https://www.panvel.com/api/v2/search/")
          .setPayload(payload)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .build();
       Response response = dataFetcher.post(session, request);
       return response.getBody();
