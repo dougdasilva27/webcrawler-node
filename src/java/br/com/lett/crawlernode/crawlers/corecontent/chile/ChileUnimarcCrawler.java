@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.chile;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -46,7 +45,7 @@ public class ChileUnimarcCrawler extends Crawler {
       if (data != null && !data.isEmpty()) {
          String internalId = JSONUtils.getStringValue(data, "itemId");
          String internalPid = JSONUtils.getStringValue(data, "productId");
-         String name = JSONUtils.getStringValue(data,"name");
+         String name = JSONUtils.getStringValue(data, "name");
          JSONArray images = JSONUtils.getJSONArrayValue(data, "images");
          String primaryImage = !images.isEmpty() ? (String) images.get(0) : "";
          String description = JSONUtils.getStringValue(data, "description");
