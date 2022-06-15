@@ -22,4 +22,14 @@ public class MexicoRappiCrawlerRanking extends RappiCrawlerRanking {
    protected String getProductDomain() {
       return DOMAIN;
    }
+
+   @Override
+   protected String getMarketBaseUrl() {
+      return "https://www.rappi.com.mx/tiendas/";
+   }
+
+   @Override
+   protected String getImagePrefix() {
+      return "images.rappi.com.mx/products";
+   }
 }

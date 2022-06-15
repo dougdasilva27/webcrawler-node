@@ -20,18 +20,10 @@ import org.jsoup.nodes.Document;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Date: 05/11/20
- *
- * @author Fellype Layunne
- */
+
 public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
 
-   private final String PRODUCTS_API_URL = "https://services." + getApiDomain() + "/api/cpgs/search/v2/store/";
    protected String PRODUCT_BASE_URL = "https://www." + getProductDomain() + "/product/";
-   private final String STORE_ID = storeId();
-
-   protected boolean newUnification = session.getOptions().optBoolean("newUnification",false);
 
    public RappiCrawlerRanking(Session session) {
       super(session);
@@ -41,26 +33,20 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       return session.getOptions().optString("storeId");
    }
 
-   @Deprecated
-   protected  String getStoreType(){
-      return "";
+   private String getCurrentLocation() {
+      return session.getOptions().optString("currentLocation");
    }
 
    protected abstract String getApiDomain();
 
    protected abstract String getProductDomain();
 
-   protected String storeId() {
-      if(session.getOptions().optBoolean("newUnification", false)){
-         return session.getOptions().optString("storeId");
-      }
-      else {
-         return getStoreId();
-      }
-   }
+   protected abstract String getMarketBaseUrl();
+
+   protected abstract String getImagePrefix();
 
    private Document fetch(String url) {
-      BasicClientCookie cookie = new BasicClientCookie("currentLocation", "eyJhZGRyZXNzIjoiMDYwOTAtMDEwLCBBdmVuaWRhIGRvcyBBdXRvbm9taXN0YXMgLSBDZW50cm8sIE9zYXNjbyAtIFN0YXRlIG9mIFPjbyBQYXVsbywgQnJhemlsIiwic2Vjb25kYXJ5TGFiZWwiOiJBdmVuaWRhIGRvcyBBdXRvbm9taXN0YXMgLSBDZW50cm8sIE9zYXNjbyAtIFN0YXRlIG9mIFPjbyBQYXVsbywgQnJhemlsIiwiZGlzdGFuY2VJbkttcyI6MTEuNiwicGxhY2VJZCI6IkNoSUpsemdyMlJMX3pwUVJoWTBsMmdrSTFlayIsInBsYWNlSW5mb3JtYXRpb24iOm51bGwsInNvdXJjZSI6Imdvb2dsZSIsImlkIjoxLCJkZXNjcmlwdGlvbiI6IiIsImxhdCI6LTIzLjUzNzYwNTYsImxuZyI6LTQ2Ljc3Njc5NzU5OTk5OTk5LCJjb3VudHJ5IjoiQnJhemlsIiwiYWN0aXZlIjp0cnVlfQ==");
+      BasicClientCookie cookie = new BasicClientCookie("currentLocation", getCurrentLocation());
       cookie.setDomain(".www." + getProductDomain());
       cookie.setPath("/");
       cookies.add(cookie);
@@ -79,10 +65,9 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
    @Override
    public void extractProductsFromCurrentPage() throws MalformedProductException {
 
-      this.pageSize = 40;
       this.log("Página " + this.currentPage);
 
-      String marketUrl = "https://www.rappi.com.br/lojas/" + getStoreId();
+      String marketUrl = getMarketBaseUrl() + getStoreId();
       this.currentDoc = fetch(marketUrl + "/s?term=" + this.keywordEncoded);
 
 
@@ -127,7 +112,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
    }
 
    private String crawlProductImage(JSONObject product) {
-      return CrawlerUtils.completeUrl(product.optString("image"), "https", "images.rappi.com.br/products");
+      return CrawlerUtils.completeUrl(product.optString("image"), "https", getImagePrefix());
    }
 
 
@@ -140,73 +125,4 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       return priceInCents;
    }
 
-   protected void setTotalProducts(JSONObject search) {
-      if (search.has("total_results") && search.get("total_results") instanceof Integer) {
-         this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(search, "total_results", 0);
-         this.log("Total da busca: " + this.totalProducts);
-      }
-   }
-
-   private String crawlInternalId(JSONObject product) {
-      String internalId = null;
-
-      if (product.has("id") && !product.isNull("id")) {
-         internalId = product.get("id").toString();
-      }
-
-      return internalId;
-   }
-
-   private String crawlInternalPid(JSONObject product) {
-      String internalPid = null;
-
-      if (product.has("product_id") && !product.isNull("product_id")) {
-         internalPid = product.get("product_id").toString();
-      }
-
-      return internalPid;
-   }
-
-   private String crawlProductUrl(JSONObject product) {
-      String productUrl = null;
-
-      if (product.has("id")) {
-         String id = product.optString("id");
-         productUrl = PRODUCT_BASE_URL + id;
-      }
-
-      return productUrl;
-   }
-
-   protected JSONObject fetchProductsFromAPI(String storeId) {
-      int startPage;
-
-      if (currentPage == 1) {
-         startPage = 0;
-      } else {
-         startPage = pageSize * (currentPage - 1);
-      }
-
-
-      String payload = "{\"from\":" + startPage + " ,\"query\":\"" + this.keywordWithoutAccents + "\",\"size\":" + pageSize + "}";
-
-      String url = PRODUCTS_API_URL + storeId + "/products";
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/json");
-      headers.put("Accept", "application/json, text/plain, */*");
-
-      Request request = RequestBuilder.create().setUrl(url).setHeaders(headers).setPayload(payload).mustSendContentEncoding(false).build();
-      return CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
-   }
-
-   @Override
-   protected boolean hasNextPage() {
-      if (session instanceof DiscoveryCrawlerSession) {
-         return true;
-      } else {
-         return false;
-      }
-
-   }
 }

@@ -21,4 +21,14 @@ public class  BrasilRappiCrawlerRanking extends RappiCrawlerRanking {
    protected String getProductDomain() {
       return PRODUCT_DOMAIN;
    }
+
+   @Override
+   protected String getMarketBaseUrl() {
+      return "https://www.rappi.com.br/lojas/";
+   }
+
+   @Override
+   protected String getImagePrefix() {
+      return "images.rappi.com.br/products";
+   }
 }

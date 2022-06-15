@@ -1,20 +1,16 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.exceptions.MalformedUrlException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
-import com.google.common.net.HttpHeaders;
 import exceptions.MalformedPricingException;
 import models.Offer;
 import models.Offer.OfferBuilder;
@@ -31,16 +27,12 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
 import java.math.BigDecimal;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 
-//essa classe não deve ser criada na scraper class
 public abstract class RappiCrawler extends Crawler {
-
-   protected static final Pattern URL_PATH_PATTERN = Pattern.compile(".*/([0-9][^a-zA-Z]*)_([0-9][^a-zA-Z]*)");
 
    public RappiCrawler(Session session) {
       super(session);
@@ -51,12 +43,8 @@ public abstract class RappiCrawler extends Crawler {
       return session.getOptions().optString("storeId");
    }
 
-   protected String storeId() {
-      if (session.getOptions().optBoolean("newUnification", false)) {
-         return session.getOptions().optString("storeId");
-      } else {
-         return getStoreId();
-      }
+   private String getCurrentLocation() {
+      return session.getOptions().optString("currentLocation");
    }
 
    abstract protected String getHomeDomain();
@@ -67,71 +55,12 @@ public abstract class RappiCrawler extends Crawler {
 
    abstract protected String getHomeCountry();
 
-   protected boolean newUnification = session.getOptions().optBoolean("newUnification", false);
-
    @Override
    public void handleCookiesBeforeFetch() {
-      BasicClientCookie cookie = new BasicClientCookie("currentLocation", "eyJhZGRyZXNzIjoiMDQxODItMDAxLCBBdmVuaWRhIE1hcmdpbmFsIERpcmVpdGEgQW5jaGlldGEgLSBKYXJkaW0gU2FudGEgQ3J1eiAoU2Fjb21hKSwgU+NvIFBhdWxvIC0gU3RhdGUgb2YgU+NvIFBhdWxvLCBCcmF6aWwiLCJzZWNvbmRhcnlMYWJlbCI6IkF2ZW5pZGEgTWFyZ2luYWwgRGlyZWl0YSBBbmNoaWV0YSAtIEphcmRpbSBTYW50YSBDcnV6IChTYWNvbWEpLCBT428gUGF1bG8gLSBTdGF0ZSBvZiBT428gUGF1bG8sIEJyYXppbCIsImRpc3RhbmNlSW5LbXMiOjExLjgsInBsYWNlSWQiOiJDaElKdGY3a3AyWmJ6cFFSZHN0NEFuYWt5S0EiLCJwbGFjZUluZm9ybWF0aW9uIjpudWxsLCJzb3VyY2UiOiJnb29nbGUiLCJpZCI6MSwiZGVzY3JpcHRpb24iOiIiLCJsYXQiOi0yMy42NDk5NTcsImxuZyI6LTQ2LjU4NDA0MDUsImNvdW50cnkiOiJCcmF6aWwiLCJhY3RpdmUiOnRydWV9");
+      BasicClientCookie cookie = new BasicClientCookie("currentLocation", getCurrentLocation());
       cookie.setDomain(".www." + getHomeDomain());
       cookie.setPath("/");
       this.cookies.add(cookie);
-   }
-
-   //   @Override
-//   protected JSONObject fetch() {
-//      JSONObject productsInfo = new JSONObject();
-//
-//      String storeId = storeId();
-//
-//      String productUrl = session.getOriginalURL();
-//
-//
-//      if (newUnification) {
-//         if (!checkUrl(productUrl)) {
-//            throw new MalformedUrlException("Formato da URL incorreto");
-//         } else if (!productUrl.contains(storeId)) {
-//            throw new MalformedUrlException("URL não corresponde ao market");
-//         }
-//      }
-//
-//
-//      String productId = null;
-//
-//      if (productUrl.contains("_")) {
-//         productId = CommonMethods.getLast(productUrl.split("\\?")[0].split("_"));
-//      }
-//
-//      if (productId != null && storeId != null) {
-//         String token = fetchToken();
-//
-//         JSONObject data = fetchProduct(productId, storeId, token);
-//
-//         JSONArray components = JSONUtils.getValueRecursive(data, "data.components", JSONArray.class);
-//
-//         if (components != null) {
-//            for (Object json : components) {
-//               if (json instanceof JSONObject) {
-//                  String nameComponents = ((JSONObject) json).optString("name");
-//                  if (nameComponents.contains("product_information")) {
-//                     productsInfo = JSONUtils.getJSONValue((JSONObject) json, "resource");
-//                  }
-//               }
-//            }
-//         }
-//      }
-//      return productsInfo;
-//   }
-
-   private static boolean checkUrl(String productUrl) {
-      try {
-         URL url = new URL(productUrl);
-         boolean checkHost = url.getHost().contains("www.rappi.com");
-         boolean checkPath = URL_PATH_PATTERN.matcher(url.getPath()).matches();
-
-         return checkHost && checkPath;
-      } catch (MalformedURLException e) {
-         return false;
-      }
    }
 
    protected JSONObject fetchProduct(Document doc, String storeId) {
@@ -152,42 +81,12 @@ public abstract class RappiCrawler extends Crawler {
       return productsInfo;
    }
 
-   protected String fetchToken() {
-      String url = "https://services." + getHomeDomain() + "/api/auth/guest_access_token";
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "application/json, text/plain, */*");
-      headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
-      headers.put("content-type", "application/json");
-
-      String payload = "{\"headers\":{\"normalizedNames\":{},\"lazyUpdate\":null},\"grant_type\":\"guest\"}";
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setPayload(payload)
-         .mustSendContentEncoding(false)
-         .build();
-
-      JSONObject json = JSONUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
-
-      String token = json.optString("access_token");
-      String tokenType = json.optString("token_type");
-
-      if (tokenType.equals("Bearer")) {
-         token = tokenType + " " + token;
-      }
-
-      return token;
-   }
-
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
 
       List<Product> products = new ArrayList<>();
 
-      String storeId = storeId();
-//      String productUrl = session.getOriginalURL();
+      String storeId = getStoreId();
 
       JSONObject productJson = fetchProduct(doc, storeId);
 
@@ -207,7 +106,6 @@ public abstract class RappiCrawler extends Crawler {
          boolean available = productJson.optBoolean("in_stock");
          Offers offers = available ? scrapOffers(productJson) : new Offers();
 
-         // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
@@ -310,83 +208,8 @@ public abstract class RappiCrawler extends Crawler {
       return sales;
    }
 
-   /*******************************
-    * Product page identification *
-    *******************************/
-
    protected boolean isProductPage(JSONObject productJson) {
-//      if (newUnification) {
-//         return jsonSku.length() > 0 && session.getOriginalURL().contains(storeId());
-//      } else {
-//         return jsonSku.length() > 0;
-//      }
       return productJson.length() > 0;
-   }
-
-   /*******************
-    * General methods *
-    *******************/
-
-   public String getUrl(JSONObject productJson) {
-
-      String idToUrl = productJson.optString("id");
-
-      return idToUrl != null ? getHomeCountry() + getUrlPrefix() + idToUrl : null;
-
-   }
-
-   protected String crawlInternalId(JSONObject json) {
-      String internalId = null;
-
-      if (json.has("id")) {
-         internalId = json.get("id").toString();
-      }
-
-      return internalId;
-   }
-
-
-   protected String crawlInternalPid(JSONObject json) {
-      String internalPid = null;
-
-      if (json.has("product_id")) {
-         internalPid = json.getString("product_id");
-      }
-
-      return internalPid;
-   }
-
-   protected String crawlName(JSONObject json) {
-      StringBuilder nameComplet = new StringBuilder();
-
-      if (json.has("name")) {
-         nameComplet.append(json.optString("name")).append(" ");
-      }
-      if (json.has("quantity") && json.optInt("quantity") != 0) {
-         nameComplet.append(json.optString("quantity")).append(" ");
-         if (json.has("unit_type")) {
-            nameComplet.append(json.optString("unit_type"));
-         }
-
-      }
-
-      return nameComplet.toString();
-   }
-
-   protected boolean crawlAvailability(JSONObject json) {
-      return json.has("in_stock") && json.getBoolean("in_stock");
-   }
-
-   protected String crawlPrimaryImage(JSONObject json) {
-      String primaryImage = null;
-
-      JSONObject product = json.optJSONObject("product");
-      if (product != null) {
-         String imageId = product.optString("image");
-         primaryImage = CrawlerUtils.completeUrl(imageId, "https://", getImagePrefix());
-      }
-
-      return primaryImage;
    }
 
    protected List<String> crawlSecondaryImages(JSONArray images) {
@@ -414,14 +237,5 @@ public abstract class RappiCrawler extends Crawler {
       }
 
       return categories;
-   }
-
-   protected String crawlDescription(JSONObject json) {
-      StringBuilder description = new StringBuilder();
-
-      if (json.has("description") && json.get("description") instanceof String) {
-         description.append(json.getString("description"));
-      }
-      return description.toString();
    }
 }
