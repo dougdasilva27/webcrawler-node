@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -51,8 +52,9 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
          .setPayload(payload)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(false).mustRetrieveStatistics(true).build())
          .build();
-      Response response = dataFetcher.post(session, request);
+      Response response = CrawlerUtils.retryRequest(request,session, dataFetcher, false);
       return response.getBody();
    }
 
