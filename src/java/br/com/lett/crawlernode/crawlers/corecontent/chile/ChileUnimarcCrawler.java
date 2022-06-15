@@ -47,11 +47,11 @@ public class ChileUnimarcCrawler extends Crawler {
          String internalId = JSONUtils.getStringValue(data, "itemId");
          String internalPid = JSONUtils.getStringValue(data, "productId");
          String name = JSONUtils.getStringValue(data,"name");
-         JSONArray images = JSONUtils.getJSONArrayValue(data, "product.data.images");
+         JSONArray images = JSONUtils.getJSONArrayValue(data, "images");
          String primaryImage = !images.isEmpty() ? (String) images.get(0) : "";
          String description = JSONUtils.getStringValue(data, "description");
          CategoryCollection categories = scrapCategories(dataJson);
-         Integer stock = JSONUtils.getIntegerValueFromJSON(data, "availableQuantity", 0);
+         Integer stock = JSONUtils.getValueRecursive(data, "sellers.0.availableQuantity", Integer.class, 0);
          List<String> secondaryImages = scrapSecondaryImages(images, primaryImage);
          Offers offers = stock > 0 ? scrapOffers(data) : new Offers();
          Product product = ProductBuilder.create()
