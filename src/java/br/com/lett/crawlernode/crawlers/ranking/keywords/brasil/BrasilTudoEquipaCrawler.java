@@ -73,16 +73,16 @@ public class BrasilTudoEquipaCrawler extends CrawlerRankingKeywords {
 
    private String scrapInternalId(Element doc) {
       String url =  CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,".link-compare", "href");
-      String regex = "-product\\/(.*)\\/uenc\\/";
+      String regex = "product\\/(.*)\\/uenc\\/";
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
       final Matcher matcher = pattern.matcher(url);
       String ids = "";
       if(matcher.find()) {
          ids = matcher.group(1);
       }else {
-         ids = url;
+         ids = null;
       }
-      return "djkjsa";
+      return ids;
    }
    protected Document fetch(String url) {
       Map<String, String> headers = new HashMap<>();
