@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
+import com.google.common.net.HttpHeaders;
 import exceptions.MalformedPricingException;
 import models.Offer;
 import models.Offer.OfferBuilder;
@@ -24,8 +25,10 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.nodes.Document;
 
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
@@ -66,51 +69,58 @@ public abstract class RappiCrawler extends Crawler {
 
    protected boolean newUnification = session.getOptions().optBoolean("newUnification", false);
 
-
    @Override
-   protected JSONObject fetch() {
-      JSONObject productsInfo = new JSONObject();
-
-      String storeId = storeId();
-
-      String productUrl = session.getOriginalURL();
-
-
-      if (newUnification) {
-         if (!checkUrl(productUrl)) {
-            throw new MalformedUrlException("Formato da URL incorreto");
-         } else if (!productUrl.contains(storeId)) {
-            throw new MalformedUrlException("URL não corresponde ao market");
-         }
-      }
-
-
-      String productId = null;
-
-      if (productUrl.contains("_")) {
-         productId = CommonMethods.getLast(productUrl.split("\\?")[0].split("_"));
-      }
-
-      if (productId != null && storeId != null) {
-         String token = fetchToken();
-
-         JSONObject data = fetchProduct(productId, storeId, token);
-
-         JSONArray components = JSONUtils.getValueRecursive(data, "data.components", JSONArray.class);
-
-         if (components != null) {
-            for (Object json : components) {
-               if (json instanceof JSONObject) {
-                  String nameComponents = ((JSONObject) json).optString("name");
-                  if (nameComponents.contains("product_information")) {
-                     productsInfo = JSONUtils.getJSONValue((JSONObject) json, "resource");
-                  }
-               }
-            }
-         }
-      }
-      return productsInfo;
+   public void handleCookiesBeforeFetch() {
+      BasicClientCookie cookie = new BasicClientCookie("currentLocation", "eyJhZGRyZXNzIjoiMDQxODItMDAxLCBBdmVuaWRhIE1hcmdpbmFsIERpcmVpdGEgQW5jaGlldGEgLSBKYXJkaW0gU2FudGEgQ3J1eiAoU2Fjb21hKSwgU+NvIFBhdWxvIC0gU3RhdGUgb2YgU+NvIFBhdWxvLCBCcmF6aWwiLCJzZWNvbmRhcnlMYWJlbCI6IkF2ZW5pZGEgTWFyZ2luYWwgRGlyZWl0YSBBbmNoaWV0YSAtIEphcmRpbSBTYW50YSBDcnV6IChTYWNvbWEpLCBT428gUGF1bG8gLSBTdGF0ZSBvZiBT428gUGF1bG8sIEJyYXppbCIsImRpc3RhbmNlSW5LbXMiOjExLjgsInBsYWNlSWQiOiJDaElKdGY3a3AyWmJ6cFFSZHN0NEFuYWt5S0EiLCJwbGFjZUluZm9ybWF0aW9uIjpudWxsLCJzb3VyY2UiOiJnb29nbGUiLCJpZCI6MSwiZGVzY3JpcHRpb24iOiIiLCJsYXQiOi0yMy42NDk5NTcsImxuZyI6LTQ2LjU4NDA0MDUsImNvdW50cnkiOiJCcmF6aWwiLCJhY3RpdmUiOnRydWV9");
+      cookie.setDomain(".www." + getHomeDomain());
+      cookie.setPath("/");
+      this.cookies.add(cookie);
    }
+
+   //   @Override
+//   protected JSONObject fetch() {
+//      JSONObject productsInfo = new JSONObject();
+//
+//      String storeId = storeId();
+//
+//      String productUrl = session.getOriginalURL();
+//
+//
+//      if (newUnification) {
+//         if (!checkUrl(productUrl)) {
+//            throw new MalformedUrlException("Formato da URL incorreto");
+//         } else if (!productUrl.contains(storeId)) {
+//            throw new MalformedUrlException("URL não corresponde ao market");
+//         }
+//      }
+//
+//
+//      String productId = null;
+//
+//      if (productUrl.contains("_")) {
+//         productId = CommonMethods.getLast(productUrl.split("\\?")[0].split("_"));
+//      }
+//
+//      if (productId != null && storeId != null) {
+//         String token = fetchToken();
+//
+//         JSONObject data = fetchProduct(productId, storeId, token);
+//
+//         JSONArray components = JSONUtils.getValueRecursive(data, "data.components", JSONArray.class);
+//
+//         if (components != null) {
+//            for (Object json : components) {
+//               if (json instanceof JSONObject) {
+//                  String nameComponents = ((JSONObject) json).optString("name");
+//                  if (nameComponents.contains("product_information")) {
+//                     productsInfo = JSONUtils.getJSONValue((JSONObject) json, "resource");
+//                  }
+//               }
+//            }
+//         }
+//      }
+//      return productsInfo;
+//   }
 
    private static boolean checkUrl(String productUrl) {
       try {
@@ -124,33 +134,22 @@ public abstract class RappiCrawler extends Crawler {
       }
    }
 
-   protected JSONObject fetchProduct(String productId, String storeId, String token) {
-      String url = "https://services." + getHomeDomain() + "/api/ms/web-proxy/dynamic-list/cpgs";
+   protected JSONObject fetchProduct(Document doc, String storeId) {
+      JSONObject productsInfo = new JSONObject();
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "application/json, text/plain, */*");
-      headers.put("language", "pt");
-      headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
-      headers.put("content-type", "application/json");
-      headers.put("authorization", token);
+      JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
 
-      String productFriendlyUrl = storeId + "_" + productId;
+      JSONArray stores = JSONUtils.getValueRecursive(pageJson, "props.pageProps.master_product_detail_response.data.components.0.resource.product.stores", JSONArray.class, new JSONArray());
 
-      String payload = "{\"dynamic_list_request\":{\"context\":\"product_detail\",\"state\":{\"lat\":\"1\",\"lng\":\"1\"},\"limit\":100,\"offset\":0},\"dynamic_list_endpoint\":\"context/content\",\"proxy_input\":{\"product_friendly_url\":\"" + productFriendlyUrl + "\"}}";
+      for (int i = 0; i < stores.length(); i++) {
+         JSONObject store = stores.optJSONObject(i);
+            if (store != null && storeId.equals(store.optString("store_id"))) {
+               productsInfo = store.optJSONObject("product");
+               break;
+            }
+      }
 
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setPayload(payload)
-         .build();
-
-      String body = this.dataFetcher.post(session, request).getBody();
-
-      JSONObject jsonObject = CrawlerUtils.stringToJSONObject(body);
-
-      return jsonObject.optJSONObject("dynamic_list_response");
-
+      return productsInfo;
    }
 
    protected String fetchToken() {
@@ -183,25 +182,29 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    @Override
-   public List<Product> extractInformation(JSONObject jsonSku) throws Exception {
+   public List<Product> extractInformation(Document doc) throws Exception {
 
       List<Product> products = new ArrayList<>();
 
-      JSONObject productJson = JSONUtils.getJSONValue(jsonSku, "product");
+      String storeId = storeId();
+//      String productUrl = session.getOriginalURL();
+
+      JSONObject productJson = fetchProduct(doc, storeId);
 
 
       if (isProductPage(productJson)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalPid = crawlInternalPid(productJson);
-         String internalId = newUnification ? internalPid : crawlInternalId(productJson);
-         String description = crawlDescription(productJson);
-         String primaryImage = crawlPrimaryImage(jsonSku);
-         List<String> secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
+         String internalPid = productJson.optString("master_product_id");
+         String internalId = productJson.optString("product_id");
+         String description = productJson.optString("description");
+         JSONArray images = productJson.optJSONArray("images");
+         String primaryImage = images.length() > 0 ? CrawlerUtils.completeUrl(images.optString(0), "https", getImagePrefix()) : null;
+         List<String> secondaryImages = crawlSecondaryImages(images);
          CategoryCollection categories = crawlCategories(productJson);
-         String name = crawlName(productJson);
-         List<String> eans = scrapEan(productJson);
-         boolean available = crawlAvailability(productJson);
+         String name = productJson.optString("name");
+         List<String> eans = List.of(productJson.optString("ean"));
+         boolean available = productJson.optBoolean("in_stock");
          Offers offers = available ? scrapOffers(productJson) : new Offers();
 
          // Creating the product
@@ -226,15 +229,15 @@ public abstract class RappiCrawler extends Crawler {
       return products;
    }
 
-   public Offers scrapOffers(JSONObject jsonSku) {
+   public Offers scrapOffers(JSONObject productJson) {
       Offers offers = new Offers();
 
       try {
-         Pricing pricing = scrapPricing(jsonSku);
+         Pricing pricing = scrapPricing(productJson);
          List<String> sales = scrapSales(pricing);
 
          Offer offer = new OfferBuilder().setSellerFullName("Rappi")
-            .setInternalSellerId(jsonSku.optString("store_id", null))
+            .setInternalSellerId(productJson.optString("store_type", null))
             .setMainPagePosition(1)
             .setIsBuybox(false)
             .setPricing(pricing)
@@ -250,9 +253,9 @@ public abstract class RappiCrawler extends Crawler {
       return offers;
    }
 
-   public static Pricing scrapPricing(JSONObject jsonSku) throws MalformedPricingException {
-      Double priceFrom = jsonSku.optDouble("real_price", 0D);
-      Double price = jsonSku.optDouble("balance_price", 0D);
+   public static Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
+      Double priceFrom = productJson.optDouble("real_price", 0D);
+      Double price = productJson.optDouble("balance_price", 0D);
       if (price == 0D || price.equals(priceFrom)) {
          price = priceFrom;
          priceFrom = null;
@@ -311,12 +314,13 @@ public abstract class RappiCrawler extends Crawler {
     * Product page identification *
     *******************************/
 
-   protected boolean isProductPage(JSONObject jsonSku) {
-      if (newUnification) {
-         return jsonSku.length() > 0 && session.getOriginalURL().contains(storeId());
-      } else {
-         return jsonSku.length() > 0;
-      }
+   protected boolean isProductPage(JSONObject productJson) {
+//      if (newUnification) {
+//         return jsonSku.length() > 0 && session.getOriginalURL().contains(storeId());
+//      } else {
+//         return jsonSku.length() > 0;
+//      }
+      return productJson.length() > 0;
    }
 
    /*******************
@@ -385,16 +389,13 @@ public abstract class RappiCrawler extends Crawler {
       return primaryImage;
    }
 
-   protected List<String> crawlSecondaryImages(JSONObject json, String primaryImage) {
-      JSONArray imagesArray = JSONUtils.getJSONArrayValue(json, "images");
+   protected List<String> crawlSecondaryImages(JSONArray images) {
       ArrayList<String> resultImages = new ArrayList<>();
 
-      if (imagesArray.length() > 1) {
-         for (int i = 1; i < imagesArray.length(); i++) {
-
-            String imagePath = CrawlerUtils.completeUrl(imagesArray.optString(i), "https", getImagePrefix());
-
-            if (imagePath != null && !imagePath.equals(primaryImage)) {
+      if (images.length() > 1) {
+         for (int i = 1; i < images.length(); i++) {
+            String imagePath = CrawlerUtils.completeUrl(images.optString(i), "https", getImagePrefix());
+            if (imagePath != null) {
                resultImages.add(imagePath);
             }
          }
@@ -403,10 +404,10 @@ public abstract class RappiCrawler extends Crawler {
       return resultImages;
    }
 
-   protected CategoryCollection crawlCategories(JSONObject json) {
+   protected CategoryCollection crawlCategories(JSONObject productJson) {
       CategoryCollection categories = new CategoryCollection();
 
-      String category = JSONUtils.getStringValue(json, "category");
+      String category = JSONUtils.getStringValue(productJson, "category_name");
 
       if (!category.isEmpty()) {
          categories.add(category);
@@ -423,20 +424,4 @@ public abstract class RappiCrawler extends Crawler {
       }
       return description.toString();
    }
-
-   protected List<String> scrapEan(JSONObject jsonSku) {
-      List<String> eans = new ArrayList<>();
-      String ean;
-
-      if (jsonSku.has("ean")) {
-         ean = jsonSku.getString("ean");
-
-         if (ean != null && !ean.isEmpty()) {
-            eans.add(ean);
-         }
-      }
-
-      return eans;
-   }
-
 }

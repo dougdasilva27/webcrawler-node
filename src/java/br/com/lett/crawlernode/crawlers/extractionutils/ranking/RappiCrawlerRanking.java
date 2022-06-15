@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -9,8 +10,12 @@ import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +59,22 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       }
    }
 
+   private Document fetch(String url) {
+      BasicClientCookie cookie = new BasicClientCookie("currentLocation", "eyJhZGRyZXNzIjoiMDYwOTAtMDEwLCBBdmVuaWRhIGRvcyBBdXRvbm9taXN0YXMgLSBDZW50cm8sIE9zYXNjbyAtIFN0YXRlIG9mIFPjbyBQYXVsbywgQnJhemlsIiwic2Vjb25kYXJ5TGFiZWwiOiJBdmVuaWRhIGRvcyBBdXRvbm9taXN0YXMgLSBDZW50cm8sIE9zYXNjbyAtIFN0YXRlIG9mIFPjbyBQYXVsbywgQnJhemlsIiwiZGlzdGFuY2VJbkttcyI6MTEuNiwicGxhY2VJZCI6IkNoSUpsemdyMlJMX3pwUVJoWTBsMmdrSTFlayIsInBsYWNlSW5mb3JtYXRpb24iOm51bGwsInNvdXJjZSI6Imdvb2dsZSIsImlkIjoxLCJkZXNjcmlwdGlvbiI6IiIsImxhdCI6LTIzLjUzNzYwNTYsImxuZyI6LTQ2Ljc3Njc5NzU5OTk5OTk5LCJjb3VudHJ5IjoiQnJhemlsIiwiYWN0aXZlIjp0cnVlfQ==");
+      cookie.setDomain(".www." + getProductDomain());
+      cookie.setPath("/");
+      cookies.add(cookie);
 
+      Request request = RequestBuilder.create()
+         .setCookies(cookies)
+         .setUrl(url)
+         .setFollowRedirects(true)
+         .build();
+
+      Response response = dataFetcher.get(session, request);
+
+      return Jsoup.parse(response.getBody());
+   }
 
    @Override
    public void extractProductsFromCurrentPage() throws MalformedProductException {
@@ -62,27 +82,32 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       this.pageSize = 40;
       this.log("Página " + this.currentPage);
 
-      JSONObject search;
-
-      search = fetchProductsFromAPI(STORE_ID);
-
-      // se obter 1 ou mais links de produtos e essa página tiver resultado
-      if (search.has("products") && search.getJSONArray("products").length() > 0) {
-         JSONArray products = search.getJSONArray("products");
+      String marketUrl = "https://www.rappi.com.br/lojas/" + getStoreId();
+      this.currentDoc = fetch(marketUrl + "/s?term=" + this.keywordEncoded);
 
 
+      JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "#__NEXT_DATA__", null, null, false, false);
+      JSONArray products = JSONUtils.getValueRecursive(pageJson, "props.pageProps.products", JSONArray.class, new JSONArray());
+
+      if (products.length() > 0) {
          for (int i = 0; i < products.length(); i++) {
             JSONObject product = products.getJSONObject(i);
-            String internalPid = crawlInternalPid(product);
+
+            String internalId = product.optString("product_id");
+            String id = product.optString("id", "");
+            String url = !id.equals("") ? PRODUCT_BASE_URL + id : "";
+            String name = product.optString("name");
+            Integer priceInCents = scrapPrice(product);
+            boolean isAvailable = product.optBoolean("in_stock");
+            String imageUrl = crawlProductImage(product);
 
             RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(crawlProductUrl(product))
-               .setInternalPid(internalPid)
-               .setInternalId(newUnification ? internalPid : crawlInternalId(product))
-               .setName(product.optString("name"))
-               .setPriceInCents(scrapPrice(product))
-               .setAvailability(product.optBoolean("in_stock"))
-               .setImageUrl(crawlProductImage(product))
+               .setUrl(url)
+               .setInternalId(internalId)
+               .setName(name)
+               .setPriceInCents(priceInCents)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
                .build();
 
 
