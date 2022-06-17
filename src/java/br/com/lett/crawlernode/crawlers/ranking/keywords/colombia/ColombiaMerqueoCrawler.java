@@ -21,12 +21,12 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
    public ColombiaMerqueoCrawler(Session session) {
       super(session);
    }
+   private final String zoneId = session.getOptions().optString("zoneId");
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
-
-      String url = "https://merqueo.com/api/3.1/stores/63/search?q=+" + this.keywordEncoded + "&page=" + this.currentPage + "&per_page=50";
+      String url = "https://merqueo.com/api/3.1/stores/63/search?q=+" + this.keywordEncoded + "&page=" + this.currentPage + "&per_page=50&zoneId="+zoneId+"&sort_by=relevance";
 
       this.log("Link onde são feitos os crawlers: " + url);
 
@@ -94,7 +94,7 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
 
    /*
     * Url exemple:
-    * https://merqueo.com/bogota/despensa/condimentos-especias-y-adobos/canela-su-despensa-20-gr
+    * https://merqueo.com/bogota/super-ahorro/cuidado-de-la-ropa/detergente-liquido/detergente-liquido-ariel-concentrado-revitacolor-doypack-12lt-12-lt?viewImage=1&search=Detergente%20L%C3%ADquido%20Ariel%20Revitacolor
     */
    private String assembleProductUrl(String internalId, JSONObject apiJson) {
       String productUrl = "";
@@ -116,11 +116,14 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
                .concat("https://merqueo.com/")
                .concat(attributes.optString("city"))
                .concat("/")
+               .concat("super-ahorro/")
                .concat(attributes.optString("department"))
                .concat("/")
                .concat(attributes.optString("shelf"))
                .concat("/")
-               .concat(attributes.optString("product"));
+               .concat(attributes.optString("product"))
+               .concat("?viewImage=1&search=")
+               .concat(keywordEncoded);
       }
 
 
