@@ -398,15 +398,16 @@ public abstract class Crawler extends Task {
 
          Parser parser = this.config.getParser();
 
-         if (parser != Parser.NONE) {
+         if (parser != Parser.NONE && config.getFetcher() != FetchMode.MIRANHA) {
             response = fetchResponse();
+         } else if (config.getFetcher() == FetchMode.MIRANHA) {
+            obj = fetchMiranha();
          } else {
             obj = fetch();
             if (obj instanceof Response) {
                response = (Response) obj;
             }
          }
-
          if (response != null) {
             if (parser == Parser.NONE) {
                parser = Parser.HTML;
@@ -429,14 +430,16 @@ public abstract class Crawler extends Task {
          for (Product p : products) {
             processedProducts.add(ProductDTO.processCaptureData(p, session));
          }
-      } catch (ResponseCodeException e) {
+      } catch (
+         ResponseCodeException e) {
          Logging.printLogWarn(logger, session, "ResponseCodeException: " + e.getMessage());
          if (session instanceof SeedCrawlerSession) {
             session.registerError(new SessionError(SessionError.EXCEPTION, e.getMessage()));
          } else if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(e);
          }
-      } catch (Exception e) {
+      } catch (
+         Exception e) {
          Exporter.collectError(e, session);
          if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(e);
@@ -540,6 +543,10 @@ public abstract class Crawler extends Task {
       }
 
       return resp;
+   }
+
+   protected Document fetchMiranha() {
+      return S3Service.fetchHtml(session, session.getFileS3Miranha(), GlobalConfigurations.executionParameters.getBucketMiranha());
    }
 
    /**

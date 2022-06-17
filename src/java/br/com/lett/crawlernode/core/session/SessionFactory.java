@@ -49,8 +49,8 @@ public class SessionFactory {
       }
    }
 
-   public static Session createTestSession(String url, Market market, ScraperInformation scraperInformation) {
-      return new TestCrawlerSession(url, market, scraperInformation);
+   public static Session createTestSession(String url, Market market, ScraperInformation scraperInformation, String fileMiranha) {
+      return new TestCrawlerSession(url, market, scraperInformation, fileMiranha);
    }
 
    public static Session createTestRankingKeywordsSession(String keyword, Market market, ScraperInformation scraperInformation) {

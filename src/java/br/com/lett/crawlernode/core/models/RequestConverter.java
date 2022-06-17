@@ -41,6 +41,8 @@ public class RequestConverter {
    private static final String SESSION_ID = "sessionId";
    private static final String USE_BROWSER = "use_browser";
 
+   private static final String FILE_S3_MIRANHA = "file_s3_miranha";
+
    private RequestConverter() {
    }
 
@@ -75,6 +77,7 @@ public class RequestConverter {
       request.setMessageId(req.getHeader(MSG_ID_HEADER));
       request.setClassName(body.optString(BODY_CLASS_NAME));
       request.setSessionId(body.optString(SESSION_ID));
+
       request.setUseBrowser((Boolean) body.optQuery("/market/" + USE_BROWSER));
 
       String options = body.optString(BODY_OPTIONS);
@@ -96,7 +99,10 @@ public class RequestConverter {
          request.setMarket(createMarket(marketObj));
       }
 
-
+      String fileS3Miranha = body.optString(FILE_S3_MIRANHA);
+      if (fileS3Miranha != null) {
+         request.setFileS3Miranha(fileS3Miranha);
+     }
       String processedIdString = body.optString(BODY_PROCESSED_ID);
       if (processedIdString != null && !processedIdString.isEmpty()) {
          request.setProcessedId(Long.parseLong(processedIdString));

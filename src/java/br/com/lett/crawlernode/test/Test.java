@@ -26,6 +26,7 @@ public class Test {
       String parameters = dotenv.get("PARAMETERS");
       String maxProducts = dotenv.get("MAX_PRODUCTS");
       String corePollSize = dotenv.get("CORE_POOL_SIZE");
+      String fileMiranha = dotenv.get("FILE_MIRANHA");
 
       Market market = TestUtils.fetchMarket(city != null ? city : "", marketName != null ? marketName : "", Long.parseLong(marketId != null ? marketId : "0"));
 
@@ -34,7 +35,7 @@ public class Test {
          if (testType.equals("DISCOVERY")) {
            new LocalDiscovery().discovery(market, List.of(parameters), Integer.parseInt(maxProducts != null ? maxProducts : "1"),Integer.parseInt(corePollSize != null ? corePollSize : "1"));
          } else {
-            TestUtils.taskProcess(market, List.of(parameters), TestType.valueOf(testType), 0);
+            TestUtils.taskProcess(market, List.of(parameters), fileMiranha, TestType.valueOf(testType), 0);
          }
       }
 

@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -31,17 +32,17 @@ public class ChileUnimarcCrawler extends Crawler {
 
    public ChileUnimarcCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.MIRANHA);
    }
 
    @Override
-   public List<Product> extractInformation(JSONObject dataJson) throws Exception {
-      super.extractInformation(dataJson);
+   public List<Product> extractInformation(Document doc) throws Exception {
+
       List<Product> products = new ArrayList<>();
 
       Logging.printLogDebug(logger, session, "Not a product page " + session.getOriginalURL());
-
+      JSONObject dataJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
       JSONObject data = JSONUtils.getValueRecursive(dataJson, "props.pageProps.product.data", JSONObject.class);
-
       if (data != null && !data.isEmpty()) {
          String internalId = JSONUtils.getStringValue(data, "itemId");
          String internalPid = JSONUtils.getStringValue(data, "productId");
@@ -190,17 +191,6 @@ public class ChileUnimarcCrawler extends Crawler {
    }
 
 
-   @Override
-   protected Object fetch() {
-      Document document = getDocumentPage(this.dataFetcher);
 
-      JSONObject dataJson = CrawlerUtils.selectJsonFromHtml(document, "#__NEXT_DATA__", null, null, false, false);
-      if (dataJson != null && dataJson.optBoolean("isFallback")) {
-         Document doc = getDocumentPage(new FetcherDataFetcher());
-         dataJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
-      }
-
-      return dataJson;
-   }
 
 }

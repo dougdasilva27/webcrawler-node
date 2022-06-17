@@ -35,4 +35,6 @@ public class EnvironmentVariables {
    public static final String HTML_PATH = "HTML_PATH";
    public static final String REDIS_HOST = "REDIS_HOST";
    public static final String REDIS_PORT = "REDIS_PORT";
+
+   public static final String BUCKET_MIRANHA = "BUCKET_MIRANHA";
 }

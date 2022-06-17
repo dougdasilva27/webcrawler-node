@@ -60,8 +60,10 @@ public class TestUtils {
       }
    }
 
-
-   public static List<Task> taskProcess(Market market, List<String> parameters, TestType currentTest, Integer productsLimit) {
+   public static List<Task> taskProcess(Market market, List<String> parameters,  TestType currentTest, Integer productsLimit){
+      return taskProcess(market,parameters,null,currentTest,productsLimit);
+   }
+   public static List<Task> taskProcess(Market market, List<String> parameters, String fileMiranha, TestType currentTest, Integer productsLimit) {
 
       ScraperInformation scraperInformation = fetchScraperInfoToOneMarket(market.getNumber(), currentTest);
 
@@ -74,7 +76,7 @@ public class TestUtils {
          if (currentTest == TestType.KEYWORDS) {
             session = SessionFactory.createTestRankingKeywordsSession(parameter, market, scraperInformation);
          } else {
-            session = SessionFactory.createTestSession(parameter, market, scraperInformation);
+            session = SessionFactory.createTestSession(parameter, market, scraperInformation, fileMiranha);
          }
          String className = scraperInformation.getClassName().split("\\.")[scraperInformation.getClassName().split("\\.").length - 1];
          Logging.printLogDebug(logger, "Crawler running for class: " + ".("+ className +".java:1)");
