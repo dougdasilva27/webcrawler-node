@@ -11,7 +11,7 @@ public class MexicoRappiCrawler extends RappiCrawler {
 
    @Override
    protected String getHomeDomain() {
-      return "mxgrability.rappi.com";
+      return "rappi.com.mx";
    }
 
    @Override
@@ -38,23 +38,5 @@ public class MexicoRappiCrawler extends RappiCrawler {
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-   }
-
-   @Override
-   protected String crawlDescription(JSONObject json) {
-      StringBuilder description = new StringBuilder();
-
-      if (json.has("description") && json.get("description") instanceof String) {
-         String desc = json.getString("description");
-
-         if (desc.replace(" ", "").contains("-PLU")) {
-            String descFinal = desc.replace(CommonMethods.getLast(desc.split("-")), "").trim();
-            description.append(descFinal.substring(0, descFinal.length() - 2).trim());
-         } else {
-            description.append(desc);
-         }
-      }
-
-      return description.toString();
    }
 }
