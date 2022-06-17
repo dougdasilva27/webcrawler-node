@@ -10,13 +10,17 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+
+import java.util.*;
+
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
 import models.RatingsReviews;
 import models.prices.Prices;
+import models.pricing.*;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -25,6 +29,9 @@ import org.jsoup.select.Elements;
 
 public class BrasilLojadomecanicoCrawler extends Crawler {
    private static final String HOME_PAGE = "http://www.lojadomecanico.com.br/";
+   private static final String SELLER_FULL_NAME = "loja-do-mecanico-brasil";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.ELO.toString());
 
    public BrasilLojadomecanicoCrawler(Session session) {
       super(session);
@@ -52,33 +59,28 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
          String name = scrapName(jsonNameDesc, doc, internalId);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".cateMain_breadCrumbs .breadCrumbNew li span[itemprop=\"name\"]", false);
          String description = scrapDescription(jsonNameDesc);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .img-produto-min li a", Arrays.asList("data-image"), "https:",
-               "www.lojadomecanico.com.br");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image .img-produto-min li a", Arrays.asList("data-image"),
-               "https:", "www.lojadomecanico.com.br", primaryImage);
-         Float price = CrawlerUtils.getFloatValueFromJSON(jsonIdSkuPrice, "price");
-         Prices prices = scrapPrices(doc, price, jsonIdSkuPrice);
-         boolean available = doc.selectFirst("#btn-comprar-product") != null;
-         Integer stock = scrapStock(doc, available);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .img-produto-min li a", Arrays.asList("data-image"), "https:", "www.lojadomecanico.com.br");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image .img-produto-min li ", Arrays.asList("data-image"), "https", "www.lojadomecanico.com.br", primaryImage);
+         boolean availableToBuy = doc.selectFirst("#btn-comprar-product") != null;
+         Integer stock = scrapStock(doc, availableToBuy);
          RatingsReviews rating = scrapRating(jsonNameDesc);
+         Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setStock(stock)
-               .setRatingReviews(rating)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setOffers(offers)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setRatingReviews(rating)
+            .build();
 
          products.add(product);
 
@@ -119,40 +121,6 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
       }
 
       return description;
-   }
-
-   private Prices scrapPrices(Document doc, Float price, JSONObject json) {
-      Prices prices = new Prices();
-      Elements elements = doc.select(".modal-content .tab-container #pgCartao tbody tr");
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-
-         prices.setBankTicketPrice(price);
-
-         if (json.has("product")) {
-            JSONObject innerJson = json.getJSONObject("product");
-
-            if (innerJson.has("old_price")) {
-               prices.setPriceFrom(innerJson.getDouble("old_price"));
-            }
-         }
-
-         for (Element e : elements) {
-            Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x", "total", false, ',');
-            installmentPriceMap.put(installment.getFirst(), installment.getSecond());
-         }
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
-      }
-
-      return prices;
    }
 
    private Integer scrapStock(Document doc, boolean available) {
@@ -203,5 +171,69 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
       }
 
       return avgRating;
+   }
+
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(pricing);
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setSales(sales)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .build());
+
+      return offers;
+
+   }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=product-price]", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.preco-tabela", null, true, ',', session);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+   private List<String> scrapSales(Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+
+      String saleDiscount = CrawlerUtils.calculateSales(pricing);
+
+      if (saleDiscount != null) {
+         sales.add(saleDiscount);
+      }
+
+      return sales;
    }
 }

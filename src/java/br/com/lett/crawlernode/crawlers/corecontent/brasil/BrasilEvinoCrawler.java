@@ -7,9 +7,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -54,7 +52,9 @@ public class BrasilEvinoCrawler extends Crawler {
          JSONObject productBiggyJson = skuJson.has("productBiggyJson") ? new JSONObject(skuJson.get("productBiggyJson").toString()) : new JSONObject();
          JSONArray biggyJson = productBiggyJson.has("skus") ? productBiggyJson.getJSONArray("skus") : new JSONArray();
 
-         String name = crawlName(productBiggyJson);
+         String countryName = crawlCountryName(productBiggyJson);
+
+         String name = crawlName(productBiggyJson) + (countryName != null && !countryName.equals("") ? " - " + countryName : "");
          String primaryImage = crawlPrimaryImage(productBiggyJson);
          List<String> secondaryImages = crawlSecondaryImages(doc, primaryImage);
          CategoryCollection categories = crawlCategories(productBiggyJson);
@@ -160,6 +160,18 @@ public class BrasilEvinoCrawler extends Crawler {
       return variation.has("stockQuantity") ? variation.getInt("stockQuantity") : null;
    }
 
+   private String crawlCountryName(JSONObject productBiggyJson) {
+      JSONArray categoriesJson = JSONUtils.getValueRecursive(productBiggyJson, "categories", ".", JSONArray.class, new JSONArray());
+      String countryName = "";
+      if (categoriesJson.length() > 0) {
+         countryName = categoriesJson.optJSONObject(categoriesJson.length() - 1).optString("name");
+         if (countryName == null) {
+            countryName = "";
+         }
+      }
+
+      return countryName;
+   }
 
    private CategoryCollection crawlCategories(JSONObject productBiggyJson) {
       CategoryCollection categories = new CategoryCollection();

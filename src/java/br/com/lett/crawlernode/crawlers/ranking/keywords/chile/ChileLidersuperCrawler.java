@@ -1,11 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -15,23 +15,25 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.Cookie;
+import org.openqa.selenium.chrome.ChromeOptions;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
 
    public ChileLidersuperCrawler(Session session) {
       super(session);
    }
+   private static final String HOME_PAGE = "https://www.lider.cl/supermercado/";
 
    private final List<String> proxies = Arrays.asList(
       ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
@@ -42,28 +44,38 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void processBeforeFetch() {
-      String url = "https://www.lider.cl/supermercado";
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("authority", "https://www.lider.cl");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setProxyservice(Arrays.asList(
-               ProxyCollection.BUY,
-               ProxyCollection.LUMINATI_SERVER_BR,
-               ProxyCollection.BUY_HAPROXY))
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
-         .setSendUserAgent(false)
-         .build();
+      Document doc;
+      try {
+         int attempts = 0;
 
-      Response response = this.dataFetcher.get(session, request);
+         do {
+            ChromeOptions chromeOptions = new ChromeOptions();
+            chromeOptions.addArguments("--window-size=1920,1080");
+            chromeOptions.addArguments("--headless");
+            chromeOptions.addArguments("--no-sandbox");
+            chromeOptions.addArguments("--disable-dev-shm-usage");
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(HOME_PAGE, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, session);
+            webdriver.waitLoad(10000);
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
-      if (!response.isSuccess()) {
-         response = retryRequest(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), this.dataFetcher));
+            Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
+
+            for (Cookie cookie : cookiesResponse) {
+               BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
+               basicClientCookie.setDomain(cookie.getDomain());
+               basicClientCookie.setPath(cookie.getPath());
+               basicClientCookie.setExpiryDate(cookie.getExpiry());
+               this.cookies.add(basicClientCookie);
+            }
+
+            webdriver.terminate();
+
+         } while (doc.select("div #main-content").isEmpty() && attempts++ < 3);
+
+      } catch (Exception e) {
+         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
+         webdriver.terminate();
       }
-
-      this.cookies = response.getCookies();
    }
 
    @Override

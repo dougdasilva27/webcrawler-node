@@ -67,23 +67,13 @@ public class BrasilDivvinoCrawler extends Crawler {
 
    private String scrapName(Document document) {
       String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".product_title", true);
-      String containerSize = CrawlerUtils.scrapStringSimpleInfo(document, ".product_detail_container .subtitle", true);
-      StringBuilder sizeBuilder = new StringBuilder();
+      String containerExtraInfo = CrawlerUtils.scrapStringSimpleInfo(document, ".product_detail_container .subtitle", true);
 
-      if (containerSize != null) {
-         Pattern pattern = Pattern.compile("(\\d+,?\\d*\\s?)(ml|L|g|gr|mg|Kg)");
-         Matcher matcher = pattern.matcher(containerSize);
-         if (matcher.find()) {
-            sizeBuilder.append(matcher.group(1));
-            sizeBuilder.append(matcher.group(2));
-         }
+      if (containerExtraInfo != null) {
+         String extraInfos = containerExtraInfo.replace("| ", "");
+         return !extraInfos.isEmpty() ? WordUtils.capitalizeFully(productName) + " " + extraInfos : WordUtils.capitalizeFully(productName);
       }
 
-      String sanitizedSize = sizeBuilder.toString().trim();
-
-      if (productName != null && !sanitizedSize.isEmpty() && !productName.toLowerCase().contains(sanitizedSize.toLowerCase())) {
-         return WordUtils.capitalizeFully(productName) + " " + sanitizedSize;
-      }
       return WordUtils.capitalizeFully(productName);
    }
 

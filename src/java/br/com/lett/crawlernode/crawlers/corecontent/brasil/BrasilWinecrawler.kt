@@ -42,7 +42,7 @@ class BrasilWinecrawler(session: Session?) : Crawler(session) {
          Logging.printLogDebug(logger, session,
             "Product page identified: " + session.originalURL)
 
-         val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".PageHeader-title", false)
+         val name = scrapName(doc)
 
          val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a", false)
 
@@ -79,6 +79,19 @@ class BrasilWinecrawler(session: Session?) : Crawler(session) {
 
    private fun isProductPage(doc: Document): Boolean {
       return doc.selectFirst(".ProductPage") != null
+   }
+
+   private fun scrapName(doc: Document): String? {
+      var name = CrawlerUtils.scrapStringSimpleInfo(doc, ".PageHeader-title", false)
+      val extraInfos = doc.select(".visible-xs .PageHeader-tags > li[class=PageHeader-tag]")
+      for (li in extraInfos) {
+         val extraInfo = li.ownText()
+         if (!extraInfo.isEmpty()) {
+            name = name.plus(" ").plus(extraInfo)
+         }
+      }
+
+      return name
    }
 
    private fun scrapOffers(jsonOffer: JSONObject): Offers {

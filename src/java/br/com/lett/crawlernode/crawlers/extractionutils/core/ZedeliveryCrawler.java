@@ -5,7 +5,6 @@ import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -124,7 +123,9 @@ public class ZedeliveryCrawler extends Crawler {
 
       if (visitorId == null || visitorId.isEmpty()) {
          Logging.printLogError(logger, "FAILED TO GET VISITOR ID");
+
       }
+
       return CrawlerUtils.stringToJson(response.getBody());
    }
 

@@ -31,7 +31,7 @@ public class CornershopCrawler extends Crawler {
 
    public CornershopCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.FETCHER);
+      config.setFetcher(FetchMode.APACHE);
 
    }
 
