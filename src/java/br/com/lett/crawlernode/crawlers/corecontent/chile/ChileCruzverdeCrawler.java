@@ -54,6 +54,7 @@ public class ChileCruzverdeCrawler extends Crawler {
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://api.cruzverde.cl/customer-service/login")
+         .setSendUserAgent(true)
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.NETNUT_RESIDENTIAL_ES,

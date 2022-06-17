@@ -42,7 +42,6 @@ public class BrasilTudoEquipaCrawler extends Crawler {
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-//            .setInternalPid(internalId)
             .setName(name)
             .setOffers(offers)
             .setPrimaryImage(primaryImage)
@@ -80,6 +79,10 @@ public class BrasilTudoEquipaCrawler extends Crawler {
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,"span.desconto .price",null,false,',' ,session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc,"span.desconto_cartao > span:nth-child(2)",null,false,',' ,session);
+
+      if(spotlightPrice == null){
+         spotlightPrice = priceFrom;
+      }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
