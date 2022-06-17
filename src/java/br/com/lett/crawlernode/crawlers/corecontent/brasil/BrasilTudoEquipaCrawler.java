@@ -69,7 +69,7 @@ public class BrasilTudoEquipaCrawler extends Crawler {
          .setIsBuybox(false)
          .setPricing(pricing)
          .setSales(sales)
-         .setSellerFullName(session.getOptions().optString("sellerName"))
+         .setSellerFullName("tudoequipa")
          .setIsMainRetailer(true)
          .setUseSlugNameAsInternalSellerId(true)
          .build());
@@ -78,10 +78,8 @@ public class BrasilTudoEquipaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,"",)
-      Double priceFrom = data.getInt("price_min_before_discount");
-
-
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,"span.desconto .price",null,false,',' ,session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc,"span.desconto_cartao > span:nth-child(2)",null,false,',' ,session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
@@ -104,7 +102,7 @@ public class BrasilTudoEquipaCrawler extends Crawler {
          .setInstallmentPrice(spotlightPrice)
          .build());
 
-      Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString(), Card.ELO.toString());
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
