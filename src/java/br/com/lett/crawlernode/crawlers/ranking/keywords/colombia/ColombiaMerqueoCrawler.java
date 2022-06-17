@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
@@ -12,6 +15,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -26,8 +30,7 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
-      String url = "https://merqueo.com/api/3.1/stores/63/search?q=+" + this.keywordEncoded + "&page=" + this.currentPage + "&per_page=50&zoneId="+zoneId+"&sort_by=relevance";
-
+      String url = "https://merqueo.com/api/3.1/stores/63/search?q=" + this.keywordEncoded + "&page=" + this.currentPage + "&per_page=50&zoneId="+zoneId+"&sort_by=relevance";
       this.log("Link onde são feitos os crawlers: " + url);
 
       JSONObject apiJson = fetchApiProducts(url);
@@ -53,8 +56,9 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
 
                String name = attributes.optString("name");
                String image = attributes.optString("image_large_url");
-               int price = crawlPrice(attributes);
-               boolean available = attributes.optInt("quantity") > 0;
+               Integer price = crawlPrice(attributes);
+               boolean available = attributes.getBoolean("status");
+               if(!available){ price = null;}
 
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
@@ -82,7 +86,7 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private int crawlPrice(JSONObject product) {
+   private Integer crawlPrice(JSONObject product) {
       int price = 0;
       if (product.has("special_price") && (product.optInt("special_price") != 0)) {
          price = product.optInt("special_price") * 100;
@@ -131,12 +135,23 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
    }
 
    private JSONObject fetchApiProducts(String url) {
-      Request request = RequestBuilder
-         .create()
+
+      Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .mustSendContentEncoding(false)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
+            ))
          .build();
+      Response responseApi = this.dataFetcher.post(session, request);
 
+      int tries = 0;
+      while(!responseApi.isSuccess() && tries < 3) {
+         tries++;
+         responseApi = new JsoupDataFetcher().post(session, request);
+      }
       return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
    }
 
