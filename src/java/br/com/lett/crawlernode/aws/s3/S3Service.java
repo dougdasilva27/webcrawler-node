@@ -270,8 +270,6 @@ public class S3Service {
          Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
          return null;
       }
-
-
    }
 
 

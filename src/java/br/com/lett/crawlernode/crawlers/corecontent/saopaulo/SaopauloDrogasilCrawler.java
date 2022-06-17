@@ -62,7 +62,6 @@ public class SaopauloDrogasilCrawler extends Crawler {
    private List<String> SELLERS = getSellers();
    public SaopauloDrogasilCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.MIRANHA);
    }
 
    @Override
