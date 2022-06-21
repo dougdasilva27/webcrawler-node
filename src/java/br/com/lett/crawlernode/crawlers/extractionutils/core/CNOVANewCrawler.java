@@ -106,7 +106,6 @@ public abstract class CNOVANewCrawler extends Crawler {
       headers.put("sec-fetch-user", "?1");
       headers.put("upgrade-insecure-requests", "1");
 
-
       Request request = RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
@@ -236,7 +235,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       return imgsList;
    }
 
-   private Offers scrapOffers(String internalId) throws MalformedPricingException, OfferException {
+   protected Offers scrapOffers(String internalId) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       List<String> sellersIdList = new ArrayList<>();
       String url = "https://pdp-api." + getStore() + ".com.br/api/v2/sku/" + internalId + "/price/source/" + getInitials() + "?&take=all";
@@ -306,7 +305,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       return offers;
    }
 
-   private List<String> scrapSales(JSONObject offersJson) {
+   protected List<String> scrapSales(JSONObject offersJson) {
       List<String> salesList = new ArrayList<>();
 
       JSONObject sellPrice = offersJson.optJSONObject("sellPrice");
@@ -321,7 +320,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       return salesList;
    }
 
-   private Pricing scrapPricing(JSONObject offersJson, JSONObject info, boolean principalSeller)
+   protected Pricing scrapPricing(JSONObject offersJson, JSONObject info, boolean principalSeller)
       throws MalformedPricingException {
 
       if (principalSeller) {
@@ -490,7 +489,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       return categories;
    }
 
-   private String crawlDescription(JSONObject infoProductJson, JSONObject productJson) {
+   protected String crawlDescription(JSONObject infoProductJson, JSONObject productJson) {
       StringBuilder description = new StringBuilder();
 
       description.append("<div id=\"desciption\">" + infoProductJson.optString("description") + "</div>");
@@ -584,7 +583,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       return new AdvancedRatingReview.Builder().allStars(starsMap).build();
    }
 
-   private Map<String, Double> scrapSallersRating(List<String> sellersIdList) {
+   protected Map<String, Double> scrapSallersRating(List<String> sellersIdList) {
       Map<String, Double> SellerIdAndSellerRating = new HashMap<>();
       String sellersIds = sellersIdList.toString()
          .replaceAll("[^0-9 ]", "")
