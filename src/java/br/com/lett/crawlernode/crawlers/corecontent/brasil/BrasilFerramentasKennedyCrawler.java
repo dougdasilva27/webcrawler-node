@@ -49,9 +49,6 @@ public class BrasilFerramentasKennedyCrawler extends Crawler {
             for (Element variant : variants) {
                String variantUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "option", "value");
                variantUrl = "https://www.ferramentaskennedy.com.br/" + variantUrl + "/true";
-               if (!mustAddProduct(variantUrl, products)) {
-                  continue;
-               }
                Document variantDoc = fetchDoc(variantUrl);
                Product p = addProduct(variantDoc, variantUrl);
                products.add(p);
@@ -79,14 +76,6 @@ public class BrasilFerramentasKennedyCrawler extends Crawler {
       return Jsoup.parse(response.getBody());
    }
 
-   private boolean mustAddProduct(String url, List<Product> products) {
-      for (Product product : products) {
-         if (product.getUrl().equals(url)) {
-            return false;
-         }
-      }
-      return true;
-   }
 
    private Product addProduct(Document doc, String url) throws MalformedProductException, OfferException, MalformedPricingException {
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.top input[id*=produto]", "value");
