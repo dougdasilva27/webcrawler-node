@@ -95,7 +95,7 @@ public class WalmartSuperCrawler extends Crawler {
 
       Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestJsoup;
 
-      Response response = dataFetcher.get(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
 
       int statusCode = response.getLastStatusCode();
 
