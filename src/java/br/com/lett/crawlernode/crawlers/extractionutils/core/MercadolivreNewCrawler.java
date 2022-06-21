@@ -327,9 +327,10 @@ public class MercadolivreNewCrawler {
 
    private boolean checkIsMainRetailer(String sellerFullName) {
       boolean isMainRetailer = false;
-      sellerFullName = StringUtils.stripAccents(sellerFullName.toLowerCase(Locale.ROOT));
 
       if (sellerFullName != null) {
+         sellerFullName = StringUtils.stripAccents(sellerFullName.toLowerCase(Locale.ROOT));
+
          if (sellersVariations != null && !sellersVariations.isEmpty()) {
             isMainRetailer = isMainRetailer(sellerFullName);
          } else {
