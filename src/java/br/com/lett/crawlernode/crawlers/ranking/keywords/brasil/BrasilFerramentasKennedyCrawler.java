@@ -35,7 +35,8 @@ public class BrasilFerramentasKennedyCrawler extends CrawlerRankingKeywords {
          if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
             String productUrl = CrawlerUtils.scrapUrl(e, "div.picture a", "href", "https", "www.ferramentaskennedy.com.br");
-            String internalId = CrawlerUtils.scrapStringSimpleInfo(e, "span.span-sku", true);
+            String internalPid = CrawlerUtils.scrapStringSimpleInfo(e, "span.span-sku", true);
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"div.infos div.yv-review-quickreview", "value");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "h2 a", true);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "div.picture img", Arrays.asList("src"), "https", "static.ferramentaskennedy.com.br");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "div.price p", null, true, ',', session, 0);
@@ -45,6 +46,7 @@ public class BrasilFerramentasKennedyCrawler extends CrawlerRankingKeywords {
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalId(internalId)
+               .setInternalPid(internalPid)
                .setName(name)
                .setImageUrl(imgUrl)
                .setPriceInCents(price)
