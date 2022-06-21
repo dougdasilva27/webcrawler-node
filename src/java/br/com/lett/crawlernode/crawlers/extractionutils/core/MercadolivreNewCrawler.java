@@ -286,12 +286,7 @@ public class MercadolivreNewCrawler {
       boolean hasMainOffer = false;
       boolean isMainRetailer;
 
-
-      if (sellersVariations == null) {
-         isMainRetailer = checkIsMainRetailerToOneSeller(sellerFullName);
-      } else {
-         isMainRetailer = isMainRetailer(sellerFullName);
-      }
+      isMainRetailer = checkIsMainRetailer(sellerFullName);
 
       if (isMainRetailer || allow3PSellers) {
          Pricing pricing = scrapPricing(doc);
@@ -320,7 +315,6 @@ public class MercadolivreNewCrawler {
 
    private boolean isMainRetailer(String sellerFullName) {
       boolean isMainRetailer = false;
-      sellerFullName = StringUtils.stripAccents(sellerFullName.toLowerCase(Locale.ROOT));
 
       for (String sellerName : sellersVariations) {
          sellerName = StringUtils.stripAccents(sellerName.toLowerCase(Locale.ROOT));
@@ -331,14 +325,21 @@ public class MercadolivreNewCrawler {
       return isMainRetailer;
    }
 
-   private boolean checkIsMainRetailerToOneSeller(String sellerFullName) {
+   private boolean checkIsMainRetailer(String sellerFullName) {
       boolean isMainRetailer = false;
+
       if (sellerFullName != null) {
-         String mainSellerNameLowerWithoutAccents = StringUtils.stripAccents(mainSellerNameLower.toLowerCase(Locale.ROOT));
          sellerFullName = StringUtils.stripAccents(sellerFullName.toLowerCase(Locale.ROOT));
-         if (mainSellerNameLowerWithoutAccents.equalsIgnoreCase(sellerFullName) || sellerFullName.contains(mainSellerNameLowerWithoutAccents)) {
-            isMainRetailer = true;
+
+         if (sellersVariations != null && !sellersVariations.isEmpty()) {
+            isMainRetailer = isMainRetailer(sellerFullName);
+         } else {
+            String mainSellerNameLowerWithoutAccents = StringUtils.stripAccents(mainSellerNameLower.toLowerCase(Locale.ROOT));
+            if (mainSellerNameLowerWithoutAccents.equalsIgnoreCase(sellerFullName) || sellerFullName.contains(mainSellerNameLowerWithoutAccents)) {
+               isMainRetailer = true;
+            }
          }
+
       }
 
       return isMainRetailer;
@@ -375,7 +376,7 @@ public class MercadolivreNewCrawler {
 
 
                   } else {
-                     boolean sellerNameIsMainRetailer = checkIsMainRetailerToOneSeller(sellerName);
+                     boolean sellerNameIsMainRetailer = checkIsMainRetailer(sellerName);
                      String currentSeller = sellerName;
                      if (sellerNameIsMainRetailer && !mainSellerNameLower.isEmpty()) currentSeller = mainSellerNameLower;
                      if (sellerNameIsMainRetailer || allow3PSellers) {
