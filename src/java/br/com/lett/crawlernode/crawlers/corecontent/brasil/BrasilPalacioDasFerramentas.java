@@ -1,15 +1,18 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import models.AdvancedRatingReview;
@@ -17,15 +20,11 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import javax.print.Doc;
 import java.util.*;
 
 public class BrasilPalacioDasFerramentas extends Crawler {
@@ -38,6 +37,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
    private Integer star3 = 0;
    private Integer star4 = 0;
    private Integer star5 = 0;
+
    public BrasilPalacioDasFerramentas(Session session) {
       super(session);
    }
@@ -46,33 +46,59 @@ public class BrasilPalacioDasFerramentas extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
-
+      Product product = null;
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
 
          String internalId = scrapInternalId(doc);
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=\"sku\"]", false);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img#mainImage", Arrays.asList("data-big"), "https", HOST);
          List<String> images = CrawlerUtils.scrapSecondaryImages(doc, "ul#productImages img", Arrays.asList("data-big"), "https", HOST, primaryImage);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, "div.descricao", false);
          Boolean available = isAvailable(doc);
+         CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a span", true);
+         Offers offers = available != null && available ? scrapOffers(doc) : new Offers(); // I did not found any product having price or avaibility differente because volts or model
          RatingsReviews ratings = crawlRating(doc, internalId);
-         Offers offers = available != null && available ? scrapOffers(doc) : new Offers();
 
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(images)
-            .setDescription(description)
-            .setRatingReviews(ratings)
-            .setOffers(offers)
-            .build();
+         Elements variations = getVariations(doc);
+         if (!variations.isEmpty()) {
+            for (Element variation : variations) {
+               String voltsOrModel = scrapVoltsOrModels(variation);
+               String nameVariation = scrapName(name, voltsOrModel);
+               String internalIdVariation = internalId + voltsOrModel;
+               product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalIdVariation)
+                  .setInternalPid(internalPid)
+                  .setName(nameVariation)
+                  .setPrimaryImage(primaryImage)
+                  .setCategories(categoryCollection)
+                  .setSecondaryImages(images)
+                  .setDescription(description)
+                  .setRatingReviews(ratings)
+                  .setOffers(offers)
+                  .build();
 
-         products.add(product);
+               products.add(product);
+            }
+         } else {
+            product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategories(categoryCollection)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(images)
+               .setDescription(description)
+               .setRatingReviews(ratings)
+               .setOffers(offers)
+               .build();
+
+            products.add(product);
+
+         }
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -83,6 +109,20 @@ public class BrasilPalacioDasFerramentas extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst("li.product") != null;
+   }
+
+   private String scrapName(String name, String voltsOrModel) {
+      StringBuilder stringBuilder = new StringBuilder();
+
+      if (name != null) {
+         stringBuilder.append(name);
+         if (voltsOrModel != null && !name.contains(voltsOrModel)) {
+            stringBuilder.append(" - ").append(voltsOrModel);
+         }
+      }
+
+      return stringBuilder.toString();
+
    }
 
    private String scrapInternalId(Document doc) {
@@ -96,8 +136,30 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       }
       return internalId;
    }
+
+   private String scrapVoltsOrModels(Element variation) {
+      String voltsOrModel = CrawlerUtils.scrapStringSimpleInfo(variation, null, true);
+
+      if (voltsOrModel != null) {
+         voltsOrModel = voltsOrModel.replace("indisponível","");
+
+      }
+
+      return voltsOrModel;
+   }
+
    private Boolean isAvailable(Document doc) {
-      return doc.select("button#Buy") != null;
+      return doc.select(".aviseme").isEmpty();
+   }
+
+   private Elements getVariations(Document doc) {
+      Elements variations = doc.select(".voltagem option:not(:first-child)");
+      if (variations.isEmpty()) {
+         variations = doc.select(".modelo option:not(:first-child)");
+      }
+
+      return variations;
+
    }
 
    private Offers scrapOffers(Document doc) {
@@ -124,8 +186,8 @@ public class BrasilPalacioDasFerramentas extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = convertPrice(doc, "[itemprop=\"offers\"] li.de strong", null);
-      Double spotlightPrice = convertPrice(doc, "[itemprop=\"offers\"] li.por strong", null);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[itemprop=\"offers\"] li.de strong", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[itemprop=\"offers\"] li.por strong", null, false, ',', session);
       Double priceBankSlip = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li.price [itemprop=\"price\"]", "content", false, '.', session);
 
       if (Objects.equals(priceFrom, spotlightPrice)) priceFrom = null;
@@ -149,16 +211,13 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       Installments installments = new Installments();
 
       for (Element installment : installmentsInfo) {
-         String installmentNumber = CrawlerUtils.scrapStringSimpleInfo(installment, "li strong:nth-of-type(1)", false);
-
-         if (installmentNumber != null) {
-            installmentNumber = installmentNumber.replace("x", "");
+         Integer installmentNumber = CrawlerUtils.scrapIntegerFromHtml(installment, "li strong:nth-of-type(1)", false, 0);
 
             installments.add(Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(Integer.parseInt(installmentNumber))
-               .setInstallmentPrice(convertPrice(null, "li strong:nth-of-type(2)", installment))
+               .setInstallmentNumber(installmentNumber)
+               .setInstallmentPrice(CrawlerUtils.scrapDoublePriceFromHtml(installment, "li strong:nth-of-type(2)", null, false, ',', session))
                .build());
-         }
+
       }
 
       for (String card : cards) {
@@ -181,7 +240,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       Elements comments = ratingResponse.select("body > li");
       Integer currentRating = 0;
 
-      while (comments != null && currentRating < totalReviews) {
+      while (comments != null && !comments.isEmpty() && currentRating < totalReviews) {
          for (Element comment : comments) {
             scrapAdvancedRatingReview(comment);
             currentRating++;
@@ -230,13 +289,12 @@ public class BrasilPalacioDasFerramentas extends Crawler {
          }
       }
    }
+
    protected Document fetchRatings(String internalId) {
       Map<String, String> headers = new HashMap<>();
-
-      headers.put("Accept","*/*");
-      headers.put("Accept-Encoding","gzip, deflate, br");
-      headers.put("Connection","keep-alive");
-      headers.put("Connection","keep-alive");
+      headers.put("Accept", "*/*");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Connection", "keep-alive");
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.palaciodasferramentas.com.br/load/comentarios/" + internalId + "?page=" + pageRating)
@@ -250,6 +308,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
 
       return Jsoup.parse(response.getBody());
    }
+
    private List<String> scrapSales(Pricing pricing) {
       List<String> sales = new ArrayList<>();
 
@@ -262,21 +321,5 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       return sales;
    }
 
-   private Double convertPrice(Document doc, String css, Element e) {
-      String price = null;
-
-      if (doc != null) {
-         price = CrawlerUtils.scrapStringSimpleInfo(doc, css, false);
-      } else if (e != null) {
-         price = CrawlerUtils.scrapStringSimpleInfo(e, css, false);
-      }
-
-      if (price != null) {
-         price = price.replace("R$", "").trim();
-
-         return MathUtils.parseDoubleWithComma(price);
-      }
-      return null;
-   }
 }
 
