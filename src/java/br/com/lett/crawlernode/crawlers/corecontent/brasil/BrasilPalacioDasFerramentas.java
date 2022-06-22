@@ -55,7 +55,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
          List<String> images = CrawlerUtils.scrapSecondaryImages(doc, "ul#productImages img", Arrays.asList("data-big"), "https", HOST, primaryImage);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, "div.descricao", false);
          Boolean available = isAvailable(doc);
-         Offers offers = available != null && available ? scrapOffers(doc) : new Offers();
+         Offers offers = available != null && available ? scrapOffers(doc) : new Offers(); // I did not found any product having price or avaibility differente because volts or model
          RatingsReviews ratings = crawlRating(doc, internalId);
 
          Elements variations = getVariations(doc);
