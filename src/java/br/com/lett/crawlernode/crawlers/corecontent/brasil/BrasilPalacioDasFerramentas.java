@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -48,13 +49,15 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       Product product = null;
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String name;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
+
          String internalId = scrapInternalId(doc);
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=\"sku\"]", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img#mainImage", Arrays.asList("data-big"), "https", HOST);
          List<String> images = CrawlerUtils.scrapSecondaryImages(doc, "ul#productImages img", Arrays.asList("data-big"), "https", HOST, primaryImage);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, "div.descricao", false);
          Boolean available = isAvailable(doc);
+         CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a span", true);
          Offers offers = available != null && available ? scrapOffers(doc) : new Offers(); // I did not found any product having price or avaibility differente because volts or model
          RatingsReviews ratings = crawlRating(doc, internalId);
 
@@ -62,14 +65,15 @@ public class BrasilPalacioDasFerramentas extends Crawler {
          if (!variations.isEmpty()) {
             for (Element variation : variations) {
                String voltsOrModel = scrapVoltsOrModels(variation);
-               name = scrapName(doc, voltsOrModel);
-               internalId += voltsOrModel;
+               String nameVariation = scrapName(name, voltsOrModel);
+               String internalIdVariation = internalId + voltsOrModel;
                product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
+                  .setInternalId(internalIdVariation)
                   .setInternalPid(internalPid)
-                  .setName(name)
+                  .setName(nameVariation)
                   .setPrimaryImage(primaryImage)
+                  .setCategories(categoryCollection)
                   .setSecondaryImages(images)
                   .setDescription(description)
                   .setRatingReviews(ratings)
@@ -79,12 +83,12 @@ public class BrasilPalacioDasFerramentas extends Crawler {
                products.add(product);
             }
          } else {
-            name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
             product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
+               .setCategories(categoryCollection)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(images)
                .setDescription(description)
@@ -107,9 +111,8 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       return doc.selectFirst("li.product") != null;
    }
 
-   private String scrapName(Document doc, String voltsOrModel) {
+   private String scrapName(String name, String voltsOrModel) {
       StringBuilder stringBuilder = new StringBuilder();
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
 
       if (name != null) {
          stringBuilder.append(name);
@@ -183,8 +186,8 @@ public class BrasilPalacioDasFerramentas extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = convertPrice(doc, "[itemprop=\"offers\"] li.de strong", null);
-      Double spotlightPrice = convertPrice(doc, "[itemprop=\"offers\"] li.por strong", null);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[itemprop=\"offers\"] li.de strong", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[itemprop=\"offers\"] li.por strong", null, false, ',', session);
       Double priceBankSlip = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li.price [itemprop=\"price\"]", "content", false, '.', session);
 
       if (Objects.equals(priceFrom, spotlightPrice)) priceFrom = null;
@@ -208,16 +211,13 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       Installments installments = new Installments();
 
       for (Element installment : installmentsInfo) {
-         String installmentNumber = CrawlerUtils.scrapStringSimpleInfo(installment, "li strong:nth-of-type(1)", false);
-
-         if (installmentNumber != null) {
-            installmentNumber = installmentNumber.replace("x", "");
+         Integer installmentNumber = CrawlerUtils.scrapIntegerFromHtml(installment, "li strong:nth-of-type(1)", false, 0);
 
             installments.add(Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(Integer.parseInt(installmentNumber))
-               .setInstallmentPrice(convertPrice(null, "li strong:nth-of-type(2)", installment))
+               .setInstallmentNumber(installmentNumber)
+               .setInstallmentPrice(CrawlerUtils.scrapDoublePriceFromHtml(installment, "li strong:nth-of-type(2)", null, false, ',', session))
                .build());
-         }
+
       }
 
       for (String card : cards) {
@@ -321,21 +321,5 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       return sales;
    }
 
-   private Double convertPrice(Document doc, String css, Element e) {
-      String price = null;
-
-      if (doc != null) {
-         price = CrawlerUtils.scrapStringSimpleInfo(doc, css, false);
-      } else if (e != null) {
-         price = CrawlerUtils.scrapStringSimpleInfo(e, css, false);
-      }
-
-      if (price != null) {
-         price = price.replace("R$", "").trim();
-
-         return MathUtils.parseDoubleWithComma(price);
-      }
-      return null;
-   }
 }
 
