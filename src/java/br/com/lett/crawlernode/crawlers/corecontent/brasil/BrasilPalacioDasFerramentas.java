@@ -48,7 +48,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       Product product = null;
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
+         String name;
          String internalId = scrapInternalId(doc);
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=\"sku\"]", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img#mainImage", Arrays.asList("data-big"), "https", HOST);
@@ -80,6 +80,8 @@ public class BrasilPalacioDasFerramentas extends Crawler {
 
             }
          } else {
+            name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
+
             product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)

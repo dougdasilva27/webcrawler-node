@@ -15,7 +15,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
    protected Integer PRODUCTS_PER_PAGE = 24;
@@ -46,7 +48,7 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
          for (Element e : products) {
             String productUrlPath = scrapUrl(e);
             String productUrl = productUrlPath != null ? HOME_PAGE + productUrlPath : null;
-            String internalId = scrapInternalId(productUrlPath);
+            String internalPid = CrawlerUtils.scrapIntegerFromHtml(e, "span .text", true, 0).toString();
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "a h1", false);
             String imgUrl = scrapImgUrl(e);
             Integer price = scrapPrice(e);
@@ -54,7 +56,7 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalId)
+               .setInternalPid(internalPid)
                .setName(name)
                .setImageUrl(imgUrl)
                .setPriceInCents(price)
@@ -78,33 +80,25 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
 
    }
 
-   private String scrapImgUrl (Element e) {
+   private String scrapImgUrl(Element e) {
       String img = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "img", "data-src");
 
       if (img != null) {
-         img = HOME_PAGE + img.replaceAll("\\s+","%20");
+         img = HOME_PAGE + img.replaceAll("\\s+", "%20");
       }
       return img;
    }
-   private String scrapInternalId(String url) {
-      List<String> urlParts = url.isEmpty() ? null : List.of(url.split("/"));
 
-      if (urlParts != null && !urlParts.isEmpty()) {
-         return urlParts.get(2);
-      }
-
-      return null;
-   }
-
-   private String scrapUrl (Element e) {
+   private String scrapUrl(Element e) {
       String urlPath = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a:nth-child(2n)", "href");
 
-      if (urlPath == null || urlPath.contains("sub-departamento")){
+      if (urlPath == null || urlPath.contains("sub-departamento")) {
          urlPath = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a:nth-child(3n)", "href");
       }
 
       return urlPath;
    }
+
    private Integer scrapPrice(Element e) {
       String priceDescription = CrawlerUtils.scrapStringSimpleInfo(e, "h2", false);
       Integer price;
@@ -128,9 +122,9 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
    protected Document fetchDocument(String url) {
       Map<String, String> headers = new HashMap<>();
 
-      headers.put("Accept","*/*");
-      headers.put("Accept-Encoding","gzip, deflate, br");
-      headers.put("Connection","keep-alive");
+      headers.put("Accept", "*/*");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Connection", "keep-alive");
       headers.put("authority", "www.palaciodasferramentas.com.br");
 
       Request request = Request.RequestBuilder.create()
