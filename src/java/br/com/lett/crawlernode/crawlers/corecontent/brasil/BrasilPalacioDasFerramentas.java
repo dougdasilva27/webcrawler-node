@@ -61,7 +61,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
          Elements variations = getVariations(doc);
          if (!variations.isEmpty()) {
             for (Element variation : variations) {
-               String voltsOrModel = CrawlerUtils.scrapStringSimpleInfo(variation, null, true);
+               String voltsOrModel = scrapVoltsOrModels(variation);
                name = scrapName(doc, voltsOrModel);
                internalId += voltsOrModel;
                product = ProductBuilder.create()
@@ -77,11 +77,9 @@ public class BrasilPalacioDasFerramentas extends Crawler {
                   .build();
 
                products.add(product);
-
             }
          } else {
             name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
-
             product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
@@ -97,7 +95,6 @@ public class BrasilPalacioDasFerramentas extends Crawler {
             products.add(product);
 
          }
-
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -115,9 +112,9 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
 
       if (name != null) {
-         stringBuilder.append(name).append(" - ");
-         if (voltsOrModel != null) {
-            stringBuilder.append(voltsOrModel);
+         stringBuilder.append(name);
+         if (voltsOrModel != null && !name.contains(voltsOrModel)) {
+            stringBuilder.append(" - ").append(voltsOrModel);
          }
       }
 
@@ -137,8 +134,19 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       return internalId;
    }
 
+   private String scrapVoltsOrModels(Element variation) {
+      String voltsOrModel = CrawlerUtils.scrapStringSimpleInfo(variation, null, true);
+
+      if (voltsOrModel != null) {
+         voltsOrModel = voltsOrModel.replace("indisponível","");
+
+      }
+
+      return voltsOrModel;
+   }
+
    private Boolean isAvailable(Document doc) {
-      return doc.select("button#Buy") != null;
+      return doc.select(".aviseme").isEmpty();
    }
 
    private Elements getVariations(Document doc) {
