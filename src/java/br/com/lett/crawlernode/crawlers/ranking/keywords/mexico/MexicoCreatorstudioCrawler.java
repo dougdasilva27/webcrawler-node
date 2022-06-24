@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 
 public class MexicoCreatorstudioCrawler extends CrawlerRankingKeywords {
 
-   private static final String HOME_PAGE = "https://creatorstudio.com.mx/";
+   private static final String HOME_PAGE = "https://creatorstudio.com.mx";
 
    public MexicoCreatorstudioCrawler(Session session) {
       super(session);
@@ -92,7 +92,10 @@ public class MexicoCreatorstudioCrawler extends CrawlerRankingKeywords {
       return null;
    }
 
-   private String scrapInternalPidAnotherOption(String productUrl) {
+   /*
+   In same products haven't pid in grid
+    */
+   private String scrapInternalPidInPageProduct(String productUrl) {
       Request request = Request.RequestBuilder.create()
          .setUrl(productUrl)
          .build();
@@ -120,7 +123,7 @@ public class MexicoCreatorstudioCrawler extends CrawlerRankingKeywords {
       }
 
       if (internalPid == null) {
-         internalPid = scrapInternalPidAnotherOption(productUrl);
+         internalPid = scrapInternalPidInPageProduct(productUrl);
       }
 
       return internalPid;
@@ -128,6 +131,6 @@ public class MexicoCreatorstudioCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return !this.currentDoc.select("pagination .next").isEmpty();
+      return !this.currentDoc.select(".pagination .next").isEmpty();
    }
 }
