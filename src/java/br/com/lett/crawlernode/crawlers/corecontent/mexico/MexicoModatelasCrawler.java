@@ -24,8 +24,10 @@ public class MexicoModatelasCrawler extends Crawler {
    public MexicoModatelasCrawler(Session session) {
       super(session);
    }
+
    private static final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.DINERS.toString(), Card.AMEX.toString(), Card.ELO.toString());
+
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
@@ -39,7 +41,7 @@ public class MexicoModatelasCrawler extends Crawler {
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder._block-content-loading > img",
             Arrays.asList("src"), "http://", "https://www.modatelas.com.mx/");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#description > .product.attribute.description > .value > p"));
-         boolean available = CrawlerUtils.scrapStringSimpleInfo(doc,".product-info-stock-sku > div.stock.available > span:last-child", false).contains("Disponible");
+         boolean available = isAvailable(doc);
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
@@ -61,6 +63,16 @@ public class MexicoModatelasCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private boolean isAvailable(Document doc) {
+      String available = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info-stock-sku > div.stock.available > span:last-child", false);
+      if (available != null && available.contains("Disponible")) {
+         return true;
+      }
+
+      return false;
+
    }
 
    private boolean isProductPage(Document doc) {
@@ -87,16 +99,12 @@ public class MexicoModatelasCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price > .price-container.price-final_price > .price-wrapper", "data-price-amount", false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".special-price > .price-container.price-final_price > .price-wrapper", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price > .price-container.price-final_price > .price-wrapper .price", null, true, '.', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".special-price > .price-container.price-final_price > .price-wrapper .price", null, true, '.', session);
 
-      if (priceFrom == null){
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-container.price-final_price > .price-wrapper", "data-price-amount", false, ',', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-container.price-final_price > .price-wrapper .price", null, true, '.', session);
       }
-      if (spotlightPrice == null){
-         spotlightPrice = priceFrom;
-      }
-
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
