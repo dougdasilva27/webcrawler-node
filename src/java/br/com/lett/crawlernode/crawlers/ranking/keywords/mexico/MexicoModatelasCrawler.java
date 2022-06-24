@@ -39,7 +39,7 @@ public class MexicoModatelasCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product.details.product-item-details > strong > a", "href"), "https:", "www.modatelas.com.mx/");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product.details.product-item-details > strong > a", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product.photo.product-item-photo > a > img", "data-src");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "#product-price-47322", "data-price-amount", true, '.', session, null);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price-wrapper[data-price-type=finalPrice]", "data-price-amount", true, '.', session, null);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
