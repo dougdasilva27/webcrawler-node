@@ -57,7 +57,6 @@ public class MexicoElPalacioDeHierroCrawler extends Crawler {
          String url = "https://www.elpalaciodehierro.com/on/demandware.store/Sites-palacio-MX-Site/es_MX/Product-Variation?pid="+ internalPid +"&quantity=1&ajax=true";
          JSONObject variantsDoc = fetchJSONObject(url);
          JSONArray variants = (JSONArray) variantsDoc.optQuery("/product/variationAttributes/0/swatchable/0/values");
-         
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -72,7 +71,7 @@ public class MexicoElPalacioDeHierroCrawler extends Crawler {
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(variantDoc, "div.l-pdp-product_images picture.b-product_image img", Arrays.asList("src"), "https", "www.elpalaciodehierro.com");
       List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(variantDoc, "div.l-pdp-product_images picture.b-product_image img", Arrays.asList("src"), "https", "www.elpalaciodehierro.com", primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(variantDoc, Arrays.asList("div.b-product_description .b-product_description-short"));
-      boolean availableToBuy = variantDoc.select("p.b-product_availability.m-out_of_stock") == null;
+      boolean availableToBuy = variantDoc.selectFirst("p.b-product_availability.m-out_of_stock") == null;
       Offers offers = availableToBuy ? scrapOffers(variantDoc) : new Offers();
 
       Product product = ProductBuilder.create()

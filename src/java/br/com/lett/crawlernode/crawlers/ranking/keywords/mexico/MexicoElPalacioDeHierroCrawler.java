@@ -45,7 +45,7 @@ public class MexicoElPalacioDeHierroCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 51;
       this.log("Página " + this.currentPage);
-      String url = HOME_PAGE + "on/demandware.store/Sites-palacio-MX-Site/es_MX/Search-UpdateGrid?q=" + this.keywordEncoded + "&start=" + valNext + "&sz=" + this.pageSize + "&ajax=true";
+      String url = HOME_PAGE + "on/demandware.store/Sites-palacio-MX-Site/es_MX/Search-UpdateGrid?q=" + this.keywordWithoutAccents + "&start=" + valNext + "&sz=" + this.pageSize + "&ajax=true";
       valNext += this.pageSize;
       this.log("URL : " + url);
       this.currentDoc = fetchDocument(url);
