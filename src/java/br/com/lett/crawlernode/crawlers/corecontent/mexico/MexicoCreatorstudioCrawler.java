@@ -74,8 +74,11 @@ public class MexicoCreatorstudioCrawler extends Crawler {
                if (checkIfProductAlreadyAdded(products, internalId)) {
                   continue;
                }
+               Product productVariation = crawlVariations(jsonVariation);
+               productVariation.setInternalPid(internalPid);
+               productVariation.setDescription(description);
 
-               products.add(crawlVariations(jsonVariation, description));
+               products.add(productVariation);
             }
          }
 
@@ -114,9 +117,8 @@ public class MexicoCreatorstudioCrawler extends Crawler {
       return null;
    }
 
-   private Product crawlVariations(JSONObject jsonVariation, String description) throws MalformedProductException, MalformedPricingException, OfferException {
+   private Product crawlVariations(JSONObject jsonVariation) throws MalformedProductException, MalformedPricingException, OfferException {
       String internalId = jsonVariation.optString("sku");
-      String internalPid = jsonVariation.optString("id");
       String name = jsonVariation.optString("name");
       String primaryImage = JSONUtils.getValueRecursive(jsonVariation, "featured_media.preview_image.src", String.class);
       Offers offers = scrapOffers(jsonVariation); //all variations has status "sobre pedido" so we are capture as available to show price
@@ -125,11 +127,9 @@ public class MexicoCreatorstudioCrawler extends Crawler {
       Product product = ProductBuilder.create()
          .setUrl(session.getOriginalURL())
          .setInternalId(internalId)
-         .setInternalPid(internalPid)
          .setName(name)
          .setOffers(offers)
          .setPrimaryImage(primaryImage)
-         .setDescription(description)
          .build();
 
       return product;
