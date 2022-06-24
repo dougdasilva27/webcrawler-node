@@ -25,7 +25,6 @@ import java.util.*;
 public class MexicoCreatorstudioCrawler extends Crawler {
 
    private static final String SELLER_NAME = "Creator Studio";
-   private static String pageId;
 
    public MexicoCreatorstudioCrawler(Session session) {
       super(session);
