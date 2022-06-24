@@ -452,6 +452,21 @@ public class CrawlerUtils {
       return image;
    }
 
+   public static List<String> scrapSecondaryImagesFromElements(Elements elements, String cssSelector, List<String> attributes, String protocol, String host, String primaryImage) {
+      List<String> secondaryImages = new ArrayList<>();
+
+      Elements images = cssSelector != null? elements.select(cssSelector): elements;
+      for (Element e : images) {
+         String image = sanitizeUrl(e, attributes, protocol, host);
+
+         if ((primaryImage == null || !primaryImage.equals(image)) && image != null) {
+            secondaryImages.add(image);
+         }
+      }
+
+      return secondaryImages;
+   }
+
    /**
     * @param doc
     * @param cssSelector
