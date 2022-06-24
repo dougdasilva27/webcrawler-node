@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -22,6 +23,7 @@ import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -506,8 +508,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       String reference = json.optString("reference");
       String name = json.optString("title") + (reference != null && !reference.equals("") ? " - " + reference : "");      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img[data-testid=\"image-selected-thumbnail\"]", Collections.singletonList("src"), "https", "");
-      List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "img[data-testid=\"media-gallery-image\"]", Collections.singletonList("src"), "https", "", primaryImage);
+      List<String> images = JSONUtils.jsonArrayToStringList(JSONUtils.getValueRecursive(json, "media.images", JSONArray.class));
+      String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
       boolean availableToBuy = json.optBoolean("available");
       Offers offers = availableToBuy ? scrapOffersNewLayout(doc, json) : new Offers();
       RatingsReviews ratingsReviews = scrapRatingsReviews(json);
@@ -520,7 +522,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          .setName(name)
          .setCategories(categories)
          .setPrimaryImage(primaryImage)
-         .setSecondaryImages(secondaryImages)
+         .setSecondaryImages(images)
          .setDescription(description)
          .setRatingReviews(ratingsReviews)
          .setOffers(offers)
