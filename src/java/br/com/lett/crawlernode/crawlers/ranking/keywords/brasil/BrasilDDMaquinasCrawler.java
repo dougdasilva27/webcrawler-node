@@ -30,7 +30,7 @@ public class BrasilDDMaquinasCrawler extends CrawlerRankingKeywords {
       for (Element element : products) {
 
          String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "a", "href");
-         String productName = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "a", "title");
+         String productName = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "a[title]", "title");
          String productImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".image a img", "src");
          Integer productPrice = CrawlerUtils.scrapPriceInCentsFromHtml(element, ".avista_price", null, true, ',', session, null);
 

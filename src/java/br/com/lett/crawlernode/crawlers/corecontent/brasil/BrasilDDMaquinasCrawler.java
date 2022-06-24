@@ -24,6 +24,8 @@ import org.jsoup.select.Elements;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilDDMaquinasCrawler extends Crawler {
    static final String SELLER_FULL_NAME = "Brasil DDMaquinas";
@@ -46,8 +48,13 @@ public class BrasilDDMaquinasCrawler extends Crawler {
          Elements productImages = document.select(".content-image-product ul li#zoom-image");
          String primaryImage = productImages.size() > 0 ? CrawlerUtils.scrapStringSimpleInfoByAttribute(productImages.get(0), null, "data-zoom") : "";
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImagesFromElements(productImages, null, List.of("data-zoom"), "https", "img.irroba.com.br", primaryImage);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfo(document, "#details-product .text_model_ref", true);
-
+         String internalPid = "";
+         String regex = "-([0-9]*)$";
+         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+         Matcher matcher = pattern.matcher(session.getOriginalURL());
+         if (matcher.find()) {
+            internalPid = matcher.group(1);
+         }
 
          Elements variations = document.select("div.options_list .product_options_list li");
 
