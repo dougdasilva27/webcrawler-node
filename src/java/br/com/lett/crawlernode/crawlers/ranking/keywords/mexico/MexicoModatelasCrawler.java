@@ -23,7 +23,7 @@ public class MexicoModatelasCrawler extends CrawlerRankingKeywords {
 
       this.pageSize = 12;
 
-      String url = "https://www.modatelas.com.mx/catalogsearch/result/?p=" + this.currentPage + "&" + "q=" + this.keywordWithoutAccents;
+      String url = "https://www.modatelas.com.mx/catalogsearch/result/?p=" + this.currentPage + "&" + "q=" + this.keywordEncoded.replace(" ", "+");
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url, cookies);
