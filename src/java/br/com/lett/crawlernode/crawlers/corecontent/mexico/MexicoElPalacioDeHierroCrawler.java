@@ -20,10 +20,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -60,7 +57,7 @@ public class MexicoElPalacioDeHierroCrawler extends Crawler {
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String internalPid = crawPid(doc);
+         String internalPid = crawlPid(doc);
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "button.b-add_to_cart-btn", "data-pid");
 
          if (doc.selectFirst("div.b-select_variation") != null) {
@@ -100,6 +97,12 @@ public class MexicoElPalacioDeHierroCrawler extends Crawler {
    private Product addProduct(Document variantDoc, String internalPid, String url) throws OfferException, MalformedPricingException, MalformedProductException {
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variantDoc, "button.b-add_to_cart-btn", "data-pid");
       String name = CrawlerUtils.scrapStringSimpleInfo(variantDoc, "h1.b-product_main_info-name", true);
+
+      if(!Objects.equals(internalId, internalPid)){
+         String variantName = CrawlerUtils.scrapStringSimpleInfo(variantDoc, "span.b-select_variation-name", true);
+         String variansize = CrawlerUtils.scrapStringSimpleInfo(variantDoc, "div[data-js-pdp-attributes-selected]", true);
+         name = name + "_" + variantName + "_" + variansize;
+      }
       CategoryCollection categories = CrawlerUtils.crawlCategories(variantDoc, "li a.b-breadcrumbs-link");
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(variantDoc, "div.l-pdp-product_images picture.b-product_image img", Arrays.asList("src"), "https", "www.elpalaciodehierro.com");
       List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(variantDoc, "div.l-pdp-product_images picture.b-product_image img", Arrays.asList("src"), "https", "www.elpalaciodehierro.com", primaryImage);
@@ -125,7 +128,7 @@ public class MexicoElPalacioDeHierroCrawler extends Crawler {
       return doc.selectFirst("span.b-product_description-key") != null;
    }
 
-   private String crawPid(Document doc) {
+   private String crawlPid(Document doc) {
       String regex = ": ([0-9]*)";
       String pid = CrawlerUtils.scrapStringSimpleInfo(doc, "span.b-product_description-key", true);
 
