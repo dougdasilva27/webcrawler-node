@@ -36,14 +36,12 @@ public class MexicoElPalacioDeHierroCrawler extends CrawlerRankingKeywords {
    }
 
    private static final String HOME_PAGE = "https://www.elpalaciodehierro.com/";
-   int valNext = 0;
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 51;
       this.log("Página " + this.currentPage);
       String url = "https://www.elpalaciodehierro.com/buscar?q=" + this.keywordEncoded + "&start=" + (this.currentPage - 1) * pageSize + "&sz=" + this.pageSize + "&ajax=true";
-      valNext += this.pageSize;
       this.log("URL : " + url);
       this.currentDoc = fetchDocument(url);
 
