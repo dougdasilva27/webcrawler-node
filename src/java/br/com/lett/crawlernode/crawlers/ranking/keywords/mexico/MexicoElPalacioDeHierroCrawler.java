@@ -42,7 +42,6 @@ public class MexicoElPalacioDeHierroCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 51;
       this.log("Página " + this.currentPage);
-      //String url = "https://www.elpalaciodehierro.com/buscar?q=" + this.keywordEncoded + "&start=" + valNext + "&sz=" + this.pageSize + "&ajax=true";
       String url = "https://www.elpalaciodehierro.com/buscar?q=" + this.keywordEncoded + "&start=" + (this.currentPage - 1) * pageSize + "&sz=" + this.pageSize + "&ajax=true";
       valNext += this.pageSize;
       this.log("URL : " + url);
@@ -54,7 +53,7 @@ public class MexicoElPalacioDeHierroCrawler extends CrawlerRankingKeywords {
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.b-product", "data-pid");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.b-product", "data-pid");
             String productUrl = HOME_PAGE + e.select("a.b-product_tile-name").attr("href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "a.b-product_tile-name", true);
             String image = CrawlerUtils.scrapSimplePrimaryImage(e, "picture.b-product_image source", Collections.singletonList("data-srcset"), "https", "www.elpalaciodehierro.com");
@@ -63,8 +62,8 @@ public class MexicoElPalacioDeHierroCrawler extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalId)
-               .setInternalPid(null)
+               .setInternalId(null)
+               .setInternalPid(internalPid)
                .setImageUrl(image)
                .setName(name)
                .setPriceInCents(priceInCents)
