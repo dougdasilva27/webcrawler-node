@@ -79,9 +79,4 @@ public class MexicoElPalacioDeHierroCrawler extends CrawlerRankingKeywords {
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, "div.b-results_found", true, 0);
       this.log("Total: " + this.totalProducts);
    }
-
-   @Override
-   protected boolean hasNextPage() {
-      return true;
-   }
 }
