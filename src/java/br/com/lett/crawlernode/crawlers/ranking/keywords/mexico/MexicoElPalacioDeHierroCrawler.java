@@ -35,7 +35,7 @@ public class MexicoElPalacioDeHierroCrawler extends CrawlerRankingKeywords {
       return Jsoup.parse(new ApacheDataFetcher().get(session, request).getBody());
    }
 
-   private static final String HOME_PAGE = "https://www.elpalaciodehierro.com/";
+   private static final String HOME_PAGE = "https://www.elpalaciodehierro.com";
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
