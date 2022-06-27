@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -9,16 +8,14 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.apache.http.cookie.Cookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.Collections;
 
 public class MexicoElPalacioDeHierroCrawler extends CrawlerRankingKeywords {
 
@@ -28,7 +25,7 @@ public class MexicoElPalacioDeHierroCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected Document fetchDocument(String url, List<Cookie> cookies) {
+   protected Document fetchDocument(String url) {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -39,13 +36,14 @@ public class MexicoElPalacioDeHierroCrawler extends CrawlerRankingKeywords {
    }
 
    private static final String HOME_PAGE = "https://www.elpalaciodehierro.com/";
-   int valNext= 0;
-   //https://www.elpalaciodehierro.com/on/demandware.store/Sites-palacio-MX-Site/es_MX/Search-UpdateGrid?q=hombre&start=51&sz=51&ajax=true
+   int valNext = 0;
+
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 51;
       this.log("Página " + this.currentPage);
-      String url = HOME_PAGE + "on/demandware.store/Sites-palacio-MX-Site/es_MX/Search-UpdateGrid?q=" + this.keywordWithoutAccents + "&start=" + valNext + "&sz=" + this.pageSize + "&ajax=true";
+      //String url = "https://www.elpalaciodehierro.com/buscar?q=" + this.keywordEncoded + "&start=" + valNext + "&sz=" + this.pageSize + "&ajax=true";
+      String url = "https://www.elpalaciodehierro.com/buscar?q=" + this.keywordEncoded + "&start=" + (this.currentPage - 1) * pageSize + "&sz=" + this.pageSize + "&ajax=true";
       valNext += this.pageSize;
       this.log("URL : " + url);
       this.currentDoc = fetchDocument(url);
@@ -56,7 +54,7 @@ public class MexicoElPalacioDeHierroCrawler extends CrawlerRankingKeywords {
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.b-product" ,"data-pid");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.b-product", "data-pid");
             String productUrl = HOME_PAGE + e.select("a.b-product_tile-name").attr("href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "a.b-product_tile-name", true);
             String image = CrawlerUtils.scrapSimplePrimaryImage(e, "picture.b-product_image source", Collections.singletonList("data-srcset"), "https", "www.elpalaciodehierro.com");
@@ -84,6 +82,7 @@ public class MexicoElPalacioDeHierroCrawler extends CrawlerRankingKeywords {
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, "div.b-results_found", true, 0);
       this.log("Total: " + this.totalProducts);
    }
+
    @Override
    protected boolean hasNextPage() {
       return true;

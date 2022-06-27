@@ -2,10 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
@@ -23,13 +20,17 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MexicoElPalacioDeHierroCrawler extends Crawler {
    public MexicoElPalacioDeHierroCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.HTML);
    }
 
    private static final String SELLER_FULL_NAME = "El Palacio de Hierro";
@@ -43,28 +44,60 @@ public class MexicoElPalacioDeHierroCrawler extends Crawler {
       return JSONUtils.stringToJson(response.getBody());
    }
 
+   protected Document fetchDoc(String url) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .build();
+      Response response = this.dataFetcher.get(session, request);
+      return Jsoup.parse(response.getBody());
+   }
+
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
+      doc = fetchDoc(session.getOriginalURL());
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalPid = crawPid(doc);
-         Product product = addProduct(doc, internalPid);
-         products.add(product);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "button.b-add_to_cart-btn", "data-pid");
 
-         String url = "https://www.elpalaciodehierro.com/on/demandware.store/Sites-palacio-MX-Site/es_MX/Product-Variation?pid="+ internalPid +"&quantity=1&ajax=true";
-         JSONObject variantsDoc = fetchJSONObject(url);
-         JSONArray variants = (JSONArray) variantsDoc.optQuery("/product/variationAttributes/0/swatchable/0/values");
+         if (doc.selectFirst("div.b-select_variation") != null) {
+            List<String> variantIds = getListVariantIds(internalPid);
+            for (String variantId : variantIds) {
+               String url = session.getOriginalURL().replace(internalId, variantId);
+               doc = fetchDoc(url);
+               Product product = addProduct(doc, internalPid, url);
+               products.add(product);
+            }
 
+         } else {
+            Product product = addProduct(doc, internalPid, session.getOriginalURL());
+            products.add(product);
+         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
       return products;
    }
 
-   private Product addProduct(Document variantDoc, String internalPid) throws OfferException, MalformedPricingException, MalformedProductException {
+   private List<String> getListVariantIds(String pid) {
+      List<String> variantIds = new ArrayList<>();
+      String url = "https://www.elpalaciodehierro.com/on/demandware.store/Sites-palacio-MX-Site/es_MX/Product-Variation?pid=" + pid + "&quantity=1&ajax=true";
+      JSONObject variantsDoc = fetchJSONObject(url);
+      JSONArray variants = (JSONArray) variantsDoc.optQuery("/product/variationAttributes/0/allAttributes/0/values");
+      for (int i = 0; i < variants.length(); i++) {
+         JSONObject variant = variants.getJSONObject(i);
+         JSONArray variantId = variant.getJSONArray("variants");
+         for (int j = 0; j < variantId.length(); j++) {
+            variantIds.add(variantId.getString(j));
+         }
+      }
+      return variantIds;
+   }
+
+   private Product addProduct(Document variantDoc, String internalPid, String url) throws OfferException, MalformedPricingException, MalformedProductException {
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variantDoc, "button.b-add_to_cart-btn", "data-pid");
       String name = CrawlerUtils.scrapStringSimpleInfo(variantDoc, "h1.b-product_main_info-name", true);
       CategoryCollection categories = CrawlerUtils.crawlCategories(variantDoc, "li a.b-breadcrumbs-link");
@@ -75,7 +108,7 @@ public class MexicoElPalacioDeHierroCrawler extends Crawler {
       Offers offers = availableToBuy ? scrapOffers(variantDoc) : new Offers();
 
       Product product = ProductBuilder.create()
-         .setUrl(session.getOriginalURL())
+         .setUrl(url)
          .setInternalId(internalId)
          .setInternalPid(internalPid)
          .setName(name)
@@ -94,7 +127,7 @@ public class MexicoElPalacioDeHierroCrawler extends Crawler {
 
    private String crawPid(Document doc) {
       String regex = ": ([0-9]*)";
-      String pid = CrawlerUtils.scrapStringSimpleInfo(doc, "span.b-product_description-key", true);;
+      String pid = CrawlerUtils.scrapStringSimpleInfo(doc, "span.b-product_description-key", true);
 
       final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
       final Matcher matcher = pattern.matcher(pid);
