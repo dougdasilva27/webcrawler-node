@@ -52,7 +52,7 @@ public class CovabraCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".category", false);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("#description"));
          List<String> eans = Collections.singletonList(CrawlerUtils.scrapStringSimpleInfo(doc, ".sku", false).replaceAll("[^0-9]", ""));
-         boolean availableToBuy = doc.selectFirst(".stock.available") != null;
+         boolean availableToBuy = doc.selectFirst(".estimaste-body") != null;
 
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
