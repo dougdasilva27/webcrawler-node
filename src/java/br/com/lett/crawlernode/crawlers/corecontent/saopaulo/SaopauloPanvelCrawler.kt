@@ -46,7 +46,8 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
       if (isProductPage(doc)) {
          val internalId = URL(session.originalURL).path.substringAfterLast("-")
 
-         val json = unescapeHtml(doc.selectFirst("#serverApp-state").data()).toJson().optJSONObject("api/v2/catalog/$internalId")
+         val json = unescapeHtml(doc.selectFirst("#serverApp-state").data()).toJson()
+            .optJSONObject("api/v1/item/$internalId")
 
          val categories = json.optJSONArray("categories").map { (it as JSONObject).optString("description") }
          val jsonImages = json.optJSONArray("images").sortedBy { (it as JSONObject).optInt("number") }.toMutableList()
@@ -75,7 +76,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
    }
 
    private fun isProductPage(doc: Document): Boolean {
-      return doc.select("div.title h1").first() != null
+      return doc.select(".produto-nome").first() != null
    }
 
 
@@ -114,7 +115,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
    private fun scrapOffers(json: JSONObject, doc: Document): Offers {
       var price = json.optDouble("originalPrice")
       var priceFrom: Double? = null
-      val discount = (json.optQuery("/discount/discountPercentage") as Int?)
+      val discount = (json.optQuery("/discount/percentage") as Int?)
       if (discount != 0 && discount != null) {
          price = json.optQuery("/discount/dealPrice") as Double
          priceFrom = json.optDouble("originalPrice")
@@ -159,11 +160,11 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
       var rating = RatingsReviews()
 
 
-      val s = doc.select(".detail-rating.ng-star-inserted .material-icons").size
+      val s = doc.select(".rating .material-icons.star-on").size
 
       val average = MathUtils.parseDoubleWithComma(s.toString())
 
-      var count = CrawlerUtils.scrapIntegerFromHtml(doc, ".detail-rating span:not(.material-icons)", false, 0);
+      var count = CrawlerUtils.scrapIntegerFromHtml(doc, ".rating span:not(.material-icons)", false, 0);
 
       if (average == 0.0) {
          count = 0
