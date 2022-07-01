@@ -1,6 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -15,6 +22,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.HttpHeaders;
 import org.jsoup.nodes.Document;
 
 import java.util.*;
@@ -29,6 +37,42 @@ public class MexicoSorianaCrawler extends Crawler {
    public MexicoSorianaCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
+   }
+   private Map<String, String> getHeaders() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      headers.put("origin", "https://www.soriana.com/");
+      headers.put("authority", "www.soriana.com");
+      headers.put("referer", "https://www.soriana.com/buscar?q=aceite&cid=&search-button=");
+      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+
+      return headers;
+   }
+   @Override
+   public void handleCookiesBeforeFetch() {
+      Response response;
+      String postalCode = session.getOptions().optString("postalCode");
+      if (postalCode.isEmpty()) {
+         Request request = Request.RequestBuilder.create().setUrl("https://www.soriana.com/").build();
+         response = this.dataFetcher.get(session, request);
+      } else {
+         Request request = Request.RequestBuilder.create()
+            .setUrl("https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Stores-UpdateStoreByPostalCode")
+            .setHeaders(getHeaders())
+            .setProxyservice(Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ))
+            .setSendUserAgent(true)
+            .setPayload("dwfrm_storeUpdate_postalCode=" + postalCode + "&basketValidation=true&selectSubmitPc=true&methodid=homeDelivery")
+            .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(false).mustRetrieveStatistics(true).build())
+            .build();
+         response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+      }
+      this.cookies.addAll(response.getCookies());
    }
 
    @Override
