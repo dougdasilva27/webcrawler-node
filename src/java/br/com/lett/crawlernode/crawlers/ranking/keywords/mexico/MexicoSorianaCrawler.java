@@ -68,6 +68,7 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
 
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product", "data-pid");
             String productUrl = CrawlerUtils.scrapUrl(e, ".image-container a", "href", "https", "www.soriana.com");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".tile-body.product-tile--body.w-100.p-0 > div.price.product-tile--price.p-0.border-x-1.pb-1 > div > div > div > span > span", null, true, ',', session, 0);
 
             saveDataProduct(internalId, null, productUrl);
 
