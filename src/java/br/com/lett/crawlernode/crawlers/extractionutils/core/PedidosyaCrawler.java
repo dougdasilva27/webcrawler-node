@@ -25,117 +25,35 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
+import org.jsoup.nodes.Document;
 
 import java.util.*;
 
 public class PedidosyaCrawler extends Crawler {
    public PedidosyaCrawler(Session session) {
       super(session);
-      config.setParser(Parser.JSON);
-      config.setFetcher(FetchMode.FETCHER);
-   }
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      String url = "https://www.pedidosya.com.ar";
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("authority", "www.pedidosya.com.ar");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setProxyservice(proxies)
-         .setHeaders(headers)
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
-         .setSendUserAgent(false)
-         .build();
-      Response response = new ApacheDataFetcher().get(session, request);
-
-      if (!response.isSuccess()) {
-         response = retryRequest(request, List.of(new JavanetDataFetcher(), new ApacheDataFetcher(), this.dataFetcher));
-      }
-
-      this.cookies = response.getCookies();
+      config.setFetcher(FetchMode.MIRANHA);
    }
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.HIPERCARD.toString(), Card.ELO.toString());
    private static final String MAINSELLER = "Pedidos Ya";
 
-   private final List<String> proxies = Arrays.asList(
-      ProxyCollection.LUMINATI_SERVER_BR,
-      ProxyCollection.BUY,
-      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY);
-
-
    @Override
-   protected Response fetchResponse() {
-      String internalId = getInternalIdFromUrl();
-
-      String storeId = session.getOptions().optString("store_id");
-
-      String url = "https://www.pedidosya.com.ar/mobile/v1/products/" + internalId + "?restaurantId=" + storeId + "&businessType=GROCERIES";
-      Map<String, String> headers = new HashMap<>();
-      headers.put("cookie", CommonMethods.cookiesToString(cookies));
-      headers.put("authority", "www.pedidosya.com.ar");
-      headers.put("accept", "application/json, text/plain, */*");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      headers.put("referer", session.getOriginalURL());
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setProxyservice(proxies)
-         .setSendUserAgent(true)
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#px-captcha").build())
-         .build();
-
-      Response response = new ApacheDataFetcher().get(session, request);
-
-      if (!response.isSuccess()) {
-         response = retryRequest(request, List.of(this.dataFetcher, new JavanetDataFetcher(), new JsoupDataFetcher()));
-      }
-
-      return response;
-   }
-
-   private Response retryRequest(Request request, List<DataFetcher> dataFetcherList) {
-      Response response = dataFetcherList.get(0).get(session, request);
-
-      if (!response.isSuccess()) {
-         int tries = 0;
-         while (!response.isSuccess() && tries < 3) {
-            tries++;
-            if (tries % 2 == 0) {
-               response = dataFetcherList.get(1).get(session, request);
-            } else {
-               response = dataFetcherList.get(2).get(session, request);
-            }
-         }
-      }
-
-      return response;
-   }
-
-   @Override
-   public List<Product> extractInformation(JSONObject productInfo) throws Exception {
-      super.extractInformation(productInfo);
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (productInfo.has("name")) {
+      if (!doc.select(".title_component").isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = productInfo.optString("id");
+         String internalId = getInternalIdFromUrl();
          String internalPid = internalId;
-         String name = productInfo.optString("name");
-         String primaryImage = "https://images.deliveryhero.io/image/pedidosya/products/" + productInfo.optString("image");
-         boolean available = productInfo.optBoolean("enabled");
-         Offers offers = available ? scrapOffers(productInfo) : new Offers();
-         String description = productInfo.optString("description", "");
-         List<String> eans = Collections.singletonList(productInfo.optString("gtin"));
-         // Creating the product
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".title_component", true);
+         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "picture img", "src");
+         boolean available = !doc.select("#product__add__action").isEmpty();
+         Offers offers = available ? scrapOffers(doc) : new Offers();
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".sc-gry158-0.fyQpXl", true);
+
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
@@ -144,7 +62,6 @@ public class PedidosyaCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setDescription(description)
             .setOffers(offers)
-            .setEans(eans)
             .build();
 
          products.add(product);
@@ -162,9 +79,9 @@ public class PedidosyaCrawler extends Crawler {
       return originalUrl;
    }
 
-   private Offers scrapOffers(JSONObject productInfo) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(productInfo);
+      Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(pricing);
 
       offers.add(Offer.OfferBuilder.create()
@@ -189,9 +106,9 @@ public class PedidosyaCrawler extends Crawler {
    }
 
 
-   private Pricing scrapPricing(JSONObject productInfo) throws MalformedPricingException {
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      Double spotlightPrice = productInfo.optDouble("price");
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sc-teqjqu-0.hdwlqB.sc-coreb3-0.gtcPXF", null, true, ',', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
