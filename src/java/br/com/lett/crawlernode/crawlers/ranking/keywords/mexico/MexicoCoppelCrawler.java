@@ -10,7 +10,9 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,11 +25,12 @@ import java.util.Map;
 
 
 public class MexicoCoppelCrawler extends CrawlerRankingKeywords{
-   protected Integer PRODUCT_ID_SIZE = 7;
    protected Integer PRODUCTS_PER_PAGE = 12;
 
 
    private static final String HOME_PAGE = "https://www.coppel.com/";
+   private final String COPPEL_CITY = this.session.getOptions().optString("COPPEL_CITY");
+   private final String COPPEL_STATE = this.session.getOptions().optString("COPPEL_STATE");
 
    public MexicoCoppelCrawler(Session session) {
       super(session);
@@ -56,9 +59,9 @@ public class MexicoCoppelCrawler extends CrawlerRankingKeywords{
          for (Element e : products) {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".product_name a", "href");
             String internalId = scrapInternalId(e);
-            String name = CrawlerUtils.scrapStringSimpleInfo(e,".product_name p", false);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e,".product_name a h3", false);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product_image a img", Arrays.asList("data-original"), "https", "");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".unique_price", null, false, ',', session, 0);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "input[id^=ProductInfoPrice]", "value", false, '.', session, 0);
 
             boolean isAvailable = price != 0;
 
@@ -72,11 +75,6 @@ public class MexicoCoppelCrawler extends CrawlerRankingKeywords{
                .build();
 
             saveDataProduct(productRanking);
-
-            this.log(
-               "Position: " + this.position +
-                  " - InternalId: " + internalId +
-                  " - Url: " + productUrl);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
@@ -96,7 +94,7 @@ public class MexicoCoppelCrawler extends CrawlerRankingKeywords{
    private String scrapInternalId(Element doc) {
       String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,".product_name a", "href");
 
-      return productUrl.substring(productUrl.length() - PRODUCT_ID_SIZE);
+      return CommonMethods.getLast(productUrl.split("-"));
    }
 
    protected Document fetch(String url) {
@@ -106,9 +104,20 @@ public class MexicoCoppelCrawler extends CrawlerRankingKeywords{
       headers.put("Accept-Encoding","gzip, deflate, br");
       headers.put("Connection","keep-alive");
 
+      BasicClientCookie cookie = new BasicClientCookie("COPPEL_CITY", COPPEL_CITY);
+      cookie.setDomain("www.coppel.com");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+
+      cookie = new BasicClientCookie("COPPEL_STATE", COPPEL_STATE);
+      cookie.setDomain("www.coppel.com");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
+         .setCookies(this.cookies)
          .setProxyservice(Collections.singletonList(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
          .setSendUserAgent(false)
          .build();
