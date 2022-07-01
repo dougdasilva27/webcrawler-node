@@ -49,7 +49,7 @@ public class MexicoSearsCrawler extends CrawlerRankingKeywords {
    @Override
    public void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 100;
-      String url = "https://seapi.sears.com.mx/anteater/search?cliente=sears_v2&proxystylesheet=xml2json&oe=UTF-8&getfields=*&sort=&start=" + ((this.currentPage - 1) * this.pageSize) + "&num=" + this.pageSize + "&q=" + this.keywordEncoded + "&requiredfields=&ds=marcas:attribute_marca:0:0:100:0:1.sale_precio:sale_price:1:1:1000.ranking:review:0:0:8:0:1.full:fulfillment:0:0:8:0:1.free:shipping_price:0:0:8:0:1.discount:discount:0:0:1000:0:1&do=breadcrumbs:breadcrumbs:id,name,padre:100:1:2:1&requiredobjects=&client=pwa";
+      String url = "https://seapi.sears.com.mx/anteater/search?cliente=sears_v2&proxystylesheet=xml2json&oe=UTF-8&getfields=*&sort=&start=" + ((this.currentPage - 1) * this.pageSize) + "&num=" + this.pageSize + "&q=" + this.keywordEncoded;
 
       JSONObject searchJson = fetchSearch(url);
 
