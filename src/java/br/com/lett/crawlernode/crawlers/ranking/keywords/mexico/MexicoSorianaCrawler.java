@@ -2,6 +2,9 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -21,6 +24,7 @@ import schemasMicrosoftComOfficeOffice.STInsetMode;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
@@ -33,10 +37,10 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
    private Map<String, String> getHeaders() {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-      headers.put("origin", "https://cruzverde.cl");
-      headers.put("authority", "api.cruzverde.cl");
-      headers.put("referer", "https://cruzverde.cl/");
-      headers.put("accept", "application/json, text/plain, */*");
+      headers.put("origin", "https://www.soriana.com/");
+      headers.put("authority", "www.soriana.com");
+      headers.put("referer", "https://www.soriana.com/buscar?q=aceite&cid=&search-button=");
+      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
 
       return headers;
@@ -61,10 +65,10 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
                ProxyCollection.NETNUT_RESIDENTIAL_BR
             ))
             .setSendUserAgent(true)
-            .setPayload("dwfrm_storeUpdate_postalCode=" + "&basketValidation=true&selectSubmitPc=true&methodid=homeDelivery")
+            .setPayload("dwfrm_storeUpdate_postalCode=" + postalCode + "&basketValidation=true&selectSubmitPc=true&methodid=homeDelivery")
             .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(false).mustRetrieveStatistics(true).build())
             .build();
-         response = this.dataFetcher.post(session, request);
+         response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
       }
       this.cookies = response.getCookies();
    }
@@ -88,9 +92,7 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
       this.pageSize = 12;
 
       this.log("Página " + this.currentPage);
-      String keyword = this.keywordEncoded.replace(" ", "+");
-      //https://www.soriana.com/buscar?q=vino&cid=&search-button=&cref=0&view=grid
-      String url = "https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Search-UpdateGrid?q=" + keyword + "&pmin=0.01&start=" + (this.currentPage - 1) * 12 + "&sz=12&selectedUrl=https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Search-UpdateGrid?q=" + keyword + "&pmin=0%2e01&start=" + (this.currentPage - 1) * 12 + "&sz=12";
+      String url = "https://www.soriana.com/buscar?q=" + this.keywordEncoded + "&cid=&search-button=&cref=0&view=grid";
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
