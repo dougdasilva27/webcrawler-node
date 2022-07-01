@@ -99,18 +99,8 @@ public class BrasilEmporionestleCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".special-price .price", null, false, ',', session);
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-price .price-wrapper .price", null, false, ',', session);
-      }
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, false, ',', session);
-      if (spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
-         priceFrom = null;
-      }
-      if (spotlightPrice == null && priceFrom != null) {
-         spotlightPrice = priceFrom;
-         priceFrom = null;
-      }
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-main span[data-price-type=finalPrice] .price", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-main span[data-price-type=oldPrice] .price", null, false, ',', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
