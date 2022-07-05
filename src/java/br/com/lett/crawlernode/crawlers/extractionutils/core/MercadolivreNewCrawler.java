@@ -144,9 +144,11 @@ public class MercadolivreNewCrawler {
       if (!variationsElements.isEmpty()) {
 
          for (Element e : variationsElements) {
-            name.append(" ").append(e.ownText().trim());
+            String variation = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-pdp-variations__selected-text", true);
+            if (variation != null && !productName.replace(" ","").contains(variation)) {
+               name.append(" - ").append(variation);
+            }
          }
-
       } else if (!doc.select(".andes-dropdown__popover ul li").isEmpty()) {
 
          name.append(" ").append(CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-dropdown-selector__item--label", true));
