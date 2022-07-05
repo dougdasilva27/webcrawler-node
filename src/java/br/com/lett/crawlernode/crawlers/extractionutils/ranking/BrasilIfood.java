@@ -117,7 +117,7 @@ public class BrasilIfood extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .build();
 
-      String content = this.dataFetcher.get(session, request).getBody();
+      String content = CrawlerUtils.retryRequest(request, session, this.dataFetcher, true).getBody();
 
       return JSONUtils.stringToJson(content);
    }
