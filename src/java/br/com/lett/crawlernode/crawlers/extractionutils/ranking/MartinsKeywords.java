@@ -75,8 +75,8 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          for (Object o : products) {
             JSONObject productObj = (JSONObject) o;
 
-            String internalId = CommonMethods.getLast(productObj.optString("productSku").split("_"));
-            String urlProduct = "www.martinsatacado.com.br" + productObj.optString("productUrl");
+            String internalPid = CommonMethods.getLast(productObj.optString("productSku").split("_"));
+            String urlProduct = "https://www.martinsatacado.com.br" + productObj.optString("productUrl");
             String name = productObj.getString("name");
             String imageUrl = JSONUtils.getValueRecursive(productObj, "images.0.value", String.class);
             Integer price = getPrice(productObj.optString("productSku"));
@@ -84,7 +84,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(urlProduct)
-               .setInternalId(internalId)
+               .setInternalPid(internalPid)
                .setName(name)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
@@ -129,8 +129,6 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       String str = response.getBody();
       JSONObject body = JSONUtils.stringToJson(str);
       accessToken = body.optString("access_token");
-
-
    }
 
    protected void fetchPrices(JSONArray products) {
@@ -167,7 +165,6 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          if(flag){
             payload = payload +",";
          }
-         // "{\"seller\":\"bodebrown\",\"CodigoMercadoria\":\"bodebrown_004000077\",\"Quantidade\":0},"
          payload = payload + "{\"seller\":\"" + parts.get(0) + "\",\"CodigoMercadoria\":\"" + cod + "\",\"Quantidade\":0}";
          flag = true;
       }
