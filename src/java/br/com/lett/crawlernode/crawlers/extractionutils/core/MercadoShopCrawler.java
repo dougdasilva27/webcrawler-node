@@ -240,7 +240,7 @@ public class MercadoShopCrawler extends Crawler {
    }
 
    private boolean isAvailable(Document doc) {
-      return !doc.select("h1.ui-pdp-title").isEmpty();
+      return !doc.select(".ui-pdp-price").isEmpty();
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
