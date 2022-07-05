@@ -31,6 +31,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class BrasilMagazineluizaCrawler extends Crawler {
 
@@ -508,7 +509,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       String reference = json.optString("reference");
       String name = json.optString("title") + (reference != null && !reference.equals("") ? " - " + reference : "");      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
-      List<String> images = JSONUtils.jsonArrayToStringList(JSONUtils.getValueRecursive(json, "media.images", JSONArray.class));
+      List<String> images = crawlImagesNewLayout(skuJsonInfo, json);
       String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
       boolean availableToBuy = json.optBoolean("available");
       Offers offers = availableToBuy ? scrapOffersNewLayout(doc, json) : new Offers();
@@ -527,6 +528,30 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          .setRatingReviews(ratingsReviews)
          .setOffers(offers)
          .build();
+   }
+
+   private List<String> crawlImagesNewLayout(JSONObject skuJsonInfo, JSONObject json) {
+      JSONArray components = JSONUtils.getValueRecursive(skuJsonInfo, "props.pageProps.structure.components", ".", JSONArray.class, new JSONArray());
+      String imgWidth = "800";
+      String imgHeight = "560";
+
+      for (Object component : components) {
+         String name = JSONUtils.getValueRecursive(component, "components.0.name", String.class, "");
+         if (name.equals("MediaGallery")) {
+            imgWidth = JSONUtils.getValueRecursive(component, "components.0.static.imgWidth", String.class, "800");
+            imgHeight = JSONUtils.getValueRecursive(component, "components.0.static.imgHeight", String.class, "560");
+            break;
+         }
+      }
+
+      List<String> images = JSONUtils.jsonArrayToStringList(JSONUtils.getValueRecursive(json, "media.images", ".", JSONArray.class, new JSONArray()));
+      List<String> imagesWithSize = new ArrayList<>();
+
+      for (String image : images) {
+         imagesWithSize.add(image.replace("{w}", imgWidth).replace("{h}", imgHeight));
+      }
+
+      return imagesWithSize;
    }
 
    private Offers scrapOffersNewLayout(Document doc, JSONObject json) throws OfferException, MalformedPricingException {
