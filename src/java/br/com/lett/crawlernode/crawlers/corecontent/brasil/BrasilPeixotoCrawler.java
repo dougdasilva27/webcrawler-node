@@ -22,6 +22,8 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
@@ -34,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
 
 public class BrasilPeixotoCrawler extends Crawler {
 
@@ -99,7 +100,10 @@ public class BrasilPeixotoCrawler extends Crawler {
    @Override
    protected Response fetchResponse() {
 
-      List<String> proxies = Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
+      List<String> proxies = Arrays.asList(
+         ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+         ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+         ProxyCollection.BUY_HAPROXY);
 
       int attemp = 0;
 
@@ -130,25 +134,25 @@ public class BrasilPeixotoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONObject imga = getScriptImage(doc);
-
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "div.value", true);
-
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-final_price", "data-product-id");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=name]", true);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.items a", false);
-
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div.product.pricing"));
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.items a", false);
+         List<String> imagesList = getImageListFromScript(doc);
+         String primaryImage = imagesList != null ? imagesList.remove(0) : null;
+
          boolean availableToBuy = doc.select("button[id=button-out]").isEmpty();
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "a.thumbnail img", Arrays.asList("src"), "https", "www.menonatacadista.com.br");
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalId)
+            .setInternalPid(internalPid)
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(imagesList)
             .setOffers(offers)
             .setDescription(description)
 
@@ -163,9 +167,18 @@ public class BrasilPeixotoCrawler extends Crawler {
       return products;
    }
 
-   private JSONObject getScriptImage(Document doc) {
-      String script = String.valueOf(doc.select("script[type='text/x-magento-init']"));
-
+   private List<String> getImageListFromScript(Document doc) {
+      Element imageScript = doc.selectFirst("script:containsData(mage/gallery/gallery)");
+      if(imageScript != null) {
+         JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
+         JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class);
+         List<String> imagesList = new ArrayList<>();
+         for (int i = 0; i < imageArray.length(); i++) {
+            String imageList = JSONUtils.getValueRecursive(imageArray, i+".img", String.class);
+            imagesList.add(imageList);
+         }
+         return imagesList;
+      }
       return null;
    }
 

@@ -37,28 +37,29 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
 
-      String url = "https://www.peixoto.com.br/consulta/?q=" + this.keywordEncoded + "&page=" + this.currentPage;
+      String url = "https://www.peixoto.com.br/catalogsearch/result/index/?p="+ this.currentPage +"&q="+ this.keywordEncoded.replace(" ", "+");
       this.currentDoc = fetch(url);
 
-      Elements products = this.currentDoc.select(".product_item.logged");
+      Elements products = this.currentDoc.select(".products .product-item");
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
             this.totalProducts = products.size();
          }
 
          for (Element e : products) {
-            String productUrl = "https://www.peixoto.com.br/" + CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product_image", "href");
-            Integer id = CrawlerUtils.scrapSimpleInteger(e, ".product_name> strong", false);
-            String internalId = id != null ? String.valueOf(id) : null;
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product_name> span", false);
-            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "a.product_image img", Arrays.asList("src"), "https", "www.peixoto.com.br");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "> div > h3", null, false, ',', session, null);
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item-link", "href");
+
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.price-final_price", "data-product-id");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-link", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".main-image img", Arrays.asList("src"), "https", "www.peixoto.com.br");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "span.price", null, false, ',', session, null);
 
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalId)
+               .setInternalId(null)
+               .setInternalPid(internalPid)
                .setName(name)
                .setImageUrl(imgUrl)
                .setPriceInCents(price)
@@ -89,30 +90,28 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
          options.addArguments("--no-sandbox");
          options.addArguments("--disable-dev-shm-usage");
          
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session, this.cookiesWD, "https://www.peixoto.com.br", options);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/customer/account/login/", proxy, session, this.cookiesWD, "https://www.peixoto.com.br", options);
 
          webdriver.waitLoad(10000);
 
-         waitForElement(webdriver.driver, "#login_username");
-         WebElement username = webdriver.driver.findElement(By.cssSelector("#login_username"));
+         waitForElement(webdriver.driver, ".page-main #email");
+         WebElement username = webdriver.driver.findElement(By.cssSelector(".page-main #email"));
          username.sendKeys(session.getOptions().optString("user"));
 
          webdriver.waitLoad(2000);
-         waitForElement(webdriver.driver, "#login_password");
-         WebElement pass = webdriver.driver.findElement(By.cssSelector("#login_password"));
+         waitForElement(webdriver.driver, ".page-main #pass");
+         WebElement pass = webdriver.driver.findElement(By.cssSelector(".page-main #pass"));
          pass.sendKeys(session.getOptions().optString("pass"));
 
-         waitForElement(webdriver.driver, ".button.submit");
-         webdriver.findAndClick(".button.submit", 15000);
+         waitForElement(webdriver.driver, ".page-main button.login");
+         webdriver.findAndClick(".page-main button.login", 15000);
 
-         waitForElement(webdriver.driver, ".account-link.trocar-filial");
-         webdriver.findAndClick(".account-link.trocar-filial", 15000);
+         //chose catalão - GO = 5
+         waitForElement(webdriver.driver, "#branch-select option[value='5']");
+         webdriver.findAndClick("#branch-select option[value='5']", 15000);
 
-         waitForElement(webdriver.driver, "#popup_content .table-scrollable .row0.first.gradeX.odd .modal-window.blue");
-         webdriver.findAndClick("#popup_content .table-scrollable .row0.first.gradeX.odd .modal-window.blue", 15000);
-
-         waitForElement(webdriver.driver, "#popup_content .table-scrollable .row0.first.gradeX.odd  .enviar.blue");
-         webdriver.findAndClick("#popup_content .table-scrollable .row0.first.gradeX.odd  .enviar.blue", 15000);
+         waitForElement(webdriver.driver, "button.b2b-choices");
+         webdriver.findAndClick("button.b2b-choices", 15000);
 
          Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
 
@@ -139,7 +138,7 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
    }
 
    protected Document fetch(String url) {
-      List<String> proxies = Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
+      List<String> proxies = Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
       int attemp = 0;
 
