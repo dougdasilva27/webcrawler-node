@@ -2,12 +2,18 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -48,13 +54,12 @@ public class MexicoWalmartCrawler extends CrawlerRankingKeywords {
                JSONObject attributes = product.getJSONObject("attributes");
                String productUrl = crawlProductUrl(attributes);
                String internalId = crawlInternalId(attributes);
-               String name = attributes.optString("skuDisplayName").replace("[","").replace("]","").replace("\"","");
-               String imageUrl = "https://www.walmart.com.mx" + attributes.optString("smallImage").replace("[","").replace("]","").replace("\"","");
-               Integer price = crawPrice(attributes);
+               String name = attributes.optString("skuDisplayName").replace("[", "").replace("]", "").replace("\"", "");
+               String imageUrl = "https://www.walmart.com.mx" + attributes.optString("smallImage").replace("[", "").replace("]", "").replace("\"", "");
+               Integer price = crawPrice(attributes, internalId);
                boolean isAvailable = price != null;
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
-                  .setInternalId(null)
                   .setInternalId(internalId)
                   .setName(name)
                   .setPriceInCents(price)
@@ -79,12 +84,26 @@ public class MexicoWalmartCrawler extends CrawlerRankingKeywords {
 
    }
 
-   private Integer crawPrice(JSONObject attributes) {
-      String holder = attributes.optString("sku.price").replace("[","").replace("]","").replace("\"","");
-      Integer price = null;
-      if (holder != null){
-         Double Dprice = Double.valueOf(holder);
-         price = Dprice.intValue();
+   private Integer crawPrice(JSONObject attributes, String internalId) {
+      Integer price;
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept-encoding", "");
+      headers.put("accept-language", "");
+      String url = "https://www.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getProduct?id=" + internalId;
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setCookies(cookies)
+         .setFollowRedirects(false)
+         .mustSendContentEncoding(false)
+         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
+         .build();
+      Response response  = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
+      JSONObject apiJson = CrawlerUtils.stringToJson(response.getBody());
+      price = JSONUtils.getValueRecursive(apiJson, "product.childSKUs.0.offerList.0.priceInfo.specialPrice", Integer.class);
+      if (price == null) {
+         price = JSONUtils.getValueRecursive(apiJson, "product.childSKUs.0.offerList.0.priceInfo.originalPrice", Integer.class);
       }
       return price;
    }
