@@ -83,9 +83,9 @@ public class BrasilMartinsCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
       String str = CrawlerUtils.scrapScriptFromHtml(doc,"#__NEXT_DATA__");
       JSONArray productArr  = JSONUtils.stringToJsonArray(str);
+      JSONObject data = JSONUtils.getValueRecursive(productArr, "0.props.pageProps.fallback.PRODUCT_DETAIL", JSONObject.class);
+      if (data != null) {
 
-      if (true) {
-         JSONObject data = JSONUtils.getValueRecursive(productArr, "0.props.pageProps.fallback.PRODUCT_DETAIL", JSONObject.class);
          String internalPid = CommonMethods.getLast(data.optString("productSku").split("_"));
          String name = data.optString("name");
          String primaryImage = JSONUtils.getValueRecursive(data, "images.0.value", String.class);;
@@ -295,9 +295,6 @@ public class BrasilMartinsCrawler extends Crawler {
             .setIsShopCard(false)
             .build());
       }
-
       return creditCards;
    }
-
-
 }
