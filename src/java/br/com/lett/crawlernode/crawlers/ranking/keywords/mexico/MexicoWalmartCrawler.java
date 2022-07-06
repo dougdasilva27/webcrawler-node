@@ -1,7 +1,13 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -12,113 +18,142 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class MexicoWalmartCrawler extends CrawlerRankingKeywords {
 
-  public MexicoWalmartCrawler(Session session) {
-    super(session);
-  }
+   public MexicoWalmartCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  public void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 20;
+   @Override
+   public void extractProductsFromCurrentPage() throws MalformedProductException {
+      // número de produtos por página do market
+      this.pageSize = 20;
 
-    this.log("Página " + this.currentPage);
-    String url = "https://www.walmart.com.mx/api/page/search/?Ntt=" + this.keywordEncoded + "&Nrpp=24&No=" + this.arrayProducts.size();
+      this.log("Página " + this.currentPage);
+      String url = "https://www.walmart.com.mx/api/page/search/?Ntt=" + this.keywordEncoded + "&Nrpp=24&No=" + this.arrayProducts.size();
 
-    this.log("Link onde são feitos os crawlers: " + url);
+      this.log("Link onde são feitos os crawlers: " + url);
 
-    JSONObject search = fetchJSONApi(url);
+      JSONObject search = fetchJSONApi(url);
 
-    if (search.has("records") && search.getJSONArray("records").length() > 0) {
-      JSONArray products = search.getJSONArray("records");
+      if (search.has("records") && search.getJSONArray("records").length() > 0) {
+         JSONArray products = search.getJSONArray("records");
 
-      if (this.totalProducts == 0) {
-        setTotalProducts(search);
+         if (this.totalProducts == 0) {
+            setTotalProducts(search);
+         }
+
+         for (int i = 0; i < products.length(); i++) {
+            JSONObject product = products.getJSONObject(i);
+
+            if (product.has("attributes")) {
+               JSONObject attributes = product.getJSONObject("attributes");
+               String productUrl = crawlProductUrl(attributes);
+               String internalId = crawlInternalId(attributes);
+               String name = attributes.optString("skuDisplayName").replace("[","").replace("]","").replace("\"","");
+               String imageUrl = "https://www.walmart.com.mx" + attributes.optString("smallImage").replace("[","").replace("]","").replace("\"","");
+               Integer price = crawPrice(attributes);
+               boolean isAvailable = price != null;
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(null)
+                  .setInternalId(internalId)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setImageUrl(imageUrl)
+                  .build();
+
+               saveDataProduct(productRanking);
+
+            }
+
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
 
-      for (int i = 0; i < products.length(); i++) {
-        JSONObject product = products.getJSONObject(i);
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-        if (product.has("attributes")) {
-          JSONObject attributes = product.getJSONObject("attributes");
-          String productUrl = crawlProductUrl(attributes);
-          String internalId = crawlInternalId(attributes);
+   }
 
-          saveDataProduct(internalId, null, productUrl);
-
-        }
-
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
-        }
+   private Integer crawPrice(JSONObject attributes) {
+      String holder = attributes.optString("sku.price").replace("[","").replace("]","").replace("\"","");
+      Integer price = null;
+      if (holder != null){
+         Double Dprice = Double.valueOf(holder);
+         price = Dprice.intValue();
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
+      return price;
+   }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-
-  }
-
-  protected void setTotalProducts(JSONObject search) {
-    if (search.has("totalNumRecs")) {
-      this.totalProducts = search.getInt("totalNumRecs");
-      this.log("Total da busca: " + this.totalProducts);
-    }
-  }
-
-  private String crawlInternalId(JSONObject product) {
-    String internalId = null;
-
-    if (product.has("record.id")) {
-      JSONArray ids = product.getJSONArray("record.id");
-
-      if (ids.length() > 0) {
-        internalId = ids.get(0).toString();
+   protected void setTotalProducts(JSONObject search) {
+      if (search.has("totalNumRecs")) {
+         this.totalProducts = search.getInt("totalNumRecs");
+         this.log("Total da busca: " + this.totalProducts);
       }
-    }
+   }
 
-    return internalId;
-  }
+   private String crawlInternalId(JSONObject product) {
+      String internalId = null;
 
-  private String crawlProductUrl(JSONObject product) {
-    String productUrl = null;
-    if (product.has("productSeoUrl")) {
-      JSONArray urls = product.getJSONArray("productSeoUrl");
+      if (product.has("record.id")) {
+         JSONArray ids = product.getJSONArray("record.id");
 
-      if (urls.length() > 0) {
-        productUrl = "https://www.walmart.com.mx" + urls.get(0).toString().replace("[", "").replace("]", "");
+         if (ids.length() > 0) {
+            internalId = ids.get(0).toString();
+         }
       }
-    }
 
-    return productUrl;
-  }
+      return internalId;
+   }
 
-  private JSONObject fetchJSONApi(String url) {
-    JSONObject api = new JSONObject();
+   private String crawlProductUrl(JSONObject product) {
+      String productUrl = null;
+      if (product.has("productSeoUrl")) {
+         JSONArray urls = product.getJSONArray("productSeoUrl");
 
-    Map<String, String> headers = new HashMap<>();
-    headers.put("accept-encoding", "");
-    headers.put("accept-language", "");
-
-    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
-    JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
-
-    if (response.has("contents")) {
-      JSONArray contents = response.getJSONArray("contents");
-
-      if (contents.length() > 0) {
-        JSONObject content = contents.getJSONObject(0);
-
-        if (content.has("mainArea")) {
-          JSONArray mainArea = content.getJSONArray("mainArea");
-          if (mainArea.length() > 0) {
-            api = mainArea.getJSONObject(1);
-          }
-        }
+         if (urls.length() > 0) {
+            productUrl = "https://www.walmart.com.mx" + urls.get(0).toString().replace("[", "").replace("]", "");
+         }
       }
-    }
 
-    return api;
-  }
+      return productUrl;
+   }
+
+   private JSONObject fetchJSONApi(String url) {
+      JSONObject api = new JSONObject();
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept-encoding", "");
+      headers.put("accept-language", "");
+
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .mustSendContentEncoding(false)
+         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
+         .build();
+      JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
+      if (response.has("contents")) {
+         JSONArray contents = response.getJSONArray("contents");
+
+         if (contents.length() > 0) {
+            JSONObject content = contents.getJSONObject(0);
+
+            if (content.has("mainArea")) {
+               JSONArray mainArea = content.getJSONArray("mainArea");
+               if (mainArea.length() > 0) {
+                  api = mainArea.getJSONObject(2);
+               }
+            }
+         }
+      }
+
+      return api;
+   }
 }

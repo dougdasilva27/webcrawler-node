@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
@@ -43,8 +44,18 @@ public class MexicoWalmartCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
       String internalId = crawlInternalId(session.getOriginalURL());
 
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept-encoding", "");
+      headers.put("accept-language", "");
+
       String url = "https://www.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getProduct?id=" + internalId;
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setCookies(cookies)
+         .mustSendContentEncoding(false)
+         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
+         .build();
       JSONObject apiJson = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
       if (apiJson.has("product")) {
