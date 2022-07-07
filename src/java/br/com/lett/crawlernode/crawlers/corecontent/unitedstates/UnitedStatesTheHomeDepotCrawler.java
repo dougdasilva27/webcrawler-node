@@ -171,7 +171,7 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
       Boolean availability = JSONUtils.getValueRecursive(productJson, "availabilityType.status", Boolean.class);
 
       if (availability != null) {
-         return true;
+         return availability;
       }
 
       return false;
