@@ -64,7 +64,7 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
 
             String internalPid = null;
             if (productUrl != null) {
-               if (productUrl.startsWith("https://www.mercadolivre.com.br/")) {
+               if (productUrl.startsWith("https://www.mercadolivre.com.br/") || productUrl.startsWith("https://www.mercadolibre.com")) {
                   productUrl = productUrl != null ? productUrl.split("\\?")[0] : null;
                   internalPid = CommonMethods.getLast(productUrl.split("/"));
                } else {
