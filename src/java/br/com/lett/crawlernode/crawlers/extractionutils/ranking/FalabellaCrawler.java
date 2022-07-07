@@ -10,25 +10,42 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public abstract class FalabellaCrawler extends CrawlerRankingKeywords {
+public class FalabellaCrawler extends CrawlerRankingKeywords {
 
    private final String HOME_PAGE = getHomePage();
+   private final String storeName = getStoreName();
+   private final boolean allow3pSeller = isAllow3pSeller();
 
    protected FalabellaCrawler(Session session) {
       super(session);
    }
 
-   protected abstract String getHomePage();
+   protected String getHomePage() {
+      return session.getOptions().optString("home_page");
+   }
+
+   protected String getStoreName() {
+      return session.getOptions().optString("store_name");
+   }
+
+   protected boolean isAllow3pSeller() {
+      return session.getOptions().optBoolean("allow_3p_seller", true);
+   }
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 48;
-
+      String url = " ";
       this.log("Página " + this.currentPage);
 
-      String url = HOME_PAGE + "search/?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
-      this.log("Link onde são feitos os crawlers: " + url);
+      if(allow3pSeller){
+         url = HOME_PAGE + "search/?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
+      }
+      else {
+         url = HOME_PAGE + "search?Ntt=" + this.keywordEncoded + "&subdomain=" + storeName + "&page=" + this.currentPage+ "&store=" + storeName;
+      }
 
+      this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".search-results--products > div");

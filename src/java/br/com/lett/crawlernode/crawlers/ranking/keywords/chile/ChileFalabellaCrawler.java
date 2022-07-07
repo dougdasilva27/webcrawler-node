@@ -5,14 +5,20 @@ import br.com.lett.crawlernode.crawlers.extractionutils.ranking.FalabellaCrawler
 
 public class ChileFalabellaCrawler extends FalabellaCrawler {
 
-   private static final String HOME_PAGE = "https://www.falabella.com/falabella-cl/";
-
    public ChileFalabellaCrawler(Session session) {
       super(session);
    }
 
    @Override
    protected String getHomePage() {
-      return HOME_PAGE;
+      return session.getOptions().optString("home_page");
+   }
+   @Override
+   protected String getStoreName() {
+      return session.getOptions().optString("store_name");
+   }
+   @Override
+   protected boolean isAllow3pSeller() {
+      return session.getOptions().optBoolean("allow_3p_seller", true);
    }
 }

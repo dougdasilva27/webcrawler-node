@@ -7,7 +7,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -28,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -36,24 +37,34 @@ import java.util.Set;
  * @author BuSSoLoTTi
  */
 
-public abstract class FalabellaCrawler extends Crawler {
+public class FalabellaCrawler extends Crawler {
 
    private final String SELLER_FULL_NAME = getSellerName();
    private final String HOME_PAGE = getHomePage();
    private final String API_CODE = getApiCode();
-   protected Set<Card> cards = Sets.newHashSet(Card.VISA,Card.MASTERCARD,Card.AMEX);
+   private final boolean allow3pSeller = isAllow3pSeller();
 
+   protected Set<Card> cards = Sets.newHashSet(Card.VISA, Card.MASTERCARD, Card.AMEX);
 
    public FalabellaCrawler(Session session) {
       super(session);
    }
 
-   protected abstract String getHomePage();
+   protected boolean isAllow3pSeller() {
+      return session.getOptions().optBoolean("allow_3p_seller", true);
+   }
 
-   protected abstract String getApiCode();
+   protected String getHomePage() {
+      return session.getOptions().optString("home_page");
+   }
 
-   protected abstract String getSellerName();
+   protected String getApiCode() {
+      return session.getOptions().optString("api_code");
+   }
 
+   protected String getSellerName() {
+      return session.getOptions().optString("seller_name");
+   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -61,35 +72,40 @@ public abstract class FalabellaCrawler extends Crawler {
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         String sellerFullName = scrapSellerFullName(doc);
+         boolean isMainSeller = sellerFullName.equalsIgnoreCase(SELLER_FULL_NAME);
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-id]", "data-id");
-         String internalPid = internalId;
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div[data-name]", true);
-         boolean available = doc.select(".availability span").size() > 1;
-         Offers offers = available ? scrapOffers(doc) : null;
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb");
+         if (isMainSeller || allow3pSeller) {
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-id]", "data-id");
+            String internalPid = internalId;
+            String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div[data-name]", true);
+            boolean available = doc.select(".availability span").size() > 1;
+            Offers offers = available ? scrapOffers(doc) : null;
+            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb");
 
-         List<String> images = scrapImages(internalId);
-         String primaryImage = images.remove(0);
+            List<String> images = scrapImages(doc);
+            String primaryImage = images != null ? images.remove(0) : null;
 
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#productInfoContainer"));
+            String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#productInfoContainer"));
 
-         RatingsReviews ratingsReviews = scrapRatingsReviews(doc, internalId);
+            RatingsReviews ratingsReviews = scrapRatingsReviews(internalId, session.getOriginalURL());
 
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setOffers(offers)
-            .setCategories(categories)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(images)
-            .setDescription(description)
-            .setRatingReviews(ratingsReviews)
-            .build();
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setOffers(offers)
+               .setCategories(categories)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(images)
+               .setDescription(description)
+               .setRatingReviews(ratingsReviews)
+               .build();
 
-         products.add(product);
+            products.add(product);
+         }
+
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -97,13 +113,13 @@ public abstract class FalabellaCrawler extends Crawler {
       return products;
    }
 
-   private RatingsReviews scrapRatingsReviews(Document doc, String internalId) {
+   private RatingsReviews scrapRatingsReviews(String internalId, String url) {
       RatingsReviews ratingsReviews = new RatingsReviews();
 
       ratingsReviews.setDate(session.getDate());
       ratingsReviews.setInternalId(internalId);
 
-      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingsReviews(doc, internalId);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingsReviews(url);
 
       ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
       ratingsReviews.setAverageOverallRating(CrawlerUtils.extractRatingAverageFromAdvancedRatingReview(advancedRatingReview));
@@ -112,19 +128,18 @@ public abstract class FalabellaCrawler extends Crawler {
       return ratingsReviews;
    }
 
-   private AdvancedRatingReview scrapAdvancedRatingsReviews(Document doc, String internalId) {
+   private AdvancedRatingReview scrapAdvancedRatingsReviews(String url) {
       AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
-
-      String url = "https://api.bazaarvoice.com/data/display/0.2alpha/product/summary?PassKey=m8bzx1s49996pkz12xvk6gh2e&productid=" + internalId + "&contentType=reviews&reviewDistribution=primaryRating&rev=0";
+      String idProductReview = getReviewId(url);
+      String urlReview = "https://api.bazaarvoice.com/data/display/0.2alpha/product/summary?PassKey=m8bzx1s49996pkz12xvk6gh2e&productid=" + idProductReview + "&contentType=reviews&reviewDistribution=primaryRating&rev=0";
 
       Request request = Request.RequestBuilder.create()
-         .setUrl(url)
+         .setUrl(urlReview)
          .build();
 
       String response = dataFetcher.get(session, request).getBody();
 
       JSONObject json = response != null ? new JSONObject(response) : new JSONObject();
-
 
       advancedRatingReview.setTotalStar1(JSONUtils.getValueRecursive(json, "reviewSummary.primaryRating.distribution.4.count", Integer.class));
       advancedRatingReview.setTotalStar2(JSONUtils.getValueRecursive(json, "reviewSummary.primaryRating.distribution.3.count", Integer.class));
@@ -135,77 +150,67 @@ public abstract class FalabellaCrawler extends Crawler {
       return advancedRatingReview;
    }
 
-   private List<String> scrapImages(String internalId) {
-      List<String> images = new ArrayList<>();
+   private String getReviewId(String url) {
+      String regex = "product/([0-9]*)/";
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl("https://falabella.scene7.com/is/image/" + API_CODE + "/" + internalId + "?req=set,json")
-         .build();
-      String response = dataFetcher.get(session, request).getBody();
-      String json = CommonMethods.substring(response, "(", ")",true);
-      int index = json.lastIndexOf(",");
-      json = json.substring(0, index);
-
-      JSONObject jsonObject = !json.isEmpty() ? new JSONObject(json) : new JSONObject();
-
-      JSONArray imgCodes = JSONUtils.getValueRecursive(jsonObject, "set.item", JSONArray.class);
-
-      if (imgCodes == null) {
-         imgCodes = new JSONArray();
-         imgCodes.put(JSONUtils.getValueRecursive(jsonObject, "set.item", JSONObject.class));
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(url);
+      if (matcher.find()) {
+         return matcher.group(1);
       }
-      
-      if (imgCodes != null) {
-         for (Object obj : imgCodes) {
-            String value = JSONUtils.getValueRecursive(obj, "s.n", String.class);
-            if (value == null){
-               value = JSONUtils.getValueRecursive(obj, "i.n", String.class);
-            }
-            String size = JSONUtils.getValueRecursive(obj, "dx", String.class);
-            String url = "https://falabella.scene7.com/is/image/" + value + "?wid=" + size;
-            images.add(url);
+      return null;
+   }
+
+   private List<String> scrapImages(Document doc) {
+      Element imageScript = doc.selectFirst("script#__NEXT_DATA__");
+      if (imageScript != null) {
+         JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
+         JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "props.pageProps.productData.variants.0.medias", JSONArray.class);
+         List<String> images = new ArrayList<>();
+         for (int i = 0; i < imageArray.length(); i++) {
+            String imageList = JSONUtils.getValueRecursive(imageArray, i + ".url", String.class);
+            images.add(imageList);
          }
+         return images;
       }
-
-      return images;
-
+      return null;
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("div[data-id]")!= null;
+      return doc.selectFirst("div[data-id]") != null;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
+      String sellerFullName = scrapSellerFullName(doc);
 
       Pricing pricing = scrapPricing(doc);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_FULL_NAME)
+         .setSellerFullName(sellerFullName)
          .setPricing(pricing)
          .setIsBuybox(false)
-         .setIsMainRetailer(true)
+         .setIsMainRetailer(SELLER_FULL_NAME.equalsIgnoreCase(sellerFullName))
          .build());
 
       return offers;
    }
 
+   private String scrapSellerFullName(Document doc) {
+      return CrawlerUtils.scrapStringSimpleInfo(doc, ".sellerInfoContainer .underline", true);
+   }
+
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      Double priceFrom = null;
-      Double price = null;
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-internet-price]", "data-internet-price", true, ',', session);
+      ;
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-normal-price]", "data-normal-price", true, ',', session);
+      Double alternativePrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-cmr-price]", "data-cmr-price", true, ',', session);
 
-      Element e = doc.selectFirst("li[data-normal-price]");
-
-      if (e!=null) {
-         price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-internet-price]", "data-internet-price", true, ',', session);
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-normal-price]", "data-normal-price", true, ',', session);
-         if(price==null){
-            price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-event-price]", "data-event-price", true, ',', session);
-         }
-      } else {
-         price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-internet-price]", "data-internet-price", true, ',', session);
+      if (alternativePrice != null) {
+         priceFrom = spotlightPrice;
+         spotlightPrice = alternativePrice;
       }
 
       CreditCards creditCards = new CreditCards();
@@ -213,7 +218,7 @@ public abstract class FalabellaCrawler extends Crawler {
 
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(1)
-         .setInstallmentPrice(price)
+         .setInstallmentPrice(spotlightPrice)
          .build());
 
       for (Card card : cards) {
@@ -227,7 +232,7 @@ public abstract class FalabellaCrawler extends Crawler {
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
-         .setSpotlightPrice(price)
+         .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
          .build();
    }

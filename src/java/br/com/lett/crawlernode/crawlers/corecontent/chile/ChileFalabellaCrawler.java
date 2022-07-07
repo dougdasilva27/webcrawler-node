@@ -4,28 +4,26 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.FalabellaCrawler;
 
 public class ChileFalabellaCrawler extends FalabellaCrawler {
-
-   private static final String HOME_PAGE = "www.falabella.com";
-   private static final String API_CODE = "Falabella";
-   private static final String SELLE_NAME = "Falabella";
-
-
+   
    public ChileFalabellaCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String getHomePage() {
-      return HOME_PAGE;
+   protected boolean isAllow3pSeller() {
+      return session.getOptions().optBoolean("allow_3p_seller", true);
    }
 
+   @Override
+   protected String getHomePage() {
+      return session.getOptions().optString("home_page");
+   }
    @Override
    protected String getApiCode() {
-      return API_CODE;
+      return session.getOptions().optString("api_code");
    }
-
    @Override
    protected String getSellerName() {
-      return SELLE_NAME;
+      return session.getOptions().optString("seller_name");
    }
 }
