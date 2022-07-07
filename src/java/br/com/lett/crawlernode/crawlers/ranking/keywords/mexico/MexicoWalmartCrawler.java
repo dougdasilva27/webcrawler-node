@@ -56,7 +56,7 @@ public class MexicoWalmartCrawler extends CrawlerRankingKeywords {
                String internalId = crawlInternalId(attributes);
                String name = attributes.optString("skuDisplayName").replace("[", "").replace("]", "").replace("\"", "");
                String imageUrl = "https://www.walmart.com.mx" + attributes.optString("smallImage").replace("[", "").replace("]", "").replace("\"", "");
-               Integer price = crawPrice(attributes, internalId);
+               Integer price = crawlPrice(attributes, internalId);
                boolean isAvailable = price != null;
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
@@ -84,7 +84,7 @@ public class MexicoWalmartCrawler extends CrawlerRankingKeywords {
 
    }
 
-   private Integer crawPrice(JSONObject attributes, String internalId) {
+   private Integer crawlPrice(JSONObject attributes, String internalId) {
       Integer price;
 
       Map<String, String> headers = new HashMap<>();
