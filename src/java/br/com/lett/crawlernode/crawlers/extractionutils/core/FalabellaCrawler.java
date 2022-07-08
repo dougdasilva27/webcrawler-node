@@ -39,31 +39,29 @@ import java.util.regex.Pattern;
 
 public class FalabellaCrawler extends Crawler {
 
-   private final String SELLER_FULL_NAME = getSellerName();
-   private final String HOME_PAGE = getHomePage();
-   private final String API_CODE = getApiCode();
-   private final boolean allow3pSeller = isAllow3pSeller();
-
-   protected Set<Card> cards = Sets.newHashSet(Card.VISA, Card.MASTERCARD, Card.AMEX);
-
    public FalabellaCrawler(Session session) {
       super(session);
    }
+   protected Set<Card> cards = Sets.newHashSet(Card.VISA, Card.MASTERCARD, Card.AMEX);
 
+   private final boolean allow3pSeller = isAllow3pSeller();
    protected boolean isAllow3pSeller() {
-      return allow3pSeller;
+      return session.getOptions().optBoolean("allow_3p_seller", true);
    }
 
+   private final String HOME_PAGE = getHomePage();
    protected String getHomePage() {
-      return HOME_PAGE;
+      return session.getOptions().optString("home_page");
    }
 
+   private final String API_CODE = getApiCode();
    protected String getApiCode() {
-      return API_CODE;
+      return session.getOptions().optString("api_code");
    }
 
+   private final String SELLER_FULL_NAME = getSellerName();
    protected String getSellerName() {
-      return SELLER_FULL_NAME;
+      return session.getOptions().optString("seller_name");
    }
 
    @Override

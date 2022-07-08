@@ -18,7 +18,7 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
    private final String HOME_PAGE = getHomePage();
    private final boolean allow3pSeller = isAllow3pSeller();
 
-   protected FalabellaCrawler(Session session) {
+   public FalabellaCrawler(Session session) {
       super(session);
    }
 
