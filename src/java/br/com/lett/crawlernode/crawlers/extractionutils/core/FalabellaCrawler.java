@@ -78,7 +78,7 @@ public class FalabellaCrawler extends Crawler {
             String internalPid = internalId;
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div[data-name]", true);
             boolean available = doc.select(".availability span").size() > 1;
-            Offers offers = available ? scrapOffers(doc) : null;
+            Offers offers = available ? scrapOffers(doc, sellerFullName, isMainSeller) : null;
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb");
 
             List<String> images = scrapImages(doc);
@@ -181,9 +181,8 @@ public class FalabellaCrawler extends Crawler {
       return doc.selectFirst("div[data-id]") != null;
    }
 
-   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc, String sellerFullName, Boolean isMainSeller ) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      String sellerFullName = scrapSellerFullName(doc);
 
       Pricing pricing = scrapPricing(doc);
 
@@ -192,7 +191,7 @@ public class FalabellaCrawler extends Crawler {
          .setSellerFullName(sellerFullName)
          .setPricing(pricing)
          .setIsBuybox(false)
-         .setIsMainRetailer(SELLER_FULL_NAME.equalsIgnoreCase(sellerFullName))
+         .setIsMainRetailer(isMainSeller)
          .build());
 
       return offers;
