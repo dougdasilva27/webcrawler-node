@@ -10,25 +10,41 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public abstract class FalabellaCrawler extends CrawlerRankingKeywords {
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class FalabellaCrawler extends CrawlerRankingKeywords {
 
    private final String HOME_PAGE = getHomePage();
+   private final boolean allow3pSeller = isAllow3pSeller();
 
-   protected FalabellaCrawler(Session session) {
+   public FalabellaCrawler(Session session) {
       super(session);
    }
 
-   protected abstract String getHomePage();
+   protected String getHomePage() {
+      return session.getOptions().optString("home_page");
+   }
+
+   protected boolean isAllow3pSeller() {
+      return session.getOptions().optBoolean("allow_3p_seller", true);
+   }
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 48;
-
+      String url = " ";
       this.log("Página " + this.currentPage);
 
-      String url = HOME_PAGE + "search/?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
-      this.log("Link onde são feitos os crawlers: " + url);
+      if(allow3pSeller){
+         url = HOME_PAGE + "/search/?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
+      }
+      else {
+         String storeName = getStoreName(HOME_PAGE);
+         url = HOME_PAGE + "/search?Ntt=" + this.keywordEncoded + "&subdomain=" + storeName + "&page=" + this.currentPage+ "&store=" + storeName;
+      }
 
+      this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".search-results--products > div");
@@ -69,6 +85,17 @@ public abstract class FalabellaCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String getStoreName(String homePage) {
+      String regex = "/([a-z]*)-";
+
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(homePage);
+      if(matcher.find()){
+         return matcher.group(1);
+      }
+      return null;
    }
 
    protected String scrapInternalId(Element e) {
