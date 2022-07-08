@@ -10,10 +10,12 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class FalabellaCrawler extends CrawlerRankingKeywords {
 
    private final String HOME_PAGE = getHomePage();
-   private final String storeName = getStoreName();
    private final boolean allow3pSeller = isAllow3pSeller();
 
    protected FalabellaCrawler(Session session) {
@@ -22,10 +24,6 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
 
    protected String getHomePage() {
       return session.getOptions().optString("home_page");
-   }
-
-   protected String getStoreName() {
-      return session.getOptions().optString("store_name");
    }
 
    protected boolean isAllow3pSeller() {
@@ -39,10 +37,11 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       if(allow3pSeller){
-         url = HOME_PAGE + "search/?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
+         url = HOME_PAGE + "/search/?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
       }
       else {
-         url = HOME_PAGE + "search?Ntt=" + this.keywordEncoded + "&subdomain=" + storeName + "&page=" + this.currentPage+ "&store=" + storeName;
+         String storeName = getStoreName(HOME_PAGE);
+         url = HOME_PAGE + "/search?Ntt=" + this.keywordEncoded + "&subdomain=" + storeName + "&page=" + this.currentPage+ "&store=" + storeName;
       }
 
       this.log("Link onde são feitos os crawlers: " + url);
@@ -86,6 +85,17 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String getStoreName(String homePage) {
+      String regex = "/([a-z]*)-";
+
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(homePage);
+      if(matcher.find()){
+         return matcher.group(1);
+      }
+      return null;
    }
 
    protected String scrapInternalId(Element e) {

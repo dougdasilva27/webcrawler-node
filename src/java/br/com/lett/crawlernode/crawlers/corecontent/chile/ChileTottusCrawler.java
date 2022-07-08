@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.FalabellaCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TottusCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -30,14 +31,27 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class ChileTottusCrawler extends TottusCrawler {
-
-   private static final String home_page = "https://www.tottus.com.cl/";
-   private static final String seller_full_name = "Tottus";
+public class ChileTottusCrawler extends FalabellaCrawler {
 
    public ChileTottusCrawler(Session session) {
       super(session);
-      super.homePage = home_page;
-      super.salerName = seller_full_name;
    }
+
+   protected boolean isAllow3pSeller() {
+      return session.getOptions().optBoolean("allow_3p_seller", true);
+   }
+   @Override
+   protected String getHomePage() {
+      return session.getOptions().optString("home_page");
+   }
+   @Override
+   protected String getApiCode() {
+      return session.getOptions().optString("api_code");
+   }
+   @Override
+   protected String getSellerName() {
+      return session.getOptions().optString("seller_name");
+   }
+
+
 }

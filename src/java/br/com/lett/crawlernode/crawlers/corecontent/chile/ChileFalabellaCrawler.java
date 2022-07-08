@@ -13,7 +13,6 @@ public class ChileFalabellaCrawler extends FalabellaCrawler {
    protected boolean isAllow3pSeller() {
       return session.getOptions().optBoolean("allow_3p_seller", true);
    }
-
    @Override
    protected String getHomePage() {
       return session.getOptions().optString("home_page");

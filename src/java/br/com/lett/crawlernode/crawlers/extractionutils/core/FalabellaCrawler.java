@@ -51,19 +51,19 @@ public class FalabellaCrawler extends Crawler {
    }
 
    protected boolean isAllow3pSeller() {
-      return session.getOptions().optBoolean("allow_3p_seller", true);
+      return allow3pSeller;
    }
 
    protected String getHomePage() {
-      return session.getOptions().optString("home_page");
+      return HOME_PAGE;
    }
 
    protected String getApiCode() {
-      return session.getOptions().optString("api_code");
+      return API_CODE;
    }
 
    protected String getSellerName() {
-      return session.getOptions().optString("seller_name");
+      return SELLER_FULL_NAME;
    }
 
    @Override
@@ -166,6 +166,9 @@ public class FalabellaCrawler extends Crawler {
       if (imageScript != null) {
          JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
          JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "props.pageProps.productData.variants.0.medias", JSONArray.class);
+         if (imageArray.length() == 0){
+            imageArray = JSONUtils.getValueRecursive(imageToJson, "props.pageProps.productData.medias", JSONArray.class);
+         }
          List<String> images = new ArrayList<>();
          for (int i = 0; i < imageArray.length(); i++) {
             String imageList = JSONUtils.getValueRecursive(imageArray, i + ".url", String.class);
@@ -204,7 +207,9 @@ public class FalabellaCrawler extends Crawler {
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-internet-price]", "data-internet-price", true, ',', session);
-      ;
+      if(spotlightPrice == null){
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-event-price]", "data-event-price", true, ',', session);
+      }
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-normal-price]", "data-normal-price", true, ',', session);
       Double alternativePrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-cmr-price]", "data-cmr-price", true, ',', session);
 
