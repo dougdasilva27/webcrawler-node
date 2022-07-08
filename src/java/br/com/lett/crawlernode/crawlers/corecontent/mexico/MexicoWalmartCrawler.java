@@ -32,7 +32,6 @@ public class MexicoWalmartCrawler extends Crawler {
 
    public MexicoWalmartCrawler(Session session) {
       super(session);
-      // super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
