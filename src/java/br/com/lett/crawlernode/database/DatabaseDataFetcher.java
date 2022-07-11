@@ -9,10 +9,13 @@ import java.util.stream.Collectors;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.ScraperInformation;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
 import dbmodels.tables.SupplierTrackedLett;
 import exceptions.MalformedRatingModel;
 import exceptions.OfferException;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.Record;
@@ -35,7 +38,7 @@ public class DatabaseDataFetcher {
 
    private static final Logger logger = LoggerFactory.getLogger(DatabaseDataFetcher.class);
 
-   private DatabaseManager databaseManager;
+   private static DatabaseManager databaseManager;
 
    private static final String FETCHER_PROXIES_SOURCE = "source";
    private static final String FETCHER_PROXIES_USERNAME = "user";
@@ -373,6 +376,81 @@ public class DatabaseDataFetcher {
          JdbcConnectionFactory.closeResource(conn);
       }
       return result;
+   }
+
+   public static JSONArray fetchProxiesFromMongoFetcher(JSONArray proxiesNames) {
+      JSONArray proxies = new JSONArray();
+      LettProxy proxy = new LettProxy();
+
+      MongoCollection<Document> collection = databaseManager.connectionFetcher.getCollection("Proxies");
+
+      for (Object proxyName : proxiesNames) {
+         Bson query = Filters.and(
+            Filters.eq("source", proxyName));
+
+         FindIterable<Document> documents = collection.find(query);
+
+         for (Document doc : documents) {
+            String proxySource = "";
+
+            if (doc.containsKey("active") && !doc.getBoolean("active")) {
+               continue;
+            }
+
+            if (doc.containsKey(FETCHER_PROXIES_SOURCE)) {
+               proxySource = doc.getString(FETCHER_PROXIES_SOURCE);
+
+               proxy.setSource(proxySource);
+
+            } else {
+               Logging.printLogError(logger, "Proxy without" + FETCHER_PROXIES_SOURCE + " in mongo fetcher.");
+               continue;
+            }
+
+            if (doc.containsKey(FETCHER_PROXIES_USERNAME)) {
+               proxy.setUser(doc.getString(FETCHER_PROXIES_USERNAME));
+            }
+
+            if (doc.containsKey(FETCHER_PROXIES_PASSWORD)) {
+               proxy.setPass(doc.getString(FETCHER_PROXIES_PASSWORD));
+            }
+
+            if (doc.containsKey(FETCHER_PROXIES_LOCATION)) {
+               proxy.setLocation(doc.getString(FETCHER_PROXIES_LOCATION));
+            }
+
+            if (doc.containsKey(FETCHER_PROXIES_ADDRESSES)) {
+               @SuppressWarnings("unchecked")
+               List<Document> addressesDocuments = (List<Document>) doc.get(FETCHER_PROXIES_ADDRESSES);
+               Collections.shuffle(addressesDocuments);
+               if (addressesDocuments.size() > 0) {
+                  Document addressDocument = addressesDocuments.get(0);
+
+                  if (addressDocument.containsKey(FETCHER_PROXIES_ADDRESSES_HOST)) {
+                     proxy.setAddress(addressDocument.getString(FETCHER_PROXIES_ADDRESSES_HOST));
+                  } else {
+                     Logging.printLogError(logger, "Proxy " + proxySource + " without" + FETCHER_PROXIES_ADDRESSES_HOST + " in mongo fetcher.");
+                     continue;
+                  }
+
+                  if (addressDocument.containsKey(FETCHER_PROXIES_ADDRESSES_PORT)) {
+                     proxy.setPort(addressDocument.getInteger(FETCHER_PROXIES_ADDRESSES_PORT));
+                  } else {
+                     Logging.printLogError(logger, "Proxy " + proxySource + " without" + FETCHER_PROXIES_ADDRESSES_PORT + " in mongo fetcher.");
+                     continue;
+                  }
+                  proxies.put(proxy.toJson());
+
+               } else {
+                  Logging.printLogError(logger, "Proxy without" + FETCHER_PROXIES_ADDRESSES + " in mongo fetcher.");
+                  continue;
+               }
+            }
+         }
+      }
+
+      return proxies;
+
    }
 
 

@@ -186,7 +186,7 @@ public class Scheduler {
       marketInfo.put("name", market.getName());
       jsonToSendToCrawler.put("sessionId", sessionId);
       jsonToSendToCrawler.put("type", scraperType);
-      jsonToSendToCrawler.put("options", jsonOptionsRefine(scraper.getOptionsScraper(), scraper.getOptionsScraperClass(), scraper.getProxiesMarket()));
+      jsonToSendToCrawler.put("options", scraper.getOptions());
       jsonToSendToCrawler.put("market", marketInfo);
       jsonToSendToCrawler.put("className", scraper.getClassName());
       jsonToSendToCrawler.put("parameters", parameters);
@@ -195,32 +195,6 @@ public class Scheduler {
 
    }
 
-   public static JSONObject jsonOptionsRefine(String optionsScraper, String optionSuperClass, String proxiesMarket) throws JSONException {
-      JSONObject optionsScraperJson = stringToJson(optionsScraper);
-      JSONObject optionsScraperSuperClassJson = stringToJson(optionSuperClass);
-      JSONObject result = new JSONObject();
-      String keyProxies = "proxies";
-
-      for (Iterator<String> it = optionsScraperJson.keys(); it.hasNext(); ) {
-         String key = it.next();
-         Object valueKey = optionsScraperJson.opt(key);
-
-
-         result.put(key, valueKey);
-
-      }
-
-      if (optionsScraperJson.optJSONArray(keyProxies) != null){
-         result.put("proxies", optionsScraperJson.optJSONArray(keyProxies));
-      } else if (optionsScraperSuperClassJson.optJSONArray(keyProxies) != null) {
-         result.put("proxies", optionsScraperSuperClassJson.optJSONArray(keyProxies));
-
-      }else {
-         result.put(keyProxies, new JSONArray(proxiesMarket));
-      }
-
-      return result;
-   }
 
 
 }
