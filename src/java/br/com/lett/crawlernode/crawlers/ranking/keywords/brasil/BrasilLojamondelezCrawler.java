@@ -44,11 +44,7 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
    private void loginMasterAccount() {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
-      headers.put("sec-fetch-mode", "cors");
-      headers.put("origin", "https://www.lojamondelez.com.br");
-      headers.put("sec-fetch-site", "same-origin");
-      headers.put("x-requested-with", "XMLHttpRequest");
-      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
+      headers.put(HttpHeaders.REFERER, "https://www.lojamondelez.com.br/");
 
       String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
 
@@ -82,12 +78,7 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
-      headers.put("sec-fetch-mode", "cors");
-      headers.put("origin", "https://www.lojamondelez.com.br");
-      headers.put("sec-fetch-site", "same-origin");
-      headers.put("x-requested-with", "XMLHttpRequest");
-      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
-
+      headers.put("referer", "https://www.lojamondelez.com.br/VendaAssistida");
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
 
       Request request = RequestBuilder.create()
