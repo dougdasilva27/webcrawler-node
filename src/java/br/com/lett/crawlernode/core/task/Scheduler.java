@@ -191,6 +191,10 @@ public class Scheduler {
       jsonToSendToCrawler.put("className", scraper.getClassName());
       jsonToSendToCrawler.put("parameters", parameters);
 
+      if (scraper.isMiranha()) {
+         jsonToSendToCrawler.put("proxies", scraper.getProxies());
+      }
+
       return jsonToSendToCrawler;
 
    }
