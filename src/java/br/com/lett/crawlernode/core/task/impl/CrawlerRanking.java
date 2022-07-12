@@ -528,12 +528,13 @@ public abstract class CrawlerRanking extends Task {
       if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
          queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
       } else {
-         if (isMiranha){
+         if (isMiranha) {
             queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE.toString();
          } else if (session instanceof EqiRankingDiscoverKeywordsSession) {
             queueName = isWebDrive ? QueueName.WEB_SCRAPER_PRODUCT_EQI_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_PRODUCT_EQI.toString();
          } else {
-            queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();         }
+            queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();
+         }
       }
 
 
