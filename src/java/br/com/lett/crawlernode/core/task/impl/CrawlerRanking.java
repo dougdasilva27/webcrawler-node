@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.task.impl;
 
+import br.com.lett.crawlernode.aws.dynamodb.Dynamo;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
@@ -334,6 +335,16 @@ public abstract class CrawlerRanking extends Task {
       return processeds;
    }
 
+   private List<Processed> fetchProcessedOnDynamo(String url, int marketId) {
+      List<Processed> processeds = new ArrayList<>();
+
+       if (url != null) {
+         processeds = Dynamo.fetchProcesseds(url, marketId, session);
+      }
+      return processeds;
+   }
+
+
    protected void saveDataProduct(RankingProduct product) {
       saveDataProduct(product, true);
    }
@@ -361,8 +372,10 @@ public abstract class CrawlerRanking extends Task {
       Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
 
-      if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
-         List<Processed> processeds = fetchProcessed(product.getInternalId(), product.getInteranlPid(), product.getUrl());
+     // if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
+      if (true) {
+        // List<Processed> processeds = fetchProcessed(product.getInternalId(), product.getInteranlPid(), product.getUrl());
+         List<Processed> processeds = fetchProcessedOnDynamo(product.getUrl(), session.getMarket().getId());
          List<Long> processedIds = new ArrayList<>();
 
          if (!isUpdate) {
