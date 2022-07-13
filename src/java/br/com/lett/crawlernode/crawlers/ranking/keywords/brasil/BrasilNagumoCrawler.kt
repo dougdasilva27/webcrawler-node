@@ -10,7 +10,7 @@ import org.json.JSONObject
 
 class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) {
    companion object {
-      private const val API_URL ="https://b2c-api-premiumlabel-production.azurewebsites.net/api/v1/b2c/"
+      private const val API_URL ="https://www.nagumo.com.br/api/v1/b2c/"
    }
 
    override fun getHomePage(): String {
@@ -62,6 +62,6 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
       return API_URL
    }
    override fun apiSearchUrl(lojaId: String): String? {
-      return "https://b2c-api-premiumlabel-production.azurewebsites.net/api/b2c/product?store_id=$lojaId"
+      return "https://www.nagumo.com.br/api/b2c/product?store_id=$lojaId"
    }
 }
