@@ -30,25 +30,22 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-public abstract class AmericanasmaisCrawler extends Crawler {
+public class AmericanasmaisCrawler extends Crawler {
 
-   protected AmericanasmaisCrawler(Session session) {
+   public AmericanasmaisCrawler(Session session) {
       super(session);
    }
-
    private final String storeId = getStoreId();
-
    private final String sellerName = getSellerName();
    private static final String HOME_PAGE = "https://www.americanas.com.br/lojas-proximas/33014556000196/";
 
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString());
-
-   public String getStoreId() {
-      return storeId;
+   public String getSellerName() {
+      return session.getOptions().optString("seller_name");
    }
 
-   public String getSellerName() {
-      return sellerName;
+   public String getStoreId() {
+      return session.getOptions().optString("store_id");
    }
 
    @Override
@@ -67,6 +64,7 @@ public abstract class AmericanasmaisCrawler extends Crawler {
                .build()
          ).setProxyservice(
             Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
@@ -84,6 +82,7 @@ public abstract class AmericanasmaisCrawler extends Crawler {
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY));
