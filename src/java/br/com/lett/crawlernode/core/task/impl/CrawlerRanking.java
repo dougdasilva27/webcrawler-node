@@ -38,6 +38,7 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.LocalDateTime;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -322,25 +323,15 @@ public abstract class CrawlerRanking extends Task {
    }
 
 
-   private List<Processed> fetchProcessed(String internalId, String pid, String url) {
-      List<Processed> processeds = new ArrayList<>();
-
-      if (internalId != null) {
-         processeds = Persistence.fetchProcessedsWithInternalId(internalId.trim(), this.marketId, session);
-      } else if (pid != null) {
-         processeds = Persistence.fetchProcessedsWithInternalPid(pid, this.marketId, session);
-      } else if (url != null) {
-         processeds = Persistence.fetchProcessedsWithUrl(url, this.marketId, session);
-      }
-      return processeds;
-   }
-
    private List<Processed> fetchProcessedOnDynamo(String url, int marketId) {
       List<Processed> processeds = new ArrayList<>();
 
-       if (url != null) {
-         processeds = Dynamo.fetchProcesseds(url, marketId, session);
+      if (url != null) {
+         //still need processedId
+         processeds = Dynamo.fetchProducts(url, marketId, session);
       }
+
+
       return processeds;
    }
 
@@ -372,9 +363,9 @@ public abstract class CrawlerRanking extends Task {
       Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
 
-     // if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
+      // if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
       if (true) {
-        // List<Processed> processeds = fetchProcessed(product.getInternalId(), product.getInteranlPid(), product.getUrl());
+         // List<Processed> processeds = fetchProcessed(product.getInternalId(), product.getInteranlPid(), product.getUrl());
          List<Processed> processeds = fetchProcessedOnDynamo(product.getUrl(), session.getMarket().getId());
          List<Long> processedIds = new ArrayList<>();
 
@@ -385,7 +376,7 @@ public abstract class CrawlerRanking extends Task {
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
-               if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && ((!p.getUrl().equals(product.getUrl())) || hasLrtBeforeOneMonth(p.getLrt()))) {
+               if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && (hasLrtBeforeOneMonth(p.getLrt()))) {
                   saveProductUrlToQueue(product.getUrl());
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + product.getUrl());
                }
@@ -409,7 +400,9 @@ public abstract class CrawlerRanking extends Task {
    public boolean hasLrtBeforeOneMonth(String lrt) {
       if (lrt != null && !lrt.isEmpty()) {
          try {
-            Date lrtDate = new SimpleDateFormat("yyyy-M-dd hh:mm:ss").parse(lrt);
+
+            Date lrtDate = new SimpleDateFormat(
+               "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).parse(lrt);
             Date oneMonthAgo = DateUtils.addMonths(new Date(), -1);
             Logging.printLogDebug(logger, session, lrt + " - " + oneMonthAgo + " has more than one month: " + (lrtDate.before(oneMonthAgo)));
             return lrtDate.before(oneMonthAgo);
@@ -544,7 +537,8 @@ public abstract class CrawlerRanking extends Task {
          if (session instanceof EqiRankingDiscoverKeywordsSession) {
             queueName = isWebDrive ? QueueName.WEB_SCRAPER_PRODUCT_EQI_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_PRODUCT_EQI.toString();
          } else {
-            queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();         }
+            queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();
+         }
       }
 
 
