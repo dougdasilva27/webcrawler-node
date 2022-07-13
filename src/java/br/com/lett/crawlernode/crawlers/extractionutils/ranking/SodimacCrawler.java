@@ -58,7 +58,8 @@ public class SodimacCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapUrl(e, "#title-pdp-link", "href", "https", session.getOptions().optString("homePage"));
             String productId = e.attr("data-key");
             String productPid = productId;
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-title", true);
+            String brand = CrawlerUtils.scrapStringSimpleInfo(e, "a .product-brand", true);
+            String name = brand + " - " + CrawlerUtils.scrapStringSimpleInfo(e, ".product-title", true);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image > div > img", Collections.singletonList("data-src"), "https", "sodimac.scene7.com");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price", null, false, getPriceFormat(), session, null);
             boolean isAvailable = price != null;
