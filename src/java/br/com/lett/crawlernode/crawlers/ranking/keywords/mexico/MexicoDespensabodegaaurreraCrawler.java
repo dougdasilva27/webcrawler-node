@@ -30,7 +30,7 @@ public class MexicoDespensabodegaaurreraCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   protected JSONObject fetchJSON() {
+   protected JSONArray fetchJSON() {
       Map<String, String> headers = new HashMap<>();
 
       headers.put("authority", "deadpool.instaleap.io");
@@ -53,14 +53,14 @@ public class MexicoDespensabodegaaurreraCrawler extends CrawlerRankingKeywords {
          .build();
 
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new FetcherDataFetcher(), new ApacheDataFetcher()), session, "post");
-      return JSONUtils.stringToJson(response.getBody());
+      return JSONUtils.stringToJsonArray(response.getBody());
    }
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      JSONObject json = fetchJSON();
+      JSONArray json = fetchJSON();
 
-      JSONArray results = JSONUtils.getValueRecursive(json, "data.getProducts.products", JSONArray.class);
+      JSONArray results = JSONUtils.getValueRecursive(json, "1.data.getProducts.products", JSONArray.class);
 
       if (results != null && !results.isEmpty()) {
          for (Object prod : results) {
