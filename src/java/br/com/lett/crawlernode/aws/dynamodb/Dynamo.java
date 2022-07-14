@@ -12,6 +12,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
@@ -288,12 +289,9 @@ public class Dynamo {
          Table table = dynamoDB.getTable("capture_job");
          UpdateItemSpec updateItemSpec = new UpdateItemSpec()
             .withPrimaryKey("market_id_url_md5", md5)
-            .withUpdateExpression("set grid_internal_id = :grid_internal_id,grid_internal_pid = :grid_internal_pid, scheduled_at = :scheduled_at")
+            .withUpdateExpression("set scheduled_at = :scheduled_at")
             .withValueMap(new ValueMap()
-               .withString(":scheduled_at", getCurrentTime())
-               .withString(":grid_internal_id", internalId)
-               .withString(":grid_internal_pid", internalPid))
-            .withReturnValues(ReturnValue.ALL_NEW);
+               .withString(":scheduled_at", getCurrentTime()));
          UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
 
          // Confirm
@@ -304,5 +302,19 @@ public class Dynamo {
       }
    }
 
+   public static void deleteDynamo() {
+      try {
+         Table table = dynamoDB.getTable("capture_job");
+         DeleteItemSpec deleteItemSpec = new DeleteItemSpec()
+            .withPrimaryKey("market_id_url_md5", "2950_d32195353c0450a54b66b011d08383e6");
+         DeleteItemOutcome outcome = table.deleteItem(deleteItemSpec);
+
+         // Confirm
+         System.out.println("Displaying deleted item...");
+         System.out.println(outcome.getItem().toJSONPretty());
+      } catch (Exception e) {
+         Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+      }
+   }
 
 }
