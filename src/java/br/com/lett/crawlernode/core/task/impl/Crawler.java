@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.task.impl;
 
+import br.com.lett.crawlernode.aws.dynamodb.Dynamo;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
@@ -272,6 +273,8 @@ public abstract class Crawler extends Task {
       else if (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession || session instanceof EqiCrawlerSession) {
          // Before process and save to PostgreSQL
          // we must send the raw crawled data to Kinesis
+
+         Dynamo.updateObjectDynamo(products);
          for (Product p : products) {
             sendToKinesis(p);
          }

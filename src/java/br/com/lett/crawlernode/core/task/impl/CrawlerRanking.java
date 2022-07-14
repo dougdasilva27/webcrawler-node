@@ -376,22 +376,23 @@ public abstract class CrawlerRanking extends Task {
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
-               if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && (hasLrtBeforeOneMonth(p.getLrt()))) {
-                  saveProductUrlToQueue(product.getUrl());
+             //  if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && (hasLrtBeforeOneMonth(p.getLrt()))) {
+               if ( (hasLrtBeforeOneMonth(p.getLrt()))) {
+                  saveProductUrlToQueue(product);
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + product.getUrl());
                }
             }
 
          } else if (product.getUrl() != null && processeds.isEmpty()) {
 
-            saveProductUrlToQueue(product.getUrl());
+            saveProductUrlToQueue(product);
          }
 
          product.setProcessedIds(processedIds);
       }
 
       if (product.getUrl() != null && session instanceof EqiRankingDiscoverKeywordsSession) {
-         saveProductUrlToQueue(product.getUrl());
+         saveProductUrlToQueue(product);
       }
 
       this.arrayProducts.add(product);
@@ -402,7 +403,7 @@ public abstract class CrawlerRanking extends Task {
          try {
 
             Date lrtDate = new SimpleDateFormat(
-               "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).parse(lrt);
+               "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(lrt);
             Date oneMonthAgo = DateUtils.addMonths(new Date(), -1);
             Logging.printLogDebug(logger, session, lrt + " - " + oneMonthAgo + " has more than one month: " + (lrtDate.before(oneMonthAgo)));
             return lrtDate.before(oneMonthAgo);
@@ -434,8 +435,16 @@ public abstract class CrawlerRanking extends Task {
    }
 
 
-   protected void saveProductUrlToQueue(String url) {
-      this.messages.add(url);
+   protected void saveProductUrlToQueue(RankingProduct product) {
+      if (Dynamo.sendToQueue(product, session)) {
+         Logging.printLogDebug(logger, session, "Product " + product.getUrl() + " saved to queue");
+         Dynamo.insertObjectDynamo(product);
+         this.messages.add(product.getUrl());
+      } else {
+         Logging.printLogInfo(logger, session, "Product already send to queue url: " + product.getUrl());
+      }
+
+
    }
 
 
