@@ -28,20 +28,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
+public class AmericanasmaisCrawler extends CrawlerRankingKeywords {
 
-   protected AmericanasmaisCrawler(Session session) {
+   public AmericanasmaisCrawler(Session session) {
       super(session);
    }
-
    private final String storeId = getStoreId();
-
    private static final String HOME_PAGE = "https://www.americanas.com.br/lojas-proximas/33014556000196/";
-
    public String getStoreId() {
-      return storeId;
+      return session.getOptions().optString("store_id");
    }
-
    private Document fetchPage() {
 
       Map<String, String> headers = new HashMap<>();

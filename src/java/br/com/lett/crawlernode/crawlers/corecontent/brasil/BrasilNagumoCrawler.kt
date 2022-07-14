@@ -15,7 +15,7 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
 
 
    companion object {
-      private const val API_URL = "https://b2c-api-premiumlabel-production.azurewebsites.net/api/"
+      private const val API_URL = "https://www.nagumo.com.br/api/"
    }
 
    override fun getHomePage(): String {
