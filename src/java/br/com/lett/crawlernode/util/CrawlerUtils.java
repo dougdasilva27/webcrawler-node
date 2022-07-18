@@ -2462,5 +2462,15 @@ public class CrawlerUtils {
 
    }
 
+   public static String getObjectByRegex(String script, String regex) {
+      String result = null;
+      Pattern pattern = Pattern.compile(regex);
+      Matcher matcher = pattern.matcher(script);
+      if (matcher.find()) {
+         result = matcher.group(1);
+      }
+      return result;
+   }
+
 
 }

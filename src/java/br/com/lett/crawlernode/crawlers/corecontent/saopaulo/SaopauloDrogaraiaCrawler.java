@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -63,7 +64,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img", Arrays.asList("data-zoom-image"), "https://", "www.drogaraia.com.br/");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image-gallery img", Arrays.asList("data-zoom-image"), "https://", "www.drogaraia.com.br/", primaryImage);
          String ean = scrapEan(doc);
-         RatingsReviews ratingReviews = crawRating(doc, internalId);
+         RatingsReviews ratingReviews = crawRating(internalId);
          boolean available = doc.selectFirst(".product-shop.boxPBM .add-to-cart") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
@@ -261,9 +262,10 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return creditCards;
    }
 
-   private RatingsReviews crawRating(Document doc, String internalId) {
+   private RatingsReviews crawRating(String internalId) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "71450", logger);
-      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
+
+      return trustVox.extractV2RatingAndReviews(internalId, this.dataFetcher);
    }
 
 }
