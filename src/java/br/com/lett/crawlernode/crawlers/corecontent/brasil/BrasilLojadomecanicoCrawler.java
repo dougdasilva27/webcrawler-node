@@ -60,7 +60,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".cateMain_breadCrumbs .breadCrumbNew li span[itemprop=\"name\"]", false);
          String description = scrapDescription(jsonNameDesc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .img-produto-min li a", Arrays.asList("data-image"), "https:", "www.lojadomecanico.com.br");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image .img-produto-min li ", Arrays.asList("data-image"), "https", "www.lojadomecanico.com.br", primaryImage);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image .img-produto-min li a", Arrays.asList("data-image"), "https", "www.lojadomecanico.com.br", primaryImage);
          boolean availableToBuy = doc.selectFirst("#btn-comprar-product") != null;
          Integer stock = scrapStock(doc, availableToBuy);
          RatingsReviews rating = scrapRating(jsonNameDesc);
