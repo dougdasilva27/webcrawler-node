@@ -38,7 +38,7 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.LocalDateTime;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -323,15 +323,28 @@ public abstract class CrawlerRanking extends Task {
    }
 
 
-   private List<Processed> fetchProcessedOnDynamo(String url, int marketId) {
+   public static List<Processed> createProcesseds(JSONObject result, int market, Session session) {
       List<Processed> processeds = new ArrayList<>();
 
-      if (url != null) {
-         //still need processedId
-         processeds = Dynamo.fetchProducts(url, marketId, session);
+      if (result != null) {
+         JSONArray foundSkus = result.optJSONArray("found_skus");
+
+         if (foundSkus != null) {
+
+            for (Object o : foundSkus) {
+               if (o instanceof JSONObject) {
+                  Processed p = new Processed();
+                  JSONObject product = (JSONObject) o;
+                  p.setVoid(product.optString("status").equalsIgnoreCase("void"));
+                  p.setLrt(product.optString("event_timestamp"));
+                  p.setId(Persistence.fetchProcessedIdWithInternalId(product.optString("internal_id"), market, session));
+
+                  processeds.add(p);
+               }
+
+            }
+         }
       }
-
-
       return processeds;
    }
 
@@ -362,37 +375,39 @@ public abstract class CrawlerRanking extends Task {
 
       Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
+      JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId(), session);
 
       // if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
       if (true) {
-         // List<Processed> processeds = fetchProcessed(product.getInternalId(), product.getInteranlPid(), product.getUrl());
-         List<Processed> processeds = fetchProcessedOnDynamo(product.getUrl(), session.getMarket().getId());
+
+         //this is legacy architecture, when none app using anymore we can remove
+         List<Processed> processeds = createProcesseds(resultJson, product.getMarketId(), session);
          List<Long> processedIds = new ArrayList<>();
 
          if (!isUpdate) {
             completeRankingProduct(product, processeds);
+            //botar log pra saber se tá caindo aqui
          }
 
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
-             //  if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && (hasLrtBeforeOneMonth(p.getLrt()))) {
-               if ( (hasLrtBeforeOneMonth(p.getLrt()))) {
-                  saveProductUrlToQueue(product);
+               if (hasLrtBeforeOneMonth(p.getLrt())) {
+                  saveProductUrlToQueue(product, resultJson);
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + product.getUrl());
                }
             }
 
          } else if (product.getUrl() != null && processeds.isEmpty()) {
 
-            saveProductUrlToQueue(product);
+            saveProductUrlToQueue(product, resultJson);
          }
 
          product.setProcessedIds(processedIds);
       }
 
       if (product.getUrl() != null && session instanceof EqiRankingDiscoverKeywordsSession) {
-         saveProductUrlToQueue(product);
+         saveProductUrlToQueue(product, resultJson);
       }
 
       this.arrayProducts.add(product);
@@ -435,13 +450,16 @@ public abstract class CrawlerRanking extends Task {
    }
 
 
-   protected void saveProductUrlToQueue(RankingProduct product) {
-      if (Dynamo.sendToQueue(product, session)) {
-         Logging.printLogDebug(logger, session, "Product " + product.getUrl() + " saved to queue");
+   protected void saveProductUrlToQueue(RankingProduct product, JSONObject result) {
+      if (result == null || result.isEmpty()) {
          Dynamo.insertObjectDynamo(product);
+         Logging.printLogDebug(logger, session, "Insert product:  " + product.getUrl() + " in dynamo and saved to queue");
+      } else if (Dynamo.scheduledMoreThanOneHour(result.optString("scheduled_at"), session)) {
+         Logging.printLogDebug(logger, session, "Update product " + product.getUrl() + " in duynamo and saved to queue");
+         Dynamo.updateObjectDynamo(product);
          this.messages.add(product.getUrl());
       } else {
-         Logging.printLogInfo(logger, session, "Product already send to queue url: " + product.getUrl());
+         Logging.printLogInfo(logger, session, "Product already send to queue less than one hour ago url: " + product.getUrl());
       }
 
 

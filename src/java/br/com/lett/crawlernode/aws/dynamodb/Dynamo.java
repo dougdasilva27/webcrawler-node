@@ -15,7 +15,9 @@ import com.amazonaws.services.dynamodbv2.document.*;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
+import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import models.Processed;
 import org.apache.commons.lang.time.DateUtils;
@@ -27,13 +29,11 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static br.com.lett.crawlernode.util.JSONUtils.stringToJson;
@@ -74,18 +74,15 @@ public class Dynamo {
          Table table = dynamoDB.getTable("capture_job");
          QuerySpec spec = new QuerySpec()
             .withKeyConditionExpression("market_id_url_md5 = :market_id_url_md5")
-            //  .withFilterExpression("scheduled_at > :now")
-            //    .withKeyConditionExpression("finished_at = :finished_at")
-            .withProjectionExpression("found_skus, finished_at")
+            .withProjectionExpression("found_skus, finished_at, scheduled_at")
             .withValueMap(new ValueMap()
                .withString(":market_id_url_md5", md5))
             .withConsistentRead(true);
 
-
          ItemCollection<QueryOutcome> items = table.query(spec);
 
          Iterator<Item> iterator = items.iterator();
-         Item item = null;
+         Item item;
          while (iterator.hasNext()) {
             item = iterator.next();
             System.out.println(item.toJSONPretty());
@@ -102,20 +99,24 @@ public class Dynamo {
    }
 
 
-   public static String scheduledTime(RankingProduct product) {
+   public static JSONObject scheduledTime(RankingProduct product) {
 
       String md5 = convertUrlInMD5(product.getUrl(), product.getMarketId());
+      Date oneHour = DateUtils.addHours(new Date(), +1);
+
+      String dateOneHour = new SimpleDateFormat(
+         "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(oneHour);
 
       try {
 
          Table table = dynamoDB.getTable("capture_job");
          QuerySpec spec = new QuerySpec()
-            .withKeyConditionExpression("market_id_url_md5 = :market_id_url_md5")
-            .withProjectionExpression("scheduled_at")
+            .withKeyConditionExpression("market_id_url_md5 = :market_id_url_md5 and scheduled_at > :dateOneHour")
+            .withProjectionExpression("scheduled_at, finished_at")
             .withValueMap(new ValueMap()
-               .withString(":market_id_url_md5", md5))
+               .withString(":market_id_url_md5", md5)
+               .withString(":dateOneHour", dateOneHour))
             .withConsistentRead(true);
-
 
          ItemCollection<QueryOutcome> items = table.query(spec);
 
@@ -126,27 +127,28 @@ public class Dynamo {
             System.out.println(item.toJSONPretty());
             JSONObject jsonObject = stringToJson(item.toJSONPretty());
 
-            return jsonObject.optString("scheduled_at");
-
+            return jsonObject;
          }
 
       } catch (Exception e) {
          Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
       }
 
-      return "";
+      return new JSONObject();
 
    }
 
-   public static boolean scheduledMoreThanTwelveHours(String scheduled, Session session) {
+   public static boolean scheduledMoreThanOneHour(String scheduled, Session session) {
       if (scheduled != null && !scheduled.isEmpty()) {
          try {
 
             Date scheduledDate = new SimpleDateFormat(
                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(scheduled);
-            Date twelveHours = DateUtils.addHours(new Date(), -12);
-            Logging.printLogDebug(logger, session, scheduled + " - " + twelveHours + " has more than 12 hours: " + (scheduledDate.after(twelveHours)));
-            return scheduledDate.before(twelveHours);
+            Date oneHour = DateUtils.addHours(new Date(), +1);
+            Logging.printLogInfo(logger, session, scheduled + " - " + oneHour + " has more than 1 hours: " + (scheduledDate.after(oneHour)));
+
+           // return scheduledDate.after(oneHour);
+            return true;
 
          } catch (Exception e) {
             Logging.printLogError(logger, session, "Error parsing lrt date: " + scheduled);
@@ -172,32 +174,6 @@ public class Dynamo {
       return s.toString();
 
 
-   }
-
-   public static List<Processed> fetchProducts(String url, int market, Session session) {
-      List<Processed> processeds = new ArrayList<>();
-
-      JSONObject result = fetchObjectDynamo(url, market, session);
-
-      JSONArray foundSkus = result.optJSONArray("found_skus");
-
-      if (foundSkus != null) {
-
-         for (Object o : foundSkus) {
-            if (o instanceof JSONObject) {
-               Processed p = new Processed();
-               JSONObject product = (JSONObject) o;
-               p.setVoid(product.optString("status").equalsIgnoreCase("void"));
-               p.setLrt(product.optString("event_timestamp"));
-               p.setId(Persistence.fetchProcessedIdWithInternalId(product.optString("internal_id"), market, session));
-
-               processeds.add(p);
-            }
-
-         }
-      }
-
-      return processeds;
    }
 
    public static String getCurrentTime() {
@@ -226,25 +202,6 @@ public class Dynamo {
       }
    }
 
-   public static boolean sendToQueue(RankingProduct product, Session session) {
-      boolean mustSend;
-
-      String scheduled = scheduledTime(product);
-      if (scheduled == null || scheduled.isEmpty()) {
-         insertObjectDynamo(product);
-         mustSend = true;
-      } else {
-         if (!scheduledMoreThanTwelveHours(scheduled, session)) {
-            mustSend = true;
-            updateObjectDynamo(product);
-         } else {
-            mustSend = false;
-         }
-
-      }
-      return mustSend;
-
-   }
 
    public static void updateObjectDynamo(List<Product> products) {
       JSONArray foundSkus = new JSONArray();
@@ -285,13 +242,17 @@ public class Dynamo {
       String internalId = p.getInternalId() != null ? p.getInternalId() : "";
       String internalPid = p.getInternalPid() != null ? p.getInternalPid() : "";
 
+      Map<String, AttributeValue> attributeValues = new HashMap<>();
+      attributeValues.put(":scheduled_at", new AttributeValue().withS(getCurrentTime()));
       try {
          Table table = dynamoDB.getTable("capture_job");
          UpdateItemSpec updateItemSpec = new UpdateItemSpec()
             .withPrimaryKey("market_id_url_md5", md5)
-            .withUpdateExpression("set scheduled_at = :scheduled_at")
-            .withValueMap(new ValueMap()
-               .withString(":scheduled_at", getCurrentTime()));
+            .withReturnValues(ReturnValue.ALL_NEW)
+            .withUpdateExpression("set #scheduled_at = :scheduled_at")
+            .withNameMap(new NameMap().with("#scheduled_at","scheduled_at"))
+            .withValueMap(new ValueMap().with(":scheduled_at",getCurrentTime()));
+
          UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
 
          // Confirm
@@ -301,6 +262,20 @@ public class Dynamo {
          Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
       }
    }
+
+
+//   Map<String, AttributeValue> key = new HashMap<>();
+//key.put("market_id_url_md5", new AttributeValue().withS(md5));
+//   Map<String, AttributeValue> attributeValues = new HashMap<>();
+//attributeValues.put(":scheduled_at", new AttributeValue().withS(getCurrentTime()));
+//
+//   UpdateItemRequest updateItemRequest = new UpdateItemRequest()
+//      .withTableName("capture_job")
+//      .withKey(key)
+//      .withUpdateExpression("set scheduled_at = :scheduled_at")
+//      .withExpressionAttributeValues(attributeValues);
+//   UpdateItemResult updateItemResult = dynamoDB.client.updateItem(updateItemRequest);
+
 
    public static void deleteDynamo() {
       try {
