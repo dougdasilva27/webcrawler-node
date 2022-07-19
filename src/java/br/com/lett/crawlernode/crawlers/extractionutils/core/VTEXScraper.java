@@ -177,7 +177,17 @@ public abstract class VTEXScraper extends Crawler {
    }
 
    protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
-      return JSONUtils.getStringValue(productJson, "description");
+      String description = JSONUtils.getStringValue(productJson, "description");
+      if (description.equals("")) {
+         String complementName = JSONUtils.getValueRecursive(productJson, "items.0.complementName", ".", String.class, "");
+         String nameComplete = JSONUtils.getValueRecursive(productJson, "items.0.nameComplete", ".", String.class, "");
+
+         if (!complementName.isEmpty() && !complementName.equals(nameComplete)) {
+            description = description.concat(complementName);
+         }
+      }
+
+      return description;
    }
 
    protected Document sanitizeDescription(Object obj) {
