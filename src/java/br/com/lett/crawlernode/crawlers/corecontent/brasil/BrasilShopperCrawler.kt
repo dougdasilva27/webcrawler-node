@@ -55,10 +55,10 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
          webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.BUY_HAPROXY, session)
 
          log("waiting home page")
-         webdriver.waitForElement("button.login", 30)
+         webdriver.waitForElement(".login", 30)
 
          log("clicking on login button")
-         webdriver.clickOnElementViaJavascript("button.login", 5000)
+         webdriver.clickOnElementViaJavascript(".login", 5000)
 
          webdriver.waitForElement(".access-login input[name=email]", 30)
 
@@ -71,7 +71,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
          webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 20000)
 
 
-         webdriver.waitForElement("#home", 240)
+         webdriver.waitForElement("div h1", 200)
 
          cookies = webdriver.driver.manage().cookies.map {
             BasicClientCookie(it.name, it.value)
@@ -95,6 +95,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       val headers: MutableMap<String, String> = HashMap()
 
       headers["authorization"] = "Bearer $token"
+      headers["x-store-id"] = "3"
 
       val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
 
