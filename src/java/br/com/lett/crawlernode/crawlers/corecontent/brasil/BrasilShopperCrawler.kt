@@ -71,7 +71,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
          webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 20000)
 
 
-         webdriver.waitForElement("div h1", 200)
+         webdriver.waitForElement("div h1", 240)
 
          cookies = webdriver.driver.manage().cookies.map {
             BasicClientCookie(it.name, it.value)
