@@ -177,7 +177,7 @@ public abstract class VTEXScraper extends Crawler {
    }
 
    protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
-      String description = JSONUtils.getStringValue(productJson, "description");
+      String description = JSONUtils.getValueRecursive(productJson, "description", ".", String.class, "");
       if (description.equals("")) {
          String complementName = JSONUtils.getValueRecursive(productJson, "items.0.complementName", ".", String.class, "");
          String nameComplete = JSONUtils.getValueRecursive(productJson, "items.0.nameComplete", ".", String.class, "");
