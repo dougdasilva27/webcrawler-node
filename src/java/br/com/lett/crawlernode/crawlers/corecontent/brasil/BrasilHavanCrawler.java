@@ -21,6 +21,8 @@ import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,8 +54,6 @@ public class BrasilHavanCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-add-form form", "data-product-sku");
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".price-box.price-final_price", "data-product-id");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title .base", false);
          boolean available = doc.selectFirst("#product-addtocart-button") != null;
@@ -68,23 +68,52 @@ public class BrasilHavanCrawler extends Crawler {
 
          Offers offers = available ? scrapOffer(doc) : new Offers();
 
-         // Creating the product
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setRatingReviews(ratingReviews)
-            .setOffers(offers)
-            .build();
+         Element variantsScript = doc.selectFirst("script:containsData([data-role=swatch-options])");
+         if (variantsScript != null) {
+            JSONObject variantsToJson = CrawlerUtils.stringToJson(variantsScript.html());
+            JSONArray variants = JSONUtils.getValueRecursive(variantsToJson, "[data-role=swatch-options].Magento_Swatches/js/swatch-renderer.jsonConfig.attributes.180.options", JSONArray.class);
+            for (int i = 0; i < variants.length(); i++) {
+               String skuId = JSONUtils.getValueRecursive(variants, i + ".products.0", String.class);
+               JSONObject skuObject = JSONUtils.getValueRecursive(variantsToJson, "[data-role=swatch-options].Magento_Swatches/js/swatch-renderer.jsonConfig.sku", JSONObject.class);
+               String internalId = skuObject.getString(skuId);
+               name = name + " - " + JSONUtils.getValueRecursive(variants, i + ".label", String.class);
+               internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-add-form form", "data-product-sku");
 
-         products.add(product);
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setCategory1(categories.getCategory(0))
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setRatingReviews(ratingReviews)
+                  .setOffers(offers)
+                  .build();
+               products.add(product);
+            }
+         } else {
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-add-form form", "data-product-sku");
+
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setRatingReviews(ratingReviews)
+               .setOffers(offers)
+               .build();
+            products.add(product);
+         }
 
 
       } else {
