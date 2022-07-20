@@ -76,14 +76,14 @@ public class BrasilHavanCrawler extends Crawler {
                String skuId = JSONUtils.getValueRecursive(variants, i + ".products.0", String.class);
                JSONObject skuObject = JSONUtils.getValueRecursive(variantsToJson, "[data-role=swatch-options].Magento_Swatches/js/swatch-renderer.jsonConfig.sku", JSONObject.class);
                String internalId = skuObject.getString(skuId);
-               name = name + " - " + JSONUtils.getValueRecursive(variants, i + ".label", String.class);
+               String variantName = name + " - " + JSONUtils.getValueRecursive(variants, i + ".label", String.class);
                internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-add-form form", "data-product-sku");
 
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
                   .setInternalId(internalId)
                   .setInternalPid(internalPid)
-                  .setName(name)
+                  .setName(variantName)
                   .setCategory1(categories.getCategory(0))
                   .setCategory2(categories.getCategory(1))
                   .setCategory3(categories.getCategory(2))
