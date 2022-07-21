@@ -367,6 +367,7 @@ public abstract class CrawlerRanking extends Task {
 
          if (!isUpdate) {
             completeRankingProduct(product, processeds);
+            Logging.printLogWarn(logger, session, "Market is not in new arch - " + product.getMarketId());
          }
 
          if (!processeds.isEmpty()) {
