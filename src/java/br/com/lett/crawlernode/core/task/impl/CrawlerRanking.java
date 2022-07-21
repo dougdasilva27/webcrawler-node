@@ -375,6 +375,7 @@ public abstract class CrawlerRanking extends Task {
 
       Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
+      //busca o resultado do produto no dynamo
       JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId(), session);
 
       // if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
