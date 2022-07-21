@@ -75,6 +75,9 @@ public class FalabellaCrawler extends Crawler {
 
          if (isMainSeller || allow3pSeller) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-id]", "data-id");
+            if(internalId == null){
+               internalId = getReviewId(session.getOriginalURL());
+            }
             String internalPid = internalId;
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div[data-name]", true);
             boolean available = doc.select(".availability span").size() > 1;
@@ -178,7 +181,7 @@ public class FalabellaCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("div[data-id]") != null;
+      return doc.selectFirst(".productContainer") != null;
    }
 
    private Offers scrapOffers(Document doc, String sellerFullName, Boolean isMainSeller ) throws OfferException, MalformedPricingException {
