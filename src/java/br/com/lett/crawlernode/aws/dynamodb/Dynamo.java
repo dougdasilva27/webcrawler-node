@@ -17,8 +17,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.*;
 import models.Processed;
 import org.apache.commons.lang.time.DateUtils;
 import org.json.JSONArray;
@@ -37,6 +36,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static br.com.lett.crawlernode.util.JSONUtils.stringToJson;
+import static com.amazonaws.auth.policy.actions.DynamoDBv2Actions.UpdateItem;
 
 public class Dynamo {
 
@@ -203,7 +203,7 @@ public class Dynamo {
    }
 
 
-   public static void updateObjectDynamo(List<Product> products) {
+   public static void updateObjectDynamo(List<Product> products, String scheduledAt) {
       JSONArray foundSkus = new JSONArray();
       String md5 = "";
       for (Product p : products) {
@@ -222,7 +222,7 @@ public class Dynamo {
       try {
          Table table = dynamoDB.getTable("capture_job");
          UpdateItemSpec updateItemSpec = new UpdateItemSpec()
-            .withPrimaryKey("market_id_url_md5", md5)
+            .withPrimaryKey(new PrimaryKey("market_id_url_md5", md5, "scheduled_at", scheduledAt))
             .withUpdateExpression("set found_skus = :found_skus, finished_at = :finished_at")
             .withValueMap(new ValueMap()
                .withList(":found_skus", foundSkus)
@@ -237,27 +237,34 @@ public class Dynamo {
       }
    }
 
-   public static void updateObjectDynamo(RankingProduct p) {
+   public static void updateObjectDynamo(RankingProduct p, String scheduledAt) {
       String md5 = convertUrlInMD5(p.getUrl(), p.getMarketId());
       String internalId = p.getInternalId() != null ? p.getInternalId() : "";
       String internalPid = p.getInternalPid() != null ? p.getInternalPid() : "";
 
       Map<String, AttributeValue> attributeValues = new HashMap<>();
-      attributeValues.put(":scheduled_at", new AttributeValue().withS(getCurrentTime()));
+      attributeValues.put("#grid_internal_pid", new AttributeValue().withS("555"));
+      attributeValues.put("#grid_internal_id", new AttributeValue().withS(internalId));
+
       try {
-         Table table = dynamoDB.getTable("capture_job");
+        Table table = dynamoDB.getTable("capture_job");
+
+         Map<String, String> expressionAttributeNames = new HashMap<String, String>();
+         expressionAttributeNames.put("#scheduled_at", "scheduled_at");
+
+         Map<String, Object> expressionAttributeValues = new HashMap<String, Object>();
+         expressionAttributeValues.put(":scheduled_at", getCurrentTime());
          UpdateItemSpec updateItemSpec = new UpdateItemSpec()
-            .withPrimaryKey("market_id_url_md5", md5)
-            .withReturnValues(ReturnValue.ALL_NEW)
+           .withPrimaryKey(new PrimaryKey("market_id_url_md5", md5, "scheduled_at", scheduledAt))
             .withUpdateExpression("set #scheduled_at = :scheduled_at")
-            .withNameMap(new NameMap().with("#scheduled_at","scheduled_at"))
-            .withValueMap(new ValueMap().with(":scheduled_at",getCurrentTime()));
+            .withNameMap(expressionAttributeNames)
+            .withValueMap(expressionAttributeValues)
+            .withReturnValues(ReturnValue.ALL_NEW);
 
-         UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
-
-         // Confirm
+         UpdateItemOutcome outcome =  table.updateItem(updateItemSpec);
          System.out.println("Displaying updated item...");
          System.out.println(outcome.getItem().toJSONPretty());
+
       } catch (Exception e) {
          Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
       }

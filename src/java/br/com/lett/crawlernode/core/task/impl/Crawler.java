@@ -274,7 +274,7 @@ public abstract class Crawler extends Task {
          // Before process and save to PostgreSQL
          // we must send the raw crawled data to Kinesis
 
-         Dynamo.updateObjectDynamo(products);
+         Dynamo.updateObjectDynamo(products, "");
          for (Product p : products) {
             sendToKinesis(p);
          }

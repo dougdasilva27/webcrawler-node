@@ -454,9 +454,9 @@ public abstract class CrawlerRanking extends Task {
       if (result == null || result.isEmpty()) {
          Dynamo.insertObjectDynamo(product);
          Logging.printLogDebug(logger, session, "Insert product:  " + product.getUrl() + " in dynamo and saved to queue");
-      } else if (Dynamo.scheduledMoreThanOneHour(result.optString("scheduled_at"), session)) {
+      } else if ((result.optString("finished_at") == null || result.optString("finished_at").isEmpty()) && Dynamo.scheduledMoreThanOneHour(result.optString("scheduled_at"), session)) {
          Logging.printLogDebug(logger, session, "Update product " + product.getUrl() + " in duynamo and saved to queue");
-         Dynamo.updateObjectDynamo(product);
+         Dynamo.updateObjectDynamo(product, result.optString("scheduled_at"));
          this.messages.add(product.getUrl());
       } else {
          Logging.printLogInfo(logger, session, "Product already send to queue less than one hour ago url: " + product.getUrl());
