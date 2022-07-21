@@ -63,7 +63,7 @@ public class Dynamo {
    }
 
 
-   public static JSONObject fetchObjectDynamo(String url, int marketId, Session session) {
+   public static JSONObject fetchObjectDynamo(String url, int marketId) {
 
       String md5 = convertUrlInMD5(url, marketId);
 
@@ -95,6 +95,36 @@ public class Dynamo {
       }
 
       return new JSONObject();
+
+   }
+
+   public static String fetchObjectDynamoScheduledAt(String md5) {
+
+      try {
+
+         Table table = dynamoDB.getTable("capture_job");
+         QuerySpec spec = new QuerySpec()
+            .withKeyConditionExpression("market_id_url_md5 = :market_id_url_md5")
+            .withProjectionExpression("scheduled_at")
+            .withValueMap(new ValueMap()
+               .withString(":market_id_url_md5", md5))
+            .withConsistentRead(true);
+
+         ItemCollection<QueryOutcome> items = table.query(spec);
+
+         Iterator<Item> iterator = items.iterator();
+         Item item;
+         while (iterator.hasNext()) {
+            item = iterator.next();
+
+            return item.getString("scheduled_at");
+         }
+
+      } catch (Exception e) {
+         Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+      }
+
+      return "";
 
    }
 
@@ -203,20 +233,53 @@ public class Dynamo {
    }
 
 
-   public static void updateObjectDynamo(List<Product> products, String scheduledAt) {
+   public static void updateObjectDynamo(List<Product> products) {
+
+      JSONObject productDynamo = new JSONObject();
+      String scheduledAt = "";
+
       JSONArray foundSkus = new JSONArray();
       String md5 = "";
       for (Product p : products) {
-         JSONObject product = new JSONObject();
-         product.put("internal_id", p.getInternalId());
-         product.put("event_timestamp", p.getTimestamp());
-         product.put("status", p.getStatus());
-         product.put("last_modified_status_timestamp", p.getInternalPid());
-
-         foundSkus.put(product);
          if (md5.isEmpty()) {
             md5 = convertUrlInMD5(p.getUrl(), p.getMarketId());
          }
+         if (productDynamo.isEmpty()){
+            productDynamo = fetchObjectDynamo(p.getUrl(), p.getMarketId());
+            scheduledAt = productDynamo.getString("scheduled_at");
+         }
+         if (productDynamo != null && !productDynamo.isEmpty()) {
+            JSONArray skus = productDynamo.optJSONArray("found_skus");
+
+            for (Object o : skus) {
+               if (o instanceof JSONObject) {
+                  JSONObject sku = (JSONObject) o;
+                  if(sku.optString("internal_id").equals(p.getInternalId())){
+                     foundSkus.put(sku);
+                     JSONObject product = new JSONObject();
+                     product.put("internal_id", p.getInternalId());
+                     product.put("event_timestamp", p.getTimestamp());
+                     product.put("status", p.getStatus());
+                     if (sku.optString("status").equals(p.getStatus())){
+                        product.put("last_modified_status_timestamp", p.getTimestamp());
+                     }
+                     foundSkus.put(product);
+
+                  }
+               }
+
+            }
+         } else {
+            JSONObject product = new JSONObject();
+            product.put("internal_id", p.getInternalId());
+            product.put("event_timestamp", p.getTimestamp());
+            product.put("status", p.getStatus());
+            product.put("last_modified_status_timestamp", p.getTimestamp());
+
+            foundSkus.put(product);
+         }
+
+
       }
 
       try {

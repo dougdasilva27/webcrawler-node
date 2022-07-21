@@ -376,7 +376,7 @@ public abstract class CrawlerRanking extends Task {
       Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
       //busca o resultado do produto no dynamo
-      JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId(), session);
+      JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
 
       // if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
       if (true) {
@@ -393,9 +393,8 @@ public abstract class CrawlerRanking extends Task {
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
-               if (hasLrtBeforeOneMonth(p.getLrt())) {
+               if (p.isVoid() && hasLrtBeforeOneMonth(p.getLrt())) {
                   saveProductUrlToQueue(product, resultJson);
-                  Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + product.getUrl());
                }
             }
 
@@ -452,18 +451,26 @@ public abstract class CrawlerRanking extends Task {
 
 
    protected void saveProductUrlToQueue(RankingProduct product, JSONObject result) {
+      if (isProductToSendToQueue(product, result)) {
+         this.messages.add(product.getUrl());
+      }
+
+   }
+
+   protected boolean isProductToSendToQueue(RankingProduct product, JSONObject result){
+      boolean sendToQueue = true;
       if (result == null || result.isEmpty()) {
          Dynamo.insertObjectDynamo(product);
          Logging.printLogDebug(logger, session, "Insert product:  " + product.getUrl() + " in dynamo and saved to queue");
       } else if ((result.optString("finished_at") == null || result.optString("finished_at").isEmpty()) && Dynamo.scheduledMoreThanOneHour(result.optString("scheduled_at"), session)) {
          Logging.printLogDebug(logger, session, "Update product " + product.getUrl() + " in duynamo and saved to queue");
          Dynamo.updateObjectDynamo(product, result.optString("scheduled_at"));
-         this.messages.add(product.getUrl());
       } else {
+         sendToQueue = false;
          Logging.printLogInfo(logger, session, "Product already send to queue less than one hour ago url: " + product.getUrl());
       }
 
-
+      return sendToQueue;
    }
 
 
