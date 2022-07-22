@@ -285,17 +285,16 @@ public class BrasilMartinsCrawler extends Crawler {
       if (spotlightPriceStr != null && (spotlightPriceStr.equals("0.0") || spotlightPriceStr.isEmpty())) {
          spotlightPriceStr = data.optString("precoNormal");
       }
-      Double spotlightPrice = Double.parseDouble(spotlightPriceStr);
+      Double spotlightPrice=null;
+      if(spotlightPriceStr != null){
+         spotlightPrice = Double.parseDouble(spotlightPriceStr);
+      }
+
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
-      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
-         .setFinalPrice(spotlightPrice)
-         .build();
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
-
-         .setBankSlip(bankSlip)
          .setCreditCards(creditCards)
          .build();
    }
