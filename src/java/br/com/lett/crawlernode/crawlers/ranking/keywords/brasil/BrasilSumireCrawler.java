@@ -33,20 +33,20 @@ public class BrasilSumireCrawler extends CrawlerRankingKeywords {
       if (products.size() > 0) {
 
          if (this.totalProducts == 0) {
-            this.totalProducts = CrawlerUtils.scrapSimpleInteger(this.currentDoc, "#toolbar-amount > span.toolbar-amount-top > span:nth-child(3)",false);
+            this.totalProducts = CrawlerUtils.scrapSimpleInteger(this.currentDoc, "#toolbar-amount > span.toolbar-amount-top > span:nth-child(3)", false);
             this.log("Total da busca: " + this.totalProducts);
          }
 
          for (Element e : products) {
 
             String internalId = crawlId(e);
-            Boolean isAvailable = false;
+            Boolean isAvailable = CrawlerUtils.scrapStringSimpleInfo(e, "x", false) == null;
             String urlProduct = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product.details.product-item-details > .product.name.product-item-name > a", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product.details.product-item-details > .product.name.product-item-name > a", false);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, " .product-item-info > a > span > .product-image-wrapper > img", Arrays.asList("src"), "https", "://www.perfumariasumire.com.br/");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".product.details.product-item-details > .price-box.price-final_price > span > span > span > span", null, false, ',', session, null);
-            if (price != null) {
-               isAvailable = true;
+            Integer price = null;
+            if (isAvailable == true) {
+               price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "#product-price-" + internalId, null, false, ',', session, null);
             }
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(urlProduct)
@@ -84,8 +84,8 @@ public class BrasilSumireCrawler extends CrawlerRankingKeywords {
    @Override
    protected boolean hasNextPage() {
       boolean finalResponse = false;
-      String nextPage = CrawlerUtils.scrapStringSimpleInfo(currentDoc,"#amasty-shopby-product-list > div:first-child > div.pages > ul > li.item.pages-item-next > a",false);
-      if (nextPage != null){
+      String nextPage = CrawlerUtils.scrapStringSimpleInfo(currentDoc, "#amasty-shopby-product-list > div:first-child > div.pages > ul > li.item.pages-item-next > a", false);
+      if (nextPage != null) {
          finalResponse = true;
       }
       return finalResponse;
