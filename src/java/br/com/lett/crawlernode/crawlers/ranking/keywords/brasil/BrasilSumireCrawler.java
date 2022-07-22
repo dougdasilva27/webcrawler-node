@@ -40,7 +40,7 @@ public class BrasilSumireCrawler extends CrawlerRankingKeywords {
          for (Element e : products) {
 
             String internalId = crawlId(e);
-            Boolean isAvailable = CrawlerUtils.scrapStringSimpleInfo(e, "x", false) == null;
+            Boolean isAvailable = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-inner > div > div.actions-primary > div > span", false) == null;
             String urlProduct = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product.details.product-item-details > .product.name.product-item-name > a", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product.details.product-item-details > .product.name.product-item-name > a", false);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, " .product-item-info > a > span > .product-image-wrapper > img", Arrays.asList("src"), "https", "://www.perfumariasumire.com.br/");
