@@ -160,13 +160,15 @@ public class BrasilFarmaciasuniprecoCrawler extends Crawler {
 
 
       Integer parcels = CrawlerUtils.scrapIntegerFromHtml(productInfo, ".information .wd-product-price-description .priceContainer .condition .parcels", true, 0);
-      Double parcelValue = CrawlerUtils.scrapDoublePriceFromHtml(productInfo, ".information .wd-product-price-description .priceContainer .condition .parcel-value", null, true, ',', session);
 
-      installments.add(Installment.InstallmentBuilder.create()
-         .setInstallmentNumber(parcels)
-         .setInstallmentPrice(parcelValue != null ? parcelValue : 0.0)
-         .build());
+      if (parcels != null && parcels > 1) {
+         Double parcelValue = CrawlerUtils.scrapDoublePriceFromHtml(productInfo, ".information .wd-product-price-description .priceContainer .condition .parcel-value", null, true, ',', session);
 
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(parcels)
+            .setInstallmentPrice(parcelValue != null ? parcelValue : 0.0)
+            .build());
+      }
 
       Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(), Card.DINERS.toString());
 
