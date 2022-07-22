@@ -110,7 +110,7 @@ public class GPACrawler extends Crawler {
 
          String description = crawlDescription(jsonSku, doc);
 
-         Offers offers = scrapOffers(jsonSku);
+         Offers offers = scrapOffers(jsonSku, doc);
 
          Product product =
             ProductBuilder.create()
@@ -358,7 +358,25 @@ public class GPACrawler extends Crawler {
          .split("/")[0];
    }
 
-   private Offers scrapOffers(JSONObject jsonSku) throws OfferException, MalformedPricingException {
+   private String scrapSales(Pricing pricing, Document doc){
+      List<String> sales = new ArrayList<>();
+
+      String diff = CrawlerUtils.calculateSales(pricing);
+
+      if (diff != null && !diff.isEmpty()) {
+         sales.add(diff);
+      }
+
+      String salesFromDoc = CrawlerUtils.scrapStringSimpleInfo(doc, ".seal-sale-box-divided__Label1-pf7r6x-1", true);
+
+      if(salesFromDoc != null){
+         sales.add(salesFromDoc);
+      }
+
+      return sales.toString();
+   }
+
+   private Offers scrapOffers(JSONObject jsonSku, Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
       JSONArray data = JSONUtils.getValueRecursive(jsonSku, "sellInfos", JSONArray.class);
@@ -367,7 +385,7 @@ public class GPACrawler extends Crawler {
          for (Object o : data) {
             JSONObject sellerinfo = (JSONObject) o;
             Pricing pricing = scrapPricing(sellerinfo);
-            String sales = CrawlerUtils.calculateSales(pricing);
+            String sales = scrapSales(pricing, doc);
             String sellerName = JSONUtils.getStringValue(sellerinfo, "name");
             boolean isMainRetailersMainRetailer = sellerinfo.optString("sellType", "").equals("1P");
 
@@ -391,25 +409,8 @@ public class GPACrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
-      Double spotlightPrice = null;
-      Double priceFrom = null;
-
-      if (data.has("productPromotions")) {
-         JSONArray promotions = data.optJSONArray("productPromotions");
-         for (Object e : promotions) {
-            if (e instanceof JSONObject) {
-               spotlightPrice = ((JSONObject) e).optDouble("unitPrice");
-               priceFrom = data.optDouble("currentPrice");
-            }
-         }
-      }
-      if (spotlightPrice == null) {
-         spotlightPrice = data.optDouble("currentPrice");
-      }
-
-      if (priceFrom == null && data.has("priceFrom")) {
-         priceFrom = data.optDouble("priceFrom");
-      }
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(data, "currentPrice", true);
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(data, "priceFrom", true);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
@@ -423,6 +424,7 @@ public class GPACrawler extends Crawler {
          .build();
 
    }
+
 
    protected CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
