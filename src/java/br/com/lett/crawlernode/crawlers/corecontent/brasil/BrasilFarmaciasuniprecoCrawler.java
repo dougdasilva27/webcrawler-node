@@ -134,7 +134,7 @@ public class BrasilFarmaciasuniprecoCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(productInfo, ".information .wd-product-price-description .priceContainer .list-price span", null, true, ',', session);
 
       if(spotlightPrice != null){
-         CreditCards creditCards = scrapCreditCards(spotlightPrice);
+         CreditCards creditCards = scrapCreditCards(productInfo, spotlightPrice);
          BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
             .build();
@@ -150,13 +150,23 @@ public class BrasilFarmaciasuniprecoCrawler extends Crawler {
       }
    }
 
-   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Element productInfo, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(1)
          .setInstallmentPrice(spotlightPrice)
          .build());
+
+
+      Integer parcels = CrawlerUtils.scrapIntegerFromHtml(productInfo, ".information .wd-product-price-description .priceContainer .condition .parcels", true, 0);
+      Double parcelValue = CrawlerUtils.scrapDoublePriceFromHtml(productInfo, ".information .wd-product-price-description .priceContainer .condition .parcel-value", null, true, ',', session);
+
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(parcels)
+         .setInstallmentPrice(parcelValue != null ? parcelValue : 0.0)
+         .build());
+
 
       Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(), Card.DINERS.toString());
 
