@@ -48,6 +48,7 @@ public class ChileLidersuperCrawler extends Crawler {
       Document doc = new Document(HOME_PAGE);
       try {
          int attempts = 0;
+         List<String> proxies = List.of( ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY );
 
          do {
             ChromeOptions chromeOptions = new ChromeOptions();
@@ -55,10 +56,12 @@ public class ChileLidersuperCrawler extends Crawler {
             chromeOptions.addArguments("--headless");
             chromeOptions.addArguments("--no-sandbox");
             chromeOptions.addArguments("--disable-dev-shm-usage");
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, session, cookiesWD, HOME_PAGE, chromeOptions);
-            webdriver.waitLoad(10000);
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempts), session, cookiesWD, HOME_PAGE, chromeOptions);
+            if (webdriver != null) {
+               webdriver.waitLoad(10000);
+               doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
+            }
          } while (doc.select(".product-info").isEmpty() && attempts++ < 3);
 
       } catch (Exception e) {

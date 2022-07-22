@@ -54,7 +54,7 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
             chromeOptions.addArguments("--headless");
             chromeOptions.addArguments("--no-sandbox");
             chromeOptions.addArguments("--disable-dev-shm-usage");
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(HOME_PAGE, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, session);
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(HOME_PAGE, ProxyCollection.BUY_HAPROXY, session);
             webdriver.waitLoad(10000);
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
