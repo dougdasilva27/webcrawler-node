@@ -27,6 +27,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import java.text.Normalizer;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -35,7 +36,6 @@ public class BrasilMartinsCrawler extends Crawler {
 
    private static final String SELLER_FULL_NAME = "Martins";
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString());
-
 
 
    public BrasilMartinsCrawler(Session session) {
@@ -51,6 +51,7 @@ public class BrasilMartinsCrawler extends Crawler {
    protected String getPassword() {
       return session.getOptions().optString("pass");
    }
+
    protected String getLogin() {
       return session.getOptions().optString("login");
    }
@@ -58,13 +59,14 @@ public class BrasilMartinsCrawler extends Crawler {
    protected String getCnpj() {
       return session.getOptions().optString("cnpj");
    }
+
    @Override
    protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put("authority", "www.martinsatacado.com.br");
 
-      Request request =  Request.RequestBuilder.create()
+      Request request = Request.RequestBuilder.create()
          .setHeaders(headers)
          .setUrl(session.getOriginalURL())
          .setSendUserAgent(true)
@@ -81,14 +83,15 @@ public class BrasilMartinsCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
-      String str = CrawlerUtils.scrapScriptFromHtml(doc,"#__NEXT_DATA__");
-      JSONArray productArr  = JSONUtils.stringToJsonArray(str);
+      String str = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
+      JSONArray productArr = JSONUtils.stringToJsonArray(str);
       JSONObject data = JSONUtils.getValueRecursive(productArr, "0.props.pageProps.fallback.PRODUCT_DETAIL", JSONObject.class);
       if (data != null) {
 
          String internalPid = CommonMethods.getLast(data.optString("productSku").split("_"));
          String name = data.optString("name");
-         String primaryImage = JSONUtils.getValueRecursive(data, "images.0.value", String.class);;
+         String primaryImage = JSONUtils.getValueRecursive(data, "images.0.value", String.class);
+         ;
          String description = data.getString("description");
          List<String> secondaryImages = scrapSecondaryImages(data, primaryImage);
          JSONObject priceObj = fetchPrice(data.optString("productSku"));
@@ -114,15 +117,15 @@ public class BrasilMartinsCrawler extends Crawler {
       return products;
    }
 
-   protected Boolean getStock(JSONObject priceObj){
+   protected Boolean getStock(JSONObject priceObj) {
       JSONArray prices = priceObj.optJSONArray("precos");
-      if(prices == null){
-         return priceObj.optInt("estoque")>0;
+      if (prices == null) {
+         return priceObj.optInt("estoque") > 0;
       }
-      for(Object p : prices){
+      for (Object p : prices) {
          JSONObject price = (JSONObject) p;
-         if(price.optDouble("estoque")>0){
-            return  true;
+         if (price.optDouble("estoque") > 0) {
+            return true;
          }
       }
       return false;
@@ -157,18 +160,18 @@ public class BrasilMartinsCrawler extends Crawler {
 
       List<String> parts = List.of(id.split("_"));
       Map<String, String> headers = new HashMap<>();
-      String payloadMartins = parts.get(0).equals("martins") ? "{\"CodigoMercadoria\": \""+id+"\", \"Quantidade\": 0, \"codGroupMerFrac\": 0, \"codPmc\": null }" : "";
+      String payloadMartins = parts.get(0).equals("martins") ? "{\"CodigoMercadoria\": \"" + id + "\", \"Quantidade\": 0, \"codGroupMerFrac\": 0, \"codPmc\": null }" : "";
       String payload3P = !parts.get(0).equals("martins") ? "{\"seller\":\"" + parts.get(0) + "\",\"CodigoMercadoria\":\"" + id + "\",\"Quantidade\":0}" : "";
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put("Origin", "www.martinsatacado.com.br");
       headers.put("access_token", accessToken);
       headers.put("client_id", "bb6d8be8-0671-32ea-9a6e-3da4c63525a3");
       headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
-      String payload = "{\"asm\":0,\"produtos\":["+payloadMartins+"]," +
-         "\"ProdutosExclusaoEan\":[],\"produtosSeller\":["+payload3P+"],\"codeWarehouseDelivery\":0,\"codeWarehouseBilling\":0,\"condicaoPagamento\":111,\"uid\":6659973,\"segment\":0," +
+      String payload = "{\"asm\":0,\"produtos\":[" + payloadMartins + "]," +
+         "\"ProdutosExclusaoEan\":[],\"produtosSeller\":[" + payload3P + "],\"codeWarehouseDelivery\":0,\"codeWarehouseBilling\":0,\"condicaoPagamento\":111,\"uid\":6659973,\"segment\":0," +
          "\"tipoLimiteCred\":\"C\",\"precoEspecial\":\"S\",\"ie\":\"127285489112\",\"territorioRca\":0,\"classEstadual\":10,\"tipoSituacaoJuridica\":\"M\",\"codSegNegCliTer\":0," +
          "\"tipoConsulta\":1,\"commercialActivity\":5,\"groupMartins\":171,\"codCidadeEntrega\":3232,\"codCidade\":3232,\"codRegiaoPreco\":250,\"temVendor\":\"S\",\"codigoCanal\":9," +
-         "\"ufTarget\":\"SP\",\"bu\":1,\"manual\":\"N\",\"email\":\""+getLogin()+"\",\"numberSpinPrice\":\"64\",\"codeDeliveryRegion\":\"322\",\"ufFilialFaturamento\":\"GO\"," +
+         "\"ufTarget\":\"SP\",\"bu\":1,\"manual\":\"N\",\"email\":\"" + getLogin() + "\",\"numberSpinPrice\":\"64\",\"codeDeliveryRegion\":\"322\",\"ufFilialFaturamento\":\"GO\"," +
          "\"cupons_novos\":[],\"codopdtrcetn\":10,\"origemChamada\":\"PLP\"}";
 
       Request request = Request.RequestBuilder.create()
@@ -184,8 +187,9 @@ public class BrasilMartinsCrawler extends Crawler {
       String str = response.getBody();
       JSONObject body = JSONUtils.stringToJson(str);
 
-      return  parts.get(0).equals("martins") ? JSONUtils.getValueRecursive(body, "resultado.0", JSONObject.class) : JSONUtils.getValueRecursive(body, "lstPrecoSeller.0", JSONObject.class);
+      return parts.get(0).equals("martins") ? JSONUtils.getValueRecursive(body, "resultado.0", JSONObject.class) : JSONUtils.getValueRecursive(body, "lstPrecoSeller.0", JSONObject.class);
    }
+
    private boolean isProductPage(Document doc) {
       return !doc.select("input#id").isEmpty();
    }
@@ -206,64 +210,72 @@ public class BrasilMartinsCrawler extends Crawler {
 
    private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      List<String> sales = new ArrayList<>();
+      String sales = null;
+      Pricing pricing = null;
+      String seller = "";
+      String sellerName = "";
       JSONArray prices = data.optJSONArray("precos");
-      if(prices == null){
+      if (prices == null) {
+         pricing = scrapPricing(data);
+         sales = scrapSales(data);
+         seller = data.optString("RAZAO_SELLER");
 
-
-            Pricing pricing = scrapPricing(data);
-            sales.add(CrawlerUtils.calculateSales(pricing));
-            String sellerName = data.optString("RAZAO_SELLER");
-            offers.add(Offer.OfferBuilder.create()
-               .setMainPagePosition(1)
-               .setIsBuybox(false)
-               .setPricing(pricing)
-               .setSales(sales)
-               .setSellerFullName(sellerName)
-               .setIsMainRetailer(false)
-               .setUseSlugNameAsInternalSellerId(true)
-               .build());
-
-
-      }else{
-         for(Object p : prices){
+      } else {
+         for (Object p : prices) {
             JSONObject price = (JSONObject) p;
-            Pricing pricing = scrapPricing(price);
-            sales.add(CrawlerUtils.calculateSales(pricing));
-            String sellerName = price.optString("fil_delivery");
+            pricing = scrapPricing(price);
+            sales = scrapSales(price);
+            sellerName = price.optString("fil_delivery");
             String sellerLocate = price.optString("uf_Delivery");
-            String seller = sellerName + " " + sellerLocate;
-            offers.add(Offer.OfferBuilder.create()
-               .setMainPagePosition(1)
-               .setIsBuybox(false)
-               .setPricing(pricing)
-               .setSales(sales)
-               .setSellerFullName(seller)
-               .setIsMainRetailer(sellerName.equalsIgnoreCase("Martins Hidrolândia"))
-               .setUseSlugNameAsInternalSellerId(true)
-               .build());
+            seller = sellerName + " " + sellerLocate;
+            seller = Normalizer.normalize(seller, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "").toLowerCase();
+            seller = seller.replaceAll(" ", "-");
+            if (seller.equals("martins-hidrolandia-go")) {
+               break;
+            }
          }
-      }
 
+      }
+      offers.add(Offer.OfferBuilder.create()
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setPricing(pricing)
+         .setSales(Collections.singletonList(sales))
+         .setSellerFullName(seller)
+         .setIsMainRetailer(seller.equalsIgnoreCase("martins-hidrolandia-go"))
+         .setUseSlugNameAsInternalSellerId(true)
+         .build());
 
 
       return offers;
    }
 
+   private String scrapSales(JSONObject obj) {
+      List<String> sales = new ArrayList<>();
+      Integer q = obj.optInt("QdeUndVndCxaFrn");
+      String salesFromDoc = null;
+      if (q > 0) {
+         String value = obj.getString("precoCaixa");
+         Double valueDouble = Double.parseDouble(value);
+         valueDouble = valueDouble * q;
+         salesFromDoc = "Caixa com " + q + "un, com valor de: " + MathUtils.normalizeTwoDecimalPlaces(valueDouble);
+      }
+
+
+      if (salesFromDoc != null) {
+         sales.add(salesFromDoc);
+      }
+
+      return sales.toString();
+   }
+
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
-      String spotlightPriceStr = data.optString("preco") ;
+      String spotlightPriceStr = data.optString("preco");
       Double priceFrom;
-      if (spotlightPriceStr.equals("0.0") || spotlightPriceStr.isEmpty()){
+      if (spotlightPriceStr.equals("0.0") || spotlightPriceStr.isEmpty()) {
          spotlightPriceStr = data.optString("precoNormal");
       }
       Double spotlightPrice = Double.parseDouble(spotlightPriceStr);
-      String priceFromStr = data.optString("precoCaixaCupom");
-      if(!priceFromStr.isEmpty()){
-        priceFrom = Double.parseDouble(priceFromStr);
-      }else{
-         priceFrom = spotlightPrice;
-      }
-
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
@@ -272,7 +284,7 @@ public class BrasilMartinsCrawler extends Crawler {
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
-         .setPriceFrom(priceFrom)
+
          .setBankSlip(bankSlip)
          .setCreditCards(creditCards)
          .build();

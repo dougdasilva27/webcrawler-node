@@ -56,12 +56,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
    public void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 12;
       this.log("Página " + this.currentPage);
-
-      // monta a url com a keyword, page size e a página
-      String url = "https://www.martinsatacado.com.br/_next/data/SPltamPgUma6uFFv78HbH/busca/" + this.keywordWithoutAccents.replace(" ", "%20") + ".json?page=" + this.currentPage + "&perPage=" + this.pageSize;
-
-      this.log("Link onde são feitos os crawlers: " + url);
-      String response = fetchJson(url);
+      String response = fetchJson();
       JSONObject obj = JSONUtils.stringToJson(response);
       obj = JSONUtils.getValueRecursive(obj, "pageProps.fallback./api/search", JSONObject.class);
 
@@ -189,9 +184,10 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       return null;
    }
 
-   protected String fetchJson(String url) {
+   protected String fetchJson() {
       login();
-
+      String id = catureId();
+      String url = "https://www.martinsatacado.com.br/_next/data/"+ id +"/busca/" + this.keywordWithoutAccents.replace(" ", "%20") + ".json?page=" + this.currentPage + "&perPage=" + this.pageSize;
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setProxyservice(Arrays.asList(
@@ -202,6 +198,22 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       String response = this.dataFetcher.get(session, request).getBody();
 
       return response;
+   }
+   protected String catureId(){
+      String id = null;
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.martinsatacado.com.br/")
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+         .build();
+      String response = this.dataFetcher.get(session, request).getBody();
+      Document doc = Jsoup.parse(response);
+      String script = CrawlerUtils.scrapScriptFromHtml(doc,"#__NEXT_DATA__");
+      JSONArray obj = JSONUtils.stringToJsonArray(script);
+      id = JSONUtils.getValueRecursive(obj,"0.buildId", String.class);
+      return id;
    }
 
 }
