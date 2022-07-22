@@ -48,7 +48,7 @@ public class ChileLidersuperCrawler extends Crawler {
       Document doc = new Document(HOME_PAGE);
       try {
          int attempts = 0;
-         List<String> proxies = List.of( ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY );
+         List<String> proxies = List.of( ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY );
 
          do {
             ChromeOptions chromeOptions = new ChromeOptions();
