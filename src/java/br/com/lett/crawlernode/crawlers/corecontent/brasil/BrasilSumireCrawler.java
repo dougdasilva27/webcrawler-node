@@ -41,7 +41,7 @@ public class BrasilSumireCrawler extends Crawler {
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info-main > div.product.attribute.overview > div > p", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product.media > div.gallery-placeholder._block-content-loading > img", Arrays.asList("src"), "https", "://www.perfumariasumire.com.br/");
          boolean available = doc.selectFirst(".product-info-main > div.product.alert.stock > a") == null;
-         Offers offers = available ? scrapOffers(doc) : new Offers();
+         Offers offers = available ? scrapOffers(doc, internalId) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -67,9 +67,9 @@ public class BrasilSumireCrawler extends Crawler {
       return doc.selectFirst(".title-sku-wrapper > div.page-title-wrapper.product > h1") != null;
    }
 
-   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc, String internalId) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
+      Pricing pricing = scrapPricing(doc, internalId);
 
       if (pricing != null) {
          offers.add(Offer.OfferBuilder.create()
@@ -85,10 +85,13 @@ public class BrasilSumireCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+   private Pricing scrapPricing(Document doc, String internalId) throws MalformedPricingException {
 
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-main > div.product-info-price > div.price-box.price-final_price > span > span > meta:nth-child(odd)", "content", false, '.', session);
-      Double spotlightPrice = priceFrom;
+     if (priceFrom == null){
+        priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#product-price-" + internalId, "data-price-amount", false, '.', session);
+     }
+     Double spotlightPrice = priceFrom;
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
