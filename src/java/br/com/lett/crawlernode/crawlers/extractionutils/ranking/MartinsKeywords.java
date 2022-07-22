@@ -60,7 +60,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       JSONObject obj = JSONUtils.stringToJson(response);
       obj = JSONUtils.getValueRecursive(obj, "pageProps.fallback./api/search", JSONObject.class);
 
-      JSONArray products = obj.getJSONArray("products");
+      JSONArray products = obj.optJSONArray("products");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -69,10 +69,13 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          fetchPrices(products);
          for (Object o : products) {
             JSONObject productObj = (JSONObject) o;
-
-            String internalPid = CommonMethods.getLast(productObj.optString("productSku").split("_"));
+            String internalPid = null;
+            String id = productObj.optString("productSku");
+            if (id != null) {
+               internalPid = CommonMethods.getLast(id.split("_"));
+            }
             String urlProduct = "https://www.martinsatacado.com.br" + productObj.optString("productUrl");
-            String name = productObj.getString("name");
+            String name = productObj.optString("name");
             String imageUrl = JSONUtils.getValueRecursive(productObj, "images.0.value", String.class);
             Integer price = getPrice(productObj.optString("productSku"));
             boolean isAvailable = price != 0;
@@ -171,7 +174,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
 
       for (Object o : this.prices) {
          JSONObject price = (JSONObject) o;
-         String cod = price.getString("codigoMercadoria");
+         String cod = price.optString("codigoMercadoria");
          if (cod.equals(id)) {
             String priceStr = price.optString("preco");
             priceStr = priceStr.replaceAll("\\.", "");
