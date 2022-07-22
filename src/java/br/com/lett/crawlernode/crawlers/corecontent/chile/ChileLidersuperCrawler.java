@@ -66,7 +66,9 @@ public class ChileLidersuperCrawler extends Crawler {
 
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-         webdriver.terminate();
+         if (webdriver != null) {
+            webdriver.terminate();
+         }
       }
 
       return doc;
