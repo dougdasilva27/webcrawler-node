@@ -75,8 +75,8 @@ public class BrasilHavanCrawler extends Crawler {
             for (int i = 0; i < variants.length(); i++) {
                String skuId = JSONUtils.getValueRecursive(variants, i + ".products.0", String.class);
                JSONObject skuObject = JSONUtils.getValueRecursive(variantsToJson, "[data-role=swatch-options].Magento_Swatches/js/swatch-renderer.jsonConfig.sku", JSONObject.class);
-               String internalId = skuObject.getString(skuId);
-               String variantName = name + " - " + JSONUtils.getValueRecursive(variants, i + ".label", String.class);
+               String internalId = skuObject.optString(skuId);
+               String variantName = getVariantName(name, variants, i);
                internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-add-form form", "data-product-sku");
 
                Product product = ProductBuilder.create()
@@ -101,7 +101,7 @@ public class BrasilHavanCrawler extends Crawler {
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
-               .setInternalPid(internalPid)
+               .setInternalPid(internalId)
                .setName(name)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
@@ -125,6 +125,14 @@ public class BrasilHavanCrawler extends Crawler {
 
    private boolean isProductPage(Document document) {
       return document.selectFirst(".column.main") != null;
+   }
+   private String getVariantName(String name, JSONArray variants, int i) {
+      String jsonName = JSONUtils.getValueRecursive(variants, i + ".label", String.class);
+      if (jsonName != null) {
+         return name + " - " + jsonName;
+      } else {
+         return name;
+      }
    }
 
    private List<String> getSecondaryImages(Document doc) {
