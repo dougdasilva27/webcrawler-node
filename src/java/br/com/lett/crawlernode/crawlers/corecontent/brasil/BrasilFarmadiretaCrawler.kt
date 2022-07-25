@@ -58,7 +58,8 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
       val primaryCategory = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#CategoriaProduto", "value")
       val secondaryCategory = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#SubCategoriaProduto", "value")
       val primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".img-zoom #imgProduto", "src")
-      val description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ficha-produto"))
+      val secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".jsThumbProduto", Arrays.asList("data-image"), "https", "www.farmadireta.com.br", primaryImage)
+      val description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("section.dgf-single-abas"))
       val available = doc.select(".produto-esgotado-avise").isEmpty()
       val offers = if (available) scrapOffers(doc) else Offers();
 
@@ -68,6 +69,7 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
          .setInternalPid(internalId)
          .setName(name)
          .setPrimaryImage(primaryImage)
+         .setSecondaryImages(secondaryImages)
          .setCategories(mutableListOf(primaryCategory, secondaryCategory))
          .setOffers(offers)
          .setDescription(description)
