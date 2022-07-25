@@ -79,7 +79,7 @@ public class FalabellaCrawler extends Crawler {
                internalId = getReviewId(session.getOriginalURL());
             }
             String internalPid = internalId;
-            String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div[data-name]", true);
+            String name = crawlBrandName(doc);
             boolean available = doc.select(".availability span").size() > 1;
             Offers offers = available ? scrapOffers(doc, sellerFullName, isMainSeller) : null;
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb");
@@ -112,6 +112,16 @@ public class FalabellaCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String crawlBrandName(Document doc) {
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div[data-name]", true);
+      String brand = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-brand]", "data-brand");
+      if (brand != null && !brand.isEmpty()) {
+         name = name + " - " + brand;
+         return name;
+      }
+      return name;
    }
 
    private RatingsReviews scrapRatingsReviews(String internalId, String url) {
