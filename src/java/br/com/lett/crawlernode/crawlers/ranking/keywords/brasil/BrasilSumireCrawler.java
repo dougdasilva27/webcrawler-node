@@ -39,18 +39,18 @@ public class BrasilSumireCrawler extends CrawlerRankingKeywords {
 
          for (Element e : products) {
 
-            String internalId = crawlId(e);
+            String internalPid = crawlId(e);
             Boolean isAvailable = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-inner > div > div.actions-primary > div > span", false) == null;
             String urlProduct = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product.details.product-item-details > .product.name.product-item-name > a", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product.details.product-item-details > .product.name.product-item-name > a", false);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, " .product-item-info > a > span > .product-image-wrapper > img", Arrays.asList("src"), "https", "://www.perfumariasumire.com.br/");
             Integer price = null;
             if (isAvailable == true) {
-               price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "#product-price-" + internalId, null, false, ',', session, null);
+               price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "#product-price-" + internalPid, null, false, ',', session, null);
             }
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(urlProduct)
-               .setInternalId(internalId)
+               .setInternalPid(internalPid)
                .setName(name)
                .setImageUrl(imgUrl)
                .setPriceInCents(price)
