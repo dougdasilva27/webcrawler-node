@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -13,7 +12,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -29,7 +27,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.util.*;
 
@@ -41,42 +38,9 @@ public class ChileLidersuperCrawler extends Crawler {
 
    public ChileLidersuperCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.MIRANHA);
    }
 
-   @Override
-   protected Object fetch() {
-      Document doc = new Document(HOME_PAGE);
-      try {
-         int attempts = 0;
-         List<String> proxies = List.of( ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY );
-
-         do {
-            ChromeOptions chromeOptions = new ChromeOptions();
-            chromeOptions.addArguments("--window-size=1920,1080");
-            chromeOptions.addArguments("--headless");
-            chromeOptions.addArguments("--no-sandbox");
-            chromeOptions.addArguments("--disable-dev-shm-usage");
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempts), session, cookiesWD, HOME_PAGE, chromeOptions);
-            if (webdriver != null) {
-               webdriver.waitLoad(10000);
-               doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
-            }
-         } while (doc.select(".product-info").isEmpty() && attempts++ < 3);
-
-      } catch (Exception e) {
-         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-         if (webdriver != null) {
-            webdriver.terminate();
-         }
-      }
-
-      return doc;
-   }   @Override
-   public boolean shouldVisit() {
-      String href = session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
