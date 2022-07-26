@@ -49,13 +49,13 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       Product product = null;
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#maincontent > div.columns > div > div.product-info-main > div.page-title-wrapper.product > h1 > span", false);
 
          String internalId = scrapInternalId(doc);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=\"sku\"]", false);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img#mainImage", Arrays.asList("data-big"), "https", HOST);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-stock-sku > div.product.attribute.sku > div", false);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#maincontent > div.columns > div > div.product.media > div.gallery-placeholder._block-content-loading > img", Arrays.asList("src"), "https", HOST);
          List<String> images = CrawlerUtils.scrapSecondaryImages(doc, "ul#productImages img", Arrays.asList("data-big"), "https", HOST, primaryImage);
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "div.descricao", false);
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#description > div > div", false);
          Boolean available = isAvailable(doc);
          CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a span", true);
          Offers offers = available != null && available ? scrapOffers(doc) : new Offers(); // I did not found any product having price or avaibility differente because volts or model
@@ -108,7 +108,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("li.product") != null;
+      return doc.selectFirst(".loading-mask") != null;
    }
 
    private String scrapName(String name, String voltsOrModel) {
