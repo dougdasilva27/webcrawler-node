@@ -45,7 +45,7 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
 
          for (Element e : products) {
             String productUrl = CrawlerUtils.scrapUrl(e,".product.photo.product-item-photo a","href","", "");
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".price-box.price-final_price", "data-product-id");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".price-box.price-final_price", "data-product-id");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-link", false);
             String imgUrl = scrapImgUrl(e);
             Integer price = scrapPrice(e);
@@ -53,7 +53,7 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalPid(internalPid)
+               .setInternalId(internalId)
                .setName(name)
                .setImageUrl(imgUrl)
                .setPriceInCents(price)
