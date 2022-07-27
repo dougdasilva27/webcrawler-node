@@ -33,19 +33,18 @@ public class MexicoSorianaCrawler extends Crawler {
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
-
    public MexicoSorianaCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
    }
+
    private Map<String, String> getHeaders() {
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-      headers.put("origin", "https://www.soriana.com/");
-      headers.put("authority", "www.soriana.com");
-      headers.put("referer", "https://www.soriana.com/buscar?q=aceite&cid=&search-button=");
-      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("Connection", "keep-alive");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Accept", "*/*");
+      headers.put("cookie", "PIM-SESSION-ID=dznWODemsE3uLOoC; dwac_f1e552945f65c8b8b0264c1a64=PTG1Ii-Pw2dC3o-3fPsnNlP9e1jTX53j9qk%3D|dw-only|||MXN|false|America%2FMexico%5FCity|true; cqcid=ackLoYst7aCewofaKKgPkobfLK; cquid=||; dwanonymous_ad95070cfe256984fa6223b8e5b1c401=ackLoYst7aCewofaKKgPkobfLK; sid=PTG1Ii-Pw2dC3o-3fPsnNlP9e1jTX53j9qk; __cq_dnt=0; dw_dnt=0; dwsid=tJb04uh4Z1BjUFlGo-p4EtpaOpgUqDnU1yd-nwWkycRT5hWg_NnI42XF2gIFU3dqxYYcsS2AFicPMXXruLu_Hg==; _gcl_au=1.1.1389905974.1658947038; cookieCodePostal=true; __cq_uuid=deagk4FCec3rRbruYeyHJqgHLg; __cq_bc=%7B%22bgbd-Soriana%22%3A%5B%7B%22id%22%3A%222023107%22%7D%5D%7D; __cq_seg=; bm_sv=17E4F7F1D642F21C369E93917EBFBC9B~YAAQbs1YaHExmyCCAQAAwZ3xQBApuIwc5D/vZ66bhdxhFM/SMbxGhvva+Vb0ie/JObqXsmm4VNTEI23pKHKZEoZk4fbNWm3TpJr/NBZjU0K7R33orUiIVRESbzeq3tfnQ0OqfPf8gUtVB8he+RaSkFMwVifKLJJrQxEBzjlj7U/eaLabY75/xqt6FrVV1dhyAVS0SSSbmyrfH9g9L7zG9XPCLlqjjvng8GO+FNLbJUixe/mZqoSwRztPnX4YiqVKRA==~1; _ga_LZ2D37D7GQ=GS1.1.1658946171.1.1.1658947038.15; _ga=GA1.2.947908215.1658947038; _gid=GA1.2.95255934.1658947038; ak_bmsc=53D9644728FF16E4B0F82D0CDDD98D66~000000000000000000000000000000~YAAQbs1YaHgxmyCCAQAAq57xQBAUhCGmrfbpvGoYYp5ngvQrVnZ4CXKN3d0pUQKkjkurhPnBpmNvrFpf/3GgAfuwanttexCGXKaT45gmcuMP2vVqXgTv5tTlT3TZod4KfVX2NxvvhrEeXeG2+wR2hDWVfXN0io5gy6l9+bddk8rQ5tQPaPOjVVHLSY2UpmyzBu1z0//jl4XTtxHFthf3RwJthubARr+xmNH05ZDXVQaPUAYI95Y3tClPxooHDIB9q+1jR6/1n0F9i9rKXSbT9ObcsutHWmHopt68/KH+quIfpRvlSSYWWNVhdQ7AVgDD1wLe4hY4H2ttdaHjiMzgUxLrTb3NXX/rznplYd99AO2yn/aJENXqoa5hgAO5rhaDKf2y1e5dVZDvl9uphaWDT7FWuTwStbKwhw+pTkamf8+Gm/b7WLB1c5ipUTlGDRCo9BgyyP1rJCJssATkf3pFuvaInLMNE4XyC+zmIo/i2B9hBA1+IxHk/rB/emjy; _scid=faea27f4-421e-473a-8791-e88c6da14c75; _uetsid=216e46400dd911ed9b14b35e1be3535a; _uetvid=410d2d20f94b11ec8d6127a397078e76; _tt_enable_cookie=1; _ttp=91616f0c-0b77-49ee-b7b7-bdaaa8d713fc; _gat_UA-4339337-6=1; _hjSessionUser_464447=eyJpZCI6IjFjYTQ2YWEzLWNhODctNWQ3My05ZDkzLWQ1Y2EyYTdhMzlmZSIsImNyZWF0ZWQiOjE2NTg5NDcwMzk3NjAsImV4aXN0aW5nIjpmYWxzZX0=; _hjFirstSeen=1; _hjIncludedInSessionSample=0; _hjSession_464447=eyJpZCI6IjE3NTM2YjJmLTYwY2UtNDI1MC1hMTZiLTQ0NjIyNDNhZDFkMSIsImNyZWF0ZWQiOjE2NTg5NDcwMzk5NjUsImluU2FtcGxlIjpmYWxzZX0=; _hjAbsoluteSessionInProgress=0; _pin_unauth=dWlkPVl6RmpaVFZpT0RBdFl6Y3dZUzAwTlRNNUxUaGxZall0TURJd056Smlaamt3WWpJeA; _clck=nhs57s|1|f3i|0; _clsk=13kjz7o|1658947040490|1|1|l.clarity.ms/collect; _gali=formPostalcode; RT=\"z=1&dm=soriana.com&si=3088047b-40c0-4b00-bace-70fe7f8816e1&ss=l63xpq1z&sl=6&tt=swl&bcn=%2F%2F17de4c1f.akstat.io%2F&ld=iqmb&nu=upsadnr&cl=iuxj\"; _abck=7A2A1798C7B33BF3C12E5AA1463770F1~-1~YAAQbs1YaGennSCCAQAAP+cnQQjiyPa1QRQSjff3WsIeRaWfHtihN6CMdM/per1OnALgGacG3XzKGpDSNH/lw1PKodA79vyeesaSjPOXJWKtwcdfFrSU8M5qh86MlEAEBzOI231B/zqkMp91NJpFphLoool6497k4XxK37E+8Zi7mPYDrWGD5ohjm8hprvzM/XmPT/CFLlNBYknWrm7tXq8KQf9g6TjH1/TEQ58aJ74kOcqJnfgyEJLU5LJqI8GyFOXN4pzhav8BFqhm52LXIyaMaiTAGFvYoPkZrm9xdmkT4A96IHPgMvGFs2FF2HAg+A0UdqfK2JZYVgeNcVxIOUEPPhthebI9mD8jnbnhqeLOUkC/sxR5PHp+jYt4k1snz/hy2nF+itjh/fGWU0feCjdl83BibdmJNA==~0~-1~-1; bm_sv=17E4F7F1D642F21C369E93917EBFBC9B~YAAQbs1YaGinnSCCAQAAP+cnQRDYXCT5eD8jzs7JLg6BnKW2/+uM/mA3NRcEZeE0u4NjyqIt0pL4aFqoK+ovmqLCUOmo42szAAFiU7TsXAiRtT+qjr10FQUSaazSpKbEp/Op4FOFGkbs9hTh/Kw44bCeiiesrEumh0nFGOkrveIS+UPJvLeKuAf8jHdbmoFC7ZjG3wlwFA7EK9cgxRNyAHCgof7+Oh3RNQnnCXjF91HJ5ePJKLIF83AvujDNftrX+g==~1; __cq_dnt=0; dw_dnt=0");
 
       return headers;
    }
@@ -61,8 +60,9 @@ public class MexicoSorianaCrawler extends Crawler {
             .setUrl("https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Stores-UpdateStoreByPostalCode")
             .setHeaders(getHeaders())
             .setProxyservice(Arrays.asList(
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES,
                ProxyCollection.NETNUT_RESIDENTIAL_BR
             ))
