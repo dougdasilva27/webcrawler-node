@@ -319,7 +319,7 @@ public abstract class CrawlerRanking extends Task {
       rankingProducts.setInternalId(internalId);
       rankingProducts.setInteranlPid(pid);
       rankingProducts.setUrl(url);
-      saveDataProduct(rankingProducts, false);
+      saveDataProduct(rankingProducts);
    }
 
 
@@ -345,12 +345,33 @@ public abstract class CrawlerRanking extends Task {
             }
          }
       }
+
       return processeds;
    }
 
+   public static boolean isVoid(JSONObject result) {
+      boolean isVoid = false;
 
-   protected void saveDataProduct(RankingProduct product) {
-      saveDataProduct(product, true);
+      if (result != null) {
+         JSONArray foundSkus = result.optJSONArray("found_skus");
+
+         if (foundSkus != null) {
+
+            for (Object o : foundSkus) {
+               if (o instanceof JSONObject) {
+                  JSONObject product = (JSONObject) o;
+                  if (product.optString("status").equalsIgnoreCase("void")) {
+                     isVoid = true;
+                     break;
+                  }
+
+               }
+
+            }
+         }
+      }
+
+      return isVoid;
    }
 
 
@@ -359,7 +380,7 @@ public abstract class CrawlerRanking extends Task {
     *
     * @param product produto
     */
-   protected void saveDataProduct(RankingProduct product, boolean isUpdate) {
+   protected void saveDataProduct(RankingProduct product) {
       this.position++;
 
       if (product.getPosition() == 0) {
@@ -379,26 +400,21 @@ public abstract class CrawlerRanking extends Task {
       JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
 
       // if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
-      if (true) {
+      if (true) { //todo: remover isso
 
          //this is legacy architecture, when none app using anymore we can remove
-         List<Processed> processeds = createProcesseds(resultJson, product.getMarketId(), session);
+         List<Processed> processeds = createProcesseds(resultJson, product.getMarketId(), session); //todo: remover processed assim que tudo migrar
          List<Long> processedIds = new ArrayList<>();
-
-         if (!isUpdate) {
-            completeRankingProduct(product, processeds);
-            //botar log pra saber se tá caindo aqui
-         }
 
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
-               if (p.isVoid() && hasLrtBeforeOneMonth(p.getLrt())) {
-                  saveProductUrlToQueue(product, resultJson);
-               }
+            }
+            if (isVoid(resultJson) && hasLrtBeforeOneMonth(resultJson.optString("finished_at"))) {
+               saveProductUrlToQueue(product, resultJson);
             }
 
-         } else if (product.getUrl() != null && processeds.isEmpty()) {
+         } else if (product.getUrl() != null && resultJson.isEmpty()) {
 
             saveProductUrlToQueue(product, resultJson);
          }
@@ -451,20 +467,20 @@ public abstract class CrawlerRanking extends Task {
 
 
    protected void saveProductUrlToQueue(RankingProduct product, JSONObject result) {
-      if (isProductToSendToQueue(product, result)) {
+      if (mustSendProductToQueue(product, result)) {
          this.messages.add(product.getUrl());
       }
 
    }
 
-   protected boolean isProductToSendToQueue(RankingProduct product, JSONObject result){
+   protected boolean mustSendProductToQueue(RankingProduct product, JSONObject result) {
       boolean sendToQueue = true;
       if (result == null || result.isEmpty()) {
          Dynamo.insertObjectDynamo(product);
          Logging.printLogDebug(logger, session, "Insert product:  " + product.getUrl() + " in dynamo and saved to queue");
       } else if ((result.optString("finished_at") == null || result.optString("finished_at").isEmpty()) && Dynamo.scheduledMoreThanOneHour(result.optString("scheduled_at"), session)) {
          Logging.printLogDebug(logger, session, "Update product " + product.getUrl() + " in duynamo and saved to queue");
-         Dynamo.updateObjectDynamo(product, result.optString("scheduled_at"));
+         Dynamo.updateScheduledObjectDynamo(product, result.optString("created_at"));
       } else {
          sendToQueue = false;
          Logging.printLogInfo(logger, session, "Product already send to queue less than one hour ago url: " + product.getUrl());
@@ -502,7 +518,7 @@ public abstract class CrawlerRanking extends Task {
          ranking.setStatistics(statistics);
 
          // insere dados no postgres
-         Persistence.insertProductsRanking(ranking, session);
+         Persistence.insertProductsRanking(ranking, session); //todo: remover isso
 
          // persiste os dados no elasticsearch
          KPLProducer.getInstance().put(ranking, session);

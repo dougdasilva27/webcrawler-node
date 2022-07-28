@@ -25,7 +25,7 @@ public class RankingProduct {
    protected String keyword;
    protected Timestamp timestamp;
 
-   protected List<Long> processedIds = new ArrayList<>();
+   protected List<Long> processedIds = new ArrayList<>(); //todo remove this field
    protected String screenshot;
 
 
