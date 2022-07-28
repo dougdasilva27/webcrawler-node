@@ -33,6 +33,11 @@ public class BrasilRappiCrawler extends RappiCrawler {
    }
 
    @Override
+   protected String getMarketBaseUrl() {
+      return "https://www.rappi.com.br/lojas/";
+   }
+
+   @Override
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));

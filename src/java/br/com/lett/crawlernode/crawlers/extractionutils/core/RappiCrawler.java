@@ -61,6 +61,8 @@ public abstract class RappiCrawler extends Crawler {
 
    abstract protected String getHomeCountry();
 
+   abstract protected String getMarketBaseUrl();
+
    @Override
    public void handleCookiesBeforeFetch() {
       BasicClientCookie cookie = new BasicClientCookie("currentLocation", getCurrentLocation());
@@ -75,15 +77,30 @@ public abstract class RappiCrawler extends Crawler {
       JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
 
       JSONObject productJson = JSONUtils.getValueRecursive(pageJson, "props.pageProps.master_product_detail_response.data.components.0.resource.product", JSONObject.class, new JSONObject());
+      if (productJson.isEmpty()) {
+         JSONObject fallback = JSONUtils.getValueRecursive(pageJson, "props.pageProps.fallback", JSONObject.class, new JSONObject());
+         if (!fallback.isEmpty()) {
+            Iterator<String> keys = fallback.keys();
+            while(keys.hasNext()) {
+               String key = keys.next();
+               if (fallback.get(key) instanceof JSONObject) {
+                  productJson = JSONUtils.getValueRecursive(fallback.get(key), "master_product_detail_response.data.components.0.resource.product", JSONObject.class, new JSONObject());
+               }
+            }
+         }
+      }
+
       JSONArray stores = productJson.optJSONArray("stores");
 
-      // trying to find the current store in the store listing on product page
-      for (int i = 0; i < stores.length(); i++) {
-         JSONObject store = stores.optJSONObject(i);
+      if (stores != null) {
+         // trying to find the current store in the store listing on product page
+         for (int i = 0; i < stores.length(); i++) {
+            JSONObject store = stores.optJSONObject(i);
             if (store != null && storeId.equals(store.optString("store_id"))) {
                productsInfo = store.optJSONObject("product");
                break;
             }
+         }
       }
 
       // if the current store is not in the listing, then try to get the product data from API by product id
@@ -112,11 +129,11 @@ public abstract class RappiCrawler extends Crawler {
       return checkHost && checkPath;
    }
 
-   private String getProductIdFromRanking(JSONObject productJson) {
+   protected String getProductIdFromRanking(JSONObject productJson) {
       String productName = productJson.optString("name");
       String productImage = productJson.optString("image");
       String productNameEncoded = productName != null ? StringUtils.stripAccents(productName).replace(" ", "%20") : null;
-      String url = getHomeCountry() + "lojas/" + getStoreId() + "/s?term=" + productNameEncoded;
+      String url = getMarketBaseUrl() + getStoreId() + "/s?term=" + productNameEncoded;
       Request request = Request.RequestBuilder.create()
          .setCookies(this.cookies)
          .setUrl(url)
@@ -173,7 +190,7 @@ public abstract class RappiCrawler extends Crawler {
       return token;
    }
 
-   private JSONObject fetchProductApi(String productId, String token) {
+   protected JSONObject fetchProductApi(String productId, String token) {
       String url = "https://services." + getHomeDomain() + "/api/ms/web-proxy/dynamic-list/cpgs";
 
       Map<String, String> headers = new HashMap<>();
