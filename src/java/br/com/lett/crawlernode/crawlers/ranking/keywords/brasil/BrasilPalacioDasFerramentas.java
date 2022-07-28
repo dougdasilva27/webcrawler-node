@@ -27,11 +27,12 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
       super(session);
       super.fetchMode = FetchMode.JSOUP;
    }
+
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
 
-      String url = HOME_PAGE + "/catalogsearch/result/index/?"+ "p=" + this.currentPage +"&q="+ this.keywordEncoded ;
+      String url = HOME_PAGE + "/catalogsearch/result/index/?" + "p=" + this.currentPage + "&q=" + this.keywordEncoded;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
@@ -44,7 +45,7 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String productUrl = CrawlerUtils.scrapUrl(e,".product.photo.product-item-photo a","href","", "");
+            String productUrl = CrawlerUtils.scrapUrl(e, ".product.photo.product-item-photo a", "href", "", "");
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".price-box.price-final_price", "data-product-id");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-link", false);
             String imgUrl = scrapImgUrl(e);
@@ -78,7 +79,7 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
    }
 
    private String scrapImgUrl(Element e) {
-      return CrawlerUtils.scrapUrl(e,".product.photo.product-item-photo a img","data-src","", "");
+      return CrawlerUtils.scrapUrl(e, ".product.photo.product-item-photo a img", "data-src", "", "");
    }
 
 

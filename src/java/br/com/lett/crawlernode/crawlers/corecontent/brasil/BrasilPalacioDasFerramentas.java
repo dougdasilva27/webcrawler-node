@@ -49,20 +49,18 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#maincontent > div.columns > div > div.product-info-main > div.page-title-wrapper.product > h1 > span", false);
-
-
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-stock-sku > div.product.attribute.sku > div", false);
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-price > div", "data-product-id");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#maincontent > div.columns > div > div.product.media > div.gallery-placeholder._block-content-loading > img", Arrays.asList("src"), "https", HOST);
          List<String> images = scrapImages(doc, primaryImage);
-            //CrawlerUtils.scrapSecondaryImages(doc, "ul#productImages img", Arrays.asList("data-big"), "https", HOST, primaryImage);
+         CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, "#html-body > div.page-wrapper > div.breadcrumbs > ul li a", true);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#description > div > div", false);
          Boolean available = isAvailable(doc);
          Offers offers = available != null && available ? scrapOffers(doc) : new Offers(); // I did not found any product having price or avaibility differente because volts or model
          RatingsReviews ratings = crawlRating(doc, internalPid);
 
-        JSONArray variations = getVariations(doc);
-         if (variations!= null && variations.length() >1) {
+         JSONArray variations = getVariations(doc);
+         if (variations != null && variations.length() > 1) {
             for (Object variation : variations) {
                JSONObject jsonObj = (JSONObject) variation;
                String voltsOrModel = jsonObj.optString("label");
@@ -77,6 +75,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
                   .setSecondaryImages(images)
                   .setDescription(description)
                   .setRatingReviews(ratings)
+                  .setCategories(categoryCollection)
                   .setOffers(offers)
                   .build();
 
@@ -91,6 +90,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(images)
                .setDescription(description)
+               .setCategories(categoryCollection)
                .setRatingReviews(ratings)
                .setOffers(offers)
                .build();
@@ -108,7 +108,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
 
    private List<String> scrapImages(Document doc, String primaryImage) {
 
-      String objString = CrawlerUtils.scrapScriptFromHtml(doc,"#maincontent > div.columns > div > div.product.media > script:nth-child(6)");
+      String objString = CrawlerUtils.scrapScriptFromHtml(doc, "#maincontent > div.columns > div > div.product.media > script:nth-child(6)");
       JSONArray arr = JSONUtils.stringToJsonArray(objString);
 
       List<String> list = new ArrayList<>();
@@ -162,16 +162,16 @@ public class BrasilPalacioDasFerramentas extends Crawler {
 
    private JSONArray getVariations(Document doc) {
       String variationsString = CrawlerUtils.scrapScriptFromHtml(doc, "#product-options-wrapper > div > script:nth-child(2)");
-      if (variationsString != null){
+      if (variationsString != null) {
          JSONArray variationsArr = JSONUtils.stringToJsonArray(variationsString);
-         JSONObject vatiationObj = JSONUtils.getValueRecursive(variationsArr,"0.#product_addtocart_form.configurable.spConfig.attributes",JSONObject.class);
+         JSONObject vatiationObj = JSONUtils.getValueRecursive(variationsArr, "0.#product_addtocart_form.configurable.spConfig.attributes", JSONObject.class);
          Iterator<String> it = vatiationObj.keys();
          String key = it.next();
-         vatiationObj =   vatiationObj.optJSONObject(key);
-        return vatiationObj.optJSONArray("options");
+         vatiationObj = vatiationObj.optJSONObject(key);
+         return vatiationObj.optJSONArray("options");
 
 
-      }else{
+      } else {
          return null;
       }
    }
@@ -200,13 +200,17 @@ public class BrasilPalacioDasFerramentas extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc,"#maincontent > div.columns > div > div.product-info-main > div.product-info-price > div > span > meta:nth-child(2)","content",true,'.',session);
-     if(priceFrom == null){
-        priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc,"#maincontent > div.columns > div > div.product-info-main > div.product-info-price > div > span > span > meta:nth-child(3)","content",true,'.',session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-price > div > span > meta:nth-child(2)", "content", true, '.', session);
+      if (priceFrom == null) {
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-price > div > span > span > meta:nth-child(3)", "content", true, '.', session);
 
-     }
-      Double discount = priceFrom* 0.06;
-      Double spotlightPrice = priceFrom - discount;
+      }
+      Double spotlightPrice = null;
+      if (priceFrom != null) {
+         Double discount = priceFrom * 0.06;
+         spotlightPrice = priceFrom - discount;
+      }
+
       spotlightPrice = MathUtils.normalizeTwoDecimalPlaces(spotlightPrice);
       Double priceBankSlip = spotlightPrice;
 
