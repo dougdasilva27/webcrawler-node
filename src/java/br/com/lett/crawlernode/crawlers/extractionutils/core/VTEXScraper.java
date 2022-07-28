@@ -27,7 +27,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 public abstract class VTEXScraper extends Crawler {
 
@@ -65,7 +68,7 @@ public abstract class VTEXScraper extends Crawler {
          if (productJson != null) {
             JSONArray items = JSONUtils.getJSONArrayValue(productJson, "items");
 
-            if(items.length()>0) {
+            if (items.length() > 0) {
                for (int i = 0; i < items.length(); i++) {
                   JSONObject jsonSku = items.optJSONObject(i);
                   if (jsonSku == null) {
@@ -74,9 +77,9 @@ public abstract class VTEXScraper extends Crawler {
                   Product product = extractProduct(doc, internalPid, categories, description, jsonSku, productJson);
                   products.add(product);
                }
-            }else {
-               Product product = extractProductHtml(doc,internalPid);
-               if (product != null){
+            } else {
+               Product product = extractProductHtml(doc, internalPid);
+               if (product != null) {
                   products.add(product);
                }
             }
@@ -135,30 +138,33 @@ public abstract class VTEXScraper extends Crawler {
    protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
       String name = null;
 
-      if(productJson.has("productName")) {
+      if (productJson.has("productName")) {
          name = productJson.optString("productName");
       }
-      
-      if (name != null && jsonSku.has("nameComplete") && jsonSku.opt("nameComplete") != null) {
+
+      if (name == null && jsonSku.has("nameComplete") && jsonSku.opt("nameComplete") != null) {
          name = jsonSku.optString("nameComplete");
-      } else if (jsonSku.has("name")) {
+
+      } else if (name == null && jsonSku.has("name")) {
          name = jsonSku.optString("name");
       }
 
+
       if (name != null && !name.isEmpty() && productJson.has("brand")) {
          String brand = productJson.optString("brand");
-         if (brand != null && !brand.isEmpty() && !checkIfNameHasBrand(brand, name)){
+         if (brand != null && !brand.isEmpty() && !checkIfNameHasBrand(brand, name)) {
             name = name + " " + brand;
          }
       }
+
 
       return name;
    }
 
    private boolean checkIfNameHasBrand(String brand, String name) {
-         String brandStripAccents = StringUtils.stripAccents(brand);
-         String nameStripAccents = StringUtils.stripAccents(name);
-         return nameStripAccents.toLowerCase(Locale.ROOT).contains(brandStripAccents.toLowerCase(Locale.ROOT));
+      String brandStripAccents = StringUtils.stripAccents(brand);
+      String nameStripAccents = StringUtils.stripAccents(name);
+      return nameStripAccents.toLowerCase(Locale.ROOT).contains(brandStripAccents.toLowerCase(Locale.ROOT));
    }
 
    protected CategoryCollection scrapCategories(JSONObject product) {
@@ -294,7 +300,7 @@ public abstract class VTEXScraper extends Crawler {
 
    protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid, Pricing pricing) {
       List<String> sales = new ArrayList<>();
-      if(pricing != null) sales.add(CrawlerUtils.calculateSales(pricing));
+      if (pricing != null) sales.add(CrawlerUtils.calculateSales(pricing));
       return sales;
    }
 
@@ -327,10 +333,10 @@ public abstract class VTEXScraper extends Crawler {
       Double principalPrice = comertial.optDouble("Price");
       Double priceFrom = comertial.optDouble("ListPrice");
 
-      if(jsonSku.optString("measurementUnit").equals("kg")) {
+      if (jsonSku.optString("measurementUnit").equals("kg")) {
          Double unitMultiplier = jsonSku.optDouble("unitMultiplier");
          principalPrice = Math.floor((principalPrice * unitMultiplier) * 100) / 100.0;
-         if(priceFrom != null) priceFrom = Math.floor((priceFrom * unitMultiplier) * 100) / 100.0;
+         if (priceFrom != null) priceFrom = Math.floor((priceFrom * unitMultiplier) * 100) / 100.0;
       }
 
       CreditCards creditCards = scrapCreditCards(comertial, discountsJson, true);
@@ -586,7 +592,7 @@ public abstract class VTEXScraper extends Crawler {
          .build();
    }
 
-   protected  RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku){
+   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
       return null;
    }
 
