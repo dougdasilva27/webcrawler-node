@@ -21,6 +21,7 @@ import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Pricing.PricingBuilder;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.kafka.common.protocol.types.Field;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -139,11 +140,13 @@ public abstract class VTEXScraper extends Crawler {
          name = productJson.optString("productName");
       }
       
-      if (name != null && jsonSku.has("nameComplete") && jsonSku.opt("nameComplete") != null) {
+      if (name == null && jsonSku.has("nameComplete") && jsonSku.opt("nameComplete") != null) {
          name = jsonSku.optString("nameComplete");
-      } else if (jsonSku.has("name")) {
+
+      } else if (name == null && jsonSku.has("name")) {
          name = jsonSku.optString("name");
       }
+
 
       if (name != null && !name.isEmpty() && productJson.has("brand")) {
          String brand = productJson.optString("brand");
@@ -151,6 +154,7 @@ public abstract class VTEXScraper extends Crawler {
             name = name + " " + brand;
          }
       }
+
 
       return name;
    }
