@@ -161,7 +161,7 @@ public abstract class VTEXScraper extends Crawler {
       return name;
    }
 
-   private boolean checkIfNameHasBrand(String brand, String name) {
+   protected boolean checkIfNameHasBrand(String brand, String name) {
       String brandStripAccents = StringUtils.stripAccents(brand);
       String nameStripAccents = StringUtils.stripAccents(name);
       return nameStripAccents.toLowerCase(Locale.ROOT).contains(brandStripAccents.toLowerCase(Locale.ROOT));
