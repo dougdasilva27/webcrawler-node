@@ -9,10 +9,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import models.AdvancedRatingReview;
@@ -20,6 +17,8 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -49,22 +48,22 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       Product product = null;
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
-
-         String internalId = scrapInternalId(doc);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=\"sku\"]", false);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img#mainImage", Arrays.asList("data-big"), "https", HOST);
-         List<String> images = CrawlerUtils.scrapSecondaryImages(doc, "ul#productImages img", Arrays.asList("data-big"), "https", HOST, primaryImage);
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "div.descricao", false);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#maincontent > div.columns > div > div.product-info-main > div.page-title-wrapper.product > h1 > span", false);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-stock-sku > div.product.attribute.sku > div", false);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-price > div", "data-product-id");
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#maincontent > div.columns > div > div.product.media > div.gallery-placeholder._block-content-loading > img", Arrays.asList("src"), "https", HOST);
+         List<String> images = scrapImages(doc, primaryImage);
+         CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, "#html-body > div.page-wrapper > div.breadcrumbs > ul li a", true);
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#description > div > div", false);
          Boolean available = isAvailable(doc);
-         CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a span", true);
          Offers offers = available != null && available ? scrapOffers(doc) : new Offers(); // I did not found any product having price or avaibility differente because volts or model
-         RatingsReviews ratings = crawlRating(doc, internalId);
+         RatingsReviews ratings = crawlRating(doc, internalPid);
 
-         Elements variations = getVariations(doc);
-         if (!variations.isEmpty()) {
-            for (Element variation : variations) {
-               String voltsOrModel = scrapVoltsOrModels(variation);
+         JSONArray variations = getVariations(doc);
+         if (variations != null && variations.length() > 1) {
+            for (Object variation : variations) {
+               JSONObject jsonObj = (JSONObject) variation;
+               String voltsOrModel = jsonObj.optString("label");
                String nameVariation = scrapName(name, voltsOrModel);
                String internalIdVariation = internalId + voltsOrModel;
                product = ProductBuilder.create()
@@ -73,10 +72,10 @@ public class BrasilPalacioDasFerramentas extends Crawler {
                   .setInternalPid(internalPid)
                   .setName(nameVariation)
                   .setPrimaryImage(primaryImage)
-                  .setCategories(categoryCollection)
                   .setSecondaryImages(images)
                   .setDescription(description)
                   .setRatingReviews(ratings)
+                  .setCategories(categoryCollection)
                   .setOffers(offers)
                   .build();
 
@@ -88,10 +87,10 @@ public class BrasilPalacioDasFerramentas extends Crawler {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setCategories(categoryCollection)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(images)
                .setDescription(description)
+               .setCategories(categoryCollection)
                .setRatingReviews(ratings)
                .setOffers(offers)
                .build();
@@ -107,8 +106,27 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       return products;
    }
 
+   private List<String> scrapImages(Document doc, String primaryImage) {
+
+      String objString = CrawlerUtils.scrapScriptFromHtml(doc, "#maincontent > div.columns > div > div.product.media > script:nth-child(6)");
+      JSONArray arr = JSONUtils.stringToJsonArray(objString);
+
+      List<String> list = new ArrayList<>();
+      JSONArray imagesArr = JSONUtils.getValueRecursive(arr, "0.[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class);
+      for (Object o : imagesArr) {
+         JSONObject img = (JSONObject) o;
+         String image = img.optString("img");
+         if (!image.equals(primaryImage)) {
+            list.add(image);
+         }
+      }
+
+      return list;
+
+   }
+
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("li.product") != null;
+      return doc.selectFirst(".loading-mask") != null;
    }
 
    private String scrapName(String name, String voltsOrModel) {
@@ -137,29 +155,25 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       return internalId;
    }
 
-   private String scrapVoltsOrModels(Element variation) {
-      String voltsOrModel = CrawlerUtils.scrapStringSimpleInfo(variation, null, true);
-
-      if (voltsOrModel != null) {
-         voltsOrModel = voltsOrModel.replace("indisponível","");
-
-      }
-
-      return voltsOrModel;
-   }
 
    private Boolean isAvailable(Document doc) {
-      return doc.select(".aviseme").isEmpty();
+      return doc.select(".stock.unavailable").isEmpty();
    }
 
-   private Elements getVariations(Document doc) {
-      Elements variations = doc.select(".voltagem option:not(:first-child)");
-      if (variations.isEmpty()) {
-         variations = doc.select(".modelo option:not(:first-child)");
+   private JSONArray getVariations(Document doc) {
+      String variationsString = CrawlerUtils.scrapScriptFromHtml(doc, "#product-options-wrapper > div > script:nth-child(2)");
+      if (variationsString != null) {
+         JSONArray variationsArr = JSONUtils.stringToJsonArray(variationsString);
+         JSONObject vatiationObj = JSONUtils.getValueRecursive(variationsArr, "0.#product_addtocart_form.configurable.spConfig.attributes", JSONObject.class);
+         Iterator<String> it = vatiationObj.keys();
+         String key = it.next();
+         vatiationObj = vatiationObj.optJSONObject(key);
+         return vatiationObj.optJSONArray("options");
+
+
+      } else {
+         return null;
       }
-
-      return variations;
-
    }
 
    private Offers scrapOffers(Document doc) {
@@ -186,13 +200,23 @@ public class BrasilPalacioDasFerramentas extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[itemprop=\"offers\"] li.de strong", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[itemprop=\"offers\"] li.por strong", null, false, ',', session);
-      Double priceBankSlip = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li.price [itemprop=\"price\"]", "content", false, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-price > div > span > meta:nth-child(2)", "content", true, '.', session);
+      if (priceFrom == null) {
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-price > div > span > span > meta:nth-child(3)", "content", true, '.', session);
+
+      }
+      Double spotlightPrice = null;
+      if (priceFrom != null) {
+         Double discount = priceFrom * 0.06;
+         spotlightPrice = priceFrom - discount;
+      }
+
+      spotlightPrice = MathUtils.normalizeTwoDecimalPlaces(spotlightPrice);
+      Double priceBankSlip = spotlightPrice;
 
       if (Objects.equals(priceFrom, spotlightPrice)) priceFrom = null;
 
-      CreditCards creditCards = scrapCreditCards(doc);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(priceBankSlip)
          .build();
@@ -205,20 +229,15 @@ public class BrasilPalacioDasFerramentas extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditCards(Document doc) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-      Elements installmentsInfo = doc.select("li.parcelamento ul li");
       Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
-      for (Element installment : installmentsInfo) {
-         Integer installmentNumber = CrawlerUtils.scrapIntegerFromHtml(installment, "li strong:nth-of-type(1)", false, 0);
-
-            installments.add(Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(installmentNumber)
-               .setInstallmentPrice(CrawlerUtils.scrapDoublePriceFromHtml(installment, "li strong:nth-of-type(2)", null, false, ',', session))
-               .build());
-
-      }
+      Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.DINERS.toString(), Card.ELO.toString(), Card.AMEX.toString());
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
