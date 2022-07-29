@@ -274,7 +274,7 @@ public abstract class Crawler extends Task {
          // Before process and save to PostgreSQL
          // we must send the raw crawled data to Kinesis
          if (session instanceof DiscoveryCrawlerSession || session instanceof EqiCrawlerSession) {
-            Dynamo.updateReadByCrawlerObjectDynamo(products, session.getMarket().getId(), skuStatus);
+            Dynamo.updateReadByCrawlerObjectDynamo(products, session, skuStatus);
          }
 
          for (Product p : products) {
