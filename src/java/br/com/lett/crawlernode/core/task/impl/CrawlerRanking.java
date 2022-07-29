@@ -398,8 +398,7 @@ public abstract class CrawlerRanking extends Task {
 
       JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
 
-      // if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
-      if (true) { //todo: remover isso
+       if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
 
          //this is legacy architecture, when none app using anymore we can remove
          List<Processed> processeds = createProcesseds(resultJson, product.getMarketId(), session); //todo: remover processed assim que tudo migrar
