@@ -475,13 +475,13 @@ public abstract class CrawlerRanking extends Task {
       boolean sendToQueue = true;
       if (result == null || result.isEmpty()) {
          Dynamo.insertObjectDynamo(product);
-         Logging.printLogDebug(logger, session, "Insert product:  " + product.getUrl() + " in dynamo and saved to queue");
+         Logging.printLogDebug(logger, session, "Insert product:  " + product.getUrl() + " in dynamo and saved to queue" );
       } else if ((result.optString("finished_at") == null || result.optString("finished_at").isEmpty()) && Dynamo.scheduledMoreThanOneHour(result.optString("scheduled_at"), session)) {
          Logging.printLogDebug(logger, session, "Update product " + product.getUrl() + " in duynamo and saved to queue");
          Dynamo.updateScheduledObjectDynamo(product, result.optString("created_at"));
       } else {
          sendToQueue = false;
-         Logging.printLogInfo(logger, session, "Product already send to queue less than one hour ago url: " + product.getUrl());
+         Logging.printLogDebug(logger, session, "Product already send to queue less than one hour ago url: " + product.getUrl());
       }
 
       return sendToQueue;

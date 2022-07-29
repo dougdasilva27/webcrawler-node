@@ -219,7 +219,7 @@ public class Dynamo {
             .withString("scheduled_at", getCurrentTime())
             .withString("created_at", getCurrentTime());
 
-         Logging.printLogInfo(logger, "Insert item in dynamo " + item.toJSONPretty());
+         Logging.printLogDebug(logger, "Insert item in dynamo " + md5);
 
          table.putItem(item);
 
@@ -230,23 +230,20 @@ public class Dynamo {
    }
 
 
-   public static void updateReadByCrawlerObjectDynamo(List<Product> products, int marketId, SkuStatus skuStatus) {
+   public static void updateReadByCrawlerObjectDynamo(List<Product> products, Session session, SkuStatus skuStatus) {
 
       JSONObject productDynamo;
       String createdAt = "";
 
       List<Map> foundSkus = new ArrayList<>();
-      String md5 = "";
+      String md5 = convertUrlInMD5(session.getOriginalURL(), session.getMarket().getId());;
       for (Product p : products) {
-         if (md5.isEmpty()) {
-            md5 = convertUrlInMD5(p.getUrl(), marketId);
-         }
 
          if (createdAt.isEmpty()) {
             productDynamo = fetchObjectDynamo(md5);
             if (productDynamo.isEmpty()) {
                Logging.printLogError(logger, "Error fetching object in dynamo: " + p.getUrl());
-               break;
+               return;
             }
             createdAt = productDynamo.optString("created_at");
          }
@@ -274,9 +271,9 @@ public class Dynamo {
             .withUpdateExpression("set #found_skus = :found_skus, #finished_at = :finished_at")
             .withNameMap(expressionAttributeNames)
             .withValueMap(expressionAttributeValues);
-         UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
+         table.updateItem(updateItemSpec);
 
-         Logging.printLogInfo(logger, "Updated item in dynamo" + md5);
+         Logging.printLogDebug(logger, "Updated item in dynamo " + md5);
 
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
@@ -310,7 +307,7 @@ public class Dynamo {
             .withReturnValues(ReturnValue.ALL_NEW);
 
          UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
-         Logging.printLogInfo(logger, "Displaying updated item..." + outcome.getItem().toJSONPretty());
+         Logging.printLogDebug(logger, "Displaying updated item..." + outcome.getItem().toJSONPretty());
 
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
