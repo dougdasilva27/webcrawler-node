@@ -37,4 +37,5 @@ public class EnvironmentVariables {
    public static final String REDIS_PORT = "REDIS_PORT";
 
    public static final String BUCKET_MIRANHA = "BUCKET_MIRANHA";
+   public static final String DYNAMO_TABLE_NAME = "DYNAMO_TABLE_NAME";
 }

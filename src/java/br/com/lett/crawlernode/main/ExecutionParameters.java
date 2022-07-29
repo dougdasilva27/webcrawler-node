@@ -52,6 +52,9 @@ public class ExecutionParameters {
    private String redisHost;
 
    private Integer redisPort;
+
+   private String dynamoTableName;
+
    public ExecutionParameters() {
       debug = null;
    }
@@ -68,6 +71,7 @@ public class ExecutionParameters {
       sendToKinesis = getEnvSendToKinesis();
       sendToKinesisCatalog = getEnvSendToKinesisCatalog();
       sendToKinesisRanking = getEnvSendToKinesisRanking();
+      dynamoTableName = getEnvDynamoTableName();
       logsBucketName = getEnvLogsBucketName();
       imagesBucketName = getEnvImagesBucketName();
       imagesBucketNameNew = getEnvImagesBucketNameNew();
@@ -212,6 +216,9 @@ public class ExecutionParameters {
       return System.getenv(EnvironmentVariables.KINESIS_STREAM_RANKING);
    }
 
+   private String getEnvDynamoTableName() {
+      return System.getenv(EnvironmentVariables.DYNAMO_TABLE_NAME);
+   }
    private boolean getEnvUseFetcher() {
       String useFetcher = System.getenv(EnvironmentVariables.USE_FETCHER);
       return useFetcher != null && useFetcher.equals("true");
@@ -403,6 +410,10 @@ public class ExecutionParameters {
 
    public String getKinesisStreamCatalog() {
       return kinesisStreamCatalog;
+   }
+
+   public String getDynamoTableName() {
+      return dynamoTableName;
    }
 
    public boolean isSendToKinesisCatalog() {

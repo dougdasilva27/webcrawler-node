@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import com.amazonaws.ClientConfiguration;
@@ -60,7 +61,7 @@ public class Dynamo {
 
       try {
 
-         Table table = dynamoDB.getTable("capture_job");
+         Table table = dynamoDB.getTable(GlobalConfigurations.executionParameters.getDynamoTableName());
          QuerySpec spec = new QuerySpec()
             .withKeyConditionExpression("market_id_url_md5 = :market_id_url_md5")
             .withProjectionExpression("found_skus, finished_at, scheduled_at, created_at")
@@ -212,7 +213,7 @@ public class Dynamo {
       String internalPid = product.getInternalPid() != null ? product.getInternalPid() : "";
 
       try {
-         Table table = dynamoDB.getTable("capture_job");
+         Table table = dynamoDB.getTable(GlobalConfigurations.executionParameters.getDynamoTableName());
          Item item = new Item()
             .withPrimaryKey("market_id_url_md5", md5)
             .withString("grid_internal_id", internalId)
@@ -263,7 +264,7 @@ public class Dynamo {
       expressionAttributeValues.put(":finished_at",  getCurrentTime());
 
       try {
-         Table table = dynamoDB.getTable("capture_job");
+         Table table = dynamoDB.getTable(GlobalConfigurations.executionParameters.getDynamoTableName());
          UpdateItemSpec updateItemSpec = new UpdateItemSpec()
             .withPrimaryKey(new PrimaryKey("market_id_url_md5", md5, "created_at", createdAt))
             .withUpdateExpression("set #found_skus = :found_skus, #finished_at = :finished_at")
@@ -284,7 +285,7 @@ public class Dynamo {
       String internalPid = p.getInternalPid() != null ? p.getInternalPid() : "";
 
       try {
-         Table table = dynamoDB.getTable("capture_job");
+         Table table = dynamoDB.getTable(GlobalConfigurations.executionParameters.getDynamoTableName());
 
          Map<String, String> expressionAttributeNames = new HashMap<String, String>();
          expressionAttributeNames.put("#scheduled_at", "scheduled_at");
