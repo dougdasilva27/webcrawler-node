@@ -396,7 +396,6 @@ public abstract class CrawlerRanking extends Task {
 
       Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
-      //busca o resultado do produto no dynamo
       JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
 
       // if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
@@ -406,15 +405,15 @@ public abstract class CrawlerRanking extends Task {
          List<Processed> processeds = createProcesseds(resultJson, product.getMarketId(), session); //todo: remover processed assim que tudo migrar
          List<Long> processedIds = new ArrayList<>();
 
-         if (!processeds.isEmpty()) {
+         if (resultJson.has("finished_at") && !processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
             }
-            if (isVoid(resultJson) && hasLrtBeforeOneMonth(resultJson.optString("finished_at"))) {
+            if (isVoid(resultJson) && hasReadBeforeOneMonth(resultJson.optString("finished_at"))) {
                saveProductUrlToQueue(product, resultJson);
             }
 
-         } else if (product.getUrl() != null && resultJson.isEmpty()) {
+         } else if (product.getUrl() != null) {
 
             saveProductUrlToQueue(product, resultJson);
          }
@@ -429,7 +428,7 @@ public abstract class CrawlerRanking extends Task {
       this.arrayProducts.add(product);
    }
 
-   public boolean hasLrtBeforeOneMonth(String lrt) {
+   public boolean hasReadBeforeOneMonth(String lrt) {
       if (lrt != null && !lrt.isEmpty()) {
          try {
 

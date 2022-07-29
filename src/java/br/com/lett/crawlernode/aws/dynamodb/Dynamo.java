@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.aws.dynamodb;
 
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -15,8 +16,8 @@ import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.xspec.S;
 import org.apache.commons.lang.time.DateUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -55,17 +56,14 @@ public class Dynamo {
 
    }
 
-
-   public static JSONObject fetchObjectDynamo(String url, int marketId) {
-
-      String md5 = convertUrlInMD5(url, marketId);
+   public static JSONObject fetchObjectDynamo(String md5) {
 
       try {
 
          Table table = dynamoDB.getTable("capture_job");
          QuerySpec spec = new QuerySpec()
             .withKeyConditionExpression("market_id_url_md5 = :market_id_url_md5")
-            .withProjectionExpression("found_skus, finished_at, scheduled_at")
+            .withProjectionExpression("found_skus, finished_at, scheduled_at, created_at")
             .withValueMap(new ValueMap()
                .withString(":market_id_url_md5", md5))
             .withConsistentRead(true);
@@ -82,10 +80,17 @@ public class Dynamo {
 
       } catch (Exception e) {
          Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
-         Logging.printLogError(logger, "Error fetching object from DynamoDB  " + url);
+         Logging.printLogError(logger, "Error fetching object from DynamoDB  " + md5);
       }
 
       return new JSONObject();
+
+   }
+
+
+
+   public static JSONObject fetchObjectDynamo(String url, int marketId) {
+     return fetchObjectDynamo(convertUrlInMD5(url, marketId));
 
    }
 
@@ -167,8 +172,7 @@ public class Dynamo {
             Date oneHour = DateUtils.addHours(new Date(), +1);
             Logging.printLogInfo(logger, session, scheduled + " - " + oneHour + " has more than 1 hours: " + (scheduledDate.after(oneHour)));
 
-            // return scheduledDate.after(oneHour);
-            return true; //to test
+            return scheduledDate.after(oneHour);
 
          } catch (Exception e) {
             Logging.printLogError(logger, session, "Error parsing lrt date: " + scheduled);
@@ -225,47 +229,53 @@ public class Dynamo {
    }
 
 
-   public static void updateReadByCrawlerObjectDynamo(List<Product> products) {
+   public static void updateReadByCrawlerObjectDynamo(List<Product> products, int marketId, SkuStatus skuStatus)  {
 
       JSONObject productDynamo;
       String createdAt = "";
 
-      JSONArray foundSkus = new JSONArray();
+      List<Map> foundSkus = new ArrayList<>();
       String md5 = "";
       for (Product p : products) {
          if (md5.isEmpty()) {
-            md5 = convertUrlInMD5(p.getUrl(), p.getMarketId());
+            md5 = convertUrlInMD5(p.getUrl(), marketId);
          }
 
          if (createdAt.isEmpty()) {
-            productDynamo = fetchObjectDynamo(p.getUrl(), p.getMarketId());
+            productDynamo = fetchObjectDynamo(md5);
             createdAt = productDynamo.optString("created_at");
          }
 
-         JSONObject product = new JSONObject();
-         product.put("internal_id", p.getInternalId());
-         product.put("event_timestamp", p.getTimestamp());
-         product.put("status", p.getStatus());
+         Map<String, String> map = new HashMap<>();
+         map.put("internal_id", p.getInternalId());
+         map.put("event_timestamp", p.getTimestamp());
+         map.put("status", skuStatus.toString());
 
-         foundSkus.put(product);
+         foundSkus.add(map);
       }
+
+      Map<String, String> expressionAttributeNames = new HashMap<String, String>();
+      expressionAttributeNames.put("#found_skus", "found_skus");
+      expressionAttributeNames.put("#finished_at", "finished_at");
+
+      Map<String, Object> expressionAttributeValues = new HashMap<String, Object>();
+      expressionAttributeValues.put(":found_skus", foundSkus);
+      expressionAttributeValues.put(":finished_at",  getCurrentTime());
 
       try {
          Table table = dynamoDB.getTable("capture_job");
          UpdateItemSpec updateItemSpec = new UpdateItemSpec()
             .withPrimaryKey(new PrimaryKey("market_id_url_md5", md5, "created_at", createdAt))
-            .withUpdateExpression("set found_skus = :found_skus, finished_at = :finished_at")
-            .withValueMap(new ValueMap()
-               .withList(":found_skus", foundSkus)
-               .withString(":finished_at", getCurrentTime()));
+            .withUpdateExpression("set #found_skus = :found_skus, #finished_at = :finished_at")
+            .withNameMap(expressionAttributeNames)
+            .withValueMap(expressionAttributeValues);
          UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
 
-         // Confirm
-         System.out.println("Displaying updated item...");
-         System.out.println(outcome.getItem().toJSONPretty());
+         Logging.printLogDebug(logger, "Displaying updated item..." + outcome.getItem().toJSONPretty());
+
       } catch (Exception e) {
          Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
-      }
+         Logging.printLogError(logger, "Error updating object in dynamo: " + md5);      }
    }
 
    public static void updateScheduledObjectDynamo(RankingProduct p, String createdAt) {
@@ -273,48 +283,34 @@ public class Dynamo {
       String internalId = p.getInternalId() != null ? p.getInternalId() : "";
       String internalPid = p.getInternalPid() != null ? p.getInternalPid() : "";
 
-      Map<String, AttributeValue> attributeValues = new HashMap<>();
-      attributeValues.put("#grid_internal_pid", new AttributeValue().withS("555"));
-      attributeValues.put("#grid_internal_id", new AttributeValue().withS(internalId));
-
       try {
          Table table = dynamoDB.getTable("capture_job");
 
          Map<String, String> expressionAttributeNames = new HashMap<String, String>();
          expressionAttributeNames.put("#scheduled_at", "scheduled_at");
+         expressionAttributeNames.put("#grid_internal_pid", "grid_internal_pid");
+         expressionAttributeNames.put("#grid_internal_id", "grid_internal_id");
 
          Map<String, Object> expressionAttributeValues = new HashMap<String, Object>();
          expressionAttributeValues.put(":scheduled_at", getCurrentTime());
+         expressionAttributeValues.put(":grid_internal_pid", internalPid);
+         expressionAttributeValues.put(":grid_internal_id", internalId);
+
          UpdateItemSpec updateItemSpec = new UpdateItemSpec()
-            .withPrimaryKey(new PrimaryKey("market_id_url_md5", md5, "scheduled_at", createdAt))
-            .withUpdateExpression("set #scheduled_at = :scheduled_at")
+            .withPrimaryKey(new PrimaryKey("market_id_url_md5", md5, "created_at", createdAt))
+            .withUpdateExpression("set #scheduled_at = :scheduled_at, #grid_internal_pid = :grid_internal_pid, #grid_internal_id = :grid_internal_id")
             .withNameMap(expressionAttributeNames)
             .withValueMap(expressionAttributeValues)
             .withReturnValues(ReturnValue.ALL_NEW);
 
          UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
-         System.out.println("Displaying updated item...");
-         System.out.println(outcome.getItem().toJSONPretty());
+         Logging.printLogDebug(logger, "Displaying updated item..." + outcome.getItem().toJSONPretty());
 
       } catch (Exception e) {
          Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+         Logging.printLogError(logger, "Error updating object in dynamo: " + p.getUrl());
       }
    }
 
-
-   public static void deleteDynamo() {
-      try {
-         Table table = dynamoDB.getTable("capture_job");
-         DeleteItemSpec deleteItemSpec = new DeleteItemSpec()
-            .withPrimaryKey("market_id_url_md5", "2950_d32195353c0450a54b66b011d08383e6");
-         DeleteItemOutcome outcome = table.deleteItem(deleteItemSpec);
-
-         // Confirm
-         System.out.println("Displaying deleted item...");
-         System.out.println(outcome.getItem().toJSONPretty());
-      } catch (Exception e) {
-         Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
-      }
-   }
 
 }

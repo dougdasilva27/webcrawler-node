@@ -201,7 +201,8 @@ public abstract class Crawler extends Task {
       try {
          setDataFetcher();
 
-         if (session instanceof TestCrawlerSession) {
+       //  if (session instanceof TestCrawlerSession) {
+         if (false) {
             testRun();
          } else {
             productionRun();
@@ -270,11 +271,13 @@ public abstract class Crawler extends Task {
       // when processing a task of a suggested URL by the webcrawler or
       // an URL scheduled manually, we won't run active void and
       // we must process each crawled product
-      else if (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession || session instanceof EqiCrawlerSession) {
+     // else if (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession || session instanceof EqiCrawlerSession) {
+      else if (true) {
          // Before process and save to PostgreSQL
          // we must send the raw crawled data to Kinesis
-         if (session instanceof DiscoveryCrawlerSession || session instanceof EqiCrawlerSession) {
-            Dynamo.updateReadByCrawlerObjectDynamo(products);
+        // if (session instanceof DiscoveryCrawlerSession || session instanceof EqiCrawlerSession) {
+         if (true) {
+            Dynamo.updateReadByCrawlerObjectDynamo(products, session.getMarket().getId(), skuStatus);
          }
 
          for (Product p : products) {
