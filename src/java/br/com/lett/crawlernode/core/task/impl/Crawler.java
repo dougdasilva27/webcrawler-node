@@ -20,6 +20,7 @@ import br.com.lett.crawlernode.core.session.crawler.*;
 import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.config.CrawlerConfig;
+import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
@@ -278,7 +279,7 @@ public abstract class Crawler extends Task {
 
          for (Product product : products) {
             if (!(session instanceof EqiCrawlerSession)) {
-               processProduct(product);
+               processProduct(product); //todo remove this, legacy architecture
             }
          }
       }
@@ -582,8 +583,8 @@ public abstract class Crawler extends Task {
       // fetch the previous processed product
       // if a processed already exists and is void, then
       // we won't perform new attempts to extract the current product
-      Processed previousProcessedProduct = processor.fetchPreviousProcessed(product, session);
-      if (previousProcessedProduct != null && previousProcessedProduct.isVoid()) {
+      Processed previousProcessedProduct = processor.fetchPreviousProcessed(product, session); //todo remove this, legacy architecture
+      if (previousProcessedProduct != null && DatabaseDataFetcher.isVoidFromDremio(product)) {
          Persistence.updateProcessedLRT(nowISO, session);
          processor.updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
          Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session, previousProcessedProduct.getId());
@@ -698,7 +699,7 @@ public abstract class Crawler extends Task {
          Processed newProcessedProduct =
             Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
          if (newProcessedProduct != null) {
-            PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
+            PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session); //todo remove persiste in processed
 
             List<Integer> marketsDownloadImagesNotAllowed = Arrays.asList(158, 184, 363, 382, 383, 384, 400, 403, 486, 1188, 1220, 1285, 1285, 1287, 1371, 1372, 1373, 1381, 1384, 1387, 1388, 1479, 1480, 1487, 1491, 1511, 1512, 1513, 1514, 1515, 1516, 1517, 1518, 1519, 1520, 1521, 1522, 1523, 1524, 1525, 1527, 1528, 1529, 1530, 1531, 1532, 1534, 1535, 1536, 1537, 1538, 1542, 1545, 1546, 1547, 1548, 1549, 1550, 1551, 1552, 1554, 1555, 1556, 1557, 1558, 1559, 1653, 1743, 1890, 1909, 1910, 1911, 2004, 2005, 2010, 2036, 2037, 2038, 2041, 2078, 2123, 2124, 2126, 2216, 2219, 2220, 2221, 2223, 2715, 2716, 2717, 2718, 2720, 2721, 2722, 2745, 2746, 2747, 2748, 2749, 2759, 2767, 2768, 2769, 2770, 2772, 2773, 2774, 2775, 2776, 2779, 2780, 2781, 2782, 2783);
 

@@ -1,13 +1,13 @@
 package br.com.lett.crawlernode.database;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
+import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.ScraperInformation;
 import dbmodels.tables.SupplierTrackedLett;
 import exceptions.MalformedRatingModel;
@@ -375,5 +375,48 @@ public class DatabaseDataFetcher {
       return result;
    }
 
+   public static boolean isVoidFromDremio(Product product){
+      boolean isVoid = false;
+      try {
+         ResultSet rs = fetchFromDremio("SELECT status FROM captura.\"insights_skus\" WHERE internal_id = '" + product.getInternalId() + " + ' AND market_id = " + product.getMarketId());
+         if (rs.next()) {
+            String status = rs.getString("status");
+            isVoid = status.equals("void");
+         }
+      } catch (SQLException e) {
+         throw new RuntimeException(e);
+      } catch (ParseException e) {
+         throw new RuntimeException(e);
+      }
 
+      return isVoid;
+
+   }
+
+   public static ResultSet fetchFromDremio(String query) throws SQLException, ParseException {
+      Properties props = new Properties();
+      props.setProperty("user", GlobalConfigurations.executionParameters.getDremioUser());
+      props.setProperty("password", GlobalConfigurations.executionParameters.getDremioPassword());
+      Connection conn;
+      Statement stmt;
+      ResultSet rs = null;
+
+      try {
+         Logging.printLogInfo(logger, "Connecting to in Dremio database...");
+         Class.forName("com.dremio.jdbc.Driver");
+         conn = DriverManager.getConnection(GlobalConfigurations.executionParameters.getDremioUrl(), props);
+
+         Logging.printLogDebug(logger, "Creating statement...");
+         stmt = conn.createStatement();
+         Logging.printLogDebug(logger, "Executing statement...");
+         rs = stmt.executeQuery(query);
+
+      } catch (SQLException | ClassNotFoundException e) {
+         Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+         Logging.printLogError(logger, "Error in fetching data from Dremio " + query);
+      }
+
+      return rs;
+
+   }
 }
