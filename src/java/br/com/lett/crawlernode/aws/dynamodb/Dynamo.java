@@ -13,14 +13,11 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.*;
-import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.amazonaws.services.dynamodbv2.xspec.S;
 import org.apache.commons.lang.time.DateUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,9 +88,8 @@ public class Dynamo {
    }
 
 
-
    public static JSONObject fetchObjectDynamo(String url, int marketId) {
-     return fetchObjectDynamo(convertUrlInMD5(url, marketId));
+      return fetchObjectDynamo(convertUrlInMD5(url, marketId));
 
    }
 
@@ -234,7 +230,7 @@ public class Dynamo {
    }
 
 
-   public static void updateReadByCrawlerObjectDynamo(List<Product> products, int marketId, SkuStatus skuStatus)  {
+   public static void updateReadByCrawlerObjectDynamo(List<Product> products, int marketId, SkuStatus skuStatus) {
 
       JSONObject productDynamo;
       String createdAt = "";
@@ -248,6 +244,10 @@ public class Dynamo {
 
          if (createdAt.isEmpty()) {
             productDynamo = fetchObjectDynamo(md5);
+            if (productDynamo.isEmpty()) {
+               Logging.printLogError(logger, "Error fetching object in dynamo: " + p.getUrl());
+               break;
+            }
             createdAt = productDynamo.optString("created_at");
          }
 
@@ -265,7 +265,7 @@ public class Dynamo {
 
       Map<String, Object> expressionAttributeValues = new HashMap<String, Object>();
       expressionAttributeValues.put(":found_skus", foundSkus);
-      expressionAttributeValues.put(":finished_at",  getCurrentTime());
+      expressionAttributeValues.put(":finished_at", getCurrentTime());
 
       try {
          Table table = dynamoDB.getTable(GlobalConfigurations.executionParameters.getDynamoTableName());
@@ -276,11 +276,12 @@ public class Dynamo {
             .withValueMap(expressionAttributeValues);
          UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
 
-         Logging.printLogInfo(logger, "Displaying updated item..." + outcome.getItem().toJSONPretty());
+         Logging.printLogInfo(logger, "Updated item in dynamo" + md5);
 
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
-         Logging.printLogError(logger, "Error updating object in dynamo: " + md5);      }
+         Logging.printLogError(logger, "Error updating object in dynamo: " + md5);
+      }
    }
 
    public static void updateScheduledObjectDynamo(RankingProduct p, String createdAt) {

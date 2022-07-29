@@ -201,8 +201,7 @@ public abstract class Crawler extends Task {
       try {
          setDataFetcher();
 
-       //  if (session instanceof TestCrawlerSession) {
-         if (false) {
+         if (session instanceof TestCrawlerSession) {
             testRun();
          } else {
             productionRun();

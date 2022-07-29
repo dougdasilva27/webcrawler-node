@@ -396,10 +396,9 @@ public abstract class CrawlerRanking extends Task {
 
       Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
-      JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
 
        if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
-
+          JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
          //this is legacy architecture, when none app using anymore we can remove
          List<Processed> processeds = createProcesseds(resultJson, product.getMarketId(), session); //todo: remover processed assim que tudo migrar
          List<Long> processedIds = new ArrayList<>();
@@ -421,6 +420,7 @@ public abstract class CrawlerRanking extends Task {
       }
 
       if (product.getUrl() != null && session instanceof EqiRankingDiscoverKeywordsSession) {
+         JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
          saveProductUrlToQueue(product, resultJson);
       }
 
