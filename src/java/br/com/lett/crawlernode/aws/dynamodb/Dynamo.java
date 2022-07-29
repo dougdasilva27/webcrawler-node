@@ -75,6 +75,8 @@ public class Dynamo {
          Item item;
          while (iterator.hasNext()) {
             item = iterator.next();
+            Logging.printLogInfo(logger, "Fetching object in dynamo " + md5); //todo: remove
+            Logging.printLogInfo(logger, "Object in dynamo " + item.toJSONPretty()); //todo: remove
 
             return stringToJson(item.toJSONPretty());
          }
@@ -221,6 +223,8 @@ public class Dynamo {
             .withString("scheduled_at", getCurrentTime())
             .withString("created_at", getCurrentTime());
 
+         Logging.printLogInfo(logger, "Insert item in dynamo " + item.toJSONPretty());
+
          table.putItem(item);
 
       } catch (Exception e) {
@@ -272,10 +276,10 @@ public class Dynamo {
             .withValueMap(expressionAttributeValues);
          UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
 
-         Logging.printLogDebug(logger, "Displaying updated item..." + outcome.getItem().toJSONPretty());
+         Logging.printLogInfo(logger, "Displaying updated item..." + outcome.getItem().toJSONPretty());
 
       } catch (Exception e) {
-         Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+         Logging.printLogError(logger, CommonMethods.getStackTrace(e));
          Logging.printLogError(logger, "Error updating object in dynamo: " + md5);      }
    }
 
@@ -305,10 +309,10 @@ public class Dynamo {
             .withReturnValues(ReturnValue.ALL_NEW);
 
          UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
-         Logging.printLogDebug(logger, "Displaying updated item..." + outcome.getItem().toJSONPretty());
+         Logging.printLogInfo(logger, "Displaying updated item..." + outcome.getItem().toJSONPretty());
 
       } catch (Exception e) {
-         Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+         Logging.printLogError(logger, CommonMethods.getStackTrace(e));
          Logging.printLogError(logger, "Error updating object in dynamo: " + p.getUrl());
       }
    }
