@@ -382,6 +382,7 @@ public class DatabaseDataFetcher {
          if (rs.next()) {
             String status = rs.getString("status");
             isVoid = status.equals("void");
+            Logging.printLogInfo(logger, "Product " + product.getInternalId() + " is " + status);
          }
       } catch (SQLException e) {
          throw new RuntimeException(e);
