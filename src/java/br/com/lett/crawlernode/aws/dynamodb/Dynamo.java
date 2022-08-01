@@ -73,8 +73,7 @@ public class Dynamo {
          Item item;
          while (iterator.hasNext()) {
             item = iterator.next();
-            Logging.printLogInfo(logger, "Fetching object in dynamo " + md5); //todo: remove
-            Logging.printLogInfo(logger, "Object in dynamo " + item.toJSONPretty()); //todo: remove
+            Logging.printLogDebug(logger, "Fetching object in dynamo " + md5); //todo: remove
 
             return stringToJson(item.toJSONPretty());
          }
@@ -94,83 +93,13 @@ public class Dynamo {
 
    }
 
-   public static String fetchObjectDynamoScheduledAt(String md5) {
-
-      try {
-
-         Table table = dynamoDB.getTable("capture_job");
-         QuerySpec spec = new QuerySpec()
-            .withKeyConditionExpression("market_id_url_md5 = :market_id_url_md5")
-            .withProjectionExpression("scheduled_at")
-            .withValueMap(new ValueMap()
-               .withString(":market_id_url_md5", md5))
-            .withConsistentRead(true);
-
-         ItemCollection<QueryOutcome> items = table.query(spec);
-
-         Iterator<Item> iterator = items.iterator();
-         Item item;
-         while (iterator.hasNext()) {
-            item = iterator.next();
-
-            return item.getString("scheduled_at");
-         }
-
-      } catch (Exception e) {
-         Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
-      }
-
-      return "";
-
-   }
-
-
-   public static JSONObject scheduledTime(RankingProduct product) {
-
-      String md5 = convertUrlInMD5(product.getUrl(), product.getMarketId());
-      Date oneHour = DateUtils.addHours(new Date(), +1);
-
-      String dateOneHour = new SimpleDateFormat(
-         "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(oneHour);
-
-      try {
-
-         Table table = dynamoDB.getTable("capture_job");
-         QuerySpec spec = new QuerySpec()
-            .withKeyConditionExpression("market_id_url_md5 = :market_id_url_md5 and scheduled_at > :dateOneHour")
-            .withProjectionExpression("scheduled_at, finished_at")
-            .withValueMap(new ValueMap()
-               .withString(":market_id_url_md5", md5)
-               .withString(":dateOneHour", dateOneHour))
-            .withConsistentRead(true);
-
-         ItemCollection<QueryOutcome> items = table.query(spec);
-
-         Iterator<Item> iterator = items.iterator();
-         Item item;
-         while (iterator.hasNext()) {
-            item = iterator.next();
-            System.out.println(item.toJSONPretty());
-            JSONObject jsonObject = stringToJson(item.toJSONPretty());
-
-            return jsonObject;
-         }
-
-      } catch (Exception e) {
-         Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
-      }
-
-      return new JSONObject();
-
-   }
-
    public static boolean scheduledMoreThanOneHour(String scheduled, Session session) {
       if (scheduled != null && !scheduled.isEmpty()) {
          try {
             Date scheduledDate = new SimpleDateFormat(
                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(scheduled);
             Date oneHour = DateUtils.addHours(new Date(), +1);
-            Logging.printLogInfo(logger, session, scheduled + " - " + oneHour + " has more than 1 hours: " + (scheduledDate.after(oneHour)));
+            Logging.printLogDebug(logger, session, scheduled + " - " + oneHour + " has more than 1 hours: " + (scheduledDate.after(oneHour)));
 
             return scheduledDate.after(oneHour);
 
