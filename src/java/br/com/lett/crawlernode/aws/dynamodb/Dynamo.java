@@ -27,6 +27,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -200,7 +201,8 @@ public class Dynamo {
    }
 
    public static String getCurrentTime() {
-      LocalDateTime datetime1 = LocalDateTime.now();
+      ZoneId zoneId = ZoneId.of("America/Sao_Paulo");
+      LocalDateTime datetime1 = LocalDateTime.now(zoneId);
       DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
       return datetime1.format(format);
    }

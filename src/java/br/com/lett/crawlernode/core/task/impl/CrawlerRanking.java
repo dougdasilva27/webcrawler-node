@@ -400,15 +400,19 @@ public abstract class CrawlerRanking extends Task {
        if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
           JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
          //this is legacy architecture, when none app using anymore we can remove
-         List<Processed> processeds = createProcesseds(resultJson, product.getMarketId(), session); //todo: remover processed assim que tudo migrar
          List<Long> processedIds = new ArrayList<>();
 
-         if (resultJson.has("finished_at") && !processeds.isEmpty()) {
+         if (resultJson.has("finished_at")) {
+            List<Processed> processeds = createProcesseds(resultJson, product.getMarketId(), session); //todo: remover processed assim que tudo migrar
             for (Processed p : processeds) {
                processedIds.add(p.getId());
             }
             if (isVoid(resultJson) && hasReadBeforeOneMonth(resultJson.optString("finished_at"))) {
+               Logging.printLogDebug(logger, session, "Product already discovered but it was void in the last month - " + product.getUrl());
                saveProductUrlToQueue(product, resultJson);
+
+            } else {
+               Logging.printLogDebug(logger, session, "Product already discoverer " + product.getUrl());
             }
 
          } else if (product.getUrl() != null) {
@@ -475,9 +479,9 @@ public abstract class CrawlerRanking extends Task {
       boolean sendToQueue = true;
       if (result == null || result.isEmpty()) {
          Dynamo.insertObjectDynamo(product);
-         Logging.printLogDebug(logger, session, "Insert product:  " + product.getUrl() + " in dynamo and saved to queue" );
-      } else if ((result.optString("finished_at") == null || result.optString("finished_at").isEmpty()) && Dynamo.scheduledMoreThanOneHour(result.optString("scheduled_at"), session)) {
-         Logging.printLogDebug(logger, session, "Update product " + product.getUrl() + " in duynamo and saved to queue");
+         Logging.printLogDebug(logger, session, "Product new:  " + product.getUrl() + " insert in dynamo and saved to queue" );
+      } else if (Dynamo.scheduledMoreThanOneHour(result.optString("scheduled_at"), session)) {
+         Logging.printLogDebug(logger, session, "Update product " + product.getUrl() + " in dynamo and saved to queue");
          Dynamo.updateScheduledObjectDynamo(product, result.optString("created_at"));
       } else {
          sendToQueue = false;
