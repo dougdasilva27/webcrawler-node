@@ -425,7 +425,9 @@ public abstract class CrawlerRanking extends Task {
 
       if (product.getUrl() != null && session instanceof EqiRankingDiscoverKeywordsSession) {
          JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
-         saveProductUrlToQueue(product, resultJson);
+         if (resultJson.isEmpty() || !resultJson.has("finished_at")){
+            saveProductUrlToQueue(product, resultJson);
+         }
       }
 
       this.arrayProducts.add(product);
