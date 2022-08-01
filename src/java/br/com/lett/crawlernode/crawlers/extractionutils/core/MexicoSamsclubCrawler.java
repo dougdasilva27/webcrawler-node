@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -24,8 +23,6 @@ import models.pricing.Installments;
 import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +35,6 @@ public class MexicoSamsclubCrawler extends Crawler {
 
    private static final String IMAGE_URL = "www.sams.com.mx";
    private static final String SELLER_FULL_NAME = "Sams Club";
-   private String storeId;
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AMEX.toString());
@@ -48,13 +44,8 @@ public class MexicoSamsclubCrawler extends Crawler {
       this.config.setParser(Parser.JSON);
    }
 
-
    public String getStoreId() {
-      return storeId;
-   }
-
-   public void setStoreId(String storeId) {
-      this.storeId = storeId;
+      return this.session.getOptions().optString("storeId");
    }
 
    @Override
@@ -64,7 +55,7 @@ public class MexicoSamsclubCrawler extends Crawler {
       String skuId = getSkuId();
 
       String apiUrl = "https://www.sams.com.mx/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?skuId=" + skuId + "&upc="
-         + skuId + "&storeId=" + storeId;
+         + skuId + "&storeId=" + getStoreId();
 
       do {
          Request request = RequestBuilder.create()
