@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.task.impl;
 
+import br.com.lett.crawlernode.aws.dynamodb.Dynamo;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
@@ -37,6 +38,7 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -317,25 +319,59 @@ public abstract class CrawlerRanking extends Task {
       rankingProducts.setInternalId(internalId);
       rankingProducts.setInteranlPid(pid);
       rankingProducts.setUrl(url);
-      saveDataProduct(rankingProducts, false);
+      saveDataProduct(rankingProducts);
    }
 
 
-   private List<Processed> fetchProcessed(String internalId, String pid, String url) {
+   public static List<Processed> createProcesseds(JSONObject result, int market, Session session) {
       List<Processed> processeds = new ArrayList<>();
 
-      if (internalId != null) {
-         processeds = Persistence.fetchProcessedsWithInternalId(internalId.trim(), this.marketId, session);
-      } else if (pid != null) {
-         processeds = Persistence.fetchProcessedsWithInternalPid(pid, this.marketId, session);
-      } else if (url != null) {
-         processeds = Persistence.fetchProcessedsWithUrl(url, this.marketId, session);
+      if (result != null) {
+         JSONArray foundSkus = result.optJSONArray("found_skus");
+
+         if (foundSkus != null) {
+
+            for (Object o : foundSkus) {
+               if (o instanceof JSONObject) {
+                  Processed p = new Processed();
+                  JSONObject product = (JSONObject) o;
+                  p.setVoid(product.optString("status", "").equalsIgnoreCase("void"));
+                  p.setLrt(product.optString("event_timestamp"));
+                  p.setId(Persistence.fetchProcessedIdWithInternalId(product.optString("internal_id"), market, session));
+
+                  processeds.add(p);
+               }
+
+            }
+         }
       }
+
       return processeds;
    }
 
-   protected void saveDataProduct(RankingProduct product) {
-      saveDataProduct(product, true);
+   public static boolean isVoid(JSONObject result) {
+      boolean isVoid = false;
+
+      if (result != null) {
+         JSONArray foundSkus = result.optJSONArray("found_skus");
+
+         if (foundSkus != null) {
+
+            for (Object o : foundSkus) {
+               if (o instanceof JSONObject) {
+                  JSONObject product = (JSONObject) o;
+                  if (product.optString("status", "").equalsIgnoreCase("void")) {
+                     isVoid = true;
+                     break;
+                  }
+
+               }
+
+            }
+         }
+      }
+
+      return isVoid;
    }
 
 
@@ -344,7 +380,7 @@ public abstract class CrawlerRanking extends Task {
     *
     * @param product produto
     */
-   protected void saveDataProduct(RankingProduct product, boolean isUpdate) {
+   protected void saveDataProduct(RankingProduct product) {
       this.position++;
 
       if (product.getPosition() == 0) {
@@ -362,48 +398,57 @@ public abstract class CrawlerRanking extends Task {
 
 
       if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
-         List<Processed> processeds = fetchProcessed(product.getInternalId(), product.getInteranlPid(), product.getUrl());
+         JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
+         //this is legacy architecture, when none app using anymore we can remove
          List<Long> processedIds = new ArrayList<>();
 
-         if (!isUpdate) {
-            completeRankingProduct(product, processeds);
-            Logging.printLogWarn(logger, session, "Market is not in new arch - " + product.getMarketId());
-         }
+         if (resultJson.has("finished_at")) {
+            List<Processed> processeds = createProcesseds(resultJson, product.getMarketId(), session); //todo: remover processed assim que tudo migrar
 
-         if (!processeds.isEmpty()) {
-            for (Processed p : processeds) {
-               processedIds.add(p.getId());
-               if (Boolean.TRUE.equals(p.isVoid() && product.getUrl() != null) && ((!p.getUrl().equals(product.getUrl())) || hasLrtBeforeOneMonth(p.getLrt()))) {
-                  saveProductUrlToQueue(product.getUrl());
-                  Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + product.getUrl());
+            if (!processeds.isEmpty()) {
+               for (Processed p : processeds) {
+                  processedIds.add(p.getId());
                }
             }
+            if (isVoid(resultJson) && hasReadBeforeOneMonth(resultJson.optString("finished_at"))) {
+               //now, if product is void, will not insert in dynamo
+               Logging.printLogDebug(logger, session, "Product already discovered but it was void in the last month - " + product.getUrl());
+               saveProductUrlToQueue(product, resultJson);
 
-         } else if (product.getUrl() != null && processeds.isEmpty()) {
+            } else {
+               Logging.printLogDebug(logger, session, "Product already discoverer " + product.getUrl());
+            }
 
-            saveProductUrlToQueue(product.getUrl());
+         } else if (product.getUrl() != null) {
+
+            saveProductUrlToQueue(product, resultJson);
          }
 
          product.setProcessedIds(processedIds);
       }
 
       if (product.getUrl() != null && session instanceof EqiRankingDiscoverKeywordsSession) {
-         saveProductUrlToQueue(product.getUrl());
+         JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
+         if (resultJson.isEmpty()) { //on this session, even "finished_at" is not empty, will schedule
+            saveProductUrlToQueue(product, resultJson);
+         }
       }
 
       this.arrayProducts.add(product);
    }
 
-   public boolean hasLrtBeforeOneMonth(String lrt) {
-      if (lrt != null && !lrt.isEmpty()) {
+   public boolean hasReadBeforeOneMonth(String finishAt) {
+      if (finishAt != null && !finishAt.isEmpty()) {
          try {
-            Date lrtDate = new SimpleDateFormat("yyyy-M-dd hh:mm:ss").parse(lrt);
+
+            Date lrtDate = new SimpleDateFormat(
+               "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(finishAt);
             Date oneMonthAgo = DateUtils.addMonths(new Date(), -1);
-            Logging.printLogDebug(logger, session, lrt + " - " + oneMonthAgo + " has more than one month: " + (lrtDate.before(oneMonthAgo)));
+            Logging.printLogDebug(logger, session, finishAt + " - " + oneMonthAgo + " has more than one month: " + (lrtDate.before(oneMonthAgo)));
             return lrtDate.before(oneMonthAgo);
 
          } catch (Exception e) {
-            Logging.printLogError(logger, session, "Error parsing lrt date: " + lrt);
+            Logging.printLogError(logger, session, "Error parsing lrt date: " + finishAt);
          }
       }
 
@@ -429,8 +474,27 @@ public abstract class CrawlerRanking extends Task {
    }
 
 
-   protected void saveProductUrlToQueue(String url) {
-      this.messages.add(url);
+   protected void saveProductUrlToQueue(RankingProduct product, JSONObject result) {
+      if (mustSendProductToQueue(product, result)) {
+         this.messages.add(product.getUrl());
+      }
+
+   }
+
+   protected boolean mustSendProductToQueue(RankingProduct product, JSONObject result) {
+      boolean sendToQueue = true;
+      if (result == null || result.isEmpty()) {
+         Dynamo.insertObjectDynamo(product);
+         Logging.printLogDebug(logger, session, "Product new:  " + product.getUrl() + " insert in dynamo and saved to queue");
+      } else if (Dynamo.scheduledMoreThanOneHour(result.optString("scheduled_at"), session)) {
+         Logging.printLogDebug(logger, session, "Update product " + product.getUrl() + " in dynamo and saved to queue");
+         Dynamo.updateScheduledObjectDynamo(product, result.optString("created_at"));
+      } else {
+         sendToQueue = false;
+         Logging.printLogDebug(logger, session, "Product already send to queue less than one hour ago url: " + product.getUrl());
+      }
+
+      return sendToQueue;
    }
 
 
@@ -462,7 +526,7 @@ public abstract class CrawlerRanking extends Task {
          ranking.setStatistics(statistics);
 
          // insere dados no postgres
-         Persistence.insertProductsRanking(ranking, session);
+         Persistence.insertProductsRanking(ranking, session); //todo: remover isso
 
          // persiste os dados no elasticsearch
          KPLProducer.getInstance().put(ranking, session);
@@ -532,7 +596,8 @@ public abstract class CrawlerRanking extends Task {
          if (session instanceof EqiRankingDiscoverKeywordsSession) {
             queueName = isWebDrive ? QueueName.WEB_SCRAPER_PRODUCT_EQI_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_PRODUCT_EQI.toString();
          } else {
-            queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();         }
+            queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();
+         }
       }
 
 
