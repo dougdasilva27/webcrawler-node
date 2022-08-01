@@ -150,7 +150,7 @@ public class Dynamo {
             .withString("scheduled_at", getCurrentTime())
             .withString("created_at", getCurrentTime());
 
-         Logging.printLogDebug(logger, "Insert item in dynamo " + md5);
+         Logging.printLogInfo(logger, "Insert item in dynamo " + md5);
 
          table.putItem(item);
 
@@ -204,7 +204,7 @@ public class Dynamo {
             .withValueMap(expressionAttributeValues);
          table.updateItem(updateItemSpec);
 
-         Logging.printLogDebug(logger, "Updated item in dynamo " + md5);
+         Logging.printLogInfo(logger, "Updated item in dynamo " + md5);
 
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
@@ -238,7 +238,7 @@ public class Dynamo {
             .withReturnValues(ReturnValue.ALL_NEW);
 
          UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
-         Logging.printLogDebug(logger, "Displaying updated item..." + outcome.getItem().toJSONPretty());
+         Logging.printLogInfo(logger, "Displaying updated item..." + outcome.getItem().toJSONPretty());
 
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
