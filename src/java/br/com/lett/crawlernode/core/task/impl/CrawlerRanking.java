@@ -335,7 +335,7 @@ public abstract class CrawlerRanking extends Task {
                if (o instanceof JSONObject) {
                   Processed p = new Processed();
                   JSONObject product = (JSONObject) o;
-                  p.setVoid(product.optString("status").equalsIgnoreCase("void"));
+                  p.setVoid(product.optString("status", "").equalsIgnoreCase("void"));
                   p.setLrt(product.optString("event_timestamp"));
                   p.setId(Persistence.fetchProcessedIdWithInternalId(product.optString("internal_id"), market, session));
 
@@ -360,7 +360,7 @@ public abstract class CrawlerRanking extends Task {
             for (Object o : foundSkus) {
                if (o instanceof JSONObject) {
                   JSONObject product = (JSONObject) o;
-                  if (product.optString("status").equalsIgnoreCase("void")) {
+                  if (product.optString("status", "").equalsIgnoreCase("void")) {
                      isVoid = true;
                      break;
                   }
@@ -408,6 +408,7 @@ public abstract class CrawlerRanking extends Task {
                processedIds.add(p.getId());
             }
             if (isVoid(resultJson) && hasReadBeforeOneMonth(resultJson.optString("finished_at"))) {
+               //now, if product is void, will not insert in dynamo
                Logging.printLogDebug(logger, session, "Product already discovered but it was void in the last month - " + product.getUrl());
                saveProductUrlToQueue(product, resultJson);
 
@@ -425,7 +426,7 @@ public abstract class CrawlerRanking extends Task {
 
       if (product.getUrl() != null && session instanceof EqiRankingDiscoverKeywordsSession) {
          JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
-         if (resultJson.isEmpty() || !resultJson.has("finished_at")){
+         if (resultJson.isEmpty()){ //on this session, even "finished_at" is not empty, will schedule
             saveProductUrlToQueue(product, resultJson);
          }
       }
@@ -433,18 +434,18 @@ public abstract class CrawlerRanking extends Task {
       this.arrayProducts.add(product);
    }
 
-   public boolean hasReadBeforeOneMonth(String lrt) {
-      if (lrt != null && !lrt.isEmpty()) {
+   public boolean hasReadBeforeOneMonth(String finishAt) {
+      if (finishAt != null && !finishAt.isEmpty()) {
          try {
 
             Date lrtDate = new SimpleDateFormat(
-               "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(lrt);
+               "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(finishAt);
             Date oneMonthAgo = DateUtils.addMonths(new Date(), -1);
-            Logging.printLogDebug(logger, session, lrt + " - " + oneMonthAgo + " has more than one month: " + (lrtDate.before(oneMonthAgo)));
+            Logging.printLogDebug(logger, session, finishAt + " - " + oneMonthAgo + " has more than one month: " + (lrtDate.before(oneMonthAgo)));
             return lrtDate.before(oneMonthAgo);
 
          } catch (Exception e) {
-            Logging.printLogError(logger, session, "Error parsing lrt date: " + lrt);
+            Logging.printLogError(logger, session, "Error parsing lrt date: " + finishAt);
          }
       }
 

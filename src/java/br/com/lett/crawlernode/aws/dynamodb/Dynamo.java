@@ -160,29 +160,67 @@ public class Dynamo {
       }
    }
 
-
-   public static void updateReadByCrawlerObjectDynamo(List<Product> products, Session session, SkuStatus skuStatus) {
-
-      JSONObject productDynamo;
-      String createdAt = "";
-
+   public static void insertObjectDynamoByCrawler(List<Product> products, String md5) {
       List<Map> foundSkus = new ArrayList<>();
-      String md5 = convertUrlInMD5(session.getOriginalURL(), session.getMarket().getId());;
-      for (Product p : products) {
+      String internalId = "";
+      String internalPid = "";
 
-         if (createdAt.isEmpty()) {
-            productDynamo = fetchObjectDynamo(md5);
-            if (productDynamo.isEmpty()) {
-               Logging.printLogError(logger, "Error fetching object in dynamo: " + p.getUrl());
-               return;
-            }
-            createdAt = productDynamo.optString("created_at");
-         }
+      for (Product p : products) {
 
          Map<String, String> map = new HashMap<>();
          map.put("internal_id", p.getInternalId());
          map.put("event_timestamp", p.getTimestamp());
-         map.put("status", skuStatus.toString());
+         map.put("status", getStatusProduct(p));
+         if (internalId.isEmpty()) {
+            internalId = p.getInternalId();
+         }
+         if (internalPid.isEmpty()) {
+            internalPid = p.getInternalPid();
+         }
+
+         foundSkus.add(map);
+      }
+
+      try {
+         Table table = dynamoDB.getTable(GlobalConfigurations.executionParameters.getDynamoTableName());
+         Item item = new Item()
+            .withPrimaryKey("market_id_url_md5", md5)
+            .withString("grid_internal_id", internalId)
+            .withString("grid_internal_pid", internalPid)
+            .withString("scheduled_at", getCurrentTime())
+            .withString("finished_at", getCurrentTime())
+            .withList("found_skus", foundSkus)
+            .withString("created_at", getCurrentTime());
+
+         table.putItem(item);
+         Logging.printLogInfo(logger, "Insert item in dynamo " + md5);
+
+
+      } catch (Exception e) {
+         Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+         Logging.printLogError(logger, "Error inserting object in dynamo: " + md5);
+      }
+   }
+
+
+   public static void updateReadByCrawlerObjectDynamo(List<Product> products, Session session, SkuStatus skuStatus) {
+
+      List<Map> foundSkus = new ArrayList<>();
+      String md5 = convertUrlInMD5(session.getOriginalURL(), session.getMarket().getId());
+      JSONObject productDynamo = fetchObjectDynamo(md5);
+      if (productDynamo.isEmpty()) {
+         Logging.printLogError(logger, "Error fetching object in dynamo: " + session.getOriginalURL() + " Initiating insert...");
+         insertObjectDynamoByCrawler(products, md5);
+         return;
+      }
+      String createdAt = productDynamo.optString("created_at");
+
+      for (Product p : products) {
+
+         Map<String, String> map = new HashMap<>();
+         map.put("internal_id", p.getInternalId());
+         map.put("event_timestamp", p.getTimestamp());
+         map.put("status", getStatusProduct(p));
 
          foundSkus.add(map);
       }
@@ -212,6 +250,20 @@ public class Dynamo {
       }
    }
 
+
+   public static String getStatusProduct(Product product) {
+      String newStatus = "available";
+      if (!product.getAvailable()) {
+         if (product.getMarketplace() != null && product.getMarketplace().size() > 0) {
+            newStatus = "only_marketplace";
+         } else {
+            newStatus = "unavailable";
+         }
+      }
+
+      return newStatus;
+   }
+
    public static void updateScheduledObjectDynamo(RankingProduct p, String createdAt) {
       String md5 = convertUrlInMD5(p.getUrl(), p.getMarketId());
       String internalId = p.getInternalId() != null ? p.getInternalId() : "";
@@ -237,8 +289,8 @@ public class Dynamo {
             .withValueMap(expressionAttributeValues)
             .withReturnValues(ReturnValue.ALL_NEW);
 
-         UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
-         Logging.printLogInfo(logger, "Displaying updated item..." + outcome.getItem().toJSONPretty());
+         table.updateItem(updateItemSpec);
+         Logging.printLogInfo(logger, "Updated item in dynamo " + md5);
 
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
