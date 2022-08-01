@@ -121,6 +121,7 @@ public class Dynamo {
             s.append(String.format("%02x", b));
          }
       } catch (NoSuchAlgorithmException e) {
+         Logging.printLogError(logger, "Error converting url in md5: " + url);
          throw new RuntimeException(e);
       }
 
