@@ -44,9 +44,10 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void processBeforeFetch() {
-      Document doc;
+      Document doc = null;
       try {
          int attempts = 0;
+         List<String> proxies = List.of( ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY );
 
          do {
             ChromeOptions chromeOptions = new ChromeOptions();
@@ -54,27 +55,30 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
             chromeOptions.addArguments("--headless");
             chromeOptions.addArguments("--no-sandbox");
             chromeOptions.addArguments("--disable-dev-shm-usage");
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(HOME_PAGE, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, session);
-            webdriver.waitLoad(10000);
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(HOME_PAGE, proxies.get(attempts), session);
+            if (webdriver != null) {
+               webdriver.waitLoad(10000);
+               doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
-            Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
+               Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
 
-            for (Cookie cookie : cookiesResponse) {
-               BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
-               basicClientCookie.setDomain(cookie.getDomain());
-               basicClientCookie.setPath(cookie.getPath());
-               basicClientCookie.setExpiryDate(cookie.getExpiry());
-               this.cookies.add(basicClientCookie);
+               for (Cookie cookie : cookiesResponse) {
+                  BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
+                  basicClientCookie.setDomain(cookie.getDomain());
+                  basicClientCookie.setPath(cookie.getPath());
+                  basicClientCookie.setExpiryDate(cookie.getExpiry());
+                  this.cookies.add(basicClientCookie);
+               }
+
+               webdriver.terminate();
             }
-
-            webdriver.terminate();
-
-         } while (doc.select("div #main-content").isEmpty() && attempts++ < 3);
+         } while (doc != null && doc.select("div #main-content").isEmpty() && attempts++ < 3);
 
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-         webdriver.terminate();
+         if (webdriver != null) {
+            webdriver.terminate();
+         }
       }
    }
 

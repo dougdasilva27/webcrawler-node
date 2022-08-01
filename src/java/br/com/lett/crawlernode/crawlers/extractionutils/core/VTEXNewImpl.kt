@@ -6,7 +6,7 @@ import org.apache.http.impl.cookie.BasicClientCookie
 import org.json.JSONObject
 import org.jsoup.nodes.Document
 
-class VTEXNewImpl(session: Session) : VTEXNewScraper(session) {
+open class VTEXNewImpl(session: Session) : VTEXNewScraper(session) {
 
 
    override fun handleCookiesBeforeFetch() {

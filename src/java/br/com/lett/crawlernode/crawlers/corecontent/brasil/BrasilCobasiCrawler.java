@@ -1,31 +1,28 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.util.*;
-
-import java.util.*;
-
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.*;
-import models.prices.Prices;
+import models.AdvancedRatingReview;
+import models.Offer;
+import models.Offers;
+import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
+
+import java.util.*;
 
 //the first crawler made with github copilot
 public class BrasilCobasiCrawler extends Crawler {
@@ -55,6 +52,7 @@ public class BrasilCobasiCrawler extends Crawler {
          JSONArray variants = productsObj.optJSONArray("activeSkus");
          CategoryCollection categoryCollection = scrapeCategory(productsObj);
          List<String> images = scrapeImages(productsObj);
+         String description = scrapDescription(productsObj);
 
          String primaryImage = images.isEmpty() ? null : images.remove(0);
          List<String> secondaryImages = images.isEmpty() ? null : images;
@@ -62,25 +60,19 @@ public class BrasilCobasiCrawler extends Crawler {
          for (Object o : variants) {
 
             JSONObject variant = (JSONObject) o;
-            Offers offers = scrapOffer(productsObj, variant);
+            Offers offers = scrapOffer(variant);
             RatingsReviews ratingsReviews = crawlRating(productsObj);
-            String scripStr = CrawlerUtils.scrapScriptFromHtml(doc, ".styles__Wrapper-sc-1i0ham3-0.bHBbfr script");
-            JSONArray script = JSONUtils.stringToJsonArray(scripStr);
-            String name =  JSONUtils.getValueRecursive(script,"0.name", String.class);
-            String nameVariant =variant.optString("name");
-            String fullName = (!name.isEmpty() ? name:"") + (!nameVariant.isEmpty() ? " " + nameVariant:"");
-            String descriptionSort = CrawlerUtils.scrapStringSimpleInfo(doc,".styles__ProductInformations-sc-1rue5eb-8.cnACxw", false);
-            String descriptionfull = CrawlerUtils.scrapStringSimpleInfo(doc,"#panel2d-content .MuiAccordionDetails-root.styles__AccordionDetails-sc-1cpb5wa-5.gVuviu", false);
-            String description = (!descriptionSort.isEmpty()? descriptionSort:"") + (!descriptionfull.isEmpty()? " " + descriptionfull:"");
+            String name = crawlName(productsObj, variant, doc);
             String id = variant.optString("id");
             String pid = productsObj.optString("id");
             String[] urlarr = session.getOriginalURL().split("=");
-            String url = urlarr[0].contains("?idsku")? urlarr[0] + "=" + id : urlarr[0] + "?idsku=" + id;
+            String url = urlarr[0].contains("?idsku") ? urlarr[0] + "=" + id : urlarr[0] + "?idsku=" + id;
+
             Product product = ProductBuilder.create()
                .setUrl(url)
                .setInternalId(id)
                .setInternalPid(pid)
-               .setName(fullName)
+               .setName(name)
                .setCategories(categoryCollection)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
@@ -93,13 +85,45 @@ public class BrasilCobasiCrawler extends Crawler {
             products.add(product);
 
          }
-      }
-      else {
+      } else {
          Logging.printLogDebug(logger, "No products page");
       }
       return products;
    }
-   private Offers scrapOffer(JSONObject jsonObject, JSONObject variation) throws OfferException, MalformedPricingException {
+
+   private String scrapDescription(JSONObject productsObj) {
+
+      String description = productsObj.optString("description", "");
+      String descriptionShort = productsObj.optString("descriptionShort", "");
+
+
+      return description + "\n" + descriptionShort;
+
+   }
+
+   private String crawlName(JSONObject productsObj, JSONObject variant, Document doc) {
+      String name = productsObj.optString("name");
+      String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".styles__BrandLink-sc-1rue5eb-14", true);
+      String nameVariant = variant.optString("name");
+
+      if (name != null) {
+         name = CommonMethods.camelcaseToText(name);
+      }
+
+      if (nameVariant != null) {
+         name = name + " " + nameVariant;
+      }
+
+      if (brand != null) {
+         name = name + " - " + brand;
+      }
+
+      return name;
+
+
+   }
+
+   private Offers scrapOffer(JSONObject variation) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
       if (variation.optBoolean("available")) {
@@ -124,7 +148,7 @@ public class BrasilCobasiCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject jsonObject) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonObject, "bestPriceFormated", false);
       Double priceFrom = JSONUtils.getDoubleValueFromJSON(jsonObject, "listPriceFormated", false);
-      if(priceFrom == 0){
+      if (priceFrom == 0) {
          priceFrom = null;
       }
 
@@ -190,6 +214,7 @@ public class BrasilCobasiCrawler extends Crawler {
       }
       return ratingsReviews;
    }
+
    private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject reviews) {
 
       JSONObject reviewValue = reviews.optJSONObject("stars");

@@ -404,9 +404,13 @@ public abstract class CrawlerRanking extends Task {
 
          if (resultJson.has("finished_at")) {
             List<Processed> processeds = createProcesseds(resultJson, product.getMarketId(), session); //todo: remover processed assim que tudo migrar
+
+         if (!processeds.isEmpty()) {
+
             for (Processed p : processeds) {
                processedIds.add(p.getId());
             }
+            
             if (isVoid(resultJson) && hasReadBeforeOneMonth(resultJson.optString("finished_at"))) {
                //now, if product is void, will not insert in dynamo
                Logging.printLogDebug(logger, session, "Product already discovered but it was void in the last month - " + product.getUrl());

@@ -22,10 +22,14 @@ public class BrasilHavanCrawler extends LinxImpulseRanking {
 
    @Override
    protected String crawlInternalPid(JSONObject product) {
-      Object pid = product.optQuery("/skus/0/properties/details/idAddToCart");
+      Object pid = product.optQuery("/id");
       if(pid != null) {
          return pid.toString();
       }
       return super.crawlInternalPid(product);
+   }
+   @Override
+   protected String crawlInternalId(JSONObject product, String internalPid) {
+      return null;
    }
 }

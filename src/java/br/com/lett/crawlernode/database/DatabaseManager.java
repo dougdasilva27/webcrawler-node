@@ -24,8 +24,8 @@ public class DatabaseManager {
 
 
    public DatabaseManager(DBCredentials credentials) {
-      setMongoFrozen(credentials);
-      setMongoFetcher(credentials);
+     setMongoFrozen(credentials);
+     setMongoFetcher(credentials);
    }
 
    private void setMongoFrozen(DBCredentials credentials) {

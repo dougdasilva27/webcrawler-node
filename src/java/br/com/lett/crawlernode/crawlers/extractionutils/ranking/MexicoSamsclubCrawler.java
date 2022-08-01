@@ -18,19 +18,13 @@ import java.util.Map;
 
 public class MexicoSamsclubCrawler extends CrawlerRankingKeywords {
 
-   private String storeId;
-
 
    public MexicoSamsclubCrawler(Session session) {
       super(session);
    }
 
    public String getStoreId() {
-      return storeId;
-   }
-
-   public void setStoreId(String storeId) {
-      this.storeId = storeId;
+      return this.session.getOptions().optString("storeId");
    }
 
    @Override
@@ -38,7 +32,7 @@ public class MexicoSamsclubCrawler extends CrawlerRankingKeywords {
       this.pageSize = 20;
 
       this.log("Página " + this.currentPage);
-      String url = "https://www.sams.com.mx/sams/search?Ntt=" + this.keywordEncoded + "&" + storeId;
+      String url = "https://www.sams.com.mx/sams/search?Ntt=" + this.keywordEncoded + "&storeId=" + getStoreId();
 
       this.log("Link onde são feitos os crawlers: " + url);
 
