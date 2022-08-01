@@ -93,12 +93,21 @@ public class SaopauloDrogasilCrawler extends Crawler {
             List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(JSONUtils.getJSONArrayValue(data, "media_gallery_entries"),
                "file", validationImages, "https", "img.drogasil.com.br/catalog/product", session);
 
+
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".small-img", Arrays.asList("src"), "https", "img.drogasil.com.br");
 
             if (primaryImage != null) {
                primaryImage = primaryImage.split("\\?")[0]; // we need to remove parameters because this site resize img on html
             } else if (!images.isEmpty()) {
                primaryImage = images.get(0);
+            }
+            if(images != null && images.size() == 0){
+               images = CrawlerUtils.scrapSecondaryImages(doc," div.swiper-wrapper  noscript > img", Arrays.asList("src"),"https", "", primaryImage);
+               if(images != null && images.size() > 0){
+                  for (int i = 0; i < images.size() ;i++){
+                     images.set(i, images.get(i).split("\\?")[0]);
+                  }
+               }
             }
 
             String description = scrapDescription(data);
