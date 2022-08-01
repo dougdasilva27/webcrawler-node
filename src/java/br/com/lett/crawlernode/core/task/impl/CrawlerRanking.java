@@ -397,20 +397,19 @@ public abstract class CrawlerRanking extends Task {
       Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
 
-       if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
-          JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
+      if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
+         JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
          //this is legacy architecture, when none app using anymore we can remove
          List<Long> processedIds = new ArrayList<>();
 
          if (resultJson.has("finished_at")) {
             List<Processed> processeds = createProcesseds(resultJson, product.getMarketId(), session); //todo: remover processed assim que tudo migrar
 
-         if (!processeds.isEmpty()) {
-
-            for (Processed p : processeds) {
-               processedIds.add(p.getId());
+            if (!processeds.isEmpty()) {
+               for (Processed p : processeds) {
+                  processedIds.add(p.getId());
+               }
             }
-            
             if (isVoid(resultJson) && hasReadBeforeOneMonth(resultJson.optString("finished_at"))) {
                //now, if product is void, will not insert in dynamo
                Logging.printLogDebug(logger, session, "Product already discovered but it was void in the last month - " + product.getUrl());
@@ -430,7 +429,7 @@ public abstract class CrawlerRanking extends Task {
 
       if (product.getUrl() != null && session instanceof EqiRankingDiscoverKeywordsSession) {
          JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
-         if (resultJson.isEmpty()){ //on this session, even "finished_at" is not empty, will schedule
+         if (resultJson.isEmpty()) { //on this session, even "finished_at" is not empty, will schedule
             saveProductUrlToQueue(product, resultJson);
          }
       }
@@ -486,7 +485,7 @@ public abstract class CrawlerRanking extends Task {
       boolean sendToQueue = true;
       if (result == null || result.isEmpty()) {
          Dynamo.insertObjectDynamo(product);
-         Logging.printLogDebug(logger, session, "Product new:  " + product.getUrl() + " insert in dynamo and saved to queue" );
+         Logging.printLogDebug(logger, session, "Product new:  " + product.getUrl() + " insert in dynamo and saved to queue");
       } else if (Dynamo.scheduledMoreThanOneHour(result.optString("scheduled_at"), session)) {
          Logging.printLogDebug(logger, session, "Update product " + product.getUrl() + " in dynamo and saved to queue");
          Dynamo.updateScheduledObjectDynamo(product, result.optString("created_at"));
