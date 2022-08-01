@@ -10,8 +10,15 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offers;
 import models.prices.Prices;
+import models.pricing.*;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -34,6 +41,18 @@ public class MexicoHebCrawler extends Crawler {
       super(session);
    }
 
+   private String getStore() {
+      return this.session.getOptions().optString("store");
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      BasicClientCookie cookie = new BasicClientCookie("store", getStore());
+      cookie.setDomain("www.heb.com.mx");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+   }
+
    @Override
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
@@ -51,50 +70,29 @@ public class MexicoHebCrawler extends Crawler {
 
          String internalPid = crawlInternalPid(doc);
          String internalId = internalPid;
-         String name =
-            CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title-wrapper .page-title", false);
-         CategoryCollection categories =
-            CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home):not(.product)");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title-wrapper .page-title", false);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home):not(.product)");
          boolean available = !doc.select(".action.tocart.primary").isEmpty();
-         String primaryImage =
-            CrawlerUtils.scrapSimplePrimaryImage(
-               doc, ".gallery-placeholder img", Arrays.asList("src"), "https", "www.heb.com.mx/");
-
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder img", Arrays.asList("src"), "https", "www.heb.com.mx/");
          List<String> secondaryImages = getSecondaryImage(doc);
          String description = crawlDescription(doc);
-
          String ean = scrapEan(doc, ".extra-info span span[data-upc]");
-         List<String> eans = new ArrayList<>();
-         eans.add(ean);
-         Map<String, Prices> marketplaceMap =
-            available ? crawlMarketplace(doc, new JSONObject(), internalPid) : new HashMap<>();
-         Marketplace marketplace =
-            CrawlerUtils.assembleMarketplaceFromMap(
-               marketplaceMap, Arrays.asList(SELLER_NAME_LOWER), Card.AMEX, session);
-         Prices prices =
-            marketplaceMap.containsKey(SELLER_NAME_LOWER)
-               ? marketplaceMap.get(SELLER_NAME_LOWER)
-               : new Prices();
-         Float price = CrawlerUtils.extractPriceFromPrices(prices, Arrays.asList(Card.AMEX));
+         List<String> eans = ean != null ? List.of(ean) : new ArrayList<>();
+         Offers offers = available ? crawlOffers(doc) : null;
 
-         // Creating the product
          Product product =
             ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
+               .setOffers(offers)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
-               .setStock(null)
-               .setMarketplace(marketplace)
                .setEans(eans)
                .build();
 
@@ -111,22 +109,75 @@ public class MexicoHebCrawler extends Crawler {
       return !doc.select(".product-sku").isEmpty();
    }
 
-   private Map<String, Prices> crawlMarketplace(
-      Document doc, JSONObject jsonSku, String internalPid) {
-      Map<String, Prices> marketplace = new HashMap<>();
+   private Offers crawlOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(pricing);
 
-      String sellerName;
-
-      Element seller = doc.selectFirst(".infoProduct strong a.btn");
-      if (seller != null) {
-         sellerName = seller.ownText().toLowerCase().trim();
-      } else {
-         sellerName = SELLER_NAME_LOWER;
+      if(pricing != null){
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_NAME_LOWER)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
       }
 
-      marketplace.put(sellerName, crawlPrices(doc, jsonSku, internalPid));
+      return offers;
+   }
 
-      return marketplace;
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-final_price h2[data-price-type=finalPrice] .price", null, true, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-final_price h2[data-price-type=oldPrice] .price", null, true, '.', session);
+
+      if (spotlightPrice != null) {
+         CreditCards creditCards = scrapCreditCards(spotlightPrice);
+         BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+            .setFinalPrice(spotlightPrice)
+            .build();
+
+         return Pricing.PricingBuilder.create()
+            .setSpotlightPrice(spotlightPrice)
+            .setPriceFrom(priceFrom)
+            .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
+            .build();
+      } else {
+         return null;
+      }
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+      Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(), Card.DINERS.toString());
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+   private List<String> scrapSales(Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+
+      String saleDiscount = CrawlerUtils.calculateSales(pricing);
+      sales.add(saleDiscount);
+
+      return sales;
    }
 
    private String crawlInternalPid(Document doc) {
@@ -173,39 +224,6 @@ public class MexicoHebCrawler extends Crawler {
       }
 
       return description.toString();
-   }
-
-   private Prices crawlPrices(Document doc, JSONObject jsonSku, String internalPid) {
-      Prices prices = new Prices();
-
-      Float price =
-         CrawlerUtils.scrapSimplePriceFloatWithDots(doc, "#product-price-" + internalPid, false);
-      if (price == null) {
-         price =
-            CrawlerUtils.scrapSimplePriceFloatWithDots(
-               doc, ".price-info .special-price .price", false);
-      }
-
-      if (jsonSku.has("price")) {
-         price = MathUtils.parseFloatWithDots(jsonSku.get("price").toString());
-      }
-
-      prices.setPriceFrom(
-         CrawlerUtils.scrapSimplePriceDoubleWithDots(doc, "#old-price-" + internalPid, false));
-      if (jsonSku.has("oldPrice")) {
-         prices.setPriceFrom(MathUtils.parseDoubleWithDot(jsonSku.get("oldPrice").toString()));
-      }
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         installmentPriceMap.put(1, price);
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      }
-
-      return prices;
    }
 
    private String scrapEan(Document doc, String selector) {

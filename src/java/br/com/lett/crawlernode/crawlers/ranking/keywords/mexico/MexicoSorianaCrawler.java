@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.HttpHeaders;
+import org.apache.http.cookie.Cookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -31,24 +32,23 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
 
    public MexicoSorianaCrawler(Session session) {
       super(session);
-      fetchMode = FetchMode.APACHE;
+      super.fetchMode = FetchMode.APACHE;
    }
 
    private Map<String, String> getHeaders() {
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-      headers.put("origin", "https://www.soriana.com/");
-      headers.put("authority", "www.soriana.com");
-      headers.put("referer", "https://www.soriana.com/buscar?q=aceite&cid=&search-button=");
-      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("Accept", "*/*");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Connection", "keep-alive");
+      headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("x-requested-with", "XMLHttpRequest");
 
       return headers;
    }
 
    @Override
    protected void processBeforeFetch() {
-      super.processBeforeFetch();
+      //super.processBeforeFetch();
       Response response;
       String postalCode = session.getOptions().optString("postalCode");
       if (postalCode.isEmpty()) {
@@ -59,14 +59,12 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
             .setUrl("https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Stores-UpdateStoreByPostalCode")
             .setHeaders(getHeaders())
             .setProxyservice(Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES,
                ProxyCollection.NETNUT_RESIDENTIAL_BR
             ))
-            .setSendUserAgent(true)
             .setPayload("dwfrm_storeUpdate_postalCode=" + postalCode + "&basketValidation=true&selectSubmitPc=true&methodid=homeDelivery")
-            .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(false).mustRetrieveStatistics(true).build())
             .build();
          response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
       }
@@ -74,17 +72,23 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected Document fetchDocument(String url) {
+   protected Document fetchDocument(String url, List<Cookie> cookies) {
       Map<String, String> headers = new HashMap<>();
-      headers.put("Accept-Encoding", "gzip, deflate, br");
       headers.put("Accept", "*/*");
       headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
 
-      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build();
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
+         .build();
 
-      String content = this.dataFetcher.get(session, request).getBody();
-
-      return Jsoup.parse(content);
+      return Jsoup.parse(new ApacheDataFetcher().get(session, request).getBody());
    }
 
    @Override
@@ -95,7 +99,7 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
       String url = "https://www.soriana.com/buscar?q=" + this.keywordEncoded + "&cid=&search-button=&cref=0&view=grid";
       this.log("Link onde são feitos os crawlers: " + url);
 
-      this.currentDoc = fetchDocument(url);
+      this.currentDoc = fetchDocument(url, this.cookies);
 
       Elements products = this.currentDoc.select(".product-tile--wrapper.d-flex");
 

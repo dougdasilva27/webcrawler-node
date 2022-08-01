@@ -40,4 +40,5 @@ public class EnvironmentVariables {
    public static final String DREMIO_PASSWORD = "DREMIO_PASSWORD";
    public static final String DREMIO_USER = "DREMIO_USER";
    public static final String DREMIO_DB_URL = "DREMIO_DB_URL";
+   public static final String DYNAMO_TABLE_NAME = "DYNAMO_TABLE_NAME";
 }
