@@ -151,7 +151,7 @@ public class Dynamo {
             .withString("scheduled_at", getCurrentTime())
             .withString("created_at", getCurrentTime());
 
-         Logging.printLogInfo(logger, "Insert item in dynamo " + md5);
+         Logging.printLogDebug(logger, "Insert item in dynamo " + md5);
 
          table.putItem(item);
 
@@ -194,7 +194,7 @@ public class Dynamo {
             .withString("created_at", getCurrentTime());
 
          table.putItem(item);
-         Logging.printLogInfo(logger, "Insert item in dynamo " + md5);
+         Logging.printLogDebug(logger, "Insert item in dynamo " + md5);
 
 
       } catch (Exception e) {
@@ -291,7 +291,7 @@ public class Dynamo {
             .withReturnValues(ReturnValue.ALL_NEW);
 
          table.updateItem(updateItemSpec);
-         Logging.printLogInfo(logger, "Updated item in dynamo " + md5);
+         Logging.printLogDebug(logger, "Updated item in dynamo " + md5);
 
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
