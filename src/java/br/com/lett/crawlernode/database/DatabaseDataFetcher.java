@@ -1,14 +1,15 @@
 package br.com.lett.crawlernode.database;
 
-import java.sql.*;
-import java.text.ParseException;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.ScraperInformation;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
+import com.mongodb.client.FindIterable;
+import dbmodels.Tables;
 import dbmodels.tables.SupplierTrackedLett;
 import exceptions.MalformedRatingModel;
 import exceptions.OfferException;
@@ -23,13 +24,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.mongodb.client.FindIterable;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
-import dbmodels.Tables;
+
+import java.sql.*;
+import java.text.ParseException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class DatabaseDataFetcher {
 
@@ -303,23 +302,23 @@ public class DatabaseDataFetcher {
       Condition condition = isWebdriver ? marketTable.CRAWLER_WEBDRIVER.isTrue() : marketTable.CRAWLER_WEBDRIVER.isFalse();
 
       String query = DSL.select(
-         processed.ID.as("processed_id"),
-         processed.INTERNAL_ID,
-         processed.ORIGINAL_NAME,
-         processed.URL,
-         processed.MARKET,
-         processed.INTERNAL_PID,
-         processed.AVAILABLE,
-         processed.VOID,
-         processed.PIC,
-         processed.SECONDARY_PICS,
-         processed.CAT1,
-         processed.CAT2,
-         processed.CAT3,
-         processed.ORIGINAL_DESCRIPTION,
-         processed.RATING,
-         processed.EANS
-      )
+            processed.ID.as("processed_id"),
+            processed.INTERNAL_ID,
+            processed.ORIGINAL_NAME,
+            processed.URL,
+            processed.MARKET,
+            processed.INTERNAL_PID,
+            processed.AVAILABLE,
+            processed.VOID,
+            processed.PIC,
+            processed.SECONDARY_PICS,
+            processed.CAT1,
+            processed.CAT2,
+            processed.CAT3,
+            processed.ORIGINAL_DESCRIPTION,
+            processed.RATING,
+            processed.EANS
+         )
          .from(processed)
          .rightJoin(unification).on(processed.INTERNAL_ID.eq(unification.INTERNAL_ID)
             .and(processed.MARKET.eq(unification.MARKET_ID.cast(Integer.class))))
@@ -375,14 +374,17 @@ public class DatabaseDataFetcher {
       return result;
    }
 
-   public static boolean isVoidFromDremio(Product product){
+   public static boolean isVoidFromDremio(Product product) {
+      Logging.printLogInfo(logger, "Checking if product is void from dremio");
       boolean isVoid = false;
       try {
          ResultSet rs = fetchFromDremio("SELECT status FROM captura.\"insights_skus\" WHERE internal_id = '" + product.getInternalId() + " + ' AND market_id = " + product.getMarketId());
          if (rs.next()) {
             String status = rs.getString("status");
-            isVoid = status.equals("void");
-            Logging.printLogInfo(logger, "Product " + product.getInternalId() + " is " + status);
+            if (status != null) {
+               isVoid = status.equals("void");
+               Logging.printLogInfo(logger, "Product " + product.getInternalId() + " is " + status + " from dremio");
+            }
          }
       } catch (SQLException e) {
          throw new RuntimeException(e);
