@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -374,11 +375,11 @@ public class DatabaseDataFetcher {
       return result;
    }
 
-   public static boolean isVoidFromDremio(Product product) {
+   public static boolean isVoidFromDremio(Product product, Session session) {
       Logging.printLogInfo(logger, "Checking if product is void from dremio");
       boolean isVoid = false;
       try {
-         ResultSet rs = fetchFromDremio("SELECT status FROM captura.\"insights_skus\" WHERE internal_id = '" + product.getInternalId() + " + ' AND market_id = " + product.getMarketId());
+         ResultSet rs = fetchFromDremio("SELECT status FROM captura.\"insights_sku\" WHERE internal_id = '" + product.getInternalId() + "' AND market_id = " + session.getMarket().getId());
          if (rs.next()) {
             String status = rs.getString("status");
             if (status != null) {
