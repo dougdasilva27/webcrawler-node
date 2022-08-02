@@ -386,9 +386,9 @@ public class DatabaseDataFetcher {
                Logging.printLogInfo(logger, "Product " + product.getInternalId() + " is " + status + " from dremio");
             }
          }
-      } catch (SQLException e) {
-         throw new RuntimeException(e);
-      } catch (ParseException e) {
+      } catch (SQLException | ParseException e) {
+         Logging.printLogError(logger, "Error checking if product is void from dremio");
+         Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
          throw new RuntimeException(e);
       }
 
