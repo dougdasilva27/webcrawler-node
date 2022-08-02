@@ -16,6 +16,7 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.util.*;
 
@@ -64,7 +65,7 @@ public class BelohorizonteSantahelenaCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".paged.product-template-default") != null;
+      return doc.selectFirst(".product-template-default") != null;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -88,10 +89,24 @@ public class BelohorizonteSantahelenaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Map<String, Double> prices = getPrice(doc);
-      Double spotlightPrice = prices.get("spotlightPrice");
-      Double priceFrom = prices.get("priceFrom");
+      Double spotlightPrice = null;
+      Double priceFrom = null;
+
+      Element priceElement = doc.selectFirst(".price");
+
+      if (priceElement != null) {
+         if (priceElement.children().size() > 1) {
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(priceElement, "ins > .woocommerce-Price-amount.amount > bdi" , null, false, ',', session);
+            priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(priceElement, "del > .woocommerce-Price-amount.amount > bdi", null, false, ',', session);
+         }else{
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(priceElement, ".woocommerce-Price-amount.amount > bdi" , null, false, ',', session);
+         }
+      }
+
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
@@ -119,20 +134,6 @@ public class BelohorizonteSantahelenaCrawler extends Crawler {
       }
 
       return creditCards;
-   }
-
-   private Map<String, Double> getPrice(Document doc) {
-      Map<String, Double> prices = new HashMap<>();
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".summary ins bdi", null, false, ',', session);
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".summary del bdi", null, true, ',', session);
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".summary bdi", null, true, ',', session);
-         price = null;
-      }
-      prices.put("spotlightPrice", spotlightPrice);
-      prices.put("priceFrom", price);
-
-      return prices;
    }
 
    private List<String> scrapSales(Pricing pricing) {
