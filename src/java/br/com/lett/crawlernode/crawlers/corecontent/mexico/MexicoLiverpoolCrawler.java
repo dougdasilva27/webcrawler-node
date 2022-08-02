@@ -134,7 +134,7 @@ public class MexicoLiverpoolCrawler extends Crawler {
       JSONObject pricesJson = JSONUtils.getValueRecursive(productJson, "variants.0.prices", JSONObject.class, new JSONObject());
 
       Double priceFrom = CrawlerUtils.getDoubleValueFromJSON(pricesJson, "listPrice", true, false);
-      Double spotlightPrice = CrawlerUtils.getDoubleValueFromJSON(pricesJson, "salePrice", true, false);
+      Double spotlightPrice = getSpotlightPrice(pricesJson);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
@@ -148,6 +148,18 @@ public class MexicoLiverpoolCrawler extends Crawler {
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
+   }
+
+   private Double getSpotlightPrice(JSONObject pricesJson) {
+      Double spotlightPrice = CrawlerUtils.getDoubleValueFromJSON(pricesJson, "salePrice", true, false);
+      Integer discount = CrawlerUtils.getIntegerValueFromJSON(pricesJson, "discountPercentage", 0);
+
+      if (discount > 0) {
+         spotlightPrice = spotlightPrice - (spotlightPrice * discount) / 100;
+      }
+
+      return spotlightPrice;
+
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
