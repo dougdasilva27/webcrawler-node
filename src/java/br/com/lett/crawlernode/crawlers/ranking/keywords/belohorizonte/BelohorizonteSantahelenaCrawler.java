@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.belohorizonte;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -11,16 +10,13 @@ import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.exceptions.InternalIdNotFound;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import okhttp3.Cookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.net.http.HttpHeaders;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +27,7 @@ public class BelohorizonteSantahelenaCrawler extends CrawlerRankingKeywords {
    public BelohorizonteSantahelenaCrawler(Session session) {
       super(session);
    }
+
    private static final String urlAPI = "https://santahelenacenter.com.br/wp-admin/admin-ajax.php";
 
    @Override
@@ -56,7 +53,7 @@ public class BelohorizonteSantahelenaCrawler extends CrawlerRankingKeywords {
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "h2", true);
             String productUrl = CrawlerUtils.scrapUrl(e, ".product-body a", "href", "https", "santahelenacenter.com.br");
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-footer a", "data-product_id");
-            Integer price = scarpPrice(e);
+            Integer price = scrapPrice(e);
             String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".img-fluid", Arrays.asList("src"), "https", "santahelenacenter.com.br");
             boolean available = e.selectFirst("form") != null;
 
@@ -84,10 +81,10 @@ public class BelohorizonteSantahelenaCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private Integer scarpPrice(Element e) {
-      Integer spotlightPrice = CrawlerUtils.scrapPriceInCentsFromHtml(e, "ins > .woocommerce-Price-amount.amount > bdi" , null, false,',', session, null);
-      if(spotlightPrice == null){
-         spotlightPrice = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".woocommerce-Price-amount.amount > bdi" , null, false, ',', session, null);
+   private Integer scrapPrice(Element e) {
+      Integer spotlightPrice = CrawlerUtils.scrapPriceInCentsFromHtml(e, "ins > .woocommerce-Price-amount.amount > bdi", null, false, ',', session, null);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".woocommerce-Price-amount.amount > bdi", null, false, ',', session, null);
       }
       return spotlightPrice;
    }
