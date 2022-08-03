@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.models.*;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -16,28 +16,25 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilDrogarianisseiCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.farmaciasnissei.com.br/";
 
    public BrasilDrogarianisseiCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.MIRANHA);
    }
 
    @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-   }
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, "www.farmaciasnissei.com.br", "/", cookies, session, null, dataFetcher);
    }
 
    @Override
@@ -54,9 +51,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          String primaryImage = fixUrlImage(doc, internalId);
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".dots-preview .swiper-slide img", Collections.singletonList("src"), "https", "www.farmaciasnissei.com.br", primaryImage);
          String description = CrawlerUtils.scrapElementsDescription(doc, List.of(".card #tabCollapse-descricao"));
-
-         JSONObject json = accesAPIOffers(internalId);
-         Offers offers = scrapOffers(json);
+         Offers offers = scrapOffers(doc);
          RatingsReviews ratingsReviews = getRatingsReviews(doc);
          List<String> eans = scrapEan(doc);
 
@@ -84,12 +79,12 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
    }
 
-   private List<String> scrapEan(Document doc){
+   private List<String> scrapEan(Document doc) {
       List<String> ean = new ArrayList<>();
       String productInfo = CrawlerUtils.scrapStringSimpleInfo(doc, "div .row div .mt-1", true);
-      if (productInfo != null){
+      if (productInfo != null) {
          String[] split = productInfo.split("EAN:");
-         if (split.length > 1){
+         if (split.length > 1) {
             ean.add(split[1].trim());
          }
       }
@@ -112,41 +107,29 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    }
 
 
-   private Offers scrapOffers(JSONObject jsonInfo) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      if (jsonInfo != null && !jsonInfo.isEmpty()) {
-         Pricing pricing = scrapPricing(jsonInfo);
-         List<String> sales = scrapSales(jsonInfo);
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = List.of(CrawlerUtils.calculateSales(pricing));
 
-         offers.add(Offer.OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName("Drogaria Nissei")
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
-      }
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName("Drogaria Nissei")
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
       return offers;
 
    }
 
-   private List<String> scrapSales(JSONObject jsonInfo) {
-      List<String> sales = new ArrayList<>();
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".mt-md-2.mt-sm-2 > div > p", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".mt-md-2.mt-sm-2 > div > span", null, true, ',', session);
 
-      String firstSales = jsonInfo.optString("per_desc");
-
-      if (firstSales != null && !firstSales.isEmpty()) {
-         sales.add(firstSales);
-      }
-
-      return sales;
-   }
-
-   private Pricing scrapPricing(JSONObject jsonInfo) throws MalformedPricingException {
-      Double priceFrom = !scrapSales(jsonInfo).isEmpty() ? jsonInfo.optDouble("valor_ini") : null;
-      Double spotlightPrice = jsonInfo.optDouble("valor_fim");
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
@@ -182,53 +165,10 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    }
 
 
-   private JSONObject accesAPIOffers(String internalId) {
-      JSONObject jsonObject = new JSONObject();
-      String token = "";
-      String url = "https://www.farmaciasnissei.com.br/pegar/preco";
-
-
-      String cookies = CommonMethods.cookiesToString(this.cookies);
-
-      token = CommonMethods.substring(cookies, "=", ";", true);
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("cookie", cookies);
-      headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
-      headers.put("referer", session.getOriginalURL());
-
-      String payload = "csrfmiddlewaretoken=" + token + "&produtos_ids%5B%5D=" + internalId;
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setCookies(this.cookies)
-         .setPayload(payload)
-         .build();
-
-      String content = this.dataFetcher
-         .post(session, request)
-         .getBody();
-
-
-      JSONObject response = CrawlerUtils.stringToJson(content);
-
-      JSONObject precos = response != null ? response.optJSONObject("precos") : null;
-
-      if (precos != null && !precos.isEmpty()) {
-         JSONObject dataProduct = precos.optJSONObject(internalId);
-         return dataProduct != null ? dataProduct.optJSONObject("publico") : jsonObject;
-
-      }
-
-      return jsonObject;
-   }
-
-    /*
+   /*
 In this store, grades are given with a double value, e.g: 4.5 instead of 5 or 4.
 Therefore, the crawler structure, by accepting only integer values, which is common on most sites, will not be captured the advanced rating.
-  */
-
+ */
    private RatingsReviews getRatingsReviews(Document doc) {
       RatingsReviews ratingsReviews = new RatingsReviews();
       ratingsReviews.setDate(session.getDate());
