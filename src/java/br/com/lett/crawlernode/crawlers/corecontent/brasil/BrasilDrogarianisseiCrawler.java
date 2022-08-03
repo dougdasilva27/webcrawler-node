@@ -2,8 +2,13 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.models.*;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -193,22 +198,25 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       token = CommonMethods.substring(cookies, "=", ";", true);
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("cookie", cookies);
-      headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
-      headers.put("referer", session.getOriginalURL());
+      headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("Referer", session.getOriginalURL());
+      headers.put("Host", "farmaciasnissei.com.br");
 
-      String payload = "csrfmiddlewaretoken=" + token + "&produtos_ids%5B%5D=" + internalId;
+      String payload = "csrfmiddlewaretoken=" + token + "&produtos_ids[]=" + internalId;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
          .setCookies(this.cookies)
          .setPayload(payload)
+         .mustSendContentEncoding(false)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.BUY))
          .build();
 
-      String content = this.dataFetcher
-         .post(session, request)
-         .getBody();
+      Response r = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
+      String content = r.getBody();
 
 
       JSONObject response = CrawlerUtils.stringToJson(content);
