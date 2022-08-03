@@ -1,14 +1,16 @@
 package br.com.lett.crawlernode.database;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.ScraperInformation;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
+import com.mongodb.client.FindIterable;
+import dbmodels.Tables;
 import dbmodels.tables.SupplierTrackedLett;
 import exceptions.MalformedRatingModel;
 import exceptions.OfferException;
@@ -23,13 +25,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.mongodb.client.FindIterable;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
-import dbmodels.Tables;
+
+import java.sql.*;
+import java.text.ParseException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class DatabaseDataFetcher {
 
@@ -303,23 +303,23 @@ public class DatabaseDataFetcher {
       Condition condition = isWebdriver ? marketTable.CRAWLER_WEBDRIVER.isTrue() : marketTable.CRAWLER_WEBDRIVER.isFalse();
 
       String query = DSL.select(
-         processed.ID.as("processed_id"),
-         processed.INTERNAL_ID,
-         processed.ORIGINAL_NAME,
-         processed.URL,
-         processed.MARKET,
-         processed.INTERNAL_PID,
-         processed.AVAILABLE,
-         processed.VOID,
-         processed.PIC,
-         processed.SECONDARY_PICS,
-         processed.CAT1,
-         processed.CAT2,
-         processed.CAT3,
-         processed.ORIGINAL_DESCRIPTION,
-         processed.RATING,
-         processed.EANS
-      )
+            processed.ID.as("processed_id"),
+            processed.INTERNAL_ID,
+            processed.ORIGINAL_NAME,
+            processed.URL,
+            processed.MARKET,
+            processed.INTERNAL_PID,
+            processed.AVAILABLE,
+            processed.VOID,
+            processed.PIC,
+            processed.SECONDARY_PICS,
+            processed.CAT1,
+            processed.CAT2,
+            processed.CAT3,
+            processed.ORIGINAL_DESCRIPTION,
+            processed.RATING,
+            processed.EANS
+         )
          .from(processed)
          .rightJoin(unification).on(processed.INTERNAL_ID.eq(unification.INTERNAL_ID)
             .and(processed.MARKET.eq(unification.MARKET_ID.cast(Integer.class))))
@@ -375,5 +375,60 @@ public class DatabaseDataFetcher {
       return result;
    }
 
+   public static boolean isVoidFromDremio(Product product, Session session) {
+      String internalId = product.getInternalId();
+      if (internalId == null || internalId.isEmpty()) {
+         internalId = session.getInternalId();
+      }
+
+      boolean isVoid = false;
+
+      try {
+         ResultSet rs = fetchFromDremio("SELECT status FROM captura.\"insights_sku\" WHERE internal_id = '" + internalId + "' AND market_id = " + session.getMarket().getId(), session);
+         if (rs.next()) {
+            String status = rs.getString("status");
+            if (status != null) {
+               isVoid = status.equals("void");
+               Logging.printLogDebug(logger, session, "Product " + session.getInternalId() + " is " + status + " from dremio");
+            }
+         } else {
+            Logging.printLogDebug(logger, session,"Product " + session.getInternalId() + " is not found in dremio");
+         }
+      } catch (SQLException e) {
+         Logging.printLogError(logger, session, "Error checking if product is void from dremio");
+         Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+         throw new RuntimeException(e);
+      }
+
+      return isVoid;
+
+   }
+
+   public static ResultSet fetchFromDremio(String query, Session session) {
+      Properties props = new Properties();
+      props.setProperty("user", GlobalConfigurations.executionParameters.getDremioUser());
+      props.setProperty("password", GlobalConfigurations.executionParameters.getDremioPassword());
+      Connection conn;
+      Statement stmt;
+      ResultSet rs = null;
+
+      try {
+         Logging.printLogDebug(logger, session,"Connecting to in Dremio database...");
+         Class.forName("com.dremio.jdbc.Driver");
+         conn = DriverManager.getConnection(GlobalConfigurations.executionParameters.getDremioUrl(), props);
+
+         Logging.printLogDebug(logger, session,"Creating statement...");
+         stmt = conn.createStatement();
+         Logging.printLogDebug(logger, session, "Executing statement...");
+         rs = stmt.executeQuery(query);
+
+      } catch (SQLException | ClassNotFoundException e) {
+         Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+         Logging.printLogError(logger, session, "Error in fetching data from Dremio " + query);
+      }
+
+      return rs;
+
+   }
 
 }

@@ -53,6 +53,12 @@ public class ExecutionParameters {
 
    private Integer redisPort;
 
+   private String dremioPassword;
+   private String dremioUser;
+   private String dremioUrl;
+
+
+
    private String dynamoTableName;
 
    public ExecutionParameters() {
@@ -71,6 +77,9 @@ public class ExecutionParameters {
       sendToKinesis = getEnvSendToKinesis();
       sendToKinesisCatalog = getEnvSendToKinesisCatalog();
       sendToKinesisRanking = getEnvSendToKinesisRanking();
+      dremioPassword = getEnvDremioPassword();
+      dremioUser = getEnvDremioUser();
+      dremioUrl = getEnvDremioUrl();
       dynamoTableName = getEnvDynamoTableName();
       logsBucketName = getEnvLogsBucketName();
       imagesBucketName = getEnvImagesBucketName();
@@ -95,6 +104,18 @@ public class ExecutionParameters {
       setRedisHost();
       setRedisPort();
       Logging.printLogDebug(logger, this.toString());
+   }
+
+   private String getEnvDremioUrl() {
+      return System.getenv(EnvironmentVariables.DREMIO_DB_URL);
+   }
+
+   private String getEnvDremioUser() {
+      return System.getenv(EnvironmentVariables.DREMIO_USER);
+   }
+
+   private String getEnvDremioPassword() {
+      return System.getenv(EnvironmentVariables.DREMIO_PASSWORD);
    }
 
    public void setRedisHost() {
@@ -226,6 +247,18 @@ public class ExecutionParameters {
 
    public int getThreads() {
       return threads;
+   }
+
+   public String getDremioPassword() {
+      return dremioPassword;
+   }
+
+   public String getDremioUser() {
+      return dremioUser;
+   }
+
+   public String getDremioUrl() {
+      return dremioUrl;
    }
 
    private String getEnvLogsBucketName() {
