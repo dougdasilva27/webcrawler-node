@@ -593,7 +593,8 @@ public abstract class Crawler extends Task {
       // if a processed already exists and is void, then
       // we won't perform new attempts to extract the current product
       Processed previousProcessedProduct = processor.fetchPreviousProcessed(product, session); //todo remove this, legacy architecture
-      if (previousProcessedProduct != null && DatabaseDataFetcher.isVoidFromDremio(product, session)) {
+      Logging.printLogInfo(logger, session, "Previous processed product: " + previousProcessedProduct);
+      if (DatabaseDataFetcher.isVoidFromDremio(product, session) && previousProcessedProduct != null ) {
          Persistence.updateProcessedLRT(nowISO, session);
          processor.updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
          Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session, previousProcessedProduct.getId());
