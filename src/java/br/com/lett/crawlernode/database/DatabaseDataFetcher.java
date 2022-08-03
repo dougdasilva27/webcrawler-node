@@ -382,6 +382,7 @@ public class DatabaseDataFetcher {
       }
 
       boolean isVoid = false;
+
       try {
          ResultSet rs = fetchFromDremio("SELECT status FROM captura.\"insights_sku\" WHERE internal_id = '" + internalId + "' AND market_id = " + session.getMarket().getId(), session);
          if (rs.next()) {
@@ -393,7 +394,7 @@ public class DatabaseDataFetcher {
          } else {
             Logging.printLogDebug(logger, session,"Product " + session.getInternalId() + " is not found in dremio");
          }
-      } catch (SQLException | ParseException e) {
+      } catch (SQLException e) {
          Logging.printLogError(logger, session, "Error checking if product is void from dremio");
          Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
          throw new RuntimeException(e);
@@ -403,7 +404,7 @@ public class DatabaseDataFetcher {
 
    }
 
-   public static ResultSet fetchFromDremio(String query, Session session) throws SQLException, ParseException {
+   public static ResultSet fetchFromDremio(String query, Session session) {
       Properties props = new Properties();
       props.setProperty("user", GlobalConfigurations.executionParameters.getDremioUser());
       props.setProperty("password", GlobalConfigurations.executionParameters.getDremioPassword());
@@ -429,4 +430,5 @@ public class DatabaseDataFetcher {
       return rs;
 
    }
+
 }
