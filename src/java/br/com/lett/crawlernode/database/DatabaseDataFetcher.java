@@ -386,6 +386,8 @@ public class DatabaseDataFetcher {
                isVoid = status.equals("void");
                Logging.printLogInfo(logger, "Product " + product.getInternalId() + " is " + status + " from dremio");
             }
+         } else {
+            Logging.printLogInfo(logger, "Product " + product.getInternalId() + " is not found in dremio");
          }
       } catch (SQLException | ParseException e) {
          Logging.printLogError(logger, "Error checking if product is void from dremio");

@@ -594,7 +594,7 @@ public abstract class Crawler extends Task {
       // we won't perform new attempts to extract the current product
       Processed previousProcessedProduct = processor.fetchPreviousProcessed(product, session); //todo remove this, legacy architecture
       Logging.printLogInfo(logger, session, "Previous processed product: " + previousProcessedProduct);
-      if (DatabaseDataFetcher.isVoidFromDremio(product, session) && previousProcessedProduct != null ) {
+      if (DatabaseDataFetcher.isVoidFromDremio(product, session) && previousProcessedProduct != null) {
          Persistence.updateProcessedLRT(nowISO, session);
          processor.updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
          Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session, previousProcessedProduct.getId());
@@ -603,7 +603,7 @@ public abstract class Crawler extends Task {
          return product;
       }
 
-      Logging.printLogDebug(logger, session, "The previous processed is not void, starting active void attempts...");
+      Logging.printLogDebug(logger, session, "The previous processed is not void, starting active void attempts... TEST");
 
       // starting the active void iterations
       // until a maximum number of attempts, we will rerun the extract
