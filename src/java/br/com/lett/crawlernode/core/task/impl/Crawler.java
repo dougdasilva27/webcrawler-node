@@ -34,7 +34,7 @@ import br.com.lett.crawlernode.integration.redis.config.RedisDb;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.metrics.Exporter;
-import br.com.lett.crawlernode.processor.Processor;
+import br.com.lett.crawlernode.test.processor.Processor;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -593,10 +593,7 @@ public abstract class Crawler extends Task {
       // if a processed already exists and is void, then
       // we won't perform new attempts to extract the current product
       Processed previousProcessedProduct = processor.fetchPreviousProcessed(product, session); //todo remove this, legacy architecture
-      Logging.printLogInfo(logger, session, "Previous processed product: " + previousProcessedProduct);
-      boolean status = DatabaseDataFetcher.isVoidFromDremio(product, session);
-      Logging.printLogInfo(logger, session, "From dremio " + status);
-      if (status && previousProcessedProduct != null) {
+      if (previousProcessedProduct != null && DatabaseDataFetcher.isVoidFromDremio(product, session)) {
          Persistence.updateProcessedLRT(nowISO, session);
          processor.updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
          Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session, previousProcessedProduct.getId());
@@ -605,7 +602,7 @@ public abstract class Crawler extends Task {
          return product;
       }
 
-      Logging.printLogDebug(logger, session, "The previous processed is not void, starting active void attempts... TEST");
+      Logging.printLogDebug(logger, session, "The previous processed is not void, starting active void attempts...");
 
       // starting the active void iterations
       // until a maximum number of attempts, we will rerun the extract

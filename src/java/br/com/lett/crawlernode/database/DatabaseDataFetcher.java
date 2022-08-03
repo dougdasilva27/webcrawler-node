@@ -376,22 +376,25 @@ public class DatabaseDataFetcher {
    }
 
    public static boolean isVoidFromDremio(Product product, Session session) {
-      Logging.printLogInfo(logger, session, "Checking if product is void from dremio");
+      String internalId = product.getInternalId();
+      if (internalId == null || internalId.isEmpty()) {
+         internalId = session.getInternalId();
+      }
 
       boolean isVoid = false;
       try {
-         ResultSet rs = fetchFromDremio("SELECT status FROM captura.\"insights_sku\" WHERE internal_id = '" + product.getInternalId() + "' AND market_id = " + session.getMarket().getId());
+         ResultSet rs = fetchFromDremio("SELECT status FROM captura.\"insights_sku\" WHERE internal_id = '" + internalId + "' AND market_id = " + session.getMarket().getId(), session);
          if (rs.next()) {
             String status = rs.getString("status");
             if (status != null) {
                isVoid = status.equals("void");
-               Logging.printLogInfo(logger, session, "Product " + product.getInternalId() + " is " + status + " from dremio");
+               Logging.printLogDebug(logger, session, "Product " + session.getInternalId() + " is " + status + " from dremio");
             }
          } else {
-            Logging.printLogInfo(logger, session,"Product " + product.getInternalId() + " is not found in dremio");
+            Logging.printLogDebug(logger, session,"Product " + session.getInternalId() + " is not found in dremio");
          }
       } catch (SQLException | ParseException e) {
-         Logging.printLogError(logger, "Error checking if product is void from dremio");
+         Logging.printLogError(logger, session, "Error checking if product is void from dremio");
          Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
          throw new RuntimeException(e);
       }
@@ -400,7 +403,7 @@ public class DatabaseDataFetcher {
 
    }
 
-   public static ResultSet fetchFromDremio(String query) throws SQLException, ParseException {
+   public static ResultSet fetchFromDremio(String query, Session session) throws SQLException, ParseException {
       Properties props = new Properties();
       props.setProperty("user", GlobalConfigurations.executionParameters.getDremioUser());
       props.setProperty("password", GlobalConfigurations.executionParameters.getDremioPassword());
@@ -409,18 +412,18 @@ public class DatabaseDataFetcher {
       ResultSet rs = null;
 
       try {
-         Logging.printLogInfo(logger, "Connecting to in Dremio database...");
+         Logging.printLogDebug(logger, session,"Connecting to in Dremio database...");
          Class.forName("com.dremio.jdbc.Driver");
          conn = DriverManager.getConnection(GlobalConfigurations.executionParameters.getDremioUrl(), props);
 
-         Logging.printLogDebug(logger, "Creating statement...");
+         Logging.printLogDebug(logger, session,"Creating statement...");
          stmt = conn.createStatement();
-         Logging.printLogDebug(logger, "Executing statement...");
+         Logging.printLogDebug(logger, session, "Executing statement...");
          rs = stmt.executeQuery(query);
 
       } catch (SQLException | ClassNotFoundException e) {
          Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-         Logging.printLogError(logger, "Error in fetching data from Dremio " + query);
+         Logging.printLogError(logger, session, "Error in fetching data from Dremio " + query);
       }
 
       return rs;
