@@ -376,7 +376,8 @@ public class DatabaseDataFetcher {
    }
 
    public static boolean isVoidFromDremio(Product product, Session session) {
-      Logging.printLogInfo(logger, "Checking if product is void from dremio");
+      Logging.printLogInfo(logger, session, "Checking if product is void from dremio");
+
       boolean isVoid = false;
       try {
          ResultSet rs = fetchFromDremio("SELECT status FROM captura.\"insights_sku\" WHERE internal_id = '" + product.getInternalId() + "' AND market_id = " + session.getMarket().getId());
@@ -384,10 +385,10 @@ public class DatabaseDataFetcher {
             String status = rs.getString("status");
             if (status != null) {
                isVoid = status.equals("void");
-               Logging.printLogInfo(logger, "Product " + product.getInternalId() + " is " + status + " from dremio");
+               Logging.printLogInfo(logger, session, "Product " + product.getInternalId() + " is " + status + " from dremio");
             }
          } else {
-            Logging.printLogInfo(logger, "Product " + product.getInternalId() + " is not found in dremio");
+            Logging.printLogInfo(logger, session,"Product " + product.getInternalId() + " is not found in dremio");
          }
       } catch (SQLException | ParseException e) {
          Logging.printLogError(logger, "Error checking if product is void from dremio");
