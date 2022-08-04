@@ -103,7 +103,7 @@ public class BrasilIfood extends Crawler {
                boolean availableToBuy = available.equalsIgnoreCase("AVAILABLE");
                String url = "https://static-images.ifood.com.br/image/upload/t_medium/pratos/";
                String primaryImage = url + item.optString("logoUrl");
-               String description = item.optString("details");
+               String description = item.optString("additionalInfo");
                Offers offers = availableToBuy ? scrapOffer(item) : new Offers();
 
                // Creating the product
