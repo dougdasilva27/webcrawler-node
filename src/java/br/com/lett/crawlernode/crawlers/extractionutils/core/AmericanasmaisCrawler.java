@@ -21,6 +21,7 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -35,11 +36,13 @@ public class AmericanasmaisCrawler extends Crawler {
    public AmericanasmaisCrawler(Session session) {
       super(session);
    }
+
    private final String storeId = getStoreId();
    private final String sellerName = getSellerName();
    private static final String HOME_PAGE = "https://www.americanas.com.br/lojas-proximas/33014556000196/";
 
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString());
+
    public String getSellerName() {
       return session.getOptions().optString("seller_name");
    }
@@ -109,7 +112,8 @@ public class AmericanasmaisCrawler extends Crawler {
 
          if (productData != null) {
             String name = productData.optString("name");
-            String primaryImage = (String) productData.optQuery("/images/0/large");
+            List<String> images = scrapImages(productData);
+            String primaryImage = images != null && images.size() > 0 ? images.remove(0) : null;
             JSONObject dataOffers = SaopauloB2WCrawlersUtils.getJson(apolloJson, "OffersResult");
             Offers offers = dataOffers != null ? scrapOffers(dataOffers, doc) : new Offers();
             RatingsReviews rating = scrapRating(productData);
@@ -121,6 +125,7 @@ public class AmericanasmaisCrawler extends Crawler {
                .setInternalPid(internalId)
                .setName(name)
                .setPrimaryImage(primaryImage)
+               .setSecondaryImages(images)
                .setRatingReviews(rating)
                .setOffers(offers)
                .build();
@@ -132,6 +137,24 @@ public class AmericanasmaisCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private List<String> scrapImages(JSONObject productData) {
+      List<String> images = new ArrayList<>();
+      JSONArray imagesData = productData.optJSONArray("images");
+      if (imagesData != null) {
+         for (Object o : imagesData) {
+            if (o instanceof JSONObject) {
+               JSONObject imageData = (JSONObject) o;
+               String image = imageData.optString("large");
+               if (image != null) {
+                  images.add(image);
+               }
+            }
+         }
+
+      }
+      return images;
    }
 
    private static JSONObject extractProductFromApollo(JSONObject apollo) {
