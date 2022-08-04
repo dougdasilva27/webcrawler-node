@@ -1,14 +1,12 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
-import org.apache.tika.metadata.HttpHeaders;
 import org.json.JSONObject;
 
 import java.util.HashMap;
@@ -52,39 +50,25 @@ public class ArgentinaRappiCrawler extends RappiCrawler {
 
    @Override
    protected String fetchToken() {
-      String guestPassportUrl = "https://services." + getHomeDomain() + "/api/rocket/v2/guest/passport/";
+      String url = "https://services." + getHomeDomain() + "/api/auth/guest_access_token";
+
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-      headers.put("deviceid", "255a806f-25a2-4026-8584-d63dfe7464b2");
-      headers.put("needAppsFlyerId", "false");
+      headers.put("content-type", "application/json");
+
+      String payload = "{\"headers\":{\"normalizedNames\":{},\"lazyUpdate\":null},\"grant_type\":\"guest\"}";
 
       Request request = Request.RequestBuilder.create()
-         .setUrl(guestPassportUrl)
-         .setHeaders(headers)
-         .mustSendContentEncoding(false)
-         .build();
-
-
-      JSONObject jsonGuestPassport = JSONUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
-
-      String xGuestApiKey = jsonGuestPassport.optString("token");
-
-      String url = "https://services." + getHomeDomain() + "/api/rocket/v2/guest";
-
-      headers.put("x-guest-api-key", xGuestApiKey);
-
-      String payload = "{}";
-
-      request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
          .mustSendContentEncoding(false)
+         .setProxyservice(List.of(
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .build();
 
-      JSONObject json = JSONUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
+      JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher()), session, "post").getBody());
 
       String token = json.optString("access_token");
       String tokenType = json.optString("token_type");
@@ -116,13 +100,12 @@ public class ArgentinaRappiCrawler extends RappiCrawler {
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
+         .setProxyservice(List.of(
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
          .build();
 
-
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
-      String body = response.getBody();
-
-      JSONObject jsonObject = CrawlerUtils.stringToJSONObject(body);
+      JSONObject jsonObject = JSONUtils.stringToJson(CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), false).getBody());
 
       return jsonObject.optJSONObject("dynamic_list_response");
    }
