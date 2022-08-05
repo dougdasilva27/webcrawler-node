@@ -39,12 +39,12 @@ public class CostaricaPeridomicilio extends CrawlerRankingKeywords {
             setTotalProducts();
          }
          for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".cm-disable-empty-files.cm-ajax.cm-ajax-full-render.cm-ajax-status-middle > input:nth-child(3)","value");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".cm-disable-empty-files.cm-ajax.cm-ajax-full-render.cm-ajax-status-middle > input:nth-child(3)", "value");
             String productUrl = CrawlerUtils.scrapUrl(e, ".ty-product-list__content > .ty-product-list__info > .ty-product-list__item-name > a", "href", "https://", "www.peridomicilio.com");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".ty-product-list__content > .ty-product-list__info > .ty-product-list__item-name > a", true);
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".image-reload > a > .cm-image", Collections.singletonList("src"), "https://", "www.peridomicilio.com");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".ty-price > .ty-price-num:nth-child(even)", null, true, ',', session, null);
-            boolean isAvailable = price != 0;
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".ty-price > .ty-price-num:nth-child(even)", null, true, '.', session, null);
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -72,6 +72,7 @@ public class CostaricaPeridomicilio extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return this.currentDoc.selectFirst("#pagination_contents > .ty-pagination > div > a") != null;
+      String hasnextPage = CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc, "#pagination_contents > .ty-pagination > div > a", "data-ca-page");
+      return !hasnextPage.contains("1");
    }
 }
