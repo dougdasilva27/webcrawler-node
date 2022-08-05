@@ -57,8 +57,9 @@ public class SupertoninCrawler extends CrawlerRankingKeywords {
          .setPayload(payload.toString())
          .mustSendContentEncoding(false)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
          ))
 
          .build();

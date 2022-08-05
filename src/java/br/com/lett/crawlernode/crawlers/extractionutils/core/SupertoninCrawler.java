@@ -47,8 +47,9 @@ public class SupertoninCrawler extends Crawler {
          .setUrl(urlAPI)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
          ))
          .build();
       Response response = this.dataFetcher.get(session, request);
