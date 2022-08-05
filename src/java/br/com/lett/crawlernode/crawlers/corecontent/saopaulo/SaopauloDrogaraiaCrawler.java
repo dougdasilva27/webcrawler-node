@@ -53,7 +53,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, " ", false, false);
       JSONObject data = JSONUtils.getValueRecursive(json, "props.pageProps.pageData.productData.productBySku", JSONObject.class);
 
-      if (scriptHTML.size() > 0) {
+      if (!scriptHTML.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          JSONObject scriptJson = CrawlerUtils.stringToJson(scriptHTML.html());
