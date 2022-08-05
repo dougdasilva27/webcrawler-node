@@ -72,7 +72,10 @@ public class CostaricaPeridomicilio extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      String hasnextPage = CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc, "#pagination_contents > .ty-pagination > div > a", "data-ca-page");
-      return !hasnextPage.contains("1");
+      String hasNextPage = CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc, "#pagination_contents > .ty-pagination > div > a", "data-ca-page");
+      if (hasNextPage != null){
+         return !hasNextPage.contains("1");
+      }
+      return true;
    }
 }
