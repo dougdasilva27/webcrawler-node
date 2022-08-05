@@ -30,6 +30,7 @@ public class CostaricaPeridomicilio extends Crawler {
    public CostaricaPeridomicilio(Session session) {
       super(session);
    }
+
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
@@ -42,12 +43,7 @@ public class CostaricaPeridomicilio extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".ty-product-bigpicture > .ty-product-bigpicture__left > .ty-product-bigpicture__left-wrapper > h1", false);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ty-wysiwyg-content.content-description > div"));
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".ty-pict.cm-image", Arrays.asList("src"), "http://", "www.peridomicilio.com");
-         boolean isAvailable;
-         Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ty-strike > span:nth-child(even)", null, false, '.', session);
-         if (spotlightPrice == null){
-            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ty-price > span:nth-child(even)", null, false, '.', session);
-         }
-         isAvailable = spotlightPrice != null;
+         boolean isAvailable = CrawlerUtils.scrapStringSimpleInfo(doc, ".ty-btn__primary.ty-btn__big.ty-btn__add-to-cart.cm-form-dialog-closer.ty-btn", true) != null;
          Offers offers = isAvailable ? scrapOffers(doc) : new Offers();
 
          // Creating the product
@@ -73,8 +69,8 @@ public class CostaricaPeridomicilio extends Crawler {
 
    private String scrapId(Document doc) {
       String id = null;
-      String placeHolder = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,".ty-product-bigpicture > .ty-product-bigpicture__right > form","name");
-      if (placeHolder != null){
+      String placeHolder = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".ty-product-bigpicture > .ty-product-bigpicture__right > form", "name");
+      if (placeHolder != null) {
          String regex = "form_(\\d+)";
          Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
          Matcher matcher = pattern.matcher(placeHolder);
@@ -108,12 +104,10 @@ public class CostaricaPeridomicilio extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom;
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ty-strike > span:nth-child(even)", null, false, '.', session);
-      if (spotlightPrice == null){
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ty-price > span:nth-child(even)", null, false, '.', session);
-         priceFrom = spotlightPrice;
-      }else {
+      Double priceFrom = null;
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ty-price > span:nth-child(even)", null, false, '.', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ty-strike > span:nth-child(even)", null, false, '.', session);
          priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ty-price > span:nth-child(even)", null, false, '.', session);
       }
 
