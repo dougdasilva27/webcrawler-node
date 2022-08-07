@@ -47,12 +47,14 @@ public class BrasilFarmaciaRosarioCrawler extends Crawler {
       String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, "#content-product > div > div > div > div.col-12.col-md-7.product-image > div > div > figure > img", Arrays.asList("data-src"), "https", "");
       List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(document, ".thumbs li img", Arrays.asList("data-src"), "https", "", productPrimaryImage);
       Offers offers = isavailable(document) ? scrapOffers(document, productInternalId) : new Offers();
+      List<String> categories =CrawlerUtils.crawlCategories(document, "#breadcrumb > ul > li > a");
       ProductBuilder builder = ProductBuilder.create().setUrl(session.getOriginalURL());
       Product product = ProductBuilder.create()
          .setUrl(session.getOriginalURL())
          .setInternalId(productInternalId)
          .setInternalPid(productInternalPid)
          .setName(productName)
+         .setCategories(categories)
          .setPrimaryImage(productPrimaryImage)
          .setSecondaryImages(productSecondaryImages)
          .setDescription(productDescription)
