@@ -50,7 +50,7 @@ public class ChilePreunicCrawler extends Crawler {
             if (valueKey instanceof JSONObject) {
                JSONObject variation = (JSONObject) valueKey;
                String name = scrapNameWithBrand(variation, jsonScript);
-               String primaryImage = variation.optString("pictureUrl");
+               String primaryImage = crawlPrimaryImage(variation);
                List<String> secondaryImages = crawlSecondaryImages(variation, doc);
                boolean available = variation.optBoolean("isAvailable");
                Offers offers = available ? scrapOffers(variation) : new Offers();
@@ -75,6 +75,15 @@ public class ChilePreunicCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String crawlPrimaryImage(JSONObject variation) {
+      String primaryImage = variation.optString("pictureUrl");
+      if (primaryImage != null && !primaryImage.isEmpty()) {
+        primaryImage = primaryImage.replace("product/", "large/");
+      }
+
+      return primaryImage;
    }
 
    private JSONObject getJsonFromScript(Document doc) {

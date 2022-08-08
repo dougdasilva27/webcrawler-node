@@ -4,7 +4,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gson.JsonObject;
 import org.bson.Document;
 import org.json.JSONObject;
 
@@ -26,7 +25,7 @@ public class RankingProduct {
    protected String keyword;
    protected Timestamp timestamp;
 
-   protected List<Long> processedIds = new ArrayList<>();
+   protected List<Long> processedIds = new ArrayList<>(); //todo remove this field
    protected String screenshot;
 
 
@@ -38,7 +37,7 @@ public class RankingProduct {
          .append("processed_ids", this.processedIds);
    }
 
-   public String getInteranlPid() {
+   public String getInternalPid() {
       return internalPid;
    }
 

@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -18,6 +19,18 @@ public class MexicoHebCrawler extends CrawlerRankingKeywords {
    }
 
    private String categoryUrl;
+
+   private String getStore() {
+      return this.session.getOptions().optString("store");
+   }
+
+   @Override
+   protected void processBeforeFetch() {
+      BasicClientCookie cookie = new BasicClientCookie("store", getStore());
+      cookie.setDomain("www.heb.com.mx");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+   }
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {

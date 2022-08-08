@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
    protected Integer PRODUCTS_PER_PAGE = 24;
-   private static final String HOME_PAGE = "https://www.palaciodasferramentas.com.br";
+   private static final String HOME_PAGE = "https://palaciodasferramentas.com.br";
 
    public BrasilPalacioDasFerramentas(Session session) {
       super(session);
@@ -32,13 +32,12 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
 
-      String url = HOME_PAGE + "/load/buscar?q=" + this.keywordEncoded +
-         "&page=" + this.currentPage + "&inverter=true";
+      String url = HOME_PAGE + "/catalogsearch/result/index/?" + "p=" + this.currentPage + "&q=" + this.keywordEncoded;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select("body li");
+      Elements products = this.currentDoc.select(".filterproducts.products.list.items.product-items li.item.product.product-item");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -46,17 +45,16 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String productUrlPath = scrapUrl(e);
-            String productUrl = productUrlPath != null ? HOME_PAGE + productUrlPath : null;
-            String internalPid = CrawlerUtils.scrapIntegerFromHtml(e, "span .text", true, 0).toString();
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, "a h1", false);
+            String productUrl = CrawlerUtils.scrapUrl(e, ".product.photo.product-item-photo a", "href", "", "");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".price-box.price-final_price", "data-product-id");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-link", false);
             String imgUrl = scrapImgUrl(e);
             Integer price = scrapPrice(e);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalPid(internalPid)
+               .setInternalId(internalId)
                .setName(name)
                .setImageUrl(imgUrl)
                .setPriceInCents(price)
@@ -81,26 +79,12 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
    }
 
    private String scrapImgUrl(Element e) {
-      String img = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "img", "data-src");
-
-      if (img != null) {
-         img = HOME_PAGE + img.replaceAll("\\s+", "%20");
-      }
-      return img;
+      return CrawlerUtils.scrapUrl(e, ".product.photo.product-item-photo a img", "data-src", "", "");
    }
 
-   private String scrapUrl(Element e) {
-      String urlPath = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a:nth-child(2n)", "href");
-
-      if (urlPath == null || urlPath.contains("sub-departamento")) {
-         urlPath = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a:nth-child(3n)", "href");
-      }
-
-      return urlPath;
-   }
 
    private Integer scrapPrice(Element e) {
-      String priceDescription = CrawlerUtils.scrapStringSimpleInfo(e, "h2", false);
+      String priceDescription = CrawlerUtils.scrapStringSimpleInfo(e, "span .price", false);
       Integer price;
 
       if (priceDescription != null && !priceDescription.isEmpty()) {

@@ -39,7 +39,8 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
       val products: MutableList<Product> = ArrayList()
       if (doc.selectFirst(".product-basic-info") != null) {
          val internalPid = doc.selectFirst(".product-cod").text().split(" ")[1]
-         val productName = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-title", false)
+         val productBrand = CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-brand", true);
+         val productName = productBrand + " - " + CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-title", false);
 
          val images = scrapImages(internalPid)
          val primaryImage = images.removeFirstOrNull()
@@ -57,7 +58,6 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
             val offers = if (isAvailable) scrapOffers(doc, variant) else Offers()
             val ratings = crawlRatingReviews(internalPid)
 
-            // Creating the product
             val product: Product = ProductBuilder.create()
                .setUrl(session.originalURL)
                .setInternalId(internalId)
@@ -156,8 +156,8 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
       val spotlightPrice = doc.selectFirst("div.main div.price")?.toDoubleDot()!!
       var priceFrom: Double? = null
 
-      if (doc.selectFirst("div.m2") != null) {
-         priceFrom = doc.selectFirst("div.m2 div.price")?.toDoubleDot()!!
+      if (doc.selectFirst("div.secondary") != null) {
+         priceFrom = doc.selectFirst("div.secondary .price")?.toDoubleDot()!!
       }
 
       val bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null)

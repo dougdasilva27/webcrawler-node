@@ -75,8 +75,8 @@ public class LocalDiscovery {
                            System.out.println(RED_COLOR + "MISMATCHING internalId: Ranking > " + productRanking.getInternalId() + " - Core > " + product.getInternalId());
                            mismatchingId++;
                         }
-                        if(productRanking.getInteranlPid() != null && !productRanking.getInteranlPid().equals(product.getInternalPid())) {
-                           System.out.println(RED_COLOR + "MISMATCHING internalPid: Ranking > " + productRanking.getInteranlPid() + " - Core > " + product.getInternalPid());
+                        if(productRanking.getInternalPid() != null && !productRanking.getInternalPid().equals(product.getInternalPid())) {
+                           System.out.println(RED_COLOR + "MISMATCHING internalPid: Ranking > " + productRanking.getInternalPid() + " - Core > " + product.getInternalPid());
                            mismatchingPid++;
                         }
                      }

@@ -70,13 +70,16 @@ public class FalabellaCrawler extends Crawler {
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String sellerFullName = scrapSellerFullName(doc);
+         String sellerFullName = scrapSellerFullName(doc, session.getOriginalURL());
          boolean isMainSeller = sellerFullName.equalsIgnoreCase(SELLER_FULL_NAME);
 
          if (isMainSeller || allow3pSeller) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-id]", "data-id");
+            if(internalId == null){
+               internalId = getReviewId(session.getOriginalURL());
+            }
             String internalPid = internalId;
-            String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div[data-name]", true);
+            String name = crawlBrandName(doc);
             boolean available = doc.select(".availability span").size() > 1;
             Offers offers = available ? scrapOffers(doc, sellerFullName, isMainSeller) : null;
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb");
@@ -109,6 +112,16 @@ public class FalabellaCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String crawlBrandName(Document doc) {
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div[data-name]", true);
+      String brand = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-brand]", "data-brand");
+      if (brand != null || brand.isEmpty()) {
+         name = name + " - " + brand;
+         return name;
+      }
+      return name;
    }
 
    private RatingsReviews scrapRatingsReviews(String internalId, String url) {
@@ -164,21 +177,23 @@ public class FalabellaCrawler extends Crawler {
       if (imageScript != null) {
          JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
          JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "props.pageProps.productData.variants.0.medias", JSONArray.class);
-         if (imageArray.length() == 0){
-            imageArray = JSONUtils.getValueRecursive(imageToJson, "props.pageProps.productData.medias", JSONArray.class);
+         if(imageArray != null) {
+            if (imageArray.length() == 0) {
+               imageArray = JSONUtils.getValueRecursive(imageToJson, "props.pageProps.productData.medias", JSONArray.class);
+            }
+            List<String> images = new ArrayList<>();
+            for (int i = 0; i < imageArray.length(); i++) {
+               String imageList = JSONUtils.getValueRecursive(imageArray, i + ".url", String.class);
+               images.add(imageList);
+            }
+            return images;
          }
-         List<String> images = new ArrayList<>();
-         for (int i = 0; i < imageArray.length(); i++) {
-            String imageList = JSONUtils.getValueRecursive(imageArray, i + ".url", String.class);
-            images.add(imageList);
-         }
-         return images;
       }
       return null;
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("div[data-id]") != null;
+      return doc.selectFirst(".productContainer") != null;
    }
 
    private Offers scrapOffers(Document doc, String sellerFullName, Boolean isMainSeller ) throws OfferException, MalformedPricingException {
@@ -197,8 +212,19 @@ public class FalabellaCrawler extends Crawler {
       return offers;
    }
 
-   private String scrapSellerFullName(Document doc) {
-      return CrawlerUtils.scrapStringSimpleInfo(doc, ".sellerInfoContainer .underline", true);
+   private String scrapSellerFullName(Document doc, String url) {
+      String sellerName = CrawlerUtils.scrapStringSimpleInfo(doc, ".sellerInfoContainer .underline", true);
+      if (sellerName == null || sellerName.isEmpty()) {
+         String regex = "/([a-z]*)-cl";
+         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+         Matcher matcher = pattern.matcher(url);
+         if (matcher.find()) {
+            sellerName = matcher.group(1);
+            return sellerName;
+         }
+         return "";
+      }
+      return sellerName;
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {

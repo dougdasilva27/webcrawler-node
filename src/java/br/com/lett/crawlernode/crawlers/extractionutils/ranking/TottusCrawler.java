@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -11,11 +14,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 
 public class TottusCrawler extends CrawlerRankingKeywords {
 
    protected String homePage;
+   private String urlWithCode;
 
    public TottusCrawler(Session session) {
       super(session);
@@ -24,21 +29,21 @@ public class TottusCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      this.pageSize = 15;
+      this.pageSize = 48;
       this.log("Página " + this.currentPage);
 
+      if (urlWithCode == null) {
+         urlWithCode = getUrl();
+      }
 
-      String url = "https://" + homePage + "/buscar?q=" + this.keywordWithoutAccents.replace(" ", "%20") + "&page=" + this.currentPage;
+      String url = urlWithCode + "&page=" + this.currentPage;
 
       this.currentDoc = fetchDocument(url);
 
-      JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "#__NEXT_DATA__", null, null, true, false);
-      JSONObject props = jsonInfo.optJSONObject("props");
-      JSONObject pageProps = props.optJSONObject("pageProps");
-      JSONObject products = pageProps.optJSONObject("products");
-      JSONArray results = products.optJSONArray("results");
+      JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "#__NEXT_DATA__", null, null, false, false);
+      JSONArray results = JSONUtils.getValueRecursive(jsonInfo, "props.pageProps.products.results", JSONArray.class);
 
-      if (!results.isEmpty()) {
+      if (results != null && !results.isEmpty()) {
          if (this.totalProducts == 0) {
             setTotalProducts();
          }
@@ -74,6 +79,32 @@ public class TottusCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   private JSONObject fetchJsonFromApi(String url) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
+         .build();
+
+      Response response = this.dataFetcher.get(session, request);
+      return CrawlerUtils.stringToJson(response.getBody());
+
+
+   }
+
+   private String getUrl() {
+
+      String url = "https://www.tottus.com.pe/api/product-search?q=" + keywordEncoded + "&perPage=48&channel=912_RegularDelivery12&categoryId=";
+      JSONObject json = fetchJsonFromApi(url);
+      if (json != null && json.has("redirect")) {
+         urlWithCode = json.optString("redirect");
+      } else {
+         urlWithCode = "https://www.tottus.com.pe/buscar?q=" + this.keywordEncoded.replace(" ", "%20");
+      }
+
+      return urlWithCode;
+
+   }
+
    private String scrapName(JSONObject prod) {
       String name = prod.optString("name");
       String marca = JSONUtils.getValueRecursive(prod, "attributes.marca", String.class);
@@ -102,7 +133,7 @@ public class TottusCrawler extends CrawlerRankingKeywords {
       Double priceDouble = JSONUtils.getValueRecursive(prod, "prices.cmrPrice", Double.class, 0.0);
       if (priceDouble == 0.0) {
          priceDouble = JSONUtils.getValueRecursive(prod, "prices.currentPrice", Double.class, 0.0);
-         if(priceDouble == 0.0) {
+         if (priceDouble == 0.0) {
             return JSONUtils.getValueRecursive(prod, "prices.currentPrice", Integer.class, 0);
          }
       }
@@ -118,7 +149,7 @@ public class TottusCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".searchQuery span", true, 0);
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".Facets .facet-total-products", true, 0);
       this.log("Total da busca: " + this.totalProducts);
    }
 

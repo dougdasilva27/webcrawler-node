@@ -314,6 +314,17 @@
             <artifactId>java-dotenv</artifactId>
             <version>5.2.2</version>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk</artifactId>
+            <version>1.11.16</version>
+        </dependency>
+        <dependency>
+            <groupId>com.dremio.distribution</groupId>
+            <artifactId>dremio-jdbc-driver</artifactId>
+            <version>3.0.6-201812082352540436-1f684f9</version>
+        </dependency>
+
 
     </dependencies>
 
@@ -322,6 +333,12 @@
             <id>lett-maven</id>
             <url>s3://lett-maven</url>
         </repository>
+
+        <repository>
+            <id>dremio-free</id>
+            <url>https://maven.dremio.com/free/</url>
+        </repository>
+
     </repositories>
 
 </project>

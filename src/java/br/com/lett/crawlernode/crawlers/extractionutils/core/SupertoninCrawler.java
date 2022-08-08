@@ -1,15 +1,13 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -18,11 +16,12 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SupertoninCrawler extends Crawler {
 
@@ -30,37 +29,45 @@ public class SupertoninCrawler extends Crawler {
 
    public SupertoninCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.JSOUP);
+      super.config.setParser(Parser.JSON);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
-   public Object fetch() {
-      //https://www.supertonin.com.br/produto/10950/achocolatado-nestle-700-g-sache-classic#
-      String productId = "";
-      String[] spplittedUrl = session.getOriginalURL().split("/");
-
-      if (spplittedUrl.length > 0) {
-         productId = spplittedUrl[4];
-      }
-
-      String url = " https://www.supertonin.com.br/api/produto?id=" + productId;
+   protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
       headers.put("Cookie", "ls.uid_armazem=" + id_armazem);
       headers.put("Accept", "application/json, text/plain, */*");
       headers.put("Accept-Encoding", "gzip, deflate, br");
-      headers.put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36");
 
-      BasicClientCookie cookie = new BasicClientCookie("ls.uid_armazem", id_armazem);
-      cookie.setDomain("www.supertonin.com.br");
-      cookie.setPath("/");
+      String apiId = getApiId();
+      String urlAPI = " https://www.supertonin.com.br/api/produto?id=" + apiId;
 
       Request request = Request.RequestBuilder.create()
-         .setUrl(url)
+         .setUrl(urlAPI)
          .setHeaders(headers)
-         .setCookies(Collections.singletonList(cookie))
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
          .build();
+      Response response = this.dataFetcher.get(session, request);
 
-      return JSONUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      return response;
+   }
+
+   private String getApiId() {
+      String regex = "produto\\/([0-9]*)\\/";
+      String url = session.getOriginalURL();
+
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(url);
+
+      if (matcher.find()) {
+         return matcher.group(1);
+      }
+      return "";
    }
 
    @Override

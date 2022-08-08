@@ -1,17 +1,21 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -19,6 +23,7 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -31,7 +36,7 @@ import java.util.regex.Pattern;
 public class SaopauloDrogaraiaCrawler extends Crawler {
 
 
-   private static final String SELLER_NAME_LOWER = "Droga Raia";
+   private static final String SELLER_FULL_NAME = "drogaraia";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -40,44 +45,50 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
    }
 
    @Override
-   public boolean shouldVisit() {
-      String href = this.session.getOriginalURL().toLowerCase();
-      String HOME_PAGE = "http://www.drogaraia.com.br/";
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-   }
-
-   @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (doc.selectFirst(".product-view") != null) {
-         Logging.printLogDebug(
-            logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Elements scriptHTML = doc.select("script[type=\"application/ld+json\"]");
+      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, " ", false, false);
+      JSONObject data = JSONUtils.getValueRecursive(json, "props.pageProps.pageData.productData.productBySku", JSONObject.class);
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "tbody .data", true);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".page-header-container .header-minicart .novarnish", "data-productid");
-         String name = getName(doc);
-         List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li:not(.home):not(.product) a");
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-description"));
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img", Arrays.asList("data-zoom-image"), "https://", "www.drogaraia.com.br/");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image-gallery img", Arrays.asList("data-zoom-image"), "https://", "www.drogaraia.com.br/", primaryImage);
-         String ean = scrapEan(doc);
-         RatingsReviews ratingReviews = crawRating(doc, internalId);
-         boolean available = doc.selectFirst(".product-shop.boxPBM .add-to-cart") != null;
-         Offers offers = available ? scrapOffers(doc) : new Offers();
+      if (!scriptHTML.isEmpty()) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
+         JSONObject scriptJson = CrawlerUtils.stringToJson(scriptHTML.html());
+
+         String internalId = JSONUtils.getStringValue(scriptJson, "sku");
+         String internalPid = internalId;
+         String name = JSONUtils.getStringValue(scriptJson, "name");
+         String completeName = getName(doc, name);
+
+         String ean = JSONUtils.getStringValue(scriptJson, "gtin13");
          List<String> eans = new ArrayList<>();
          eans.add(ean);
+
+         RatingsReviews ratingReviews = crawRating(internalId);
+         List<String> categories = CrawlerUtils.crawlCategories(doc, "main ul > li > a");
+
+         List<String> images = scrapListImages(data);
+         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+
+         String description = scrapDescription(data);
+
+
+         boolean available = getAvailability(internalId);
+
+         Offers offers = available ? scrapOffers(data, doc) : new Offers();
+
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalPid)
-            .setName(name)
+            .setName(completeName)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
+            .setSecondaryImages(images)
             .setDescription(description)
             .setRatingReviews(ratingReviews)
             .setOffers(offers)
@@ -91,6 +102,62 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private boolean getAvailability(String internalId) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("content-type", "application/json");
+
+      String payload = "{\"operationName\":\"liveStock\",\"variables\":{\"skuList\":\""+internalId+"\"},\"query\":\"query liveStock($skuList: [String!]!) {\\n  liveStock(input: {skuList: $skuList}) {\\n    sku\\n    qty\\n    dt\\n    __typename\\n  }\\n}\\n\"}";
+
+      Request request = RequestBuilder.create()
+         .setUrl("https://bff.drogaraia.com.br/graphql")
+         .setPayload(payload)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+
+      JSONObject stockJson = JSONUtils.stringToJson(response.getBody());
+      Integer stock = JSONUtils.getValueRecursive(stockJson, "data.liveStock.0.qty", Integer.class);
+      if(stock > 0){
+         return true;
+      }
+      else {
+         return false;
+      }
+   }
+
+   private List<String> scrapListImages(JSONObject data) {
+      List<String> images = new ArrayList<>();
+      JSONArray imagesJson = JSONUtils.getValueRecursive(data, "media_gallery_entries", JSONArray.class);
+      if (imagesJson != null) {
+         for (int i = 0; i < imagesJson.length(); i++) {
+            String imageFile = JSONUtils.getValueRecursive(imagesJson, i+".file", String.class);
+            String image = "https://img.drogaraia.com.br/catalog/product/" + imageFile;
+            images.add(image);
+         }
+      }
+      return images;
+   }
+
+   private String scrapDescription(JSONObject json) {
+      JSONArray descriptionArray = json.optJSONArray("custom_attributes");
+
+      if (descriptionArray != null) {
+         for (Object attribute : descriptionArray) {
+            if (JSONUtils.getValueRecursive(attribute, "attribute_code", String.class).equals("description")) {
+               return JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
+            }
+         }
+      }
+
+      return null;
    }
 
 
@@ -110,13 +177,12 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
     https://www.drogaraia.com.br/pampers-premium-care-tamanho-grande-com-68-tiras.html, in this case, the crawler checks whether the quantity is listed in the name;
     https://www.drogaraia.com.br/pantene-ampola-de-tratamento-gold-com-3-unidades-15-ml-cada.html, in this case, the crawler splits the "-" and checks whether the first part repeats in the name;
-    https://www.drogaraia.com.br/always-absorvente-externo-active-com-abas-leve-32-com-preco-especial.html, in this case the crawler the crawler adds the entire subtitle to the name
+    https://www.drogaraia.com.br/always-absorvente-externo-active-com-abas-leve-32-com-preco-especial.html, in this case the crawler adds the entire subtitle to the name
      */
 
-   private String getName(Document doc) {
+   private String getName(Document doc, String name) {
 
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1 span", false);
-      String quantity = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-attributes .quantidade.show-hover", true);
+      String quantity = CrawlerUtils.scrapStringSimpleInfo(doc, ".quantity", true);
       if (name != null && quantity != null) {
 
          if (quantity.contains("-")) {
@@ -152,30 +218,20 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return name;
    }
 
-   private String scrapEan(Element e) {
-      String ean = null;
-      Elements trElements = e.select(".farmaBox .data-table tr");
+   private List<String> scrapSales(Pricing pricing, JSONObject data) {
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
-      if (trElements != null && !trElements.isEmpty()) {
-         for (Element tr : trElements) {
-            if (tr.text().contains("EAN")) {
-               Element td = tr.selectFirst("td");
-               ean = td != null ? td.text().trim() : null;
-            }
+      Object salesQuantity = data.optQuery("/price_aux/lmpm_qty");
+      Object salesPrice = data.optQuery("/price_aux/lmpm_value_to");
+
+      if (salesQuantity instanceof Integer && salesPrice != null) {
+         int quantity = (int) salesQuantity;
+         Double price = CommonMethods.objectToDouble(salesPrice);
+         if (quantity > 1 && price != null) {
+            sales.add("Leve " + quantity + " unidades por R$ " + price + " cada");
          }
       }
-
-      return ean;
-   }
-
-   private List<String> scrapSales(Pricing pricing, Document doc) {
-      List<String> sales = new ArrayList<>();
-      String sale = CrawlerUtils.calculateSales(pricing);
-      if (sale != null) {
-         sales.add(sale);
-      }
-
-      sales.add(scrapPromotion(doc));
 
       return sales;
    }
@@ -192,21 +248,29 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
       return stringBuilder.toString();
    }
+   private String isMainSeller(Document doc) {
+      String isMarketPlace = CrawlerUtils.scrapStringSimpleInfo(doc, "div[class*='SoldAndDelivered'] a", true);
 
-   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      if (isMarketPlace != null && !isMarketPlace.isEmpty()) {
+         return isMarketPlace;
+      }
+
+      return SELLER_FULL_NAME;
+   }
+
+   private Offers scrapOffers(JSONObject data, Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
-      List<String> sales = scrapSales(pricing, doc);
+      Pricing pricing = scrapPricing(data);
+      List<String> sales = scrapSales(pricing, data);
 
-      String sellerName = CrawlerUtils.scrapStringSimpleInfo(doc, ".sold-and-delivered a", false);
-      boolean isMainSeller = sellerName != null && sellerName.equals(SELLER_NAME_LOWER);
+      String mainSeller = isMainSeller(doc);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(sellerName)
+         .setSellerFullName(mainSeller)
          .setMainPagePosition(1)
          .setIsBuybox(false)
-         .setIsMainRetailer(isMainSeller)
+         .setIsMainRetailer(mainSeller.equals(SELLER_FULL_NAME))
          .setPricing(pricing)
          .setSales(sales)
          .build());
@@ -215,9 +279,15 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .old-price .price", null, false, ',', session);
-      Double spotlightPrice = getPrice(doc);
+   private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
+      Object spotlightPriceObject = data.optQuery("/price_aux/value_to");
+      Object priceFromObject = data.optQuery("/price_aux/value_from");
+
+      Double spotlightPrice = CommonMethods.objectToDouble(spotlightPriceObject);
+      Double priceFrom = CommonMethods.objectToDouble(priceFromObject);
+
+      if (Objects.equals(priceFrom, spotlightPrice)) priceFrom = null;
+
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
@@ -240,7 +310,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return spotlightPrice;
    }
 
-
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
@@ -261,9 +330,10 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return creditCards;
    }
 
-   private RatingsReviews crawRating(Document doc, String internalId) {
+   private RatingsReviews crawRating(String internalId) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "71450", logger);
-      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
+
+      return trustVox.extractV2RatingAndReviews(internalId, this.dataFetcher);
    }
 
 }

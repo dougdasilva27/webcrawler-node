@@ -1,21 +1,24 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SupertoninCrawler extends CrawlerRankingKeywords {
@@ -44,21 +47,24 @@ public class SupertoninCrawler extends CrawlerRankingKeywords {
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Cookie", "ls.uid_armazem=" + id_armazem);
-      headers.put("Content-Type", "application/json");
       headers.put("Accept", "application/json, text/plain, */*");
-
-      BasicClientCookie cookie = new BasicClientCookie("ls.uid_armazem", id_armazem);
-      cookie.setDomain("www.supertonin.com.br");
-      cookie.setPath("/");
+      headers.put("Content-Type", "application/json;charset=UTF-8");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload.toString())
-         .setCookies(Collections.singletonList(cookie))
-         .build();
+         .mustSendContentEncoding(false)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
 
-      JSONObject json = CrawlerUtils.stringToJson(new JsoupDataFetcher().post(session, request).getBody());
+         .build();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+      JSONObject json = CrawlerUtils.stringToJson(response.getBody());
 
       return json;
    }
@@ -70,7 +76,7 @@ public class SupertoninCrawler extends CrawlerRankingKeywords {
 
       JSONObject json = fetchProductsFromAPI();
 
-      if(this.currentPage == 1){
+      if (this.currentPage == 1) {
          setTotalProducts(json);
       }
 
@@ -113,7 +119,7 @@ public class SupertoninCrawler extends CrawlerRankingKeywords {
    protected void setTotalProducts(JSONObject search) {
       if (search != null && search.has("Avaliacoes")) {
          JSONArray ratings = search.optJSONArray("Avaliacoes");
-         this.totalProducts = ((JSONObject)ratings.opt(0)).optInt("int_qtd_produto");
+         this.totalProducts = ((JSONObject) ratings.opt(0)).optInt("int_qtd_produto");
          this.log("Total da busca: " + this.totalProducts);
       }
    }

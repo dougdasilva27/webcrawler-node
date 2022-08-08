@@ -74,8 +74,7 @@ public class BrasilJustoCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc,".product-details__name", false);
          boolean isAvailable = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
-         List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(JSONUtils.getValueRecursive(contextSchema, "image", "/", JSONArray.class, new JSONArray()), null, null, "https", "media.soujusto.com.br", session);
-         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image > img", List.of("data-src"), "https", "media.soujusto.com.br");
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__info-description-text", false);
          Offers offers = isAvailable ? crawlOffers(doc) : new Offers();
 
@@ -86,7 +85,7 @@ public class BrasilJustoCrawler extends Crawler {
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(images)
+            // this site currently has no secondary images
             .setDescription(description)
             .setOffers(offers)
             .setEans(eans)

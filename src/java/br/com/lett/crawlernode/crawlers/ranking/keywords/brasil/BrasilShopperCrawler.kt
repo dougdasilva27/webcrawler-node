@@ -22,6 +22,7 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
       headers["authorization"] = "Bearer $token"
       headers["accept"] = "application/json, text/plain, */*"
+      headers["x-store-id"] = "3"
 
       val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
 
