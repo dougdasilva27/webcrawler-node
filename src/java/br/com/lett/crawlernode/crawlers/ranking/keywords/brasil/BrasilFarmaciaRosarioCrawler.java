@@ -77,8 +77,13 @@ public class BrasilFarmaciaRosarioCrawler extends CrawlerRankingKeywords {
    @Override
    protected void setTotalProducts(){
       String totalProduct = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc,"#main-wrapper > div.content > div.container > div > div.col-12.col-lg-9.pl-lg-0 > div > div:nth-child(2)", false);
-      String [] arrProduct = totalProduct.split(" ");
-      this.totalProducts = Integer.parseInt(arrProduct[0]);
+      if(totalProduct != null){
+         String [] arrProduct = totalProduct.split(" ");
+         this.totalProducts = Integer.parseInt(arrProduct[0]);
+      }else{
+         this.totalProducts = 0;
+      }
+
       this.log("Total: " + this.totalProducts);
    }
 }

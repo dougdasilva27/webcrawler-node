@@ -46,9 +46,8 @@ public class BrasilFarmaciaRosarioCrawler extends Crawler {
       String productDescription = CrawlerUtils.scrapStringSimpleInfo(document, "#main-wrapper > div.content > div > div:nth-child(2)", false);
       String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, "#content-product > div > div > div > div.col-12.col-md-7.product-image > div > div > figure > img", Arrays.asList("data-src"), "https", "");
       List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(document, ".thumbs li img", Arrays.asList("data-src"), "https", "", productPrimaryImage);
-      Offers offers = isavailable(document) ? scrapOffers(document, productInternalId) : new Offers();
+      Offers offers = isaVailable(document) ? scrapOffers(document, productInternalId) : new Offers();
       List<String> categories =CrawlerUtils.crawlCategories(document, "#breadcrumb > ul > li > a");
-      ProductBuilder builder = ProductBuilder.create().setUrl(session.getOriginalURL());
       Product product = ProductBuilder.create()
          .setUrl(session.getOriginalURL())
          .setInternalId(productInternalId)
@@ -81,11 +80,11 @@ public class BrasilFarmaciaRosarioCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document document, String id) throws MalformedPricingException {
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(document, "#content-product > div > div > div > div.col-12.col-md-5 > div > form > div.mobile-fixed > div.row > div.col-6.col-sm-7 > div > div > p.sale-price > strong", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, "#content-product > div > div > div > div.col-12.col-md-5 > div > form > div.mobile-fixed > div.row > div.col-6.col-sm-7 > div > div > p.sale-price > strong", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, "#content-product > div > div > div > div.col-12.col-md-5 > div > form > div.mobile-fixed > div.row > div.col-6.col-sm-7 > div > div > p.unit-price.mr-md-2", null, false, ',', session);
-      CreditCards creditCards = CrawlerUtils.scrapCreditCards(price, cards);
+      CreditCards creditCards = CrawlerUtils.scrapCreditCards(spotlightPrice, cards);
       return Pricing.PricingBuilder.create()
-         .setSpotlightPrice(price)
+         .setSpotlightPrice(spotlightPrice)
          .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .build();
@@ -95,7 +94,7 @@ public class BrasilFarmaciaRosarioCrawler extends Crawler {
       return document.selectFirst("#content-product") != null;
    }
 
-   private boolean isavailable(Document document) {
+   private boolean isaVailable(Document document) {
       return document.selectFirst(".font-size-20.font-weight-bold.text-dark") == null;
    }
 }
