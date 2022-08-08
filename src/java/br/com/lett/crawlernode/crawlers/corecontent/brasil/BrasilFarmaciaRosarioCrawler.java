@@ -46,7 +46,7 @@ public class BrasilFarmaciaRosarioCrawler extends Crawler {
       String productDescription = CrawlerUtils.scrapStringSimpleInfo(document, "#main-wrapper > div.content > div > div:nth-child(2)", false);
       String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, "#content-product > div > div > div > div.col-12.col-md-7.product-image > div > div > figure > img", Arrays.asList("data-src"), "https", "");
       List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(document, ".thumbs li img", Arrays.asList("data-src"), "https", "", productPrimaryImage);
-      Offers offers = isaValiable(document) ? scrapOffers(document, productInternalId) : new Offers();
+      Offers offers = isValid(document) ? scrapOffers(document, productInternalId) : new Offers();
       List<String> categories =CrawlerUtils.crawlCategories(document, "#breadcrumb > ul > li > a");
       Product product = ProductBuilder.create()
          .setUrl(session.getOriginalURL())
@@ -94,7 +94,7 @@ public class BrasilFarmaciaRosarioCrawler extends Crawler {
       return document.selectFirst("#content-product") != null;
    }
 
-   private boolean isaValiable(Document document) {
+   private boolean isValid(Document document) {
       return document.selectFirst(".font-size-20.font-weight-bold.text-dark") == null;
    }
 }
