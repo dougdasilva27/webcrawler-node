@@ -588,13 +588,12 @@ public abstract class CrawlerRanking extends Task {
     */
    private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive, boolean isMiranha) {
       String queueName;
-      Logging.printLogInfo(logger, session, "Is miranha " + isMiranha + " messages to queue.");
 
       if (isMiranha) {
          if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
             queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString();
          } else {
-            queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString();
+            queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_PROD.toString();
          }
       } else {
          if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
