@@ -18,6 +18,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 
@@ -73,6 +74,20 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
 
       JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "#__NEXT_DATA__", null, null, false, false);
       JSONArray products = JSONUtils.getValueRecursive(pageJson, "props.pageProps.products", JSONArray.class, new JSONArray());
+
+      if (products.isEmpty()) {
+         JSONObject fallback = JSONUtils.getValueRecursive(pageJson, "props.pageProps.fallback", JSONObject.class, new JSONObject());
+         if (!fallback.isEmpty()) {
+            Iterator<String> keys = fallback.keys();
+            while(keys.hasNext()) {
+               String key = keys.next();
+               if (fallback.get(key) instanceof JSONObject) {
+                  products = JSONUtils.getValueRecursive(fallback.get(key), "products", JSONArray.class, new JSONArray());
+               }
+            }
+         }
+      }
+
 
       if (products.length() > 0) {
          for (int i = 0; i < products.length(); i++) {
