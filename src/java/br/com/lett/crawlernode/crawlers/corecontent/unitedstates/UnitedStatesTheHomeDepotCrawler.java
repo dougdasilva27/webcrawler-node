@@ -205,6 +205,17 @@ public class UnitedStatesTheHomeDepotCrawler extends Crawler {
          priceFrom = null;
       }
 
+      String unitOfMeasure = pricing.optString("unitOfMeasure");
+      if(unitOfMeasure != null && unitOfMeasure.equals("pallet(unit load)")){
+         Double spotlightPriceAux = JSONUtils.getValueRecursive(pricing, "alternate.unit.value", Double.class);
+         if(spotlightPriceAux != null){
+            spotlightPrice = spotlightPriceAux;
+         }
+         Double priceFromAux = JSONUtils.getValueRecursive(pricing, "alternate.unit.unitsOriginalPrice", Double.class);
+         if(priceFromAux != null){
+            priceFrom = priceFromAux;
+         }
+      }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
