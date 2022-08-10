@@ -10,9 +10,11 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import models.AdvancedRatingReview;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.cookie.Cookie;
+import org.apache.kafka.common.security.JaasUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -171,6 +173,25 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          String subtitle = CrawlerUtils.scrapStringSimpleInfo(e, ".title__TitleUI-sc-1eypgxa-1.cZeqMA", true);
          if (checkIsDescription(subtitle)) {
             description.append(e);
+         }
+      }
+      if(description.length() == 0){
+         String descriptionAux = JSONUtils.getValueRecursive(apolloJson, "ROOT_QUERY.description", String.class);
+         if(descriptionAux != null ){
+            description.append(descriptionAux);
+            description.append(" ");
+         }
+         JSONArray attributes = JSONUtils.getValueRecursive(apolloJson,"ROOT_QUERY.product:{\"productId\":\""+ internalPid +"\"}.attributes", JSONArray.class);
+         for(Object obj : attributes){
+            JSONObject attribute = (JSONObject) obj;
+            String attributeName = attribute.optString("name");
+            String attributeValue = attribute.getString("value");
+            if ( attributeName != null && attributeValue != null){
+               description.append(attributeName);
+               description.append(" ");
+               description.append(attributeValue);
+               description.append(" ");
+            }
          }
       }
 
