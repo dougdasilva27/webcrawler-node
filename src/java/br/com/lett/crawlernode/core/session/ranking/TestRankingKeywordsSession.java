@@ -50,8 +50,8 @@ public class TestRankingKeywordsSession extends TestRankingSession {
    }
 
    private JSONObject getSessionOptions(ScraperInformation scraperInformation) {
-      JSONObject options = JSONUtils.stringToJson(scraperInformation.getOptionsScraper());
-      JSONObject optionsScraperClass = JSONUtils.stringToJson(scraperInformation.getOptionsScraperClass());
+      JSONObject options = scraperInformation.getOptionsScraper();
+      JSONObject optionsScraperClass = scraperInformation.getOptionsScraperClass();
 
       if (optionsScraperClass != null && !optionsScraperClass.isEmpty()) {
          options.put("scraperClass", optionsScraperClass);

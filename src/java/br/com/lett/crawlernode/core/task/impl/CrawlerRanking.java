@@ -565,7 +565,7 @@ public abstract class CrawlerRanking extends Task {
             counter++;
 
             if (entries.size() > 9 || this.messages.size() == counter) {
-               populateMessagesInToQueue(entries, scraperInformation.isUseBrowser());
+               populateMessagesInToQueue(entries, scraperInformation.isUseBrowser(), scraperInformation.isMiranha());
                entries.clear();
 
                JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
@@ -586,20 +586,24 @@ public abstract class CrawlerRanking extends Task {
     * @param entries    entries
     * @param isWebDrive is true if use web drive
     */
-   private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive) {
+   private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive, boolean isMiranha) {
       String queueName;
 
-
-      if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
-         queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
+      if (isMiranha) {
+         if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
+            queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString();
+         } else {
+            queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_PROD.toString();
+         }
       } else {
-         if (session instanceof EqiRankingDiscoverKeywordsSession) {
+         if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
+          queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
+        } else if (session instanceof EqiRankingDiscoverKeywordsSession) {
             queueName = isWebDrive ? QueueName.WEB_SCRAPER_PRODUCT_EQI_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_PRODUCT_EQI.toString();
          } else {
             queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();
          }
       }
-
 
       SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
 
