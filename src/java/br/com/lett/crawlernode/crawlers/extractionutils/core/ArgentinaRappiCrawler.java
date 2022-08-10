@@ -89,7 +89,10 @@ public class ArgentinaRappiCrawler extends RappiCrawler {
          .setHeaders(headers)
          .setPayload(payload)
          .mustSendContentEncoding(false)
-         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+         .setProxyservice(List.of(
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.BUY_HAPROXY))
          .setTimeout(10000)
          .build();
 

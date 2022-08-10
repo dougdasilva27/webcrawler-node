@@ -96,7 +96,7 @@ public abstract class RappiCrawler extends Crawler {
          // trying to find the current store in the store listing on product page
          for (int i = 0; i < stores.length(); i++) {
             JSONObject store = stores.optJSONObject(i);
-            if (store != null && storeId.equals(store.optString("store_id"))) {
+            if (store != null && storeId != null && storeId.equals(store.optString("store_id"))) {
                productsInfo = store.optJSONObject("product");
                break;
             }
@@ -290,9 +290,10 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    public static Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
-      Double priceFrom = productJson.optDouble("real_price", 0D);
-      Double price = productJson.optDouble("balance_price", 0D);
-      if (price == 0D || price.equals(priceFrom)) {
+      Double priceFrom = productJson != null ? JSONUtils.getDoubleValueFromJSON(productJson, "real_price", true) : null;
+      Double price = productJson != null ? JSONUtils.getDoubleValueFromJSON(productJson, "balance_price", true) : null;
+
+      if (price == null || price.equals(priceFrom)) {
          price = priceFrom;
          priceFrom = null;
       }
