@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.unitedstates;
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -38,43 +39,11 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
 
    public UnitedstatesFlooranddecorCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.MIRANHA);
    }
 
    protected String getStoreId() {
       return session.getOptions().optString("StoreID");
-   }
-
-   @Override
-   protected Object fetch() {
-      Document doc = new Document(HOME_PAGE);
-      try {
-         int attempts = 0;
-         do {
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY, session, this.cookiesWD, HOME_PAGE);
-            webdriver.waitLoad(30000);
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-            webdriver.terminate();
-
-         } while (doc.select(".b-pdp_details").isEmpty() && attempts++ < 3);
-
-      } catch (Exception e) {
-         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-         webdriver.terminate();
-      }
-
-      return doc;
-   }
-
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      Cookie cookie = new Cookie.Builder("StoreID", storeId)
-         .domain("www.flooranddecor.com")
-         .path("/")
-         .isHttpOnly(true)
-         .isSecure(false)
-         .build();
-      this.cookiesWD.add(cookie);
    }
 
    @Override
@@ -161,8 +130,7 @@ public class UnitedstatesFlooranddecorCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
-      String priceStr = JSONUtils.getValueRecursive(json, "offers.price", String.class);
-      Double spotlightPrice = MathUtils.parseDoubleWithDot(priceStr);
+      Double spotlightPrice = JSONUtils.getValueRecursive(json, "offers.price", Double.class);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
