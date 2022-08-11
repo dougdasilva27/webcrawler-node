@@ -22,13 +22,11 @@ public class BrasilEpocacosmeticosCrawler extends VTEXOldNewImpl {
          name = productJson.optString("productName");
       }
 
-      if (name == null) {
-         if (jsonSku.has("nameComplete") && jsonSku.opt("nameComplete") != null) {
-            name = jsonSku.optString("nameComplete");
+      if (name == null || (jsonSku.has("nameComplete") && jsonSku.opt("nameComplete") != null)) {
+         name = jsonSku.optString("nameComplete");
 
-         } else if (jsonSku.has("name")) {
-            name = jsonSku.optString("name");
-         }
+      } else if (jsonSku.has("name")) {
+         name = jsonSku.optString("name");
       }
 
       if (name != null && !name.isEmpty() && productJson.has("brand")) {
@@ -43,7 +41,7 @@ public class BrasilEpocacosmeticosCrawler extends VTEXOldNewImpl {
 
    @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
-      return new TrustvoxRatingCrawler(session, "393", null).extractRatingAndReviews(internalId, doc, this.dataFetcher);
+      return new TrustvoxRatingCrawler(session, "393", logger).extractRatingAndReviews(internalId, doc, dataFetcher);
    }
 
 }
