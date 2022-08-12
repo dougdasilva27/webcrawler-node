@@ -33,6 +33,7 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
    public ChileLidersuperCrawler(Session session) {
       super(session);
    }
+
    private static final String HOME_PAGE = "https://www.lider.cl/supermercado/";
 
    private final List<String> proxies = Arrays.asList(
@@ -47,7 +48,7 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       Document doc = null;
       try {
          int attempts = 0;
-         List<String> proxies = List.of( ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY );
+         List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY);
 
          do {
             ChromeOptions chromeOptions = new ChromeOptions();
@@ -142,7 +143,7 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
             String internalId = product.optString("productNumber");
             Element e = this.currentDoc.selectFirst("." + internalId);
             String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-details a", "href"), "https:", "www.lider.cl");
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-description", true);
+            String name = scrapName(e);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".photo-container img", "src");
             int price = CommonMethods.doublePriceToIntegerPrice(CrawlerUtils.scrapDoublePriceFromHtml(e, ".price-sell b", null, true, ',', session), 0);
 
@@ -168,6 +169,15 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String scrapName(Element e) {
+      String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-description", true);
+      String brand = CrawlerUtils.scrapStringSimpleInfo(e, ".product-name", true);
+      if (brand != null) {
+         return name + " - " + brand;
+      }
+      return name;
    }
 
    protected boolean setAvailability(JSONObject jsonObject) {
