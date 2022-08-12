@@ -1,12 +1,16 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -15,6 +19,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.cookie.Cookie;
 import org.jsoup.nodes.Document;
 
 import java.util.*;
@@ -25,10 +30,66 @@ public class MexicoSorianaCrawler extends Crawler {
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
-
    public MexicoSorianaCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
+      super.config.setParser(Parser.HTML);
+   }
+
+   private Map<String, String> getHeaders() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Accept", "*/*");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Connection", "keep-alive");
+      headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("x-requested-with", "XMLHttpRequest");
+
+      return headers;
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      Response response;
+      String postalCode = session.getOptions().optString("postalCode");
+      if (postalCode.isEmpty()) {
+         Request request = Request.RequestBuilder.create().setUrl("https://www.soriana.com/").build();
+         response = this.dataFetcher.get(session, request);
+      } else {
+         Request request = Request.RequestBuilder.create()
+            .setUrl("https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Stores-UpdateStoreByPostalCode")
+            .setHeaders(getHeaders())
+            .setProxyservice(Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ))
+            .setPayload("dwfrm_storeUpdate_postalCode=" + postalCode + "&basketValidation=true&selectSubmitPc=true&methodid=homeDelivery")
+            .build();
+         response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+      }
+      this.cookies = response.getCookies();
+   }
+
+   @Override
+   protected Response fetchResponse() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Cookie", CommonMethods.cookiesToString(this.cookies));
+      headers.put("Accept", "*/*");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
+         .setHeaders(headers)
+         .build();
+
+      return new ApacheDataFetcher().get(session, request);
    }
 
    @Override

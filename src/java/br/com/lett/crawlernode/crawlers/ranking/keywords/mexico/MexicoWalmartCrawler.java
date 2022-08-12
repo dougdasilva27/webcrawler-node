@@ -1,124 +1,105 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MexicoWalmartCrawler extends CrawlerRankingKeywords {
 
-  public MexicoWalmartCrawler(Session session) {
-    super(session);
-  }
+   public MexicoWalmartCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  public void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 20;
+   @Override
+   public void extractProductsFromCurrentPage() throws MalformedProductException {
+      this.pageSize = 48;
 
-    this.log("Página " + this.currentPage);
-    String url = "https://www.walmart.com.mx/api/page/search/?Ntt=" + this.keywordEncoded + "&Nrpp=24&No=" + this.arrayProducts.size();
+      this.log("Página " + this.currentPage);
+      String url = "https://www.walmart.com.mx/api/v2/page/search?Ntt=" + this.keywordEncoded + "&page=" + (this.currentPage - 1) + "&size=" + this.pageSize;
 
-    this.log("Link onde são feitos os crawlers: " + url);
+      this.log("Link onde são feitos os crawlers: " + url);
 
-    JSONObject search = fetchJSONApi(url);
+      JSONObject search = fetchJSONApi(url);
 
-    if (search.has("records") && search.getJSONArray("records").length() > 0) {
-      JSONArray products = search.getJSONArray("records");
+      JSONArray results = JSONUtils.getJSONArrayValue(search, "content");
+      if (results != null && !results.isEmpty()) {
 
-      if (this.totalProducts == 0) {
-        setTotalProducts(search);
+         for (Object o : results) {
+            if (o instanceof JSONObject) {
+               JSONObject product = (JSONObject) o;
+               if (this.totalProducts == 0) {
+                  setTotalProducts(search);
+               }
+               String productUrl = CrawlerUtils.completeUrl(product.optString("productSeoUrl"), "https", "www.walmart.com.mx");
+               String internalId = product.optString("productId");
+               String name = product.optString("skuDisplayName");
+               String imageUrl = CrawlerUtils.completeUrl(JSONUtils.getValueRecursive(product, "imageUrls.large", String.class), "https", "www.walmart.com.mx");
+               Integer price = CommonMethods.doublePriceToIntegerPrice(JSONUtils.getDoubleValueFromJSON(product, "skuPrice", false), 0);
+               boolean isAvailable = price != 0;
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setImageUrl(imageUrl)
+                  .build();
+
+               saveDataProduct(productRanking);
+            }
+
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+
+         }
+
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
 
-      for (int i = 0; i < products.length(); i++) {
-        JSONObject product = products.getJSONObject(i);
 
-        if (product.has("attributes")) {
-          JSONObject attributes = product.getJSONObject("attributes");
-          String productUrl = crawlProductUrl(attributes);
-          String internalId = crawlInternalId(attributes);
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-          saveDataProduct(internalId, null, productUrl);
+   }
 
-        }
-
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
-        }
-      }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
-
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-
-  }
-
-  protected void setTotalProducts(JSONObject search) {
-    if (search.has("totalNumRecs")) {
-      this.totalProducts = search.getInt("totalNumRecs");
+   protected void setTotalProducts(JSONObject search) {
+      this.totalProducts = search.optInt("totalElements", 0);
       this.log("Total da busca: " + this.totalProducts);
-    }
-  }
+   }
 
-  private String crawlInternalId(JSONObject product) {
-    String internalId = null;
 
-    if (product.has("record.id")) {
-      JSONArray ids = product.getJSONArray("record.id");
+   private JSONObject fetchJSONApi(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("content-type", "application/json");
 
-      if (ids.length() > 0) {
-        internalId = ids.get(0).toString();
-      }
-    }
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
+         .build();
 
-    return internalId;
-  }
+      Response response = this.dataFetcher.get(session, request);
 
-  private String crawlProductUrl(JSONObject product) {
-    String productUrl = null;
-    if (product.has("productSeoUrl")) {
-      JSONArray urls = product.getJSONArray("productSeoUrl");
+      JSONObject json = CrawlerUtils.stringToJson(response.getBody());
 
-      if (urls.length() > 0) {
-        productUrl = "https://www.walmart.com.mx" + urls.get(0).toString().replace("[", "").replace("]", "");
-      }
-    }
+      return JSONUtils.getValueRecursive(json, "appendix.SearchResults", JSONObject.class);
 
-    return productUrl;
-  }
-
-  private JSONObject fetchJSONApi(String url) {
-    JSONObject api = new JSONObject();
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put("accept-encoding", "");
-    headers.put("accept-language", "");
-
-    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
-    JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
-
-    if (response.has("contents")) {
-      JSONArray contents = response.getJSONArray("contents");
-
-      if (contents.length() > 0) {
-        JSONObject content = contents.getJSONObject(0);
-
-        if (content.has("mainArea")) {
-          JSONArray mainArea = content.getJSONArray("mainArea");
-          if (mainArea.length() > 0) {
-            api = mainArea.getJSONObject(1);
-          }
-        }
-      }
-    }
-
-    return api;
-  }
+   }
 }

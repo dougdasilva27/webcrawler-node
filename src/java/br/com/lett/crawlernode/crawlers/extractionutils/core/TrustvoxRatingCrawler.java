@@ -4,6 +4,8 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.apache.http.HttpHeaders;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,6 +23,9 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
+
+import static br.com.lett.crawlernode.util.CrawlerUtils.getObjectByRegex;
+import static br.com.lett.crawlernode.util.CrawlerUtils.stringToJson;
 
 
 public class TrustvoxRatingCrawler {
@@ -84,6 +89,31 @@ public class TrustvoxRatingCrawler {
 
     return ratingReviews;
   }
+   public RatingsReviews extractV2RatingAndReviews(String id, DataFetcher dataFetcher) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      JSONObject trustVoxResponse = requestV2TrustVoxEndpoint(id, dataFetcher);
+
+      Integer totalNumOfEvaluations = trustVoxResponse.optInt("count", 0);
+      Double avgRating = getAverageRating(trustVoxResponse);
+
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setDate(session.getDate());
+
+      return ratingReviews;
+   }
+
+   public Double getAverageRating(JSONObject trustVoxResponse) {
+     Double average =  trustVoxResponse.optDouble("average", 0);
+     if (average == 0) {
+       Integer averageInt = trustVoxResponse.optInt("averageRating", 0);
+         if (averageInt != 0) {
+            average = averageInt.doubleValue();
+         }
+     }
+
+     return average;
+   }
 
   public Integer getTotalNumOfRatings(JSONObject trustVoxResponse) {
     String countKey = "count";
@@ -161,7 +191,42 @@ public class TrustvoxRatingCrawler {
     return trustVoxResponse;
   }
 
-  private JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces)
+   public JSONObject requestV2TrustVoxEndpoint(String id, DataFetcher dataFetcher) {
+      StringBuilder requestURL = new StringBuilder();
+
+      requestURL.append("https://trustvox.com.br/widget/shelf/v2/products_rates?codes[]=");
+      requestURL.append(id);
+
+      requestURL.append("&");
+      requestURL.append("store_id=" + this.storeId);
+
+      requestURL.append("&callback=_tsRatesReady");
+
+
+      Request request = RequestBuilder.create().setUrl(requestURL.toString()).build();
+      String response = dataFetcher.get(session, request).getBody();
+
+      JSONObject trustVoxResponse;
+      try {
+         trustVoxResponse = stringToJson(getObjectByRegex(response, "_tsRatesReady\\((.*)\\)"));
+
+         if (trustVoxResponse.has("products_rates")) {
+            return JSONUtils.getValueRecursive(trustVoxResponse, "products_rates.0", JSONObject.class);
+         }
+
+      } catch (JSONException e) {
+         Logging.printLogWarn(logger, session, "Error creating JSONObject from trustvox response.");
+         Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+
+         trustVoxResponse = new JSONObject();
+      }
+
+      return trustVoxResponse;
+   }
+
+
+
+   private JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces)
       throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
 
     if (doc == null)

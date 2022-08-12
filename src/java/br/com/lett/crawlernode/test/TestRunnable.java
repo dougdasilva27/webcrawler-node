@@ -18,7 +18,7 @@ public class TestRunnable implements Runnable {
    private TestRunnable() {
    }
 
-   public TestRunnable(Market market, List<String> parameters, TestType currentTest, Integer productsLimit) {
+   public TestRunnable(Market market, List<String> parameters,TestType currentTest, Integer productsLimit) {
       this.market = market;
       this.parameters = parameters;
       this.currentTest = currentTest;

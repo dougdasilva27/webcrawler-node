@@ -1,8 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
@@ -158,9 +160,17 @@ public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
    private JSONObject crawlSearchApi() {
       String url = "https://api.supermercadonow.com/search/v1/bulksearch?query=" + this.keywordWithoutAccents.replace(" ", "%20") + "&stores=" + loadUrl + "&size=" + this.pageSize + "&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.BUY_HAPROXY
+         ))
+         .setHeaders(headers)
+         .build();
 
-      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      return CrawlerUtils.stringToJson(CrawlerUtils.retryRequest(request, session, this.dataFetcher, true).getBody());
    }
 
    @Override

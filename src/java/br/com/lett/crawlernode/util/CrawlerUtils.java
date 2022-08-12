@@ -452,6 +452,21 @@ public class CrawlerUtils {
       return image;
    }
 
+   public static List<String> scrapSecondaryImagesFromElements(Elements elements, String cssSelector, List<String> attributes, String protocol, String host, String primaryImage) {
+      List<String> secondaryImages = new ArrayList<>();
+
+      Elements images = cssSelector != null? elements.select(cssSelector): elements;
+      for (Element e : images) {
+         String image = sanitizeUrl(e, attributes, protocol, host);
+
+         if ((primaryImage == null || !primaryImage.equals(image)) && image != null) {
+            secondaryImages.add(image);
+         }
+      }
+
+      return secondaryImages;
+   }
+
    /**
     * @param doc
     * @param cssSelector
@@ -2395,4 +2410,67 @@ public class CrawlerUtils {
       }
       return response;
    }
+
+   public static Response retryRequestWithListDataFetcher(Request request, List<DataFetcher> dataFetcherList, Session session, String method) {
+      Response response = null;
+      int attemps = 1;
+
+      boolean isGet = method.equals("get");
+
+      for (int n = 0; n < dataFetcherList.size(); n++) {
+
+         response = isGet ? dataFetcherList.get(n).get(session, request) : dataFetcherList.get(n).post(session, request);
+         if (response.isSuccess()) {
+            Logging.printLogDebug(LOGGER, session, "Request sucess after " + attemps + " attemps");
+            break;
+         }
+
+         attemps++;
+
+      }
+
+      if (!response.isSuccess()) {
+         Logging.printLogWarn(LOGGER, session, "Request failed " + attemps +  "times");
+      }
+
+
+      return response;
+   }
+
+   public static Response retryRequestWithListDataFetcher(Request request, List<DataFetcher> dataFetcherList, Session session) {
+     return retryRequestWithListDataFetcher(request, dataFetcherList, session, "get");
+   }
+
+   public static String retryRequestString(Request request, List<DataFetcher> dataFetcherList, Session session) {
+      Response response = retryRequestWithListDataFetcher(request, dataFetcherList, session);
+      if (response.isSuccess()) {
+         return response.getBody();
+      }
+
+      return "";
+
+   }
+
+   public static Document retryRequestDocument(Request request, List<DataFetcher> dataFetcherList, Session session) {
+      Document document = null;
+      Response response = retryRequestWithListDataFetcher(request, dataFetcherList, session);
+      if (response.isSuccess()) {
+         document = Jsoup.parse(response.getBody());
+      }
+
+      return document;
+
+   }
+
+   public static String getObjectByRegex(String script, String regex) {
+      String result = null;
+      Pattern pattern = Pattern.compile(regex);
+      Matcher matcher = pattern.matcher(script);
+      if (matcher.find()) {
+         result = matcher.group(1);
+      }
+      return result;
+   }
+
+
 }

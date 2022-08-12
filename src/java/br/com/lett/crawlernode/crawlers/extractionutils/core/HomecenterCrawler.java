@@ -164,15 +164,18 @@ public abstract class HomecenterCrawler extends Crawler {
 
    private RatingsReviews crawlRating(String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
+      Integer totalNumOfEvaluations = null;
+      Double avgRating = null;
 
       String urlApi = RATING_API_URL + "&PassKey=" + RATING_API_KEY + "&productid=" + "&stats=Reviews&filter=ProductId:" + internalId;
       Request request = Request.RequestBuilder.create().setUrl(urlApi).build();
       JSONObject reviewJson = CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
       JSONObject reviewStatistics = JSONUtils.getValueRecursive(reviewJson, "Results.0.ProductStatistics.ReviewStatistics", JSONObject.class);
 
-      Integer totalNumOfEvaluations = JSONUtils.getIntegerValueFromJSON(reviewStatistics, "TotalReviewCount", 0);
-
-      Double avgRating = JSONUtils.getDoubleValueFromJSON(reviewStatistics, "AverageOverallRating", true);
+      if(reviewStatistics != null) {
+         totalNumOfEvaluations = JSONUtils.getIntegerValueFromJSON(reviewStatistics, "TotalReviewCount", 0);
+         avgRating = JSONUtils.getDoubleValueFromJSON(reviewStatistics, "AverageOverallRating", true);
+      }
 
       ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);

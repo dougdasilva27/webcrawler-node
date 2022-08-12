@@ -18,6 +18,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -34,6 +35,8 @@ public class MexicoCoppelCrawler extends Crawler {
       super.config.setFetcher(FetchMode.APACHE);
    }
    private static final List<String> cards = Arrays.asList(Card.COPPEL.toString());
+   private final String COPPEL_CITY = this.session.getOptions().optString("COPPEL_CITY");
+   private final String COPPEL_STATE = this.session.getOptions().optString("COPPEL_STATE");
 
    @Override
    protected Document fetch() {
@@ -43,8 +46,19 @@ public class MexicoCoppelCrawler extends Crawler {
       headers.put("Accept-Encoding","gzip, deflate, br");
       headers.put("Connection","keep-alive");
 
+      BasicClientCookie cookie = new BasicClientCookie("COPPEL_CITY", COPPEL_CITY);
+      cookie.setDomain("www.coppel.com");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+
+      cookie = new BasicClientCookie("COPPEL_STATE", COPPEL_STATE);
+      cookie.setDomain("www.coppel.com");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
+         .setCookies(this.cookies)
          .setHeaders(headers)
          .setProxyservice(Collections.singletonList(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
          .setSendUserAgent(false)
@@ -143,12 +157,12 @@ public class MexicoCoppelCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".unique_price", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".unique_price", null, true, '.', session);
       if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[id^=\"offerPrice\"]", null, true, ',', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[id^=\"offerPrice\"]", null, true, '.', session);
       }
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old_price", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old_price", null, true, '.', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice, doc);
 
@@ -175,11 +189,11 @@ public class MexicoCoppelCrawler extends Crawler {
       
       double finalPrice = (!installmentList.get(0).isEmpty()) ? Double.parseDouble(installmentList.get(0)) : price;
 
-      double installmentPrice = (!installmentPriceList.get(0).isEmpty()) ? Double.parseDouble(installmentPriceList.get(0)) : price;
+      Double installmentPrice = (!installmentPriceList.get(0).isEmpty()) ? MathUtils.parseDoubleWithDot(installmentPriceList.get(0)) : price;
 
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(installmentNumber)
-         .setInstallmentPrice(installmentPrice)
+         .setInstallmentPrice(installmentPrice != null ? installmentPrice : price)
          .setFinalPrice(finalPrice)
          .build());
 

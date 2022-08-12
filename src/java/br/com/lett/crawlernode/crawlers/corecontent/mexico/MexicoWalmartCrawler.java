@@ -1,15 +1,18 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -44,8 +47,25 @@ public class MexicoWalmartCrawler extends Crawler {
       String internalId = crawlInternalId(session.getOriginalURL());
 
       String url = "https://www.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getProduct?id=" + internalId;
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      JSONObject apiJson = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("content-type", "application/json");
+      headers.put("authority", "www.walmart.com.mx");
+      headers.put("referer", session.getOriginalURL());
+
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create()
+            .setForbiddenCssSelector("#px-captcha")
+            .mustUseMovingAverage(false)
+            .mustRetrieveStatistics(true).build())
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
+
+      JSONObject apiJson = CrawlerUtils.stringToJson(response.getBody());
 
       if (apiJson.has("product")) {
 
@@ -167,19 +187,19 @@ public class MexicoWalmartCrawler extends Crawler {
    }
 
 
-   private  List<String> crawlSecondaryImages(JSONObject sku) {
+   private List<String> crawlSecondaryImages(JSONObject sku) {
       List<String> secondaryImages = new ArrayList<>();
       JSONArray secondaryImagesArray = sku.optJSONArray("secondaryImages");
 
       for (Object o : secondaryImagesArray) {
-         if (o instanceof  JSONObject){
+         if (o instanceof JSONObject) {
             JSONObject imageJson = (JSONObject) o;
             String img = imageJson.optString("large");
-            if (img != null){
+            if (img != null) {
                secondaryImages.add(CrawlerUtils.completeUrl(imageJson.optString("large"), "https", "res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/mg/"));
             }
 
-        }
+         }
       }
 
 

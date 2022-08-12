@@ -2,7 +2,10 @@ package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -11,6 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -19,7 +23,8 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
-import models.pricing.*;
+import models.pricing.CreditCards;
+import models.pricing.Pricing;
 import org.apache.commons.lang.WordUtils;
 import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
@@ -42,31 +47,39 @@ public class ChileCruzverdeCrawler extends Crawler {
 
    private final int STORE_ID = session.getOptions().optInt("store_id", 1121);
 
+   private Map<String, String> getHeaders() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      headers.put("origin", "https://cruzverde.cl");
+      headers.put("authority", "api.cruzverde.cl");
+      headers.put("referer", "https://cruzverde.cl/");
+      headers.put("accept", "application/json, text/plain, */*");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+
+      return headers;
+   }
+
+
    @Override
    public void handleCookiesBeforeFetch() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
-      headers.put("sec-fetch-mode", "cors");
-      headers.put("origin", "https://cruzverde.cl");
-      headers.put("sec-fetch-site", "same-origin");
-      headers.put("x-requested-with", "XMLHttpRequest");
-      headers.put("accept", "application/json, text/javascript, */*; q=0.01");
+      Map<String, String> headers = getHeaders();
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://api.cruzverde.cl/customer-service/login")
          .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_ES,
             ProxyCollection.NETNUT_RESIDENTIAL_BR
          ))
+         .setSendUserAgent(true)
+         .setHeaders(headers)
+         .setPayload("")
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(false).mustRetrieveStatistics(true).build())
          .build();
-      Response responseApi = this.dataFetcher.post(session, request);
 
-      int tries = 0;
-      while(!responseApi.isSuccess() && tries < 3) {
-         tries++;
-         responseApi = new JsoupDataFetcher().post(session, request);
-      }
+      Response responseApi = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+      ;
 
       this.cookies.addAll(responseApi.getCookies());
    }
@@ -76,19 +89,19 @@ public class ChileCruzverdeCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
       String internalId = getId();
-      JSONObject productList = getProductList(internalId);
+      JSONObject productData = getProductList(internalId);
 
-      if (productList != null && !productList.isEmpty()) {
+      if (productData != null && !productData.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
-         String brand = getBrand(productList);
-         String name = getName(productList);
-         CategoryCollection categories = getCategory(productList);
-         String primaryImage = getPrimaryImage(productList);
-         List<String> secondaryImage = getSecondaryImage(productList, primaryImage);
-         String description = getDescription(productList);
-         int stock = JSONUtils.getValueRecursive(productList, "productData.stock", Integer.class, 0);
+         String brand = getBrand(productData);
+         String name = getName(productData);
+         CategoryCollection categories = getCategory(productData);
+         String primaryImage = getPrimaryImage(productData);
+         List<String> secondaryImage = getSecondaryImage(productData, primaryImage);
+         String description = getDescription(productData);
+         int stock = JSONUtils.getValueRecursive(productData, "productData.stock", Integer.class, 0);
          boolean available = stock > 0;
-         Offers offers = available ? getOffer(productList) : new Offers();
+         Offers offers = available ? getOffer(productData) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -206,20 +219,17 @@ public class ChileCruzverdeCrawler extends Crawler {
    private JSONObject getProductList(String internalId) {
       JSONObject obj = null;
       String url = "https://api.cruzverde.cl/product-service/products/detail/" + internalId + "?inventoryId=" + STORE_ID;
+      Map<String, String> headers = getHeaders();
+      headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .mustSendContentEncoding(true)
-         .setCookies(this.cookies)
+         .setHeaders(headers)
          .build();
 
-      int tries = 0;
-      Response response = this.dataFetcher.get(session, request);
-
-      while(!response.isSuccess() && tries < 3) {
-         tries++;
-         response = this.dataFetcher.get(session, request);
-      }
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+      ;
 
       return CrawlerUtils.stringToJson(response.getBody());
    }

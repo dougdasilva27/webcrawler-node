@@ -5,10 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.Parser;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -25,6 +22,8 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
@@ -56,31 +55,28 @@ public class BrasilPeixotoCrawler extends Crawler {
          chromeOptions.addArguments("--no-sandbox");
          chromeOptions.addArguments("--disable-dev-shm-usage");
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/User/Login", proxy, session, this.cookiesWD, "https://www.peixoto.com.br", chromeOptions);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/customer/account/login/", proxy, session, this.cookiesWD, "https://www.peixoto.com.br", chromeOptions);
 
          webdriver.waitLoad(10000);
 
-         waitForElement(webdriver.driver, "#login_username");
-         WebElement username = webdriver.driver.findElement(By.cssSelector("#login_username"));
+         waitForElement(webdriver.driver, ".page-main #email");
+         WebElement username = webdriver.driver.findElement(By.cssSelector(".page-main #email"));
          username.sendKeys(session.getOptions().optString("user"));
 
          webdriver.waitLoad(2000);
-         waitForElement(webdriver.driver, "#login_password");
-         WebElement pass = webdriver.driver.findElement(By.cssSelector("#login_password"));
+         waitForElement(webdriver.driver, ".page-main #pass");
+         WebElement pass = webdriver.driver.findElement(By.cssSelector(".page-main #pass"));
          pass.sendKeys(session.getOptions().optString("pass"));
 
-         waitForElement(webdriver.driver, ".button.submit");
-         webdriver.findAndClick(".button.submit", 15000);
+         waitForElement(webdriver.driver, ".page-main button.login");
+         webdriver.findAndClick(".page-main button.login", 15000);
 
+         //chose catalão - GO
+         waitForElement(webdriver.driver, "#branch-select option[value='5']");
+         webdriver.findAndClick("#branch-select option[value='5']", 15000);
 
-         waitForElement(webdriver.driver, ".account-link.trocar-filial");
-         webdriver.findAndClick(".account-link.trocar-filial", 15000);
-
-         waitForElement(webdriver.driver, "#popup_content .table-scrollable .row0.first.gradeX.odd .modal-window.blue");
-         webdriver.findAndClick("#popup_content .table-scrollable .row0.first.gradeX.odd .modal-window.blue", 15000);
-
-         waitForElement(webdriver.driver, "#popup_content .table-scrollable .row0.first.gradeX.odd  .enviar.blue");
-         webdriver.findAndClick("#popup_content .table-scrollable .row0.first.gradeX.odd  .enviar.blue", 15000);
+         waitForElement(webdriver.driver, "button.b2b-choices");
+         webdriver.findAndClick("button.b2b-choices", 15000);
 
          Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
 
@@ -104,7 +100,10 @@ public class BrasilPeixotoCrawler extends Crawler {
    @Override
    protected Response fetchResponse() {
 
-      List<String> proxies = Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
+      List<String> proxies = Arrays.asList(
+         ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+         ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+         ProxyCollection.BUY_HAPROXY);
 
       int attemp = 0;
 
@@ -130,77 +129,83 @@ public class BrasilPeixotoCrawler extends Crawler {
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
-      JSONArray arr = new JSONArray();
       List<Product> products = new ArrayList<>();
-      String script = CrawlerUtils.scrapScriptFromHtml(doc, "head > script:nth-child(5n-1)");
-      if(script != null){
-         script = script.replaceAll("window.data_layer = true;", "");
-         script = script.replaceAll("dataLayer = ", "");
-         script = script.replaceAll("\r", "");
-         script = script.replaceAll("\n", "");
-         script = script.replaceAll("\t", "");
-         script = script.substring(1, script.length() - 2);
-         arr = JSONUtils.stringToJsonArray(script);
-      }
-      if (arr.length() > 0) {
-         JSONObject data = (JSONObject) arr.get(0);
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_code span", true);
-         Integer id = JSONUtils.getValueRecursive(data, "transactionProducts.0.id", Integer.class);
-         String internalPid = id != null ? id.toString() : null;
-         String name = JSONUtils.getValueRecursive(data, "transactionProducts.0.name", String.class);
-         String primaryImage = JSONUtils.getValueRecursive(data, "transactionProducts.0.fullImage", String.class);
-         primaryImage = primaryImage.replaceAll("peixoto//","peixoto/detalhe/");
-         String description = JSONUtils.getValueRecursive(data, "transactionProducts.0.description", String.class);
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".thumbnails .list a", Arrays.asList("data-src"), "https", "https://www.peixoto.com.br", primaryImage);
-         Boolean stock = JSONUtils.getValueRecursive(data, "transactionProducts.0.available", Boolean.class);
-         List<String> eans = Arrays.asList(JSONUtils.getValueRecursive(data, "transactionProducts.0.sku", String.class));
-         Offers offers = stock ? scrapOffers(data) : new Offers();
 
-         // Creating the product
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "div.value", true);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-final_price", "data-product-id");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=name]", true);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div.product.pricing"));
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.items a", false);
+         List<String> imagesList = getImageListFromScript(doc);
+         String primaryImage = imagesList != null ? imagesList.remove(0) : null;
+
+         boolean availableToBuy = doc.select("button[id=button-out]").isEmpty();
+         Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
+
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
-            .setOffers(offers)
+            .setCategories(categories)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
+            .setSecondaryImages(imagesList)
+            .setOffers(offers)
             .setDescription(description)
-            .setEans(eans)
+
             .build();
 
          products.add(product);
 
       } else {
-         Logging.printLogDebug(logger, session, "Not a product page:   " + this.session.getOriginalURL());
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
+
       return products;
    }
 
-   private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
+   private List<String> getImageListFromScript(Document doc) {
+      Element imageScript = doc.selectFirst("script:containsData(mage/gallery/gallery)");
+      if(imageScript != null) {
+         JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
+         JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class);
+         List<String> imagesList = new ArrayList<>();
+         for (int i = 0; i < imageArray.length(); i++) {
+            String imageList = JSONUtils.getValueRecursive(imageArray, i+".img", String.class);
+            imagesList.add(imageList);
+         }
+         return imagesList;
+      }
+      return null;
+   }
+
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst("div.product-main-content") != null;
+   }
+
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       List<String> sales = new ArrayList<>();
-
-      Pricing pricing = scrapPricing(data);
-      sales.add(CrawlerUtils.calculateSales(pricing));
+      Pricing pricing = scrapPricing(doc);
 
       offers.add(Offer.OfferBuilder.create()
+         .setSellerFullName("peixoto")
          .setMainPagePosition(1)
-         .setIsBuybox(false)
          .setPricing(pricing)
          .setSales(sales)
-         .setSellerFullName("peixoto")
-         .setIsMainRetailer(true)
          .setUseSlugNameAsInternalSellerId(true)
+         .setIsMainRetailer(true)
+         .setIsBuybox(false)
          .build());
 
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
-
-      Double spotlightPrice = JSONUtils.getValueRecursive(data, "transactionProducts.0.fullPrice", Double.class);
-
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-wrapper  .price", null, true, ',', session);
       Double priceFrom = spotlightPrice;
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);

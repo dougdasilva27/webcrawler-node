@@ -20,8 +20,12 @@ public class Request {
    private String internalId;
    private Long processedId;
    private String queueName;
+
    private boolean useBrowser;
 
+
+
+   private String fileS3Miranha;
    public Request() {
       super();
    }
@@ -32,6 +36,15 @@ public class Request {
 
    public void setMessageId(String messageId) {
       this.messageId = messageId;
+   }
+
+
+   public String getFileS3Miranha() {
+      return fileS3Miranha;
+   }
+
+   public void setFileS3Miranha(String fileS3Miranha) {
+      this.fileS3Miranha = fileS3Miranha;
    }
 
    public String getParameter() {
@@ -116,7 +129,7 @@ public class Request {
 
    @Override
    public String toString() {
-      return "Request[sessionId= " + sessionId + ", messageId=" + messageId + ", messageBody=" + parameter + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
+      return "Request[sessionId= " + sessionId + ", messageId=" + messageId + ", fileS3Miranha=" + fileS3Miranha + ",messageBody=" + parameter + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
             + ", internalId=" + internalId + ", processedId=" + processedId + ", marketId=" + market + ", queueName=" + queueName
             + ", supplierId=" + supplierId + ", useBrowser=" + useBrowser + "]";
    }

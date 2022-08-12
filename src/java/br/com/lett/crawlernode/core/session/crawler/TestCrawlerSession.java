@@ -32,7 +32,7 @@ public class TestCrawlerSession extends Session {
 
    private List<Product> products;
 
-   public TestCrawlerSession(String url, Market market, ScraperInformation scraperInformation) {
+   public TestCrawlerSession(String url, Market market, ScraperInformation scraperInformation, String fileMiranha) {
       super(market);
 
       // initialize counters
@@ -50,6 +50,7 @@ public class TestCrawlerSession extends Session {
       // setting URL and originalURL
       this.originalURL = url;
 
+      this.fileS3Miranha = fileMiranha;
 
       this.options = getSessionOptions(scraperInformation);
 
@@ -82,8 +83,8 @@ public class TestCrawlerSession extends Session {
    }
 
    private JSONObject getSessionOptions(ScraperInformation scraperInformation) {
-      JSONObject options = JSONUtils.stringToJson(scraperInformation.getOptionsScraper());
-      JSONObject optionsScraperClass = JSONUtils.stringToJson(scraperInformation.getOptionsScraperClass());
+      JSONObject options = scraperInformation.getOptionsScraper();
+      JSONObject optionsScraperClass = scraperInformation.getOptionsScraperClass();
 
       if (optionsScraperClass != null && !optionsScraperClass.isEmpty()) {
          options.put("scraperClass", optionsScraperClass);

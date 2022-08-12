@@ -22,6 +22,7 @@ import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -506,8 +507,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       String reference = json.optString("reference");
       String name = json.optString("title") + (reference != null && !reference.equals("") ? " - " + reference : "");      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img[data-testid=\"image-selected-thumbnail\"]", Collections.singletonList("src"), "https", "");
-      List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "img[data-testid=\"media-gallery-image\"]", Collections.singletonList("src"), "https", "", primaryImage);
+      List<String> images = crawlImagesNewLayout(skuJsonInfo, json);
+      String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
       boolean availableToBuy = json.optBoolean("available");
       Offers offers = availableToBuy ? scrapOffersNewLayout(doc, json) : new Offers();
       RatingsReviews ratingsReviews = scrapRatingsReviews(json);
@@ -520,11 +521,35 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          .setName(name)
          .setCategories(categories)
          .setPrimaryImage(primaryImage)
-         .setSecondaryImages(secondaryImages)
+         .setSecondaryImages(images)
          .setDescription(description)
          .setRatingReviews(ratingsReviews)
          .setOffers(offers)
          .build();
+   }
+
+   private List<String> crawlImagesNewLayout(JSONObject skuJsonInfo, JSONObject json) {
+      JSONArray components = JSONUtils.getValueRecursive(skuJsonInfo, "props.pageProps.structure.components", ".", JSONArray.class, new JSONArray());
+      String imgWidth = "800";
+      String imgHeight = "560";
+
+      for (Object component : components) {
+         String name = JSONUtils.getValueRecursive(component, "components.0.name", String.class, "");
+         if (name.equals("MediaGallery")) {
+            imgWidth = JSONUtils.getValueRecursive(component, "components.0.static.imgWidth", String.class, "800");
+            imgHeight = JSONUtils.getValueRecursive(component, "components.0.static.imgHeight", String.class, "560");
+            break;
+         }
+      }
+
+      List<String> images = JSONUtils.jsonArrayToStringList(JSONUtils.getValueRecursive(json, "media.images", ".", JSONArray.class, new JSONArray()));
+      List<String> imagesWithSize = new ArrayList<>();
+
+      for (String image : images) {
+         imagesWithSize.add(image.replace("{w}", imgWidth).replace("{h}", imgHeight));
+      }
+
+      return imagesWithSize;
    }
 
    private Offers scrapOffersNewLayout(Document doc, JSONObject json) throws OfferException, MalformedPricingException {

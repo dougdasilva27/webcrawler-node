@@ -14,7 +14,6 @@ import java.util.List;
 public class ArgentinaDiaCrawler extends VTEXScraper {
    public ArgentinaDiaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override

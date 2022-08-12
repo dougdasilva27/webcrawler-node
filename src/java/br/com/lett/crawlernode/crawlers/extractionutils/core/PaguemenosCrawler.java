@@ -32,7 +32,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    }
 
    private static final String HOME_PAGE = "https://www.paguemenos.com.br/";
-   private static final String API_TOKEN = "c5c833774d6feccd351ce70d3b8353c0d99ae61432ec46a2c648f430936ff8e5";
+   private static final String API_sha256Has = "add5c41ad4c1edee61c2987c5fc1396ca5cf20cd28035ee0225f9634bbaffdb8";
    private static final List<String> MAIN_SELLERS = Arrays.asList("Farmácias Pague Menos");
    private RatingsReviews rating = new RatingsReviews();
    private Offers offers;
@@ -153,14 +153,14 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    private JSONObject crawlPageRatings(String internalId) throws UnsupportedEncodingException {
 
       String query = "{\"persistedQuery\":" +
-         "{\"version\":1,\"sha256Hash\":\"1c9d35bb4f74b0334af671a19fb624c608643f7606fd3de29f5037b2570ee361\",\"sender\":\"yourviews.yourviewsreviews@0.x\"," +
+         "{\"version\":1,\"sha256Hash\":\"" + API_sha256Has + "\",\"sender\":\"yourviews.yourviewsreviews@0.x\"," +
          "\"provider\":\"yourviews.yourviewsreviews@0.x\"}," +
          "\"variables\":\"" + createVariablesBase64(internalId) + "\"}";
 
       String encodedQuery = URLEncoder.encode(query, "UTF-8");
 
       StringBuilder url = new StringBuilder();
-      url.append("https://www.paguemenos.com.br/_v/public/graphql/v1?extensions=");
+      url.append("https://www.paguemenos.com.br/_v/public/graphql/v1?workspace=master&maxAge=medium&appsEtag=remove&domain=store&locale=pt-BR&__bindingId=23424e23-86bb-4397-98b0-238d88d7f528&operationName=productReviews&variables=%7B%7D&extensions=");
       url.append(encodedQuery);
 
       Map<String, String> headers = new HashMap<>();

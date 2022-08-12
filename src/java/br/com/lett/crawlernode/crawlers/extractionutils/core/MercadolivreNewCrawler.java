@@ -144,9 +144,11 @@ public class MercadolivreNewCrawler {
       if (!variationsElements.isEmpty()) {
 
          for (Element e : variationsElements) {
-            name.append(" ").append(e.ownText().trim());
+            String variation = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-pdp-variations__selected-text", true);
+            if (variation != null && !productName.replace(" ","").contains(variation)) {
+               name.append(" - ").append(variation);
+            }
          }
-
       } else if (!doc.select(".andes-dropdown__popover ul li").isEmpty()) {
 
          name.append(" ").append(CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-dropdown-selector__item--label", true));
@@ -286,12 +288,7 @@ public class MercadolivreNewCrawler {
       boolean hasMainOffer = false;
       boolean isMainRetailer;
 
-
-      if (sellersVariations == null) {
-         isMainRetailer = checkIsMainRetailerToOneSeller(sellerFullName);
-      } else {
-         isMainRetailer = isMainRetailer(sellerFullName);
-      }
+      isMainRetailer = checkIsMainRetailer(sellerFullName);
 
       if (isMainRetailer || allow3PSellers) {
          Pricing pricing = scrapPricing(doc);
@@ -320,7 +317,6 @@ public class MercadolivreNewCrawler {
 
    private boolean isMainRetailer(String sellerFullName) {
       boolean isMainRetailer = false;
-      sellerFullName = StringUtils.stripAccents(sellerFullName.toLowerCase(Locale.ROOT));
 
       for (String sellerName : sellersVariations) {
          sellerName = StringUtils.stripAccents(sellerName.toLowerCase(Locale.ROOT));
@@ -331,14 +327,21 @@ public class MercadolivreNewCrawler {
       return isMainRetailer;
    }
 
-   private boolean checkIsMainRetailerToOneSeller(String sellerFullName) {
+   private boolean checkIsMainRetailer(String sellerFullName) {
       boolean isMainRetailer = false;
+
       if (sellerFullName != null) {
-         String mainSellerNameLowerWithoutAccents = StringUtils.stripAccents(mainSellerNameLower.toLowerCase(Locale.ROOT));
          sellerFullName = StringUtils.stripAccents(sellerFullName.toLowerCase(Locale.ROOT));
-         if (mainSellerNameLowerWithoutAccents.equalsIgnoreCase(sellerFullName) || sellerFullName.contains(mainSellerNameLowerWithoutAccents)) {
-            isMainRetailer = true;
+
+         if (sellersVariations != null && !sellersVariations.isEmpty()) {
+            isMainRetailer = isMainRetailer(sellerFullName);
+         } else {
+            String mainSellerNameLowerWithoutAccents = StringUtils.stripAccents(mainSellerNameLower.toLowerCase(Locale.ROOT));
+            if (mainSellerNameLowerWithoutAccents.equalsIgnoreCase(sellerFullName) || sellerFullName.contains(mainSellerNameLowerWithoutAccents)) {
+               isMainRetailer = true;
+            }
          }
+
       }
 
       return isMainRetailer;
@@ -375,7 +378,7 @@ public class MercadolivreNewCrawler {
 
 
                   } else {
-                     boolean sellerNameIsMainRetailer = checkIsMainRetailerToOneSeller(sellerName);
+                     boolean sellerNameIsMainRetailer = checkIsMainRetailer(sellerName);
                      String currentSeller = sellerName;
                      if (sellerNameIsMainRetailer && !mainSellerNameLower.isEmpty()) currentSeller = mainSellerNameLower;
                      if (sellerNameIsMainRetailer || allow3PSellers) {

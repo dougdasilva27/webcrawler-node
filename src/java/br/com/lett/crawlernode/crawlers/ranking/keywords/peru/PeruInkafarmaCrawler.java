@@ -18,6 +18,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +26,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
 
    public PeruInkafarmaCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.APACHE;
    }
 
    private String accessToken;
@@ -41,6 +42,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
          .setUrl("https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key="
             + br.com.lett.crawlernode.crawlers.corecontent.peru.PeruInkafarmaCrawler.GOOGLE_KEY)
          .setPayload("{\"returnSecureToken\":true}")
+         .setProxyservice(Collections.singletonList(ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY))
          .setHeaders(headersToken)
          .build();
 
@@ -145,6 +147,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
             .setHeaders(headers)
             .mustSendContentEncoding(false)
             .setProxyservice(Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
                ProxyCollection.BUY_HAPROXY,
                ProxyCollection.LUMINATI_SERVER_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,

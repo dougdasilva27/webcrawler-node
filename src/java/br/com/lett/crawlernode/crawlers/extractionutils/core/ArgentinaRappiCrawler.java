@@ -23,7 +23,7 @@ public class ArgentinaRappiCrawler extends RappiCrawler {
 
    public ArgentinaRappiCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override

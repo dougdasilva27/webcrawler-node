@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -20,10 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 public class PeruInkafarmaCrawler extends Crawler {
@@ -32,7 +30,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
    public PeruInkafarmaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
@@ -47,6 +45,15 @@ public class PeruInkafarmaCrawler extends Crawler {
          Request requestToken = RequestBuilder.create()
             .setUrl("https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=" + GOOGLE_KEY)
             .setPayload("{\"returnSecureToken\":true}")
+            .setProxyservice(Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.LUMINATI_SERVER_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX,
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+            ))
             .setHeaders(headersToken)
             .build();
 
@@ -64,6 +71,15 @@ public class PeruInkafarmaCrawler extends Crawler {
                .setUrl("https://qurswintke.execute-api.us-west-2.amazonaws.com/PROD/product/" + parameterSku)
                .setHeaders(headers)
                .mustSendContentEncoding(false)
+               .setProxyservice(Arrays.asList(
+                  ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
+                  ProxyCollection.BUY_HAPROXY,
+                  ProxyCollection.LUMINATI_SERVER_BR,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_MX,
+                  ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+               ))
                .build();
 
             String responseBody = this.dataFetcher.get(session, request).getBody();
