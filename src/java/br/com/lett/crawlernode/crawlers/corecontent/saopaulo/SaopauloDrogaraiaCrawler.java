@@ -54,7 +54,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          JSONObject scriptJson = CrawlerUtils.stringToJson(scriptHTML.html());
 
          String internalId = JSONUtils.getStringValue(scriptJson, "sku");
-         String internalPid = internalId;
+         String internalPid = data.optString("id");
          String name = JSONUtils.getStringValue(scriptJson, "name");
          String completeName = getName(doc, name);
 
