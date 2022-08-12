@@ -174,7 +174,7 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
    private String scrapName(Element e) {
       String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-description", true);
       String brand = CrawlerUtils.scrapStringSimpleInfo(e, ".product-name", true);
-      if (brand != null) {
+      if (brand != null && !brand.isEmpty()) {
          return name + " - " + brand;
       }
       return name;
