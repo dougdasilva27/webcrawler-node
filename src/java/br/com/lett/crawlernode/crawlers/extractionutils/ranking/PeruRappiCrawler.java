@@ -29,5 +29,13 @@ public class PeruRappiCrawler extends RappiCrawlerRanking {
       return PRODUCT_DOMAIN;
    }
 
+   @Override
+   protected String getMarketBaseUrl() {
+      return "https://www.rappi.com.pe/tiendas/";
+   }
 
+   @Override
+   protected String getImagePrefix() {
+      return "images.rappi.com.pe/products";
+   }
 }

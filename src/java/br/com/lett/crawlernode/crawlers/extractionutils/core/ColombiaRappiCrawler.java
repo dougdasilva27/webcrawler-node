@@ -26,4 +26,10 @@ public class ColombiaRappiCrawler extends RappiCrawler {
    protected String getHomeCountry() {
       return "https://www.rappi.com.co/";
    }
+
+   @Override
+   protected String getMarketBaseUrl() {
+      return "https://www.rappi.com.co/tiendas/";
+   }
+
 }

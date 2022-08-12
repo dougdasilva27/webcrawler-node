@@ -27,4 +27,14 @@ public class ColombiaRappiCrawlerRanking extends RappiCrawlerRanking {
    protected String getProductDomain() {
       return PRODUCT_DOMAIN;
    }
+
+   @Override
+   protected String getMarketBaseUrl() {
+      return "https://www.rappi.com.co/tiendas/";
+   }
+
+   @Override
+   protected String getImagePrefix() {
+      return "images.rappi.com.co/products";
+   }
 }

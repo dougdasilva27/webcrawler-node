@@ -2,12 +2,6 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.session.Session;
 
-/**
- * Date: 05/11/20
- *
- * @author Fellype Layunne
- *
- */
 public class ArgentinaRappiCrawler extends RappiCrawlerRanking {
 
    public ArgentinaRappiCrawler(Session session) {
@@ -27,5 +21,15 @@ public class ArgentinaRappiCrawler extends RappiCrawlerRanking {
    @Override
    protected String getProductDomain() {
       return PRODUCT_DOMAIN;
+   }
+
+   @Override
+   protected String getMarketBaseUrl() {
+      return "https://www.rappi.com.ar/tiendas/";
+   }
+
+   @Override
+   protected String getImagePrefix() {
+      return "images.rappi.com.ar/products";
    }
 }
