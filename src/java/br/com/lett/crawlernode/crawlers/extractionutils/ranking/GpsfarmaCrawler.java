@@ -2,14 +2,13 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 
 import java.util.Collections;
 
@@ -69,7 +68,7 @@ public class GpsfarmaCrawler extends CrawlerRankingKeywords {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "div.price-box.price-final_price", "data-product-id");
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "form[data-role=tocart-form]", "data-product-sku");
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "a.product-item-link", "href");
-            String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-item-name", false);
+            String name = scrapName(product);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".product-image-photo", Collections.singletonList("src"), "https", "covabra.com.br");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "span[data-price-type=finalPrice]", null, false, ',', session, null);
             boolean isAvailable = product.selectFirst(".stock.unavailable") == null;
@@ -98,11 +97,20 @@ public class GpsfarmaCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   private String scrapName(Element product) {
+      String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-item-name", false);
+      String brand = CrawlerUtils.scrapStringSimpleInfo(product, ".product-item-brand", false);
+      if (brand != null) {
+         return name + " - " + brand;
+      }
+      return name;
+   }
+
    @Override
    protected void setTotalProducts() {
       Element totalSearchElement = this.currentDoc.selectFirst("p.toolbar-amount :last-child");
 
-      if(totalSearchElement != null) {
+      if (totalSearchElement != null) {
          this.totalProducts = Integer.parseInt(totalSearchElement.text());
       }
 
