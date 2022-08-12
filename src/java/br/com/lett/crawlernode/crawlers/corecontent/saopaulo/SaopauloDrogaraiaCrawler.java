@@ -72,7 +72,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
          Boolean available = JSONUtils.getValueRecursive(data, "extension_attributes.stock_item.is_in_stock", Boolean.class);
 
-         Offers offers = available != null ? scrapOffers(data, doc) : new Offers();
+         Offers offers = available != null && available ? scrapOffers(data, doc) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
