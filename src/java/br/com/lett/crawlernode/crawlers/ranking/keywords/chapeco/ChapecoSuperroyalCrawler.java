@@ -51,7 +51,7 @@ public class ChapecoSuperroyalCrawler extends CrawlerRankingKeywords {
                   String internalId = productJson.optString("objectID");
                   String productUrl = "https://www.superroyal.com.br/produtos/" + internalId + "/" + productJson.optString("slug");
                   String name = productJson.optString("name");
-                  String image = productJson.optString("originalImage");
+                  String image = productJson.optString("image");
                   Integer priceInCents = CommonMethods.doublePriceToIntegerPrice(JSONUtils.getValueRecursive(productJson, "pricing.0.price", Double.class), null);
                   boolean available = priceInCents != 0;
 
