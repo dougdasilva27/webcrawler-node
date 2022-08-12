@@ -1,90 +1,116 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chapeco;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ChapecoSuperroyalCrawler extends CrawlerRankingKeywords {
-    public ChapecoSuperroyalCrawler(Session session) {
-        super(session);
-    }
+   public ChapecoSuperroyalCrawler(Session session) {
+      super(session);
+   }
 
-    @Override
-    protected void extractProductsFromCurrentPage() {
-        this.pageSize = 20;
-        log("Página " + this.currentPage);
+   @Override
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
+      this.pageSize = 20;
+      log("Página " + this.currentPage);
 
-        String url = "https://superroyal.com.br/busca/" + this.keywordEncoded;
-        log("Link onde são feitos os crawlers: " + url);
+      String url = "https://superroyal.com.br/busca/" + this.keywordEncoded;
+      log("Link onde são feitos os crawlers: " + url);
 
-        JSONObject productsJSON = fetchJson();
-        JSONArray items = productsJSON.optJSONArray("hits");
-        if (items != null && !items.isEmpty()) {
+      JSONObject productsJSON = fetchJson();
+      JSONArray edges = productsJSON.optJSONArray("edges");
+      if (edges != null && !edges.isEmpty()) {
 
-            if (this.totalProducts == 0) {
-                setTotalProducts(productsJSON);
+         if (this.totalProducts == 0) {
+            setTotalProducts(productsJSON);
+         }
+
+         for (Object o : edges) {
+            if (o instanceof JSONObject) {
+               JSONObject node = (JSONObject) o;
+               JSONObject productJson = node.optJSONObject("node");
+               if (productJson != null) {
+                  String internalId = productJson.optString("objectID");
+                  String productUrl = "https://www.superroyal.com.br/produtos/" + internalId + "/" + productJson.optString("slug");
+                  String name = productJson.optString("name");
+                  String image = productJson.optString("image");
+                  Integer priceInCents = CommonMethods.doublePriceToIntegerPrice(JSONUtils.getValueRecursive(productJson, "pricing.0.price", Double.class), null);
+                  boolean available = priceInCents != 0;
+
+                  RankingProduct productRanking = RankingProductBuilder.create()
+                     .setUrl(productUrl)
+                     .setInternalId(internalId)
+                     .setImageUrl(image)
+                     .setName(name)
+                     .setPriceInCents(priceInCents)
+                     .setAvailability(available)
+                     .build();
+
+                  saveDataProduct(productRanking);
+
+                  if (arrayProducts.size() == productsLimit) {
+                     break;
+                  }
+               }
             }
+         }
+      } else {
+         result = false;
+         log("Keyword sem resultado!");
+      }
+      log("Finalizando Crawler de produtos da página " + this.currentPage + " até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-            for (int i = 0; i < items.length(); i++) {
-                JSONObject productJson = items.optJSONObject(i);
+   }
 
-                String internalPid = productJson.optString("objectID");
-                String internalId = internalPid;
-                String productUrl = "https://www.superroyal.com.br/produtos/" + internalPid + "/" + productJson.optString("slug");
+   protected void setTotalProducts(JSONObject json) {
+      this.totalProducts = json.optInt("count", 0);
+      this.log("Total de produtos: " + this.totalProducts);
+   }
 
-                saveDataProduct(internalId, internalPid, productUrl);
+   private JSONObject fetchJson() {
 
-                this.log("Position: " + this.position +
-                        " - InternalId: " + internalId +
-                        " - InternalPid: " + internalPid +
-                        " - Url: " + productUrl);
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      headers.put("origin", "https://www.superroyal.com.br");
+      headers.put("referer", "https://www.superroyal.com.br/");
+      headers.put("authority", "search.osuper.com.br");
 
-                if (arrayProducts.size() == productsLimit) {
-                    break;
-                }
-            }
-        } else {
-            result = false;
-            log("Keyword sem resultado!");
-        }
-        log("Finalizando Crawler de produtos da página " + this.currentPage + " até agora " + this.arrayProducts.size() + " produtos crawleados");
+      JSONObject payload = new JSONObject();
+      payload.put("accountId", 8);
+      payload.put("storeId", 18);
+      payload.put("search", keywordEncoded);
+      payload.put("first", productsLimit);
+      payload.put("sort", "{\"field\":\"_score\",\"order\":\"desc\"},\"pricingRange\":{}");
 
-    }
 
-    protected void setTotalProducts(JSONObject json) {
-        this.totalProducts = json.optInt("nbHits", 0);
-        this.log("Total de produtos: " + this.totalProducts);
-    }
+      String urlApi = "https://search.osuper.com.br/ecommerce_products_production/_search";
+      Request request = Request.RequestBuilder.create()
+         .setUrl(urlApi)
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
+         .setHeaders(headers)
+         .setPayload(payload.toString())
+         .build();
 
-    private JSONObject fetchJson() {
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new FetcherDataFetcher(), new ApacheDataFetcher()), session, "post");
 
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "application/json");
-        headers.put("Host", "su0fwwvvoi-3.algolianet.com");
-
-        JSONObject payload = new JSONObject();
-        payload.put("query", this.keywordEncoded);
-        payload.put("filters", "_tags:account-8 AND _tags:show-on-store-18");
-        payload.put("page", this.currentPage - 1);
-
-        String urlApi = "https://su0fwwvvoi-3.algolianet.com/1/indexes/ecommerce_products_production/query?x-algolia-api-key=196f2ac6b0ce299ac2a625682c134007&x-algolia-application-id=SU0FWWVVOI";
-
-        Request request = Request.RequestBuilder.create()
-                .setUrl(urlApi)
-                .setHeaders(headers)
-                .mustSendContentEncoding(false)
-                .setPayload(payload.toString())
-                .setCookies(cookies)
-                .build();
-
-        String page = new FetcherDataFetcher().post(session, request).getBody();
-        return CrawlerUtils.stringToJson(page);
-    }
+      return JSONUtils.stringToJson(response.getBody());
+   }
 }
