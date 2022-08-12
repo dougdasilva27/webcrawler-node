@@ -1,8 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -14,15 +12,11 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 public class ChileJumboCrawler extends CrawlerRankingKeywords {
@@ -54,7 +48,7 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
             JSONObject product = (JSONObject) o;
             String internalPid = product.optString("productReference", null);
             String productUrl = crawlProductUrl(product);
-            String productName = product.optString("productName");
+            String productName = scrapName(product);
             Object itemObject = product.optQuery("/items/0");
 
             if (itemObject instanceof JSONObject) {
@@ -85,10 +79,19 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   private String scrapName(JSONObject product) {
+      String name = product.optString("productName");
+      String brand = product.optString("brand");
+      if (brand != null && !brand.isEmpty()) {
+         return name + " - " + brand;
+      }
+      return name;
+   }
+
    private String scrapImage(JSONObject item) {
       Object imageUrl = item.optQuery("/images/0/imageUrl");
 
-      if(imageUrl instanceof String) {
+      if (imageUrl instanceof String) {
          return (String) imageUrl;
       }
       return null;
