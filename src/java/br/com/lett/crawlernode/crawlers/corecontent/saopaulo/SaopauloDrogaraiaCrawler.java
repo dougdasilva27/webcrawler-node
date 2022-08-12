@@ -1,12 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -29,7 +22,10 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,7 +70,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
          String description = scrapDescription(data);
 
-//         boolean available = getAvailability(internalId);
          Boolean available = JSONUtils.getValueRecursive(data, "extension_attributes.stock_item.is_in_stock", Boolean.class);
 
          Offers offers = available ? scrapOffers(data, doc) : new Offers();
@@ -101,30 +96,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
       return products;
    }
-
-//   private boolean getAvailability(String internalId) {
-//      Map<String, String> headers = new HashMap<>();
-//      headers.put("content-type", "application/json");
-//
-//      String payload = "{\"operationName\":\"liveStock\",\"variables\":{\"skuList\":\""+internalId+"\"},\"query\":\"query liveStock($skuList: [String!]!) {\\n  liveStock(input: {skuList: $skuList}) {\\n    sku\\n    qty\\n    dt\\n    __typename\\n  }\\n}\\n\"}";
-//
-//      Request request = RequestBuilder.create()
-//         .setUrl("https://bff.drogaraia.com.br/graphql")
-//         .setPayload(payload)
-//         .setHeaders(headers)
-//         .setProxyservice(Arrays.asList(
-//            ProxyCollection.NETNUT_RESIDENTIAL_MX,
-//            ProxyCollection.NETNUT_RESIDENTIAL_ES,
-//            ProxyCollection.NETNUT_RESIDENTIAL_BR
-//         ))
-//         .build();
-//
-//      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
-//
-//      JSONObject stockJson = JSONUtils.stringToJson(response.getBody());
-//      Integer stock = JSONUtils.getValueRecursive(stockJson, "data.liveStock.0.qty", Integer.class);
-//      return stock > 0;
-//   }
 
    private List<String> scrapListImages(JSONObject data) {
       List<String> images = new ArrayList<>();
