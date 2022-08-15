@@ -52,7 +52,7 @@ public class BrasilAmaroCrawler extends Crawler {
       Document doc = new Document("");
       int attempt = 0;
       boolean sucess = false;
-      List<String> proxies = List.of( ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,  ProxyCollection.BUY_HAPROXY,  ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY);
+      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY);
       do {
          try {
             Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
@@ -80,7 +80,7 @@ public class BrasilAmaroCrawler extends Crawler {
 
       if (isProductPage(document)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String productCode = CrawlerUtils.scrapStringSimpleInfo(document, "p[class*=ProductInformation]", true);
+         String productCode = CrawlerUtils.scrapStringSimpleInfo(document, "p[class*=Description_productCodeInformation]", true);
          Matcher matcher = getCrawlId(productCode);
 
          if (matcher != null) {
@@ -88,7 +88,7 @@ public class BrasilAmaroCrawler extends Crawler {
             String internalPid = matcher.group(2);
             String name = CrawlerUtils.scrapStringSimpleInfo(document, "h1[class*=Heading_heading]", true);
             CategoryCollection categories = CrawlerUtils.crawlCategories(document, "a[class*=ProductBreadcrumb_link]", true);
-            String description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList("div[class*=ProductInformation_apiMessage]"));
+            String description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList("div[class*=Description_apiMessage]"));
             RatingsReviews ratingsReviews = crawlRating(internalPid);
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".images-wrap > div:last-child img.gallery_image", Arrays.asList("src"), "https", "amarotech-res.cloudinary.com");
             List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(document, ".images-wrap > div:not([data-index = '-1']):not([data-index = '0']):not(:last-child) .gallery_image", Arrays.asList("src"), "https", "amarotech-res.cloudinary.com", primaryImage);
@@ -148,12 +148,11 @@ public class BrasilAmaroCrawler extends Crawler {
          .build());
 
       return offers;
-
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[class*=Information_nowPrice]", null, true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[class*=Information_discounted]", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "strong[class*=ProductOptions]", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[class*=oldPrice]", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
@@ -165,8 +164,8 @@ public class BrasilAmaroCrawler extends Crawler {
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-
       Installments installments = new Installments();
+
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(1)
          .setInstallmentPrice(spotlightPrice)
@@ -217,7 +216,6 @@ public class BrasilAmaroCrawler extends Crawler {
       }
       return ratingsReviews;
    }
-
 
    private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject reviews) {
 
