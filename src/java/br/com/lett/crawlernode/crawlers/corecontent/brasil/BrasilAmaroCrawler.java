@@ -79,56 +79,58 @@ public class BrasilAmaroCrawler extends Crawler {
 
       if (isProductPage(document) && json != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
          JSONObject data = JSONUtils.getValueRecursive(json, "props.pageProps.dehydratedState.queries.4.state.data", JSONObject.class);
-         JSONArray variants = JSONUtils.getValueRecursive(data, "baseOptions.0.options", JSONArray.class);
 
-         String internalPid = JSONUtils.getStringValue(data, "baseProduct");
-         String description = JSONUtils.getStringValue(data, "description");
-         String internalId = JSONUtils.getStringValue(data, "code");
-         String name = JSONUtils.getStringValue(data, "name");
+         if (data != null) {
+            JSONArray variants = JSONUtils.getValueRecursive(data, "baseOptions.0.options", JSONArray.class);
 
-         CategoryCollection categories = CrawlerUtils.crawlCategories(document, "a[class*=ProductBreadcrumb_link]", true);
-         RatingsReviews ratingsReviews = crawlRating(internalPid);
+            String internalPid = JSONUtils.getStringValue(data, "baseProduct");
+            String description = JSONUtils.getStringValue(data, "description");
+            String internalId = JSONUtils.getStringValue(data, "code");
+            String name = JSONUtils.getStringValue(data, "name");
 
-         for (int i = 0; i < variants.length(); i++) {
-            JSONObject variantColor = variants.optJSONObject(i);
-            String variantUrl = JSONUtils.getStringValue(variantColor, "url");
-            List<String> imagesList = scrapImages(variantColor);
-            String primaryImage = imagesList != null && !imagesList.isEmpty() ? imagesList.remove(0) : "";
+            CategoryCollection categories = CrawlerUtils.crawlCategories(document, "a[class*=ProductBreadcrumb_link]", true);
+            RatingsReviews ratingsReviews = crawlRating(internalPid);
 
-            JSONArray variantSize = JSONUtils.getValueRecursive(variantColor, "amaroVariantOption.sizeVariantOption", JSONArray.class);
+            for (int i = 0; i < variants.length(); i++) {
+               JSONObject variantColor = variants.optJSONObject(i);
+               String variantUrl = JSONUtils.getStringValue(variantColor, "url");
+               List<String> imagesList = scrapImages(variantColor);
+               String primaryImage = imagesList != null && !imagesList.isEmpty() ? imagesList.remove(0) : null;
 
-            for (int j = 0; j < variantSize.length(); j++) {
-               JSONObject variant = variantSize.optJSONObject(j);
-               String variantName = name;
+               JSONArray variantSize = JSONUtils.getValueRecursive(variantColor, "amaroVariantOption.sizeVariantOption", JSONArray.class);
 
-               if (variants.length() > 1 && variantSize.length() > 1) {
-                  String color = JSONUtils.getStringValue(variantColor, "color");
-                  String size = JSONUtils.getStringValue(variant, "size");
-                  variantName = name + " - " + color + " - " + size;
-                  internalId = JSONUtils.getStringValue(variant, "code");
+               for (int j = 0; j < variantSize.length(); j++) {
+                  JSONObject variant = variantSize.optJSONObject(j);
+                  String variantName = name;
+
+                  if (variants.length() > 1 && variantSize.length() > 1) {
+                     String color = JSONUtils.getStringValue(variantColor, "color");
+                     String size = JSONUtils.getStringValue(variant, "size");
+                     variantName = name + " - " + color + " - " + size;
+                     internalId = JSONUtils.getStringValue(variant, "code");
+                  }
+
+                  boolean availableToBuy = scrapAvaibility(variant);
+                  Offers offers = availableToBuy ? scrapOffers(document) : new Offers();
+
+                  Product product = ProductBuilder.create()
+                     .setUrl(variantUrl)
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(variantName)
+                     .setCategories(categories)
+                     .setDescription(description)
+                     .setRatingReviews(ratingsReviews)
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(imagesList)
+                     .setOffers(offers)
+                     .build();
+
+                  products.add(product);
                }
 
-               boolean availableToBuy = scrapAvaibility(variant);
-               Offers offers = availableToBuy ? scrapOffers(document) : new Offers();
-
-               Product product = ProductBuilder.create()
-                  .setUrl(variantUrl)
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(variantName)
-                  .setCategories(categories)
-                  .setDescription(description)
-                  .setRatingReviews(ratingsReviews)
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(imagesList)
-                  .setOffers(offers)
-                  .build();
-
-               products.add(product);
             }
-
          }
 
       } else {
