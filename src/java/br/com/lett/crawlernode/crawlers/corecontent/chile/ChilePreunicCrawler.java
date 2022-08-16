@@ -49,6 +49,7 @@ public class ChilePreunicCrawler extends Crawler {
             Object valueKey = productsSkus.opt(internalId);
             if (valueKey instanceof JSONObject) {
                JSONObject variation = (JSONObject) valueKey;
+               String url = variation.optString("url");
                String name = scrapNameWithBrand(variation, jsonScript);
                String primaryImage = crawlPrimaryImage(variation);
                List<String> secondaryImages = crawlSecondaryImages(variation, doc);
@@ -56,7 +57,7 @@ public class ChilePreunicCrawler extends Crawler {
                Offers offers = available ? scrapOffers(variation) : new Offers();
 
                Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
+                  .setUrl(url)
                   .setInternalId(internalId)
                   .setInternalPid(internalPid)
                   .setName(name)
