@@ -105,9 +105,7 @@ public class BrasilAmaroCrawler extends Crawler {
                   String variantName = name;
 
                   if (variants.length() > 1 && variantSize.length() > 1) {
-                     String color = JSONUtils.getStringValue(variantColor, "color");
-                     String size = JSONUtils.getStringValue(variant, "size");
-                     variantName = name + " - " + color + " - " + size;
+                     variantName = scrapName(variantColor, variant, name);
                      internalId = JSONUtils.getStringValue(variant, "code");
                   }
 
@@ -138,6 +136,17 @@ public class BrasilAmaroCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapName(JSONObject variantColor, JSONObject variant, String name) {
+      String color = JSONUtils.getStringValue(variantColor, "color");
+      String size = JSONUtils.getStringValue(variant, "size");
+
+      if (color != null && size != null) {
+         return name + " - " + color + " - " + size;
+      }
+
+      return name;
    }
 
    private boolean scrapAvaibility(JSONObject variant) {
