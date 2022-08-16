@@ -172,13 +172,8 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
             }
          }
 
-      } else {
-         String nameWithStore = CrawlerUtils.scrapStringSimpleInfo(doc, "head title", true);
-         if (nameWithStore != null) {
-            name = nameWithStore.split("\\|")[0];
-         }
-         return name;
       }
+
       return name;
    }
 
