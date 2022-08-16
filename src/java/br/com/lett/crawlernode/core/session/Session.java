@@ -8,8 +8,6 @@ import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.DateUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.ScraperInformation;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -194,6 +192,10 @@ public class Session {
    public Long getProcessedId() {
       /* by default returns a null object */
       return null;
+   }
+
+   public boolean scheduledProductIsVoid() {
+      return false;
    }
 
    public List<String> getResponseBodiesPath() {

@@ -21,7 +21,6 @@ import br.com.lett.crawlernode.core.session.crawler.*;
 import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.config.CrawlerConfig;
-import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
@@ -288,7 +287,7 @@ public abstract class Crawler extends Task {
 
          for (Product product : products) {
             if (!(session instanceof EqiCrawlerSession)) {
-               processProduct(product); //todo remove this, legacy architecture
+               processProduct(product);
             }
          }
       }
@@ -585,18 +584,8 @@ public abstract class Crawler extends Task {
     * @return The resultant product from the analysis
     */
    private Product activeVoid(Product product) {
-      String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
-      Processor processor = new Processor();
-
-      // fetch the previous processed product
-      // if a processed already exists and is void, then
-      // we won't perform new attempts to extract the current product
-      Processed previousProcessedProduct = processor.fetchPreviousProcessed(product, session); //todo remove this, legacy architecture
-      if (previousProcessedProduct != null && previousProcessedProduct.isVoid()) {
-         Persistence.updateProcessedLRT(nowISO, session);
-         processor.updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
-         Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session, previousProcessedProduct.getId());
+      if (session.scheduledProductIsVoid()) {
 
          Logging.printLogDebug(logger, session, "The previous processed is also void. Finishing active void.");
          return product;
@@ -629,16 +618,6 @@ public abstract class Crawler extends Task {
       if (currentProduct.isVoid()) {
          Logging.printLogDebug(logger, session, "Product still void. Finishing active void.");
 
-         // set previous processed as void
-         if (previousProcessedProduct != null && !previousProcessedProduct.isVoid()) {
-            Logging.printLogDebug(logger, session, "Updating (status, lrt, lms) ...");
-            Persistence.setProcessedVoidTrue(session);
-            Persistence.updateProcessedLRT(nowISO, session);
-            Persistence.updateProcessedLMS(nowISO, session);
-
-            processor.updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
-            Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session, previousProcessedProduct.getId());
-         }
       }
 
       return currentProduct;
@@ -701,58 +680,28 @@ public abstract class Crawler extends Task {
     * @param product
     */
    private void processProduct(Product product) {
-      Processed previousProcessedProduct = new Processor().fetchPreviousProcessed(product, session);
 
-      if (previousProcessedProduct != null || (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) {
-
-         Processed newProcessedProduct =
-            Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
-         if (newProcessedProduct != null) {
-            PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session); //todo remove persiste in processed
+      if  (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession) {
 
             List<Integer> marketsDownloadImagesNotAllowed = Arrays.asList(158, 184, 363, 382, 383, 384, 400, 403, 486, 1188, 1220, 1285, 1285, 1287, 1371, 1372, 1373, 1381, 1384, 1387, 1388, 1479, 1480, 1487, 1491, 1511, 1512, 1513, 1514, 1515, 1516, 1517, 1518, 1519, 1520, 1521, 1522, 1523, 1524, 1525, 1527, 1528, 1529, 1530, 1531, 1532, 1534, 1535, 1536, 1537, 1538, 1542, 1545, 1546, 1547, 1548, 1549, 1550, 1551, 1552, 1554, 1555, 1556, 1557, 1558, 1559, 1653, 1743, 1890, 1909, 1910, 1911, 2004, 2005, 2010, 2036, 2037, 2038, 2041, 2078, 2123, 2124, 2126, 2216, 2219, 2220, 2221, 2223, 2715, 2716, 2717, 2718, 2720, 2721, 2722, 2745, 2746, 2747, 2748, 2749, 2759, 2767, 2768, 2769, 2770, 2772, 2773, 2774, 2775, 2776, 2779, 2780, 2781, 2782, 2783);
 
             if (!marketsDownloadImagesNotAllowed.contains(session.getMarket().getId())) {
-               scheduleImages(persistenceResult, newProcessedProduct);
+               scheduleImages(product);
             }
             if (session instanceof SeedCrawlerSession) {
-               Persistence.updateFrozenServerTask(previousProcessedProduct, newProcessedProduct, ((SeedCrawlerSession) session));
-
-               // This code block send a processed Id to elastic replicator,
-               // who is responsable to show products suggestions on winter for unifications
-               String replicatorUrl = GlobalConfigurations.executionParameters.getReplicatorUrl();
-               if (replicatorUrl != null) {
-                  replicatorUrl += newProcessedProduct.getId();
-                  new ApacheDataFetcher().getAsyncHttp(replicatorUrl, session);
-               }
-            }
-         } else if (previousProcessedProduct == null) {
-            Logging.printLogDebug(logger, session,
-               "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
-
-            if (session instanceof SeedCrawlerSession) {
-               Persistence.updateFrozenServerTask(((SeedCrawlerSession) session),
-                  "Probably this crawler could not perform the capture, make sure the url is not a void url.");
+               Persistence.updateFrozenServerTask(product, ((SeedCrawlerSession) session));
             }
          }
-      }
    }
 
-   private void scheduleImages(PersistenceResult persistenceResult, Processed processed) {
-      Long createdId = null;
-      if (persistenceResult instanceof ProcessedModelPersistenceResult) {
-         createdId = ((ProcessedModelPersistenceResult) persistenceResult).getCreatedId();
-      }
-
-      if (createdId != null) {
+   private void scheduleImages(Product product) {
          Logging.printLogDebug(logger, session, "Scheduling images download tasks...");
          try {
-            Scheduler.scheduleImages(session, Main.queueHandler, processed, createdId);
+            Scheduler.scheduleImages(session, Main.queueHandler, product);
          } catch (SQLException throwables) {
             Logging.printLogDebug(logger, session, "Download image scheduler attempt failed");
             throwables.printStackTrace();
          }
-      }
 
    }
 

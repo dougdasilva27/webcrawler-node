@@ -215,7 +215,6 @@ public abstract class CrawlerRanking extends Task {
 
          logInfo("Total products: " + this.totalProducts);
 
-         // função para popular os dados no banco
          if (session instanceof RankingSession) {
             persistRankingData();
          }
@@ -322,33 +321,6 @@ public abstract class CrawlerRanking extends Task {
       saveDataProduct(rankingProducts);
    }
 
-
-   public static List<Processed> createProcesseds(JSONObject result, int market, Session session) {
-      List<Processed> processeds = new ArrayList<>();
-
-      if (result != null) {
-         JSONArray foundSkus = result.optJSONArray("found_skus");
-
-         if (foundSkus != null) {
-
-            for (Object o : foundSkus) {
-               if (o instanceof JSONObject) {
-                  Processed p = new Processed();
-                  JSONObject product = (JSONObject) o;
-                  p.setVoid(product.optString("status", "").equalsIgnoreCase("void"));
-                  p.setLrt(product.optString("event_timestamp"));
-                  p.setId(Persistence.fetchProcessedIdWithInternalId(product.optString("internal_id"), market, session));
-
-                  processeds.add(p);
-               }
-
-            }
-         }
-      }
-
-      return processeds;
-   }
-
    public static boolean isVoid(JSONObject result) {
       boolean isVoid = false;
 
@@ -399,17 +371,10 @@ public abstract class CrawlerRanking extends Task {
 
       if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
          JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
-         //this is legacy architecture, when none app using anymore we can remove
-         List<Long> processedIds = new ArrayList<>();
 
          if (resultJson.has("finished_at")) {
-            List<Processed> processeds = createProcesseds(resultJson, product.getMarketId(), session); //todo: remover processed assim que tudo migrar
 
-            if (!processeds.isEmpty()) {
-               for (Processed p : processeds) {
-                  processedIds.add(p.getId());
-               }
-            }
+
             if (isVoid(resultJson) && hasReadBeforeOneMonth(resultJson.optString("finished_at"))) {
                //now, if product is void, will not insert in dynamo
                Logging.printLogDebug(logger, session, "Product already discovered but it was void in the last month - " + product.getUrl());
@@ -424,9 +389,7 @@ public abstract class CrawlerRanking extends Task {
             saveProductUrlToQueue(product, resultJson);
          }
 
-         product.setProcessedIds(processedIds);
       }
-
       if (product.getUrl() != null && session instanceof EqiRankingDiscoverKeywordsSession) {
          JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
          if (resultJson.isEmpty()) { //on this session, even "finished_at" is not empty, will schedule
@@ -455,16 +418,6 @@ public abstract class CrawlerRanking extends Task {
       return false;
    }
 
-   private void completeRankingProduct(RankingProduct product, List<Processed> processeds) {
-      if (!processeds.isEmpty()) {
-         Processed processed = processeds.get(0);
-         product.setName(processed.getOriginalName());
-         product.setPriceInCents(processed.getPrice() != null ? getPriceInCents(processed) : null);
-         product.setIsAvailable(processed.getAvailable());
-         product.setImageUrl(processed.getPic());
-      }
-   }
-
    private Integer getPriceInCents(Processed processed) {
       Float price = processed.getPrice();
       if (price != null) {
@@ -472,7 +425,6 @@ public abstract class CrawlerRanking extends Task {
       }
       return null;
    }
-
 
    protected void saveProductUrlToQueue(RankingProduct product, JSONObject result) {
       if (mustSendProductToQueue(product, result)) {
@@ -502,7 +454,6 @@ public abstract class CrawlerRanking extends Task {
     * Insert all data on table Ranking in Postgres
     */
    protected void persistRankingData() {
-      // se houver 1 ou mais produtos, eles serão cadastrados no banco
       if (!this.arrayProducts.isEmpty()) {
          Ranking ranking = new Ranking();
 
@@ -525,10 +476,6 @@ public abstract class CrawlerRanking extends Task {
 
          ranking.setStatistics(statistics);
 
-         // insere dados no postgres
-         Persistence.insertProductsRanking(ranking, session); //todo: remover isso
-
-         // persiste os dados no elasticsearch
          KPLProducer.getInstance().put(ranking, session);
 
       } else {
@@ -597,8 +544,8 @@ public abstract class CrawlerRanking extends Task {
          }
       } else {
          if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
-          queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
-        } else if (session instanceof EqiRankingDiscoverKeywordsSession) {
+            queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
+         } else if (session instanceof EqiRankingDiscoverKeywordsSession) {
             queueName = isWebDrive ? QueueName.WEB_SCRAPER_PRODUCT_EQI_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_PRODUCT_EQI.toString();
          } else {
             queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();
