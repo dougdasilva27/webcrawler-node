@@ -105,7 +105,7 @@ public class Persistence {
          return processedId;
       }
 
-      public static void insertProductsRanking (Ranking ranking, Session session){
+      public static void insertProductsRanking(Ranking ranking, Session session){
          Connection conn = null;
          Statement sta = null;
 
@@ -249,7 +249,7 @@ public class Persistence {
        *
        * @param session
        */
-      public static void updateFrozenServerTask (SeedCrawlerSession session, String msg){
+      public static void updateFrozenServerTask(SeedCrawlerSession session, String msg){
          String taskId = session.getTaskId();
 
          if (taskId != null) {
@@ -277,7 +277,7 @@ public class Persistence {
          }
       }
 
-      public static void updateFrozenServerTask (String taskId, String msg){
+      public static void updateFrozenServerTask(String taskId, String msg){
 
          if (taskId != null) {
             Document taskDocument = new Document().append("updated", new Date()).append("progress", 100);
@@ -308,7 +308,7 @@ public class Persistence {
        * @param session
        * @param progress
        */
-      public static void updateFrozenServerTaskProgress (SeedCrawlerSession session,int progress){
+      public static void updateFrozenServerTaskProgress(SeedCrawlerSession session,int progress){
          String taskId = session.getTaskId();
 
          if (taskId != null) {
