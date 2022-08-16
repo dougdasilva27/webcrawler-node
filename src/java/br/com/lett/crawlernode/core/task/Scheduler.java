@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.core.task;
 import br.com.lett.crawlernode.aws.sqs.QueueHandler;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -31,7 +32,7 @@ public class Scheduler {
 
    protected static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
 
-   public static void scheduleImages(Session session, QueueHandler queueHandler, Processed processed, Long processedId) throws SQLException {
+   public static void scheduleImages(Session session, QueueHandler queueHandler, Product product) throws SQLException {
       Logging.printLogDebug(LOGGER, session, "Scheduling images to be downloaded...");
 
       List<SendMessageBatchRequestEntry> entries = new ArrayList<>(); // send messages batch to Amazon SQS
@@ -39,15 +40,15 @@ public class Scheduler {
       Integer counter = 0;
 
       Market market = session.getMarket();
-      String primaryPic = processed.getPic();
-      String internalId = processed.getInternalId();
-      String url = processed.getPic();
+      String primaryPic = product.getPrimaryImage();
+      String internalId = product.getInternalId();
+      String url = product.getUrl();
 
       try {
 
          // assemble the primary image message
          if (primaryPic != null && !primaryPic.isEmpty()) {
-            JSONObject attrPrimary = assembleImageMessageAttributes(internalId, processedId, url, market, QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR,session);
+            JSONObject attrPrimary = assembleImageMessageAttributes(internalId, url, market, QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR,session);
 
             String body = removesUselessCharacters(attrPrimary.toString());
 
@@ -128,7 +129,7 @@ public class Scheduler {
 }
    */
 
-   private static JSONObject assembleImageMessageAttributes(String internalId, Long processedId, String url, Market market, String type,Session session) {
+   private static JSONObject assembleImageMessageAttributes(String internalId, String url, Market market, String type,Session session) {
 
       String market_code = market.getCode();
 
@@ -140,7 +141,6 @@ public class Scheduler {
       download_config.put("proxies", session.getImageProxies());
 
       JSONObject body = new JSONObject();
-      body.put("processed_id", processedId);
       body.put("type", type);
       body.put("market_code", market_code);
       body.put("internal_id", internalId);

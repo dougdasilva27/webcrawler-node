@@ -18,12 +18,10 @@ import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.*;
-import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.config.CrawlerConfig;
+import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.Persistence;
-import br.com.lett.crawlernode.database.PersistenceResult;
-import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.dto.ProductDTO;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.exceptions.RequestException;
@@ -31,20 +29,14 @@ import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import br.com.lett.crawlernode.integration.redis.config.RedisDb;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.test.Test;
-import br.com.lett.crawlernode.processor.Processor;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
-import models.DateConstants;
 import models.Offer;
 import models.Offers;
-import models.Processed;
-import models.prices.Prices;
 import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -53,8 +45,10 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -239,9 +233,9 @@ public abstract class Crawler extends Task {
 
       sendProgress(50);
 
+      List<Product> products = extract();
 
       // crawl informations and create a list of products
-      List<Product> products = extract();
 
       sendProgress(75);
 
@@ -286,7 +280,7 @@ public abstract class Crawler extends Task {
          }
 
          for (Product product : products) {
-            if (!(session instanceof EqiCrawlerSession)) {
+            if (session instanceof SeedCrawlerSession) {
                processProduct(product);
             }
          }
@@ -325,13 +319,13 @@ public abstract class Crawler extends Task {
       // we must send the raw crawled data to Kinesis
       sendToKinesis(activeVoidResultProduct);
 
-      // after active void analysis we have the resultant
-      // product after the extra extraction attempts
-      // if the resultant product is not void, the we will process it
-      setSkuStatus(activeVoidResultProduct);
-      if (!activeVoidResultProduct.isVoid() && session instanceof InsightsCrawlerSession) {
-         processProduct(activeVoidResultProduct);
-      }
+//      // after active void analysis we have the resultant
+//      // product after the extra extraction attempts
+//      // if the resultant product is not void, the we will process it
+//      setSkuStatus(activeVoidResultProduct);
+//      if (!activeVoidResultProduct.isVoid() && session instanceof InsightsCrawlerSession) {
+//         processProduct(activeVoidResultProduct);
+//      }
    }
 
    private void sendProgress(Integer progress) {
@@ -680,30 +674,10 @@ public abstract class Crawler extends Task {
     * @param product
     */
    private void processProduct(Product product) {
-
-      if  (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession) {
-
-            List<Integer> marketsDownloadImagesNotAllowed = Arrays.asList(158, 184, 363, 382, 383, 384, 400, 403, 486, 1188, 1220, 1285, 1285, 1287, 1371, 1372, 1373, 1381, 1384, 1387, 1388, 1479, 1480, 1487, 1491, 1511, 1512, 1513, 1514, 1515, 1516, 1517, 1518, 1519, 1520, 1521, 1522, 1523, 1524, 1525, 1527, 1528, 1529, 1530, 1531, 1532, 1534, 1535, 1536, 1537, 1538, 1542, 1545, 1546, 1547, 1548, 1549, 1550, 1551, 1552, 1554, 1555, 1556, 1557, 1558, 1559, 1653, 1743, 1890, 1909, 1910, 1911, 2004, 2005, 2010, 2036, 2037, 2038, 2041, 2078, 2123, 2124, 2126, 2216, 2219, 2220, 2221, 2223, 2715, 2716, 2717, 2718, 2720, 2721, 2722, 2745, 2746, 2747, 2748, 2749, 2759, 2767, 2768, 2769, 2770, 2772, 2773, 2774, 2775, 2776, 2779, 2780, 2781, 2782, 2783);
-
-            if (!marketsDownloadImagesNotAllowed.contains(session.getMarket().getId())) {
-               scheduleImages(product);
-            }
-            if (session instanceof SeedCrawlerSession) {
-               Persistence.updateFrozenServerTask(product, ((SeedCrawlerSession) session));
-            }
-         }
+         JSONObject productJson = DatabaseDataFetcher.fetchProductInElastic(product, session);
+         Persistence.updateFrozenServerTask(product, productJson, ((SeedCrawlerSession) session));
    }
 
-   private void scheduleImages(Product product) {
-         Logging.printLogDebug(logger, session, "Scheduling images download tasks...");
-         try {
-            Scheduler.scheduleImages(session, Main.queueHandler, product);
-         } catch (SQLException throwables) {
-            Logging.printLogDebug(logger, session, "Download image scheduler attempt failed");
-            throwables.printStackTrace();
-         }
-
-   }
 
    private void printCrawledInformation(Product product) {
 

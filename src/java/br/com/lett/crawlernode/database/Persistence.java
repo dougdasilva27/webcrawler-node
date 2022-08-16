@@ -167,12 +167,8 @@ public class Persistence {
        * @param product
        * @param session
        */
-      public static void updateFrozenServerTask(Product product, SeedCrawlerSession session){
+      public static void updateFrozenServerTask(Product product, JSONObject productJson, SeedCrawlerSession session){
          String taskId = session.getTaskId();
-
-         //o que é master id na nova arquitetura?
-         //
-         //posso fazer conectar no dremio pra pegar as informações do produto, mas não tem o nome do produto
 
          if (taskId != null) {
             Document taskDocument = new Document().append("updated", new Date()).append("status", "DONE").append("progress", 100);
@@ -181,12 +177,12 @@ public class Persistence {
                .append("originalName", product.getName()).append("internalId", product.getInternalId())
                .append("url", product.getUrl()).append("status", product.getStatus());
 
-            if (previousProcessedProduct != null) {
-               result.append("ect", previousProcessedProduct.getEct()).append("lettId", previousProcessedProduct.getLettId())
-                  .append("masterId", previousProcessedProduct.getMasterId()).append("oldName", previousProcessedProduct.getOriginalName())
+            if (productJson != null) {
+               result.append("created", productJson.optString("created")).append("lettId", productJson.optString("lett_id"))
+                  .append("isMaster", productJson.optString("unification_is_master")).append("oldName", productJson.optString("name"))
                   .append("isNew", false);
             } else {
-               result.append("ect", new Date()).append("lettId", null).append("masterId", null).append("oldName", null).append("isNew", true);
+               result.append("created", new Date()).append("lettId", null).append("isMaster", null).append("oldName", null).append("isNew", true);
             }
 
             taskDocument.append("result", result);

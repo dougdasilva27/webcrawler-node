@@ -19,6 +19,8 @@ public class GlobalConfigurations {
    public static ProxyCollection proxies;
    public static ResultManager processorResultManager;
 
+   public static DBCredentials dbCredentials;
+
    public static void setConfigurations() {
       Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
 
@@ -27,7 +29,7 @@ public class GlobalConfigurations {
       executionParameters.setUpExecutionParameters();
 
       // setting database credentials
-      DBCredentials dbCredentials = new DBCredentials();
+      dbCredentials = new DBCredentials();
 
       try {
          dbCredentials = DatabaseCredentialsSetter.setCredentials();

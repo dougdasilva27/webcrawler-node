@@ -19,6 +19,14 @@ import exceptions.MalformedRatingModel;
 import exceptions.OfferException;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.Record;
@@ -30,6 +38,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.sql.*;
 import java.text.ParseException;
 import java.util.*;
@@ -509,5 +518,35 @@ public class DatabaseDataFetcher {
 
    }
 
+
+   public static JSONObject fetchProductInElastic(Product product, Session session) {
+      DatabaseManager dbManagerElastic = new DatabaseManager(GlobalConfigurations.dbCredentials, true);
+      JSONObject productJson = new JSONObject();
+
+      String[] sources = new String[4];
+      sources[0] = "created";
+      sources[1] = "unification_is_master";
+      sources[2] = "name";
+      sources[3] = "lett_id";
+
+      BoolQueryBuilder query = QueryBuilders.boolQuery();
+      query.must(QueryBuilders.termQuery("internal_id", product.getInternalId()));
+      query.must(QueryBuilders.termQuery("market_id", session.getMarket().getId()));
+
+      try {
+         SearchResponse searchResponse = dbManagerElastic.connectionElasticSearch.searchResponse(sources, query);
+         SearchHit[] searchHits = searchResponse.getHits().getHits();
+         if (searchHits.length > 0) {
+            productJson = new JSONObject(searchHits[0].getSourceAsString());
+         }
+
+      } catch (IOException e) {
+         throw new RuntimeException(e);
+      }
+
+
+      return productJson;
+
+   }
 
 }

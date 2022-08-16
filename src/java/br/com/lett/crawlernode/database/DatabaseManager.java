@@ -5,7 +5,9 @@ import br.com.lett.crawlernode.util.Logging;
 import com.mongodb.ReplicaSetStatus;
 import com.mongodb.ServerAddress;
 import credentials.models.DBCredentials;
+import credentials.models.ElasticCredentials;
 import credentials.models.MongoCredentials;
+import managers.ElasticSearch;
 import managers.MongoDB;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
@@ -20,12 +22,16 @@ public class DatabaseManager {
 
    public MongoDB connectionFrozen;
    public MongoDB connectionFetcher;
+   public ElasticSearch connectionElasticSearch;
    public DSLContext jooqPostgres = DSL.using(SQLDialect.POSTGRES);
-
 
    public DatabaseManager(DBCredentials credentials) {
      setMongoFrozen(credentials);
      setMongoFetcher(credentials);
+   }
+
+   public DatabaseManager(DBCredentials credentials, boolean connectElastic) {
+      setElasticSearch(credentials);
    }
 
    private void setMongoFrozen(DBCredentials credentials) {
@@ -50,7 +56,6 @@ public class DatabaseManager {
          Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
       }
    }
-
    private void setMongoFetcher(DBCredentials credentials) {
       MongoCredentials credentialsFetcher = credentials.getMongoFetcherCredentials();
       connectionFetcher = new MongoDB();
@@ -71,6 +76,20 @@ public class DatabaseManager {
          Logging.printLogDebug(LOGGER, "Connection with database Mongo Fetcher performed successfully!");
       } catch (Exception e) {
          Logging.printLogError(LOGGER, "Erro ao conectar com o Mongo Fetcher.");
+         Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
+      }
+   }
+   private void setElasticSearch(DBCredentials credentials) {
+      ElasticCredentials credentialsElastic = credentials.getElasticCredentials();
+      connectionElasticSearch = new ElasticSearch();
+
+      try {
+         connectionElasticSearch.connection(credentialsElastic);
+
+         Logging.printLogDebug(LOGGER, "Connection with database Elastic performed successfully!");
+
+      } catch (Exception e) {
+         Logging.printLogError(LOGGER, "Error to connect with Elastic.");
          Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
       }
    }

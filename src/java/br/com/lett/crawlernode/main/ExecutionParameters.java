@@ -58,7 +58,6 @@ public class ExecutionParameters {
    private String dremioUrl;
 
 
-
    private String dynamoTableName;
 
    public ExecutionParameters() {
