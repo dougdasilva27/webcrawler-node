@@ -132,7 +132,7 @@ public class ArgentinaRappiCrawler extends RappiCrawler {
          .setTimeout(20000)
          .build();
 
-      String body = this.dataFetcher.post(session, request).getBody();
+      String body = CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), false).getBody();
 
       JSONObject jsonObject = CrawlerUtils.stringToJSONObject(body);
 
