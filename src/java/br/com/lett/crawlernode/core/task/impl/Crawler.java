@@ -233,9 +233,8 @@ public abstract class Crawler extends Task {
 
       sendProgress(50);
 
-      List<Product> products = extract();
-
       // crawl informations and create a list of products
+      List<Product> products = extract();
 
       sendProgress(75);
 
@@ -319,13 +318,8 @@ public abstract class Crawler extends Task {
       // we must send the raw crawled data to Kinesis
       sendToKinesis(activeVoidResultProduct);
 
-//      // after active void analysis we have the resultant
-//      // product after the extra extraction attempts
-//      // if the resultant product is not void, the we will process it
-//      setSkuStatus(activeVoidResultProduct);
-//      if (!activeVoidResultProduct.isVoid() && session instanceof InsightsCrawlerSession) {
-//         processProduct(activeVoidResultProduct);
-//      }
+      setSkuStatus(activeVoidResultProduct);
+
    }
 
    private void sendProgress(Integer progress) {
