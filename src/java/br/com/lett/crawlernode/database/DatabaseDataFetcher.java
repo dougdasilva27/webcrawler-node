@@ -10,23 +10,18 @@ import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import com.mongodb.client.FindIterable;
-import dbmodels.Tables;
-import br.com.lett.crawlernode.util.ScraperInformation;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
+import dbmodels.Tables;
 import dbmodels.tables.SupplierTrackedLett;
 import exceptions.MalformedRatingModel;
 import exceptions.OfferException;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.Record;
@@ -40,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.*;
-import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -405,7 +399,7 @@ public class DatabaseDataFetcher {
                Logging.printLogDebug(logger, session, "Product " + session.getInternalId() + " is " + status + " from dremio");
             }
          } else {
-            Logging.printLogDebug(logger, session,"Product " + session.getInternalId() + " is not found in dremio");
+            Logging.printLogDebug(logger, session, "Product " + session.getInternalId() + " is not found in dremio");
          }
       } catch (SQLException e) {
          Logging.printLogError(logger, session, "Error checking if product is void from dremio");
@@ -426,11 +420,11 @@ public class DatabaseDataFetcher {
       ResultSet rs = null;
 
       try {
-         Logging.printLogDebug(logger, session,"Connecting to in Dremio database...");
+         Logging.printLogDebug(logger, session, "Connecting to in Dremio database...");
          Class.forName("com.dremio.jdbc.Driver");
          conn = DriverManager.getConnection(GlobalConfigurations.executionParameters.getDremioUrl(), props);
 
-         Logging.printLogDebug(logger, session,"Creating statement...");
+         Logging.printLogDebug(logger, session, "Creating statement...");
          stmt = conn.createStatement();
          Logging.printLogDebug(logger, session, "Executing statement...");
          rs = stmt.executeQuery(query);
@@ -443,6 +437,7 @@ public class DatabaseDataFetcher {
       return rs;
 
    }
+
    public static JSONArray fetchProxiesFromMongoFetcher(JSONArray proxiesNames) {
       JSONArray proxies = new JSONArray();
       LettProxy proxy = new LettProxy();
@@ -533,6 +528,8 @@ public class DatabaseDataFetcher {
       query.must(QueryBuilders.termQuery("internal_id", product.getInternalId()));
       query.must(QueryBuilders.termQuery("market_id", session.getMarket().getId()));
 
+      long queryStartTime = System.currentTimeMillis();
+
       try {
          SearchResponse searchResponse = dbManagerElastic.connectionElasticSearch.searchResponse(sources, query);
          SearchHit[] searchHits = searchResponse.getHits().getHits();
@@ -540,8 +537,15 @@ public class DatabaseDataFetcher {
             productJson = new JSONObject(searchHits[0].getSourceAsString());
          }
 
+         JSONObject apacheMetadata = new JSONObject().put("elasticsearch_elapsed_time", System.currentTimeMillis() - queryStartTime)
+            .put("query_type", "fetch_product_in_elastic");
+
+         Logging.logInfo(logger, session, apacheMetadata, "ELASTICSEARCH TIMING INFO");
+
       } catch (IOException e) {
          throw new RuntimeException(e);
+      } finally {
+         dbManagerElastic.connectionElasticSearch.closeConnection();
       }
 
 

@@ -16,15 +16,12 @@ import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.database.JdbcConnectionFactory;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.processor.ResultManager;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.ScraperInformation;
 import credentials.models.DBCredentials;
-import org.apache.kafka.common.acl.AclOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -52,17 +49,16 @@ public class TestUtils {
 
          GlobalConfigurations.dbManager = new DatabaseManager(dbCredentials);
 
-         GlobalConfigurations.processorResultManager = new ResultManager(GlobalConfigurations.dbManager);
-
          GlobalConfigurations.proxies = new ProxyCollection(GlobalConfigurations.dbManager);
       } catch (Exception e) {
          System.out.println("não foi possivel iniciar");
       }
    }
 
-   public static List<Task> taskProcess(Market market, List<String> parameters,  TestType currentTest, Integer productsLimit){
-      return taskProcess(market,parameters,null,currentTest,productsLimit);
+   public static List<Task> taskProcess(Market market, List<String> parameters, TestType currentTest, Integer productsLimit) {
+      return taskProcess(market, parameters, null, currentTest, productsLimit);
    }
+
    public static List<Task> taskProcess(Market market, List<String> parameters, String fileMiranha, TestType currentTest, Integer productsLimit) {
 
       ScraperInformation scraperInformation = fetchScraperInfoToOneMarket(market.getNumber(), currentTest);
@@ -79,7 +75,7 @@ public class TestUtils {
             session = SessionFactory.createTestSession(parameter, market, scraperInformation, fileMiranha);
          }
          String className = scraperInformation.getClassName().split("\\.")[scraperInformation.getClassName().split("\\.").length - 1];
-         Logging.printLogDebug(logger, "Crawler running for class: " + ".("+ className +".java:1)");
+         Logging.printLogDebug(logger, "Crawler running for class: " + ".(" + className + ".java:1)");
          Task task = TaskFactory.createTask(session, scraperInformation.getClassName());
 
          if (task != null) {
@@ -189,7 +185,6 @@ public class TestUtils {
       sb.append("\tcategories: " + categoriesNumber + "\n");
       sb.append("\tdescription: " + "html code with " + product.getDescription().length() + " characters" + "\n");
       sb.append("\teans: " + (product.getEans() == null ? product.getEans() : product.getEans().toString()) + "\n");
-
 
 
       return sb.toString();

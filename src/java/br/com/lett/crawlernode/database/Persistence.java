@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.database;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
@@ -41,126 +42,6 @@ public class Persistence {
 
    private static final String MONGO_COLLECTION_SERVER_TASK = "ServerTask";
 
-   // Class generated in project DB to convert an object to gson because dialect postgres not accepted
-   // this type
-   private static final PostgresJsonBinding CONVERT_STRING_GSON = new PostgresJsonBinding();
-
-
-
-
-   /********************************* Ranking *****************************************************/
-
-
-   // busca dados no postgres
-   public static Long fetchProcessedIdWithInternalId(String internalId, int market, Session session) {
-
-      dbmodels.tables.Processed processed = Tables.PROCESSED;
-      Long processedId = null;
-
-         List<Field<?>> fields = new ArrayList<>();
-         fields.add(processed.ID);
-         fields.add(processed.MASTER_ID);
-
-         List<Condition> conditions = new ArrayList<>();
-         conditions.add(processed.MARKET.equal(market));
-         conditions.add(processed.INTERNAL_ID.equal(internalId));
-
-         long queryStartTime = System.currentTimeMillis();
-
-         Connection conn = null;
-         Statement sta = null;
-         ResultSet rs = null;
-         try {
-            conn = JdbcConnectionFactory.getInstance().getConnection();
-            sta = conn.createStatement();
-            rs = sta.executeQuery(GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(processed).where(conditions).getSQL(ParamType.INLINED));
-
-
-            ResultSet finalRs = rs;
-            Result<Record> records = Exporter.collectQuery(SqlOperation.SELECT, () -> GlobalConfigurations.dbManager.jooqPostgres.fetch(finalRs));
-
-            for (Record record : records) {
-               Long masterId = record.get(processed.MASTER_ID);
-
-               if (masterId != null) {
-                 processedId = masterId;
-               } else {
-                  processedId = record.get(processed.ID);
-               }
-
-            }
-
-            JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-               .put("query_type", "ranking_fetch_processed_product_with_internalid");
-
-            Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
-         } catch (Exception e) {
-            Logging.printLogError(logger, CommonMethods.getStackTrace(e));
-         } finally {
-            JdbcConnectionFactory.closeResource(rs);
-            JdbcConnectionFactory.closeResource(sta);
-            JdbcConnectionFactory.closeResource(conn);
-         }
-
-         return processedId;
-      }
-
-      public static void insertProductsRanking(Ranking ranking, Session session){
-         Connection conn = null;
-         Statement sta = null;
-
-         Logging.printLogInfo(logger, session, "Persisting ranking data ...");
-
-         long queryStartTime = System.currentTimeMillis();
-
-         try {
-            conn = JdbcConnectionFactory.getInstance().getConnection();
-            sta = conn.createStatement();
-
-            CrawlerRanking crawlerRanking = Tables.CRAWLER_RANKING;
-
-            List<RankingProduct> products = ranking.getProducts();
-
-            for (RankingProduct rankingProducts : products) {
-               List<Long> processedIds = rankingProducts.getProcessedIds();
-
-               for (Long processedId : processedIds) {
-
-                  Map<Field<?>, Object> mapInsert = new HashMap<>();
-
-                  mapInsert.put(crawlerRanking.RANK_TYPE, ranking.getRankType());
-                  mapInsert.put(crawlerRanking.DATE, ranking.getDate());
-                  mapInsert.put(crawlerRanking.LOCATION, ranking.getLocation());
-                  mapInsert.put(crawlerRanking.POSITION, rankingProducts.getPosition());
-                  mapInsert.put(crawlerRanking.PAGE_SIZE, ranking.getStatistics().getPageSize());
-                  mapInsert.put(crawlerRanking.PROCESSED_ID, processedId);
-                  mapInsert.put(crawlerRanking.TOTAL_SEARCH, ranking.getStatistics().getTotalSearch());
-                  mapInsert.put(crawlerRanking.TOTAL_FETCHED, ranking.getStatistics().getTotalFetched());
-                  mapInsert.put(crawlerRanking.SCREENSHOT, rankingProducts.getScreenshot());
-
-
-                  sta.addBatch((GlobalConfigurations.dbManager.jooqPostgres.insertInto(crawlerRanking).set(mapInsert)).getSQL(ParamType.INLINED));
-               }
-            }
-
-            sta.executeBatch();
-            Logging.printLogDebug(logger, session, "Produtos cadastrados no postgres.");
-
-            JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-               .put("query_type", "persist_products_crawler_ranking");
-
-            Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
-         } catch (Exception e) {
-            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-            SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
-            session.registerError(error);
-         } finally {
-            JdbcConnectionFactory.closeResource(sta);
-            JdbcConnectionFactory.closeResource(conn);
-         }
-      }
-
-
       /**
        * Update frozen server task
        *
@@ -169,20 +50,21 @@ public class Persistence {
        */
       public static void updateFrozenServerTask(Product product, JSONObject productJson, SeedCrawlerSession session){
          String taskId = session.getTaskId();
+         SkuStatus status = CommonMethods.getSkuStatus(product);
 
          if (taskId != null) {
             Document taskDocument = new Document().append("updated", new Date()).append("status", "DONE").append("progress", 100);
 
             Document result = new Document()
-               .append("originalName", product.getName()).append("internalId", product.getInternalId())
-               .append("url", product.getUrl()).append("status", product.getStatus());
+               .append("original_name", product.getName()).append("internal_id", product.getInternalId())
+               .append("url", product.getUrl()).append("status", status);
 
             if (productJson != null) {
-               result.append("created", productJson.optString("created")).append("lettId", productJson.optString("lett_id"))
-                  .append("isMaster", productJson.optString("unification_is_master")).append("oldName", productJson.optString("name"))
-                  .append("isNew", false);
+               result.append("created", productJson.optString("created")).append("lett_id", productJson.optString("lett_id"))
+                  .append("is_master", productJson.optString("unification_is_master")).append("oldName", productJson.optString("name"))
+                  .append("is_new", false);
             } else {
-               result.append("created", new Date()).append("lettId", null).append("isMaster", null).append("oldName", null).append("isNew", true);
+               result.append("created", new Date()).append("lett_id", null).append("is_master", null).append("old_name", null).append("is_new", true);
             }
 
             taskDocument.append("result", result);
@@ -202,6 +84,8 @@ public class Persistence {
             }
          }
       }
+
+
 
       /**
        * Update frozen server task

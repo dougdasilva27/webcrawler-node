@@ -251,7 +251,7 @@ public abstract class Crawler extends Task {
          printCrawledInformation(product);
       }
 
-      setSkuStatus(filter(products, session.getInternalId()));
+      setSkuStatus(filter(products, session.getInternalId()));//use only to catalog
 
       // insights session
       // there is only one product that will be selected
@@ -572,7 +572,7 @@ public abstract class Crawler extends Task {
    }
 
    /**
-    * This method performs an active analysis of the void status.
+    * This method performs an active analysis of the void status
     *
     * @param product the crawled product
     * @return The resultant product from the analysis
@@ -776,14 +776,10 @@ public abstract class Crawler extends Task {
    }
 
    private void setSkuStatus(Product product) {
-      if (product.isVoid()) {
-         skuStatus = SkuStatus.VOID;
-      } else if (product.getAvailable()) {
-         skuStatus = SkuStatus.AVAILABLE;
-      } else if (product.getMarketplace() != null && product.getMarketplace().size() > 0) {
-         skuStatus = SkuStatus.MARKETPLACE_ONLY;
-      } else {
-         skuStatus = SkuStatus.UNAVAILABLE;
-      }
+      skuStatus = CommonMethods.getSkuStatus(product);
    }
+
+
+
+
 }

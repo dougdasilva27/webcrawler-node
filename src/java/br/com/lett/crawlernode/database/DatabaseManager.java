@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.database;
 
+import br.com.lett.crawlernode.database.managers.ElasticSearch;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import com.mongodb.ReplicaSetStatus;
@@ -7,14 +8,12 @@ import com.mongodb.ServerAddress;
 import credentials.models.DBCredentials;
 import credentials.models.ElasticCredentials;
 import credentials.models.MongoCredentials;
-import managers.ElasticSearch;
 import managers.MongoDB;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 public class DatabaseManager {
 
@@ -26,7 +25,7 @@ public class DatabaseManager {
    public DSLContext jooqPostgres = DSL.using(SQLDialect.POSTGRES);
 
    public DatabaseManager(DBCredentials credentials) {
-     setMongoFrozen(credentials);
+     //setMongoFrozen(credentials);
      setMongoFetcher(credentials);
    }
 
