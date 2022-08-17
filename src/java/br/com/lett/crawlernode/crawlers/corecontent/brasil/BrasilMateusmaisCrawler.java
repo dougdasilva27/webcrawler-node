@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.exceptions.MalformedUrlException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -18,6 +19,7 @@ import models.pricing.BankSlip;
 import models.pricing.CreditCards;
 import models.pricing.Pricing;
 import org.apache.commons.lang.WordUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -62,6 +64,7 @@ public class BrasilMateusmaisCrawler extends Crawler {
          String internalId = productJson.optString("sku");
          String name = crawlName(productJson);
          String description = productJson.optString("description");
+         List<String> secondaryImages = scraplImages(productJson);
          String primaryImage = productJson.optString("image");
          List<String> eans = Collections.singletonList(productJson.optString("barcode"));
          CategoryCollection categories = getCategory(productJson);
@@ -74,6 +77,7 @@ public class BrasilMateusmaisCrawler extends Crawler {
             .setInternalPid(internalId)
             .setName(name)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setCategories(categories)
             .setEans(eans)
             .setDescription(description)
@@ -87,6 +91,18 @@ public class BrasilMateusmaisCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private List<String> scraplImages(JSONObject productJson) {
+      List<String> images = new ArrayList<>();
+      JSONArray galeryImages = productJson.optJSONArray("gallery");
+      if (galeryImages != null) {
+         for (int i = 0; i < galeryImages.length(); i++) {
+            String image = JSONUtils.getValueRecursive(galeryImages, i + ".url", String.class);
+            images.add(image);
+         }
+      }
+      return images;
    }
 
    private String crawlName(JSONObject productJson) {
