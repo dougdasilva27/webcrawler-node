@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -317,7 +318,7 @@ public class DatabaseDataFetcher {
    }
 
    public static JSONObject fetchProductInElastic(Product product, Session session) {
-      DatabaseManager dbManagerElastic = new DatabaseManager(GlobalConfigurations.dbCredentials, true);
+      DatabaseManager dbManagerElastic = new DatabaseManager(GlobalConfigurations.dbCredentials, session instanceof SeedCrawlerSession);
       JSONObject productJson = new JSONObject();
 
       String[] sources = new String[4];
@@ -349,7 +350,6 @@ public class DatabaseDataFetcher {
       } finally {
          dbManagerElastic.connectionElasticSearch.closeConnection();
       }
-
 
       return productJson;
 

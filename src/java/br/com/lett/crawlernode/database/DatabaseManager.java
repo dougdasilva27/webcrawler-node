@@ -29,8 +29,10 @@ public class DatabaseManager {
      setMongoFetcher(credentials);
    }
 
-   public DatabaseManager(DBCredentials credentials, boolean connectElastic) {
-      setElasticSearch(credentials);
+   public DatabaseManager(DBCredentials credentials, boolean isSessionSeeds) {
+      if (isSessionSeeds){
+         setElasticSearch(credentials);
+      }
    }
 
    private void setMongoFrozen(DBCredentials credentials) {
