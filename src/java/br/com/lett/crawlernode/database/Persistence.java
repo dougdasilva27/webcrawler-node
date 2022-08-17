@@ -61,7 +61,7 @@ public class Persistence {
 
             if (productJson != null) {
                result.append("created", productJson.optString("created")).append("lett_id", productJson.optString("lett_id"))
-                  .append("is_master", productJson.optString("unification_is_master")).append("oldName", productJson.optString("name"))
+                  .append("is_master", productJson.optString("unification_is_master")).append("old_name", productJson.optString("name"))
                   .append("is_new", false);
             } else {
                result.append("created", new Date()).append("lett_id", null).append("is_master", null).append("old_name", null).append("is_new", true);
