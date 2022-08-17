@@ -57,7 +57,7 @@ public class Persistence {
 
             Document result = new Document()
                .append("original_name", product.getName()).append("internal_id", product.getInternalId())
-               .append("url", product.getUrl()).append("status", status);
+               .append("url", product.getUrl()).append("status", status.toString());
 
             if (productJson != null) {
                result.append("created", productJson.optString("created")).append("lett_id", productJson.optString("lett_id"))
