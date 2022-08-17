@@ -76,20 +76,6 @@ public class CrawlerTaskEndpoint extends HttpServlet {
          Logging.printLogDebug(logger, "TASK RESPONSE STATUS: " + ServerCrawler.HTTP_STATUS_CODE_SERVER_ERROR);
       }
 
-      if (task instanceof Crawler && (task.getSession() instanceof InsightsCrawlerSession || task.getSession() instanceof ToBuyCrawlerSession)) {
-
-         if (executionParameters.isSendToKinesisCatalog()) {
-            try {
-               KPLProducer.sendMessageCatalogToKinesis(task, session);
-               Logging.printLogDebug(logger, "Sucess to send to kinesis sessionId: " + session.getSessionId());
-
-            } catch (Exception e) {
-               Logging.printLogError(logger, "Failed to send to kinesis sessionId: " + session.getSessionId());
-            }
-
-         }
-      }
-
       return response;
    }
 

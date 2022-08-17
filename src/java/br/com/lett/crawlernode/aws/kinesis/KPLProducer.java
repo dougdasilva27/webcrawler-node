@@ -83,12 +83,12 @@ public class KPLProducer {
       Futures.addCallback(f, myCallback, callbackThreadPool);
    }
 
-   public static void sendMessageCatalogToKinesis(Task task, Session session) {
+   public static void sendMessageCatalogToKinesis(Product crawledProduct, Session session) {
 
       long productStartTime = System.currentTimeMillis();
 
-      SkuStatus skuStatus = ((Crawler) task).getSkuStatus();
-      String internalId = ((Crawler) task).getCrawledInternalId();
+      SkuStatus skuStatus = CommonMethods.getSkuStatus(crawledProduct);
+      String internalId = crawledProduct.getInternalId();
       Message message = Message.build(skuStatus, session.getSessionId(), internalId, session.getMarket().getId(), session.getSupplierId());
 
       getInstance().put(message, session);

@@ -53,6 +53,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import static br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
+import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
 
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit and extract methods.
@@ -64,8 +65,6 @@ import static br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuild
 public abstract class Crawler extends Task {
 
    protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
-
-   private SkuStatus skuStatus = SkuStatus.VOID;
    private String crawledInternalId;
 
    protected static final Pattern FILTERS = Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g" + "|png|ico|tiff?|mid|mp2|mp3|mp4"
@@ -98,14 +97,6 @@ public abstract class Crawler extends Task {
       this.cookies = new ArrayList<>();
 
       createDefaultConfig();
-   }
-
-   public SkuStatus getSkuStatus() {
-      return skuStatus;
-   }
-
-   public String getCrawledInternalId() {
-      return crawledInternalId;
    }
 
    /**
@@ -250,8 +241,6 @@ public abstract class Crawler extends Task {
          printCrawledInformation(product);
       }
 
-      setSkuStatus(filter(products, session.getInternalId()));//use only to catalog
-
       // insights session
       // there is only one product that will be selected
       // by it's internalId, passed by the crawler session
@@ -268,7 +257,7 @@ public abstract class Crawler extends Task {
          // we must send the raw crawled data to Kinesis
          if (session instanceof DiscoveryCrawlerSession || session instanceof EqiCrawlerSession) {
             if (!products.isEmpty()) {
-               Dynamo.updateReadByCrawlerObjectDynamo(products, session, skuStatus);
+               Dynamo.updateReadByCrawlerObjectDynamo(products, session);
             } else {
                Logging.printLogInfo(logger, session, "No products to save in dynamo");
             }
@@ -292,21 +281,6 @@ public abstract class Crawler extends Task {
       Logging.printLogDebug(logger, session, "Selecting product with internalId " + session.getInternalId());
       Product crawledProduct = filter(products, session.getInternalId());
 
-      if (!crawledProduct.isVoid()) {
-         crawledInternalId = crawledProduct.getInternalId();
-      } else if (!products.isEmpty()) {
-         StringBuilder stringBuilder = new StringBuilder();
-         int countP = 0;
-         for (Product p : products) {
-            if (countP > 0) {
-               stringBuilder.append(" | ");
-            }
-            stringBuilder.append(p.getInternalId());
-            countP++;
-         }
-         crawledInternalId = stringBuilder.toString();
-      }
-
       // if the product is void run the active void analysis
       Product activeVoidResultProduct = crawledProduct;
       if (crawledProduct.isVoid() && !(session instanceof ToBuyCrawlerSession)) {
@@ -318,7 +292,16 @@ public abstract class Crawler extends Task {
       // we must send the raw crawled data to Kinesis
       sendToKinesis(activeVoidResultProduct);
 
-      setSkuStatus(activeVoidResultProduct);
+      if (executionParameters.isSendToKinesisCatalog()) {
+         try {
+            KPLProducer.sendMessageCatalogToKinesis(crawledProduct, session);
+            Logging.printLogDebug(logger, "Sucess to send to kinesis sessionId: " + session.getSessionId());
+
+         } catch (Exception e) {
+            Logging.printLogError(logger, "Failed to send to kinesis sessionId: " + session.getSessionId());
+         }
+
+      }
 
    }
 
@@ -766,14 +749,7 @@ public abstract class Crawler extends Task {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
 
-      Logging.logInfo(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()).put("product_status", skuStatus.toString()), "END");
+      Logging.logInfo(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
    }
-
-   private void setSkuStatus(Product product) {
-      skuStatus = CommonMethods.getSkuStatus(product);
-   }
-
-
-
 
 }
