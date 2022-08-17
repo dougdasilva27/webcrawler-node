@@ -476,7 +476,15 @@ public abstract class CrawlerRanking extends Task {
 
          ranking.setStatistics(statistics);
 
+         long productStartTime = System.currentTimeMillis();
+
          KPLProducer.getInstance().put(ranking, session);
+
+         JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
+            .put("aws_type", "kinesis")
+            .put("kinesis_flow_type", "ranking");
+
+         Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
 
       } else {
          this.log("Nothing to persist, because there are no crawled products.");
