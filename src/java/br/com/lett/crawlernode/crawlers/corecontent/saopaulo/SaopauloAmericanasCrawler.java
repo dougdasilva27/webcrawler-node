@@ -185,7 +185,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          for(Object obj : attributes){
             JSONObject attribute = (JSONObject) obj;
             String attributeName = attribute.optString("name");
-            String attributeValue = attribute.getString("value");
+            String attributeValue = attribute.optString("value");
             if ( attributeName != null && attributeValue != null){
                description.append(attributeName);
                description.append(" ");
