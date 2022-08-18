@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
 import br.com.lett.crawlernode.database.DatabaseManager;
-import br.com.lett.crawlernode.processor.ResultManager;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import credentials.models.DBCredentials;
@@ -17,7 +16,7 @@ public class GlobalConfigurations {
    public static ExecutionParameters executionParameters;
    public static DatabaseManager dbManager;
    public static ProxyCollection proxies;
-   public static ResultManager processorResultManager;
+   public static DBCredentials dbCredentials;
 
    public static void setConfigurations() {
       Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
@@ -27,7 +26,7 @@ public class GlobalConfigurations {
       executionParameters.setUpExecutionParameters();
 
       // setting database credentials
-      DBCredentials dbCredentials = new DBCredentials();
+      dbCredentials = new DBCredentials();
 
       try {
          dbCredentials = DatabaseCredentialsSetter.setCredentials();
@@ -39,9 +38,6 @@ public class GlobalConfigurations {
       dbManager = new DatabaseManager(dbCredentials);
 
       // fetch all markets information from database
-
-      // create result manager for processor stage
-      processorResultManager = new ResultManager(dbManager);
 
       // fetching proxies
       proxies = new ProxyCollection( dbManager);

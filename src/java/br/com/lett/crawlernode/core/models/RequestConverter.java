@@ -113,6 +113,11 @@ public class RequestConverter {
       request.setParameter(parameters);
       request.setScraperType(scraperType);
 
+      Boolean isVoid = body.optBoolean("isVoid");
+      if(isVoid != null) {
+         request.setVoid(isVoid);
+      }
+
 
       if (request instanceof CrawlerSeedRequest) {
          ((CrawlerSeedRequest) request).setTaskId(body.optString(BODY_SEED_TASK_ID));

@@ -23,7 +23,7 @@ public class Request {
 
    private boolean useBrowser;
 
-
+   private boolean isVoid;
 
    private String fileS3Miranha;
    public Request() {
@@ -131,7 +131,7 @@ public class Request {
    public String toString() {
       return "Request[sessionId= " + sessionId + ", messageId=" + messageId + ", fileS3Miranha=" + fileS3Miranha + ",messageBody=" + parameter + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
             + ", internalId=" + internalId + ", processedId=" + processedId + ", marketId=" + market + ", queueName=" + queueName
-            + ", supplierId=" + supplierId + ", useBrowser=" + useBrowser + "]";
+            + ", supplierId=" + supplierId + ", useBrowser=" + useBrowser + ", isVoid=" + isVoid + "]";
    }
 
    public String getClassName() {
@@ -150,5 +150,11 @@ public class Request {
       this.options = options;
    }
 
+   public boolean isVoid() {
+      return isVoid;
+   }
 
+   public void setVoid(boolean aVoid) {
+      isVoid = aVoid;
+   }
 }

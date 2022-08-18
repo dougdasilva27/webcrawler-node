@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.util;
 
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import okhttp3.HttpUrl;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -583,6 +585,21 @@ public class CommonMethods {
       }
 
       return result;
+   }
+
+   public static SkuStatus getSkuStatus(Product product) {
+      SkuStatus skuStatus;
+      if (product.isVoid()) {
+         skuStatus = SkuStatus.VOID;
+      } else if (product.getAvailable()) {
+         skuStatus = SkuStatus.AVAILABLE;
+      } else if (product.getMarketplace() != null && product.getMarketplace().size() > 0) {
+         skuStatus = SkuStatus.MARKETPLACE_ONLY;
+      } else {
+         skuStatus = SkuStatus.UNAVAILABLE;
+      }
+
+      return skuStatus;
    }
 
 }

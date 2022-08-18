@@ -24,12 +24,15 @@ public class InsightsCrawlerSession extends Session {
 
    private SkuStatus productStatus;
 
+   private boolean scheduledProductIsVoid;
+
 
    public InsightsCrawlerSession(Request request, String queueName, Market market) {
       super(request, queueName, market);
 
       processedId = request.getProcessedId();
       internalId = request.getInternalId();
+      scheduledProductIsVoid = request.isVoid();
 
       this.voidAttemptsCounter = 0;
    }
@@ -73,5 +76,11 @@ public class InsightsCrawlerSession extends Session {
    public void setProductStatus(SkuStatus productStatus) {
       this.productStatus = productStatus;
    }
+
+   @Override
+   public boolean scheduledProductIsVoid() {
+      return scheduledProductIsVoid;
+   }
+
 
 }

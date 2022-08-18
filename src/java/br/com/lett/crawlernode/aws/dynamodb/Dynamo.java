@@ -204,7 +204,7 @@ public class Dynamo {
    }
 
 
-   public static void updateReadByCrawlerObjectDynamo(List<Product> products, Session session, SkuStatus skuStatus) {
+   public static void updateReadByCrawlerObjectDynamo(List<Product> products, Session session) {
 
       List<Map> foundSkus = new ArrayList<>();
       String md5 = convertUrlInMD5(session.getOriginalURL(), session.getMarket().getId());

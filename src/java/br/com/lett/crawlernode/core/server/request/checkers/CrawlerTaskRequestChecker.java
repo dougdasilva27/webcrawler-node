@@ -27,10 +27,6 @@ public class CrawlerTaskRequestChecker {
       }
 
       if (ScrapersTypes.CORE.toString().equals(scraperType)) {
-         if (request.getProcessedId() == null) {
-            Logging.printLogError(logger, "Request is missing processedId");
-            return false;
-         }
          if (request.getInternalId() == null) {
             Logging.printLogError(logger, "Request is missing internalId");
             return false;
@@ -50,10 +46,6 @@ public class CrawlerTaskRequestChecker {
 
       if (imageCrawlerRequest.getImageType() == null) {
          Logging.printLogError(logger, "Request is missing image type");
-         return false;
-      }
-      if (imageCrawlerRequest.getProcessedId() == null) {
-         Logging.printLogError(logger, "Request is missing processedId");
          return false;
       }
       if (imageCrawlerRequest.getInternalId() == null) {
