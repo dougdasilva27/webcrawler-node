@@ -14,7 +14,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RequestMethod;
-import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.*;
@@ -267,8 +266,8 @@ public abstract class Crawler extends Task {
             sendToKinesis(p);
          }
 
-         for (Product product : products) {
-            if (session instanceof SeedCrawlerSession) {
+         if (session instanceof SeedCrawlerSession) {
+            for (Product product : products) {
                processProduct(product);
             }
          }
@@ -651,8 +650,8 @@ public abstract class Crawler extends Task {
     * @param product
     */
    private void processProduct(Product product) {
-         JSONObject productJson = DatabaseDataFetcher.fetchProductInElastic(product, session);
-         Persistence.updateFrozenServerTask(product, productJson, ((SeedCrawlerSession) session));
+      JSONObject productJson = DatabaseDataFetcher.fetchProductInElastic(product, session);
+      Persistence.updateFrozenServerTask(product, productJson, ((SeedCrawlerSession) session));
    }
 
 

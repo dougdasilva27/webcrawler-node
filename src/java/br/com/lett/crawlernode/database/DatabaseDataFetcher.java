@@ -6,7 +6,6 @@ import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
-import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -14,9 +13,6 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import dbmodels.Tables;
-import dbmodels.tables.SupplierTrackedLett;
-import exceptions.MalformedRatingModel;
-import exceptions.OfferException;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.elasticsearch.action.search.SearchResponse;
@@ -28,16 +24,16 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.conf.ParamType;
-import org.jooq.impl.DSL;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DatabaseDataFetcher {
 
@@ -346,6 +342,7 @@ public class DatabaseDataFetcher {
          Logging.logInfo(logger, session, apacheMetadata, "ELASTICSEARCH TIMING INFO");
 
       } catch (IOException e) {
+         Logging.printLogError(logger, session, "Error fetching product in elasticsearch to product: internalId  " + product.getInternalId() + " in market: " + session.getMarket().getId());
          throw new RuntimeException(e);
       } finally {
          dbManagerElastic.connectionElasticSearch.closeConnection();
