@@ -179,15 +179,16 @@ public class CornershopCrawler extends Crawler {
       String name = JSONUtils.getStringValue(json, "name");
       String brand = JSONUtils.getValueRecursive(json, "brand.name", String.class);
       String quantity = JSONUtils.getStringValue(json, "package");
-      if (name != null) {
-         nameComplete.append(name).append(" . ");
 
-         if (brand != null) {
-            nameComplete.append(brand).append(" ");
-         }
-         if (quantity != null) {
-            nameComplete.append(quantity);
-         }
+      if (brand != null) {
+         nameComplete.append(brand).append(" . ");
+      }
+      if (name != null) {
+         nameComplete.append(name).append(" ");
+      }
+
+      if (nameComplete.length() > 0 && quantity != null) {
+         nameComplete.append(quantity);
       }
 
       return nameComplete.toString();
