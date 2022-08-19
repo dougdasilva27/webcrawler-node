@@ -31,57 +31,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MexicoSingerCrawler extends Crawler {
 
+   Double globalPrice = null;
    private static final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.DINERS.toString(), Card.AMEX.toString(), Card.ELO.toString());
 
    public MexicoSingerCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.FETCHER);
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
       WebDriverWait wait = new WebDriverWait(driver, 20);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
-   }
-
-   protected Document fetch() {
-      Document doc = null;
-
-      try {
-         List<String> proxies = Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX);
-         int attemp = 0;
-         do {
-            if (attemp != 0) {
-               webdriver.terminate();
-            }
-            webdriver = DynamicDataFetcher
-               .fetchPageWebdriver(session.getOriginalURL(), proxies.get(attemp), session);
-            webdriver.waitLoad(60000);
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-         } while (doc.select(".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > .price > span.current").isEmpty() && attemp++ < 3);
-
-         webdriver.waitLoad(2000);
-         if (doc.selectFirst(".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > div.price > span.current") != null) {
-            WebElement finalScearch = webdriver.driver.findElement(By.cssSelector(".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > div.price > span.current"));
-            webdriver.clickOnElementViaJavascript(finalScearch);
-            waitForElement(webdriver.driver, ".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > div.price > span.current");
-            webdriver.waitLoad(5000);
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
-            webdriver.terminate();
-
-         }
-
-
-      } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-         Logging.printLogWarn(logger, "Parse não realizado");
-         webdriver.terminate();
-      }
-      return doc;
    }
 
    @Override
@@ -97,8 +62,8 @@ public class MexicoSingerCrawler extends Crawler {
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#collapseOne > div > p:first-child", "#collapseOne > div > p:last-child"));
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".simpleLens-container > div > a > img", Arrays.asList("src"), "http://", "www.singer.com/mx");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".simpleLens-thumbnails-container > div > a", Arrays.asList("data-big-image"), "http://", "www.singer.com/mx", primaryImage);
-         String availableHolder = getStock(doc);
-         boolean available = availableHolder.equals("In stock");
+         String availableHolder = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property='product:price:amount']", "content");
+         boolean available = availableHolder != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
@@ -123,21 +88,6 @@ public class MexicoSingerCrawler extends Crawler {
       return products;
    }
 
-   private String getStock(Document doc) {
-      int child = 0;
-      String finalStock = null;
-      Elements stock = doc.select("head > meta");
-      for (Element e : stock) {
-         String stockHolder = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"meta","content");
-         if (stockHolder!=null){
-            if (stockHolder.equals("In stock")||stockHolder.equals("Out of stock")){
-               finalStock = stockHolder;
-            }
-         }
-      }
-      return finalStock;
-   }
-
    private boolean isProductPage(Document doc) {
       return doc.selectFirst("#vue-pdp-page > div > div > div") != null;
    }
@@ -149,7 +99,7 @@ public class MexicoSingerCrawler extends Crawler {
       if (pricing != null) {
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName("Poli-Pet")
+            .setSellerFullName("Singer")
             .setSellersPagePosition(1)
             .setIsBuybox(false)
             .setIsMainRetailer(true)
@@ -162,11 +112,12 @@ public class MexicoSingerCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > div.price > span.current", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > div.price > span.percent.d-md-inline", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property='product:price:amount']", "content", false, '.', session);
+      Double priceFrom = scrapPriceFrom(doc, spotlightPrice);
 
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > div.price > span.percent.d-md-inline", null, false, ',', session);
+
+      if (priceFrom == null) {
+         priceFrom = spotlightPrice;
       }
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
@@ -178,6 +129,20 @@ public class MexicoSingerCrawler extends Crawler {
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
+   }
+
+   private Double scrapPriceFrom(Document doc, Double spot) {
+      String holderPrice;
+      Double price = null;
+      String regex = "\\$(.*)en";
+      String holder = CrawlerUtils.scrapStringSimpleInfo(doc, ".simpleLens-container > span > span:nth-child(even)", false);
+      final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      final Matcher matcher = pattern.matcher(holder);
+      if (matcher.find()) {
+         holderPrice = ((matcher.group(1)));
+         price = Double.valueOf(holderPrice);
+      }
+      return spot + price;
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
