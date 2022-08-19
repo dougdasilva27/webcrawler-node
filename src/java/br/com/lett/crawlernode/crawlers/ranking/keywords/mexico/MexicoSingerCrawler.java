@@ -42,13 +42,21 @@ public class MexicoSingerCrawler extends CrawlerRankingKeywords {
 
    protected Document fetch() {
       Document doc = null;
-      try {
-         webdriver = DynamicDataFetcher
-            .fetchPageWebdriver("https://www.singer.com/mx/search?title=" + this.keywordEncoded.replace(" ", "+") + "&page=" + currentPage, ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, session);
-         webdriver.waitLoad(5000);
-         doc = Jsoup.parse(webdriver.getCurrentPageSource());
-         webdriver.waitLoad(10000);
 
+      try {
+         List<String> proxies = Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX);
+         int attemp = 0;
+         do {
+            if (attemp != 0) {
+               webdriver.terminate();
+            }
+            webdriver = DynamicDataFetcher
+               .fetchPageWebdriver("https://www.singer.com/mx/search?title=" + this.keywordEncoded.replace(" ", "+") + "&page=" + (currentPage - 1), proxies.get(attemp), session);
+            webdriver.waitLoad(10000);
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         } while (doc.select(".card-text.plp-section-content > strong.plp-section-price.current").isEmpty() && attemp++ < 3);
+
+         webdriver.waitLoad(2000);
          if (doc.selectFirst(".card-text.plp-section-content > strong.plp-section-price.current") != null) {
             WebElement finalScearch = webdriver.driver.findElement(By.cssSelector(".card-text.plp-section-content > strong.plp-section-price.current"));
             webdriver.clickOnElementViaJavascript(finalScearch);
@@ -70,11 +78,11 @@ public class MexicoSingerCrawler extends CrawlerRankingKeywords {
 
    @Override
    public void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      this.pageSize = 20;
+      this.pageSize = 30;
 
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.singer.com/mx/search?title=" + this.keywordEncoded.replace(" ", "+") + "&page=" + currentPage;
+      String url = "https://www.singer.com/mx/search?title=" + this.keywordEncoded.replace(" ", "+") + "&page=" + (currentPage - 1);
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetch();
@@ -87,10 +95,10 @@ public class MexicoSingerCrawler extends CrawlerRankingKeywords {
          }
          for (Element e : products) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".card-image > div.product-quickview > button", "data-ep-reference");
-            String productUrl = CrawlerUtils.scrapUrl(e, ".card-body.plp-section-body > p > a", "href", "https:", "https://www.singer.com/mx");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfo(e, ".card-body.plp-section-body > p > a", false);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".card-body.plp-section-body > p > a", true);
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".main-wrap.card-category-imagewrapper > div > .card-image > a > img", Arrays.asList("data-imgsrc"), "https", "://www.singer.com/mx");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".card-text.plp-section-content > strong.plp-section-price.current", null, false, ',', session, null);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".card-text.plp-section-content > strong.plp-section-price.current", null, false, '.', session, null);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -120,5 +128,23 @@ public class MexicoSingerCrawler extends CrawlerRankingKeywords {
    public static void waitForElement(WebDriver driver, String cssSelector) {
       WebDriverWait wait = new WebDriverWait(driver, 20);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      String holder = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, ".pagerer-center-pane > nav > ul > li.pager__item.pager__item--next > a > .visually-hidden", false);
+      return holder != null && !holder.isEmpty();
+   }
+
+   @Override
+   protected void setTotalProducts() {
+      String totalHolder = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, "#products-tab > span", false);
+      Integer totalProduct = null;
+      if (totalHolder != null && !totalHolder.isEmpty()) {
+         totalProduct = Integer.parseInt(totalHolder.replace("(", "").replace(")", ""));
+      }
+      this.totalProducts = totalProduct;
+      this.log("Total: " + this.totalProducts);
+
    }
 }
