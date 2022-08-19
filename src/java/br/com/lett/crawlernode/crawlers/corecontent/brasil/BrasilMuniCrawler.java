@@ -44,10 +44,10 @@ public class BrasilMuniCrawler extends Crawler {
    private Map<String, String> getHeaders() {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-      headers.put("origin", "https://cruzverde.cl");
-      headers.put("authority", "api.cruzverde.cl");
-      headers.put("referer", "https://cruzverde.cl/");
-      headers.put("accept", "application/json, text/plain, */*");
+      headers.put("origin", "https://shop.munitienda.com.br/");
+      headers.put("authority", "api.munitienda.com.br");
+      headers.put("referer", "https://shop.munitienda.com.br/");
+      headers.put("accept", "application/json, text/plain, /");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
 
       return headers;
