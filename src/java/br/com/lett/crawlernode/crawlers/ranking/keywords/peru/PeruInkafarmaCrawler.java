@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.peru;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -29,6 +28,10 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.APACHE;
    }
 
+   private final String storeID = getStoreId();
+   protected String getStoreId() {
+      return session.getOptions().optString("store_id");
+   }
    private String accessToken;
 
    @Override
@@ -140,7 +143,8 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
          headers.put("AndroidVersion", "100000");
          headers.put("referer", "https://inkafarma.pe/");
          headers.put("origin", "https://inkafarma.pe");
-         headers.put("Accept","application/json");
+         headers.put("Accept", "application/json");
+         headers.put("drugstore-stock", storeID);
 
          Request request = RequestBuilder.create()
             .setUrl(url)
@@ -179,7 +183,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
       headers.put("origin", "https://inkafarma.pe");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("authority", "5doa19p9r7.execute-api.us-east-1.amazonaws.com");
-      headers.put("Accept","application/json");
+      headers.put("Accept", "application/json");
 
 
       Request request = RequestBuilder.create()
