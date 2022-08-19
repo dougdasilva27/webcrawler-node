@@ -2,6 +2,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -12,32 +15,43 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.prices.Prices;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
 import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.text.Normalizer;
 import java.util.*;
-import java.util.Map.Entry;
 
 public class PeruInkafarmaCrawler extends Crawler {
 
    public static final String GOOGLE_KEY = "AIzaSyC2fWm7Vfph5CCXorWQnFqepO8emsycHPc";
+   private static final String SELLER_NAME = "inkafarma";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(),
+      Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.DINERS.toString());
+
+   private final String storeID = getStoreId();
+   protected String getStoreId() {
+      return session.getOptions().optString("store_id");
+   }
+
 
    public PeruInkafarmaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
    protected Object fetch() {
       JSONObject skuJson = new JSONObject();
-
       String parameterSku = getSkuFromUrl(session.getOriginalURL());
+
       if (parameterSku != null) {
          Map<String, String> headersToken = new HashMap<>();
          headersToken.put(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -46,44 +60,47 @@ public class PeruInkafarmaCrawler extends Crawler {
             .setUrl("https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=" + GOOGLE_KEY)
             .setPayload("{\"returnSecureToken\":true}")
             .setProxyservice(Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_SERVER_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX,
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR
             ))
             .setHeaders(headersToken)
             .build();
 
-         Response response = this.dataFetcher.post(session, requestToken);
-         JSONObject apiTokenJson = JSONUtils.stringToJson(response.getBody());
+         Response responseToken = CrawlerUtils.retryRequestWithListDataFetcher(requestToken, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+         JSONObject apiTokenJson = JSONUtils.stringToJson(responseToken.getBody());
+
          if (apiTokenJson.has("idToken") && !apiTokenJson.isNull("idToken")) {
             String accesToken = apiTokenJson.get("idToken").toString();
 
             Map<String, String> headers = new HashMap<>();
             headers.put("x-access-token", accesToken);
             headers.put("AndroidVersion", "100000");
+            headers.put("content-type", "application/json");
             headers.put(HttpHeaders.REFERER, session.getOriginalURL());
+            if(storeID != null) {
+               headers.put("drugstore-stock", storeID);
+            }
+
+            String payload = "{\"departmentsFilter\":[],\"categoriesFilter\":[],\"subcategoriesFilter\":[],\"brandsFilter\":[]," +
+               "\"ranking\":0,\"page\":0,\"rows\":8,\"order\":\"ASC\",\"sort\":\"ranking\",\"productsFilter\":[\"" + parameterSku + "\"]}";
 
             Request request = RequestBuilder.create()
-               .setUrl("https://qurswintke.execute-api.us-west-2.amazonaws.com/PROD/product/" + parameterSku)
+               .setUrl("https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/PROD/filtered-products")
                .setHeaders(headers)
+               .setPayload(payload)
                .mustSendContentEncoding(false)
                .setProxyservice(Arrays.asList(
-                  ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
-                  ProxyCollection.BUY_HAPROXY,
-                  ProxyCollection.LUMINATI_SERVER_BR,
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
-                  ProxyCollection.NETNUT_RESIDENTIAL_MX,
-                  ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+                  ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+                  ProxyCollection.NETNUT_RESIDENTIAL_ES,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR
                ))
                .build();
 
-            String responseBody = this.dataFetcher.get(session, request).getBody();
-            skuJson = JSONUtils.stringToJson(Normalizer.normalize(responseBody, Normalizer.Form.NFD));
+            Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+            skuJson = JSONUtils.stringToJson(response.getBody());
          }
       }
 
@@ -109,44 +126,34 @@ public class PeruInkafarmaCrawler extends Crawler {
    public List<Product> extractInformation(JSONObject jsonSku) throws Exception {
       List<Product> products = new ArrayList<>();
 
-      if (jsonSku.has("id") && !jsonSku.isNull("id")) {
+      if (jsonSku != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         JSONObject productJson = JSONUtils.getValueRecursive(jsonSku, "rows.0", JSONObject.class);
 
-         String internalId = jsonSku.get("id").toString();
+         String internalId = productJson.optString("id");
          String internalPid = internalId;
-         String newUrl = scrapNewUrl(jsonSku, internalId, session.getOriginalURL());
-         String name = JSONUtils.getStringValue(jsonSku, "name").replace("\n", " ");
-         Integer stock = JSONUtils.getIntegerValueFromJSON(jsonSku, "stock", 0);
-         boolean available = stock > 0;
-         Float price = available ? JSONUtils.getFloatValueFromJSON(jsonSku, "price", true) : null;
-         Prices prices = crawlPrices(price);
-         String description = crawlDescription(jsonSku);
-         JSONArray images = JSONUtils.getJSONArrayValue(jsonSku, "imageList");
+         String name = productJson.optString("name");
+         String description = productJson.optString("longDescription");
 
-         String primaryImage = crawlPrimaryImage(images);
-         List<String> secondaryImages = !images.isEmpty() ? crawlSecondaryImages(images) : null;
-         CategoryCollection categories = new CategoryCollection();
+         String primaryImage = JSONUtils.getValueRecursive(productJson, "imageList.0.url", String.class);
+         CategoryCollection categories = scrapCategories(productJson);
 
-         // Creating the product
+         boolean available = productJson.optString("productStatus").equalsIgnoreCase("AVAILABLE");
+         Offers offers = available ? scrapOffers(productJson) : new Offers();
+
          Product product = ProductBuilder.create()
-            .setUrl(newUrl)
+            .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(available)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            .setStock(stock)
-            .setMarketplace(new Marketplace())
+            .setCategories(categories)
+            .setOffers(offers)
             .build();
 
          products.add(product);
+
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -154,96 +161,64 @@ public class PeruInkafarmaCrawler extends Crawler {
       return products;
    }
 
-   private String scrapNewUrl(JSONObject json, String internalId, String url) {
-      String newUrl = url;
+   private CategoryCollection scrapCategories(JSONObject productJson) {
+      CategoryCollection categories = new CategoryCollection();
 
-      if (url.contains("sku=") && internalId != null) {
-         newUrl = "https://inkafarma.pe/producto/" + CommonMethods.encondeStringURLToISO8859(json.optString("slug", ""), logger, session) + "/" + internalId;
-      }
+      String categorie = JSONUtils.getValueRecursive(productJson, "categoryList.0.name", String.class);
+      categories.add(categorie);
 
-      return newUrl;
+      return categories;
    }
 
-   private String crawlPrimaryImage(JSONArray images) {
-      String primaryImage = null;
+   private Offers scrapOffers(JSONObject productJson) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(productJson);
+      List<String> sales = scrapSales(pricing);
 
-      for (Object o : images) {
-         if (o instanceof JSONObject) {
-            JSONObject imageJson = (JSONObject) o;
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_NAME)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
-            String image = JSONUtils.getStringValue(imageJson, "url");
-            if (image != null) {
-               if (primaryImage != null && primaryImage.endsWith("X.png")) {
-                  break;
-               } else if (primaryImage == null || image.endsWith("X.png")) {
-                  primaryImage = image;
-               } else if (image.endsWith("L.png")) {
-                  primaryImage = image;
-               } else if (primaryImage != null && !primaryImage.endsWith("L.png")) {
-                  primaryImage = image;
-               }
-            }
-         }
-      }
-
-      return primaryImage;
+      return offers;
    }
 
-   private List<String> crawlSecondaryImages(JSONArray images) {
-      List<String> secondaryImages = new ArrayList<>();
-      JSONObject jsonObject = images.getJSONObject(0);
-      JSONArray imagesArr = jsonObject.optJSONArray("thumbnails");
-      if (imagesArr != null) {
-         imagesArr.forEach(image -> secondaryImages.add((String) image));
+   private Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(productJson, "priceAllPaymentMethod", true);
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(productJson, "price", true);
+      if (spotlightPrice == null || spotlightPrice == 0) {
+         spotlightPrice = JSONUtils.getDoubleValueFromJSON(productJson, "price", true);
+         priceFrom = null;
       }
-      return secondaryImages;
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create().setSpotlightPrice(spotlightPrice).setPriceFrom(priceFrom).setCreditCards(creditCards).build();
    }
 
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create().setInstallmentNumber(1).setInstallmentPrice(spotlightPrice).build());
 
-   private String crawlDescription(JSONObject json) {
-      StringBuilder description = new StringBuilder();
-
-      Map<String, String> descriptionsKeys = new HashMap<>();
-      descriptionsKeys.put("shortDescription", "");
-      descriptionsKeys.put("longDescription", "Descripción");
-      descriptionsKeys.put("howToConsume", "Administración");
-      descriptionsKeys.put("precautions", "Precauciones");
-      descriptionsKeys.put("sideEffects", "Contraindicaciones");
-
-      for (Entry<String, String> entry : descriptionsKeys.entrySet()) {
-         if (json.has(entry.getKey()) && !json.isNull(entry.getKey())) {
-            String value = json.get(entry.getKey()).toString().trim();
-
-            if (!value.isEmpty()) {
-               description.append("<div id=\"" + entry.getKey() + "\">");
-               description.append("<h5> " + entry.getValue() + "</h5>");
-               description.append("<p> " + json.get(entry.getKey()) + "</p>");
-               description.append("</div>");
-            }
-         }
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create().setBrand(card).setInstallments(installments).setIsShopCard(false).build());
       }
 
-      return description.toString();
+      return creditCards;
    }
 
-   /**
-    * In this site has no information of installments
-    *
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price) {
-      Prices p = new Prices();
+   private List<String> scrapSales(Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+      String saleDiscount = CrawlerUtils.calculateSales(pricing);
 
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-         installmentPriceMap.put(1, price);
-
-         p.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+      if (saleDiscount != null) {
+         sales.add(saleDiscount);
       }
 
-      return p;
+      return sales;
    }
 }
