@@ -91,9 +91,9 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
                String productUrl = internalId != null ? "https://inkafarma.pe/producto/" + product.optString("slug", "") + "/" + internalId : null;
 
                String name = product.optString("name");
-               Integer price = setPrice(product);
                String image = JSONUtils.getValueRecursive(product, "imageList.0.url", String.class);
                boolean isAvailable = product.optString("productStatus").equalsIgnoreCase("AVAILABLE");
+               Integer price = isAvailable ? setPrice(product) : null;
 
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
@@ -103,6 +103,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
                   .setImageUrl(image)
                   .setAvailability(isAvailable)
                   .build();
+
 
                saveDataProduct(productRanking);
 
