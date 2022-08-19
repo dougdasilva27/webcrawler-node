@@ -61,7 +61,7 @@ public class MexicoSingerCrawler extends Crawler {
                .fetchPageWebdriver(session.getOriginalURL(), proxies.get(attemp), session);
             webdriver.waitLoad(30000);
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
-         } while (doc.select(".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > .price > span.current").isEmpty() && !doc.select(".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > .price.hidden > span.current").isEmpty() && attemp++ < 3);
+         } while (doc.select(".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > .price > span.current").isEmpty() && attemp++ < 3);
 
          webdriver.waitLoad(2000);
          if (doc.selectFirst(".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > div.price > span.current") != null) {
