@@ -149,7 +149,9 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
          headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
          headers.put("x-access-token", this.accessToken);
          headers.put("AndroidVersion", "100000");
-         headers.put("drugstore-stock", storeID);
+         if(storeID != null) {
+            headers.put("drugstore-stock", storeID);
+         }
 
          Request request = RequestBuilder.create()
             .setUrl(url)
@@ -182,7 +184,9 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
       headers.put("x-access-token", this.accessToken);
-      headers.put("drugstore-stock", storeID);
+      if(storeID != null) {
+         headers.put("drugstore-stock", storeID);
+      }
 
       Request request = RequestBuilder.create()
          .setUrl(url)
