@@ -59,7 +59,7 @@ public class MexicoSingerCrawler extends Crawler {
             }
             webdriver = DynamicDataFetcher
                .fetchPageWebdriver(session.getOriginalURL(), proxies.get(attemp), session);
-            webdriver.waitLoad(30000);
+            webdriver.waitLoad(60000);
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
          } while (doc.select(".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > .price > span.current").isEmpty() && attemp++ < 3);
 
@@ -98,7 +98,7 @@ public class MexicoSingerCrawler extends Crawler {
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".simpleLens-container > div > a > img", Arrays.asList("src"), "http://", "www.singer.com/mx");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".simpleLens-thumbnails-container > div > a", Arrays.asList("data-big-image"), "http://", "www.singer.com/mx", primaryImage);
          String availableHolder = getStock(doc);
-         boolean available = availableHolder.contains("In stock");
+         boolean available = availableHolder.equals("In stock");
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
@@ -124,12 +124,13 @@ public class MexicoSingerCrawler extends Crawler {
    }
 
    private String getStock(Document doc) {
+      int child = 0;
       String finalStock = null;
       Elements stock = doc.select("head > meta");
       for (Element e : stock) {
-         String stockHolder = CrawlerUtils.scrapStringSimpleInfo(e,"head > meta",false);
+         String stockHolder = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"meta","content");
          if (stockHolder!=null){
-            if (stockHolder.contains("In stock")||stockHolder.contains("Out of stock")){
+            if (stockHolder.equals("In stock")||stockHolder.equals("Out of stock")){
                finalStock = stockHolder;
             }
          }
