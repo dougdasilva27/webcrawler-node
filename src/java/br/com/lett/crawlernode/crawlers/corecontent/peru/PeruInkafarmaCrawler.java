@@ -44,7 +44,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
    public PeruInkafarmaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
@@ -77,9 +77,11 @@ public class PeruInkafarmaCrawler extends Crawler {
             Map<String, String> headers = new HashMap<>();
             headers.put("x-access-token", accesToken);
             headers.put("AndroidVersion", "100000");
-            headers.put("drugstore-stock", storeID);
             headers.put("content-type", "application/json");
             headers.put(HttpHeaders.REFERER, session.getOriginalURL());
+            if(storeID != null) {
+               headers.put("drugstore-stock", storeID);
+            }
 
             String payload = "{\"departmentsFilter\":[],\"categoriesFilter\":[],\"subcategoriesFilter\":[],\"brandsFilter\":[]," +
                "\"ranking\":0,\"page\":0,\"rows\":8,\"order\":\"ASC\",\"sort\":\"ranking\",\"productsFilter\":[\"" + parameterSku + "\"]}";
