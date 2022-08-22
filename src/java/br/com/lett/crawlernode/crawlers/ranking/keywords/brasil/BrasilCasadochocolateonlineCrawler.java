@@ -22,7 +22,7 @@ public class BrasilCasadochocolateonlineCrawler extends CrawlerRankingKeywords {
       String url = "https://www.casadochocolateonline.com.br/produtos?q="+ this.currentPage;
       this.currentDoc = fetchDocument(url);
 
-     Elements products = this.currentDoc.select(".main-content > div > div > div > div > section > div > div > div.col-6.col-sm-6.col-md-4.col-lg-4.mb-4");
+     Elements products = this.currentDoc.select(".row.no-gutters .container-fluid.mb-4 .row.mt-4 .col-6");
 
       if(!products.isEmpty()){
          if(this.totalProducts == 0) {
