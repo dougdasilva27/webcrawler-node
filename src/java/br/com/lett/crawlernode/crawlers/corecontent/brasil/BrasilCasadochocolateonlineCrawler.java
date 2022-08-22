@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 public class BrasilCasadochocolateonlineCrawler extends Crawler {
-   private static String SELLER_NAME = "";
+   private static String SELLER_NAME = "Casa do Chocolate Online";
 
    public Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.ELO.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
