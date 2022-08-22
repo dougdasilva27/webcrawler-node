@@ -1,115 +1,103 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.apache.http.HttpHeaders;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 public abstract class AbcsupermercadosCrawler extends CrawlerRankingKeywords {
 
-   protected final String storeId = getStoreId();
-   private String userAgent;
-
-   protected abstract String getStoreId();
-
    public AbcsupermercadosCrawler(Session session) {
       super(session);
    }
 
-   private int fetchTotalProducts() {
+   private final String idLoja = getIdLoja();
 
-      int totalProducts = 0;
-
-      String url = "https://www.superabc.com.br/leite";
-      BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=" + getStoreId());
-      cookie.setDomain("www.superabc.com.br");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-
-      Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-
-      Document response = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-
-      if (response != null) {
-
-         totalProducts = CrawlerUtils.scrapIntegerFromHtml(response, ".resultado-busca-numero .value", true, 0);
-      }
-
-      return totalProducts;
-
+   protected String getIdLoja() {
+      return session.getOptions().optString("id_loja");
    }
 
+   @Override
+   protected JSONObject fetchJSONObject(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("authorization", "Basic YjQ5Y2ZlYTEtMTI4OS00YmNmLWE3M2UtMDkxMTVhZjQ4ZWNlOjY4MDZhZGY4Y2QyNGZmZGU2MGFhNGUwY2FmZDdmM2Qx");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
+         .build();
+
+      Response response = this.dataFetcher.get(session, request);
+      return JSONUtils.stringToJson(response.getBody());
+   }
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
-      this.pageSize = 20;
-
+      this.pageSize = 30;
       this.log("Página " + this.currentPage);
+      String url = "https://apiofertas.superabc.com.br/api/app/v3/selecionarprodutosnovo/?loja=" + idLoja
+         + "&descricao=" + this.keywordEncoded + "&page=" + this.currentPage + "&pagesize=30";
+      JSONObject jsonObject = fetchJSONObject(url);
 
-      String url = "https://www.superabc.com.br/buscapagina?ft=" + this.keywordEncoded + "&PS=20&sl=621a9e06-6be4-49e2-b3db-d87b97604e90&cc=20&sm=0&PageNumber="
-         + this.currentPage;
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.USER_AGENT, this.userAgent);
-
-      Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      this.currentDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
       this.log("Link onde são feitos os crawlers: " + url);
 
-      Elements products = this.currentDoc.select(".prateleira__item");
+      JSONArray products = jsonObject.optJSONArray("Produtos");
 
-      if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts();
-         }
-         for (Element e : products) {
-            String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href"), "https", "www.comper.com.br");
-            String internalId = e.attr("data-id");
+      if (products != null && products.length() > 0) {
+         for (Object product : products) {
+            if (product instanceof JSONObject) {
+               JSONObject productJson = (JSONObject) product;
+               String internalId = productJson.optString("Codigo");
+               String internalPid = internalId;
+               String name = productJson.optString("Descricao");
+               String productUrl = scrapProductUrl(productJson);
+               String image = productJson.optString("Urls/0");
+               Integer price = (int) Math.round((productJson.optDouble("PrecoVenda") * 100));
+               boolean available = JSONUtils.getIntegerValueFromJSON(productJson, "EstoqueDisponivel", 0) > 0;
 
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".prateleira__name", true);
-            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".prateleira__image > img", "src");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".prateleira__best-price", null, true, ',', session, 0);
-            boolean isAvailable = price != 0;
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setUrl(productUrl)
+                  .setImageUrl(image)
+                  .setAvailability(available)
+                  .setPriceInCents(price)
+                  .build();
 
-            RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(productUrl)
-               .setInternalId(internalId)
-               .setName(name)
-               .setPriceInCents(price)
-               .setAvailability(isAvailable)
-               .setImageUrl(imageUrl)
-               .build();
-
-            saveDataProduct(productRanking);
-
-            if (this.arrayProducts.size() == productsLimit)
-               break;
+               saveDataProduct(productRanking);
+            }
          }
       } else {
          this.result = false;
-         this.log("Keyword sem resultado!");
+         this.log("Keyword sem resultados!");
       }
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
    }
 
+   private String scrapProductUrl(JSONObject productJson) {
+      String partialUrl = productJson.optString("UrlSite");
+      return "https://superabc.com.br/" + partialUrl + "/p";
+   }
+
    @Override
-   protected void setTotalProducts() {
-      this.totalProducts = fetchTotalProducts();
-      this.log("Total da busca: " + this.totalProducts);
+   protected boolean hasNextPage() {
+      return true;
    }
 }

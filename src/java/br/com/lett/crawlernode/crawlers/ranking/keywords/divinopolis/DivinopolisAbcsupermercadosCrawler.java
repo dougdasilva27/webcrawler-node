@@ -5,13 +5,8 @@ import br.com.lett.crawlernode.crawlers.extractionutils.ranking.Abcsupermercados
 
 public class DivinopolisAbcsupermercadosCrawler extends AbcsupermercadosCrawler {
 
-   private static final String STORE_ID = "1";
-
    public DivinopolisAbcsupermercadosCrawler(Session session) {
       super(session);
    }
-   @Override
-   protected String getStoreId() {
-      return STORE_ID;
-   }
+
 }
