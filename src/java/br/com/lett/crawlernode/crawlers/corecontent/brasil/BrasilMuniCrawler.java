@@ -34,7 +34,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BrasilMuniCrawler extends Crawler {
-   private static final String SELLER_FULL_NAME = "Muni";
+   private static final String SELLER_FULL_NAME = "Tienda Muni";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
    public BrasilMuniCrawler(Session session) {
@@ -63,23 +63,18 @@ public class BrasilMuniCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
          String brand = getBrand(productData);
          String name = getName(productData);
-         CategoryCollection categories = getCategory(productData);
          String primaryImage = getPrimaryImage(productData);
-         List<String> secondaryImage = getSecondaryImage(productData, primaryImage);
          String description = getDescription(productData);
-         int stock = JSONUtils.getValueRecursive(productData, "productData.stock", Integer.class, 0);
-         boolean available = stock > 0;
+         boolean available = productData.optBoolean("is_active");
+
          Offers offers = available ? getOffer(productData) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setName(brand + " " + name)
-            .setCategories(categories)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImage)
             .setDescription(description)
-            .setStock(stock)
             .setOffers(offers)
             .build();
 
@@ -92,59 +87,19 @@ public class BrasilMuniCrawler extends Crawler {
       return products;
 
    }
-   private CategoryCollection getCategory(JSONObject productList) {
-      CategoryCollection categories = new CategoryCollection();
-      Object objCategory = productList.optQuery("/productData/category");
-      if (objCategory instanceof String && !((String) objCategory).isEmpty()) {
-         String category = WordUtils.capitalize(objCategory.toString().replace("-", " "));
-         categories.add(category);
-      }
-      return categories;
-   }
 
    private String getDescription(JSONObject productList) {
-      StringBuilder description = new StringBuilder();
-
-      Object objDescription = productList.optQuery("/productData/pageDescription");
-      if (objDescription instanceof String && !objDescription.toString().isEmpty()) {
-         description.append(objDescription.toString()).append("<br>");
+      String name = "";
+      Object objName = productList.optQuery("/content_description");
+      if (objName != null) {
+         name = objName.toString();
       }
-
-      JSONArray tabs = JSONUtils.getValueRecursive(productList, "productData.tabs", JSONArray.class, new JSONArray());
-
-      for (Object tab : tabs) {
-         JSONObject tabObj = (JSONObject) tab;
-         String title = tabObj.optString("title");
-         String content = tabObj.optString("content");
-         if (title != null && !title.isEmpty() && content != null && !content.isEmpty()) {
-            description.append("<h2>").append(title).append("</h2>").append("<p>").append(content).append("</p>");
-         }
-      }
-
-      return description.toString();
-   }
-
-   private List<String> getSecondaryImage(JSONObject productList, String primaryImage) {
-      List<String> imgFormat = new ArrayList<>();
-      JSONArray arrayImg = (JSONArray) productList.optQuery("/productData/imageGroups/0/images");
-      if (arrayImg == null) {
-         return null;
-      }
-      for (Object obj : arrayImg) {
-         if (obj instanceof JSONObject) {
-            JSONObject objJson = (JSONObject) obj;
-            String urlImg = objJson.optString("link");
-            if (!urlImg.equals(primaryImage)) {
-               imgFormat.add(urlImg);
-            }
-         }
-      }
-      return imgFormat;
+      return name;
    }
 
    private String getPrimaryImage(JSONObject productList) {
       String primaryImg = "";
-      Object objImg = productList.optQuery("/productData/imageGroups/0/images/0/link");
+      Object objImg = productList.optQuery("/image");
       if (objImg != null) {
          primaryImg = objImg.toString();
       }
@@ -153,7 +108,7 @@ public class BrasilMuniCrawler extends Crawler {
 
    private String getName(JSONObject productList) {
       String name = "";
-      Object objName = productList.optQuery("/productData/name");
+      Object objName = productList.optQuery("/name");
       if (objName != null) {
          name = objName.toString();
       }
@@ -162,7 +117,7 @@ public class BrasilMuniCrawler extends Crawler {
 
    private String getBrand(JSONObject productList) {
       String brand = "";
-      Object objBrand = productList.optQuery("/productData/brand");
+      Object objBrand = productList.optQuery("/metadata/product_brand");
       if (objBrand != null) {
          brand = objBrand.toString();
       }
@@ -184,9 +139,8 @@ public class BrasilMuniCrawler extends Crawler {
 
    private JSONObject getProductList(String internalId) {
       JSONObject obj = null;
-      String url = "https://api.cruzverde.cl/product-service/products/detail/" + internalId + "?inventoryId=";
+      String url = "https://api.munitienda.com.br/cata/v1/client/product/" + internalId;
       Map<String, String> headers = getHeaders();
-      headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -195,7 +149,6 @@ public class BrasilMuniCrawler extends Crawler {
          .build();
 
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
-      ;
 
       return CrawlerUtils.stringToJson(response.getBody());
    }
@@ -219,12 +172,12 @@ public class BrasilMuniCrawler extends Crawler {
    }
 
    private Pricing getPrice(JSONObject productList) throws MalformedPricingException {
-      Object priceObj = productList.optQuery("/productData/prices");
+      Object priceObj = productList.optQuery("/price");
 
       if (priceObj instanceof JSONObject) {
          JSONObject prices = (JSONObject) priceObj;
-         Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(prices, "price-sale-cl", false);
-         Double priceFrom = JSONUtils.getDoubleValueFromJSON(prices, "price-list-cl", false);
+         Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(prices, "value", false);
+         Double priceFrom = JSONUtils.getDoubleValueFromJSON(prices, "market_price", false);
 
          if (spotlightPrice == null && priceFrom != null) {
             spotlightPrice = priceFrom;
