@@ -95,7 +95,7 @@ public class MexicoSingerCrawler extends CrawlerRankingKeywords {
          }
          for (Element e : products) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".card-image > div.product-quickview > button", "data-ep-reference");
-            String productUrl = CrawlerUtils.scrapStringSimpleInfo(e, ".card-body.plp-section-body > p > a", false);
+            String productUrl = CrawlerUtils.scrapUrl(e, ".card-body.plp-section-body > p > a", "href","https://", "www.singer.com");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".card-body.plp-section-body > p > a", true);
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".main-wrap.card-category-imagewrapper > div > .card-image > a > img", Arrays.asList("data-imgsrc"), "https", "://www.singer.com/mx");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".card-text.plp-section-content > strong.plp-section-price.current", null, false, '.', session, null);
