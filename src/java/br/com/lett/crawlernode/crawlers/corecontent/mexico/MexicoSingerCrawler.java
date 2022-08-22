@@ -114,8 +114,6 @@ public class MexicoSingerCrawler extends Crawler {
 
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property='product:price:amount']", "content", false, '.', session);
       Double priceFrom = scrapPriceFrom(doc, spotlightPrice);
-
-
       if (priceFrom == null) {
          priceFrom = spotlightPrice;
       }
@@ -138,11 +136,16 @@ public class MexicoSingerCrawler extends Crawler {
       String holder = CrawlerUtils.scrapStringSimpleInfo(doc, ".simpleLens-container > span > span:nth-child(even)", false);
       final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
       final Matcher matcher = pattern.matcher(holder);
-      if (matcher.find()) {
-         holderPrice = ((matcher.group(1)));
-         price = Double.valueOf(holderPrice);
+      if (holder !=null){
+         if (matcher.find()) {
+            holderPrice = ((matcher.group(1)));
+            price = Double.valueOf(holderPrice);
+         }
+         return spot + price;
       }
-      return spot + price;
+      else {
+         return CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property='product:price:amount']", "content", false, '.', session);
+      }
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
