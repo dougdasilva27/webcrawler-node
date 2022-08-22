@@ -1,35 +1,46 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.gson.JsonParser;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class BrasilMuniCrawler extends CrawlerRankingKeywords {
-   public static final String PRODUCTS_API_URL = "https://gri9dmsahc-3.algolianet.com/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%20(lite)%203.32.1%3Binstantsearch.js%201.12.1%3BMagento%20integration%20(1.16.0)%3BJS%20Helper%202.26.1&x-algolia-application-id=GRI9DMSAHC&x-algolia-api-key=ZWE4ZDQyOTM5YjdjNDE0NWU5NjI5NWVhNzE4ODAwNDk5OTBjMjlhY2RiMTJiYzgzMjE0Mjc5ZmM3YmZiZTYzY2ZpbHRlcnM9Jm51bWVyaWNGaWx0ZXJzPXZpc2liaWxpdHlfc2VhcmNoJTNEMQ%3D%3D";
+   public static final String PRODUCTS_API_URL = "https://a60vkx00hn-dsn.algolia.net/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20JavaScript%20(4.10.5)%3B%20Browser%20(lite)%3B%20JS%20Helper%20(3.10.0)%3B%20react%20(16.14.0)%3B%20react-instantsearch%20(6.12.1)&x-algolia-api-key=671ae10cfea41e8580445bd850aa9d9c&x-algolia-application-id=A60VKX00HN";
 
    public BrasilMuniCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.JSOUP;
    }
 
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      this.pageSize = 32;
+      this.pageSize = 20;
       this.log("Página " + this.currentPage);
 
       JSONObject search = fetchProductsFromAPI();
-      JSONArray arraySkus = search.has("hits") ? search.getJSONArray("hits") : new JSONArray();
+      JSONArray arraySkus = search.has("hits") ? search.getJSONArray("hits/") : new JSONArray();
 
       if (arraySkus.length() > 0) {
 
@@ -39,10 +50,10 @@ public class BrasilMuniCrawler extends CrawlerRankingKeywords {
 
          for (Object product : arraySkus) {
             JSONObject jsonSku = (JSONObject) product;
-            String internalId = JSONUtils.getStringValue(jsonSku, "objectID");
-            String productUrl = JSONUtils.getStringValue(jsonSku, "url");
-            String imgUrl = JSONUtils.getStringValue(jsonSku, "image_url");
-            String name = JSONUtils.getStringValue(jsonSku, "name");
+            String name = JSONUtils.getStringValue(jsonSku, "slug_name");
+            String internalId = JSONUtils.getStringValue(jsonSku, "uuid");
+            String productUrl = "https://shop.munitienda.com.br/BR-SAO/mp/" + internalId + "/" + name;
+            String imgUrl = JSONUtils.getStringValue(jsonSku, "image");
             Integer price = crawlPrice(jsonSku);
             boolean isAvailable = JSONUtils.getIntegerValueFromJSON(jsonSku, "in_stock", 0) >= 1 ? true : false;
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -75,13 +86,12 @@ public class BrasilMuniCrawler extends CrawlerRankingKeywords {
 
    private Integer crawlPrice(JSONObject product) {
       Integer price;
-      try {
-         String priceStr = product.optQuery("/price/BRL/default").toString();
-         Double priceDouble = Double.parseDouble(priceStr) * 100;
-         price = priceDouble.intValue();
-      } catch (NullPointerException e) {
-         price = 0;
+      String priceStr = product.optQuery("/price/value").toString();
+      if (priceStr == null) {
+         priceStr = product.optQuery("/price/market_price").toString();
       }
+      Double priceDouble = Double.parseDouble(priceStr) * 100;
+      price = priceDouble.intValue();
       return price;
    }
 
@@ -93,43 +103,31 @@ public class BrasilMuniCrawler extends CrawlerRankingKeywords {
    private JSONObject fetchProductsFromAPI() {
       JSONObject products = new JSONObject();
 
-      String payload = "{\"requests\":[{\"indexName\":\"farmadelivery_default_products\","
-         + "\"params\":\"query=" + this.keywordEncoded
-         + "&hitsPerPage=32&maxValuesPerFacet=30&page=" + (this.currentPage - 1)
-         + "&ruleContexts=%5B%22magento_filters%22%2C%22%22%5D&facets=%5B%22brand%22%2C%22"
-         + "composicao_new%22%2C%22manufacturer%22%2C%22activation_information%22%2C%22frete_gratis_dropdown%22%2C%22category_ids%22%2C%22"
-         + "price.BRL.default%22%2C%22color%22%2C%22categories.level0%22%5D&tagFilters=\"}]}";
+      String payload = "{\"requests\":[{\"indexName\":\"BR-SAO__product_index__br-production\",\"params\":\"clickAnalytics=true&facets=%5B%5D&highlightPostTag=%3C%2Fais-highlight-0000000000%3E&highlightPreTag=%3Cais-highlight-0000000000%3E&page=" + (currentPage - 1) + "&query=" + keywordEncoded + "&tagFilters=\"}]}";
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/x-www-form-urlencoded");
-      headers.put("Accept-Encoding", "no");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
+      headers.put("Origin", "https://shop.munitienda.com.br/");
+      headers.put("Connection", "keep-alive");
+      headers.put("Referer", "https://shop.munitienda.com.br/");
+      headers.put("accept", "*/*");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(PRODUCTS_API_URL)
-         .setCookies(cookies)
          .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES
+         ))
          .setPayload(payload)
-         .mustSendContentEncoding(false)
+         .mustSendContentEncoding(true)
          .build();
-      String page = this.dataFetcher.post(session, request).getBody();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
 
-      if (page.startsWith("{") && page.endsWith("}")) {
-         try {
-            // Using google JsonObject to get a JSONObject because this json can have a duplicate key.
-            JSONObject result = new JSONObject(new JsonParser().parse(page).getAsJsonObject().toString());
-
-            if (result.has("results") && result.get("results") instanceof JSONArray) {
-               JSONArray results = result.getJSONArray("results");
-               if (results.length() > 0 && results.get(0) instanceof JSONObject) {
-                  products = results.getJSONObject(0);
-               }
-            }
-
-         } catch (Exception e) {
-            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-         }
-      }
-
-      return products;
+      return CrawlerUtils.stringToJson(response.getBody());
    }
 }

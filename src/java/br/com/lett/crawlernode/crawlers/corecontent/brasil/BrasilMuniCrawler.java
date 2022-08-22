@@ -34,12 +34,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BrasilMuniCrawler extends Crawler {
-   private static final String SELLER_FULL_NAME = "Tienda Muni";
+   private static final String SELLER_FULL_NAME = "muni-tienda";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
    public BrasilMuniCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
    private Map<String, String> getHeaders() {
       Map<String, String> headers = new HashMap<>();
