@@ -23,7 +23,10 @@ import models.pricing.*;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilDrogarianisseiCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.farmaciasnissei.com.br/";
