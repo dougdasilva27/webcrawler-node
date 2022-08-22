@@ -4,7 +4,6 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -23,10 +22,7 @@ import models.pricing.*;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class BrasilDrogarianisseiCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.farmaciasnissei.com.br/";
@@ -35,30 +31,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       super(session);
       super.config.setFetcher(FetchMode.JSOUP);
       super.config.setParser(Parser.HTML);
-
    }
-
-//   @Override
-//   public void handleCookiesBeforeFetch() {
-//
-//      Map<String, String> headers = new HashMap<>();
-//      headers.put("authority", "www.farmaciasnissei.com.br");
-//      headers.put("origin", "https://www.farmaciasnissei.com.br");
-//      headers.put("referer", session.getOriginalURL());
-//      headers.put("x-requested-with", "XMLHttpRequest");
-//
-//      Request request = Request.RequestBuilder.create()
-//         .setUrl(session.getOriginalURL())
-//         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
-//         .setSendUserAgent(false)
-//         .setHeaders(headers)
-//         .build();
-//
-//      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
-//
-//     this.cookies = response.getCookies();
-//
-//   }
 
    @Override
    protected Response fetchResponse() {
@@ -70,7 +43,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
-         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.BUY))
          .setSendUserAgent(false)
          .setCookies(cookies)
          .setHeaders(headers)
@@ -82,7 +55,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       return response;
 
-      }
+   }
 
    @Override
    public boolean shouldVisit() {
@@ -155,7 +128,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
-         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.BUY))
          .setSendUserAgent(false)
          .setPayload(payload)
          .build();
