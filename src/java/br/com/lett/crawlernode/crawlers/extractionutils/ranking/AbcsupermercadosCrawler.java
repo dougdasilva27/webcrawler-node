@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbcsupermercadosCrawler extends CrawlerRankingKeywords {
+public class AbcsupermercadosCrawler extends CrawlerRankingKeywords {
 
    public AbcsupermercadosCrawler(Session session) {
       super(session);

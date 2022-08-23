@@ -25,7 +25,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public abstract class AbcsupermercadosCrawler extends Crawler {
+public class AbcsupermercadosCrawler extends Crawler {
 
    private static final String SELLER_FULL_NAME = "abcsupermercados";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
