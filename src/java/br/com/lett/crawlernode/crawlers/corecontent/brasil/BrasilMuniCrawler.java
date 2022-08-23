@@ -41,17 +41,22 @@ public class BrasilMuniCrawler extends Crawler {
 
    public BrasilMuniCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://shop.munitienda.com.br/", new ArrayList<>(), ".munitienda.com.br", "/", cookies, session, null, dataFetcher);
    }
 
    private Map<String, String> getHeaders() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("origin", "https://shop.munitienda.com.br/");
+      headers.put("origin", "https://shop.munitienda.com.br");
+      headers.put("open-stack-service-zone", "BR-SAO");
       headers.put("authority", "api.munitienda.com.br");
       headers.put("referer", "https://shop.munitienda.com.br/");
       headers.put("accept", "application/json, text/plain, /");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      headers.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36");
 
       return headers;
    }
@@ -147,20 +152,20 @@ public class BrasilMuniCrawler extends Crawler {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
-         .mustSendContentEncoding(true)
          .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_ES,
             ProxyCollection.NETNUT_RESIDENTIAL_MX
          ))
          .setHeaders(headers)
-         .setSendUserAgent(true)
+         .setSendUserAgent(false)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
 
       return CrawlerUtils.stringToJson(response.getBody());
    }
@@ -184,12 +189,11 @@ public class BrasilMuniCrawler extends Crawler {
    }
 
    private Pricing getPrice(JSONObject productList) throws MalformedPricingException {
-      Object priceObj = productList.optJSONObject("/price");
+      JSONObject priceJson = productList.optJSONObject("price");
 
-      if (priceObj instanceof JSONObject) {
-         JSONObject prices = (JSONObject) priceObj;
-         Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(prices, "value", false);
-         Double priceFrom = JSONUtils.getDoubleValueFromJSON(prices, "market_price", false);
+      if (priceJson != null) {
+         Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(priceJson, "value", false);
+         Double priceFrom = JSONUtils.getDoubleValueFromJSON(priceJson, "market_price", false);
 
          if (spotlightPrice == null && priceFrom != null) {
             spotlightPrice = priceFrom;
