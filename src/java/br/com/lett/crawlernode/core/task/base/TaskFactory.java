@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.core.task.base;
 
 
+import br.com.lett.crawlernode.core.session.SentinelCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.TestType;
 import br.com.lett.crawlernode.core.session.crawler.*;
@@ -35,7 +36,7 @@ public class TaskFactory {
     */
    public static Task createTask(Session session, String className) {
 
-      if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession || session instanceof EqiCrawlerSession || session instanceof ToBuyCrawlerSession) {
+      if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession || session instanceof EqiCrawlerSession || session instanceof ToBuyCrawlerSession || session instanceof SentinelCrawlerSession) {
          return createCrawlerTask(session, className);
       } else if (session instanceof RankingKeywordsSession || session instanceof RankingDiscoverKeywordsSession || session instanceof EqiRankingDiscoverKeywordsSession
          || session instanceof TestRankingKeywordsSession) {
