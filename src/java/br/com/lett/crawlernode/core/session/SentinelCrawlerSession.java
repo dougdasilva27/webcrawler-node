@@ -5,9 +5,10 @@ import br.com.lett.crawlernode.core.server.request.CrawlerSeedRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 
 public class SentinelCrawlerSession extends Session {
+
    private String taskId;
-   public SentinelCrawlerSession(Request request, String scraperType, Market market) {
-      super(market);
+   public SentinelCrawlerSession(Request request, String queueName, Market market) {
+      super(request, queueName, market);
       setTaskId(((CrawlerSeedRequest) request).getTaskId());
    }
 

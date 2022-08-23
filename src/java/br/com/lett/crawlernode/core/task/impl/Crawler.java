@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RequestMethod;
+import br.com.lett.crawlernode.core.session.SentinelCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.*;
@@ -33,6 +34,7 @@ import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
+import exceptions.NotFoundProductException;
 import models.Offer;
 import models.Offers;
 import org.apache.http.cookie.Cookie;
@@ -405,7 +407,9 @@ public abstract class Crawler extends Task {
          } else if (obj instanceof JSONArray) {
             products = extractInformation((JSONArray) obj);
          }
-
+         if(session instanceof SentinelCrawlerSession && products.isEmpty()) {
+            throw new NotFoundProductException("No products found in Sentinel");
+         }
          for (Product p : products) {
             processedProducts.add(ProductDTO.processCaptureData(p, session));
          }
