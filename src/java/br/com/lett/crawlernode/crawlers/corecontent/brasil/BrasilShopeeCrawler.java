@@ -13,7 +13,7 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import exceptions.NotFoundProductException;
+
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
