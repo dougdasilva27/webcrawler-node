@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
@@ -20,7 +21,13 @@ import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.*;
 
@@ -148,6 +155,47 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       return jsonObject;
    }
 
+   protected Object fetchDocument() {
+
+      Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
+      ChromeOptions options = new ChromeOptions();
+      options.addArguments("--window-size=1920,1080");
+      options.addArguments("--headless");
+      options.addArguments("--no-sandbox");
+      options.addArguments("--disable-dev-shm-usage");
+
+      Document doc = new Document("");
+      int attempt = 0;
+      boolean sucess = false;
+      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY);
+      do {
+         try {
+            Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
+
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempt), session, this.cookiesWD, HOME_PAGE, options);
+            webdriver.waitLoad(1000);
+
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            sucess = doc.selectFirst("div[data-produto_id]") != null;
+            webdriver.terminate();
+            attempt++;
+
+         } catch (Exception e) {
+            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, "Página não capturada");
+         }
+
+      } while (attempt < 3 && !sucess);
+
+      return doc;
+   }
+
+
+   public static void waitForElement(WebDriver driver, String cssSelector) {
+      WebDriverWait wait = new WebDriverWait(driver, 20);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+   }
+
    private List<String> scrapEan(Document doc) {
       List<String> ean = new ArrayList<>();
       String productInfo = CrawlerUtils.scrapStringSimpleInfo(doc, "div .row div .mt-1", true);
@@ -175,13 +223,13 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       return primaryImage;
    }
 
-
    private Offers scrapOffers(JSONObject jsonInfo) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
+      Pricing pricing;
+      List<String> sales;
       if (jsonInfo != null && !jsonInfo.isEmpty()) {
-         Pricing pricing = scrapPricing(jsonInfo);
-         List<String> sales = scrapSales(jsonInfo);
-
+         pricing = scrapPricing(jsonInfo);
+         sales = scrapSales(jsonInfo);
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
             .setSellerFullName("Drogaria Nissei")
@@ -191,7 +239,24 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
             .setPricing(pricing)
             .setSales(sales)
             .build());
+
+      } else {
+         Document doc = (Document) fetchDocument();
+         if (doc != null && !doc.select(".mt-md-2.mt-sm-2 > div > p").isEmpty()) {
+            pricing = scrapPricingFromDocument(doc);
+            sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
+            offers.add(Offer.OfferBuilder.create()
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName("Drogaria Nissei")
+               .setMainPagePosition(1)
+               .setIsBuybox(false)
+               .setIsMainRetailer(true)
+               .setPricing(pricing)
+               .setSales(sales)
+               .build());
+         }
       }
+
       return offers;
 
    }
@@ -211,6 +276,18 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject jsonInfo) throws MalformedPricingException {
       Double priceFrom = !scrapSales(jsonInfo).isEmpty() ? jsonInfo.optDouble("valor_ini") : null;
       Double spotlightPrice = jsonInfo.optDouble("valor_fim");
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   private Pricing scrapPricingFromDocument(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".mt-md-2.mt-sm-2 > div > p", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".mt-md-2.mt-sm-2 > div > span", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
