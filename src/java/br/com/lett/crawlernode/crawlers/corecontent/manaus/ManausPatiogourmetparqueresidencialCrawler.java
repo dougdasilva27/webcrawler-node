@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -46,6 +47,17 @@ public class ManausPatiogourmetparqueresidencialCrawler extends VTEXOldScraper {
          cookie.setPath("/");
          this.cookies.add(cookie);
       }
+   }
+
+   @Override
+   protected Object fetch() {
+      Request request = Request.RequestBuilder.create()
+         .setCookies(this.cookies)
+         .setUrl(session.getOriginalURL())
+         .build();
+      Response response = CrawlerUtils.retryRequest(request, session, this.dataFetcher, true);
+
+      return response;
    }
 
    @Override
