@@ -6,17 +6,10 @@ import br.com.lett.crawlernode.core.server.request.Request;
 
 public class SentinelCrawlerSession extends Session {
 
-   private String taskId;
-   public SentinelCrawlerSession(Request request, String queueName, Market market) {
-      super(request, queueName, market);
-      setTaskId(((CrawlerSeedRequest) request).getTaskId());
+
+   public SentinelCrawlerSession(Market market) {
+      super(market);
+
    }
 
-   public String getTaskId() {
-      return taskId;
-   }
-
-   public void setTaskId(String taskId) {
-      this.taskId = taskId;
-   }
 }

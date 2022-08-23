@@ -32,7 +32,7 @@ public class BrasilShopeeCrawler extends Crawler {
       super(session);
    }
 
-   public List<Product> extractInformation(Document document) throws Exception, NotFoundProductException {
+   public List<Product> extractInformation(Document document) throws Exception{
       JSONObject productObj = getProduct(this.session.getOriginalURL());
       List<Product> products = new ArrayList<>();
       if (productObj != null) {
