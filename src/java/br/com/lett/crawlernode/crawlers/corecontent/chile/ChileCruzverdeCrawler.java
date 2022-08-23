@@ -8,10 +8,7 @@ import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -29,7 +26,6 @@ import org.apache.commons.lang.WordUtils;
 import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -39,10 +35,16 @@ public class ChileCruzverdeCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Cruz Verde";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+   protected String internalId = null;
+
+   public String getInternalId() {
+      return internalId;
+   }
 
    public ChileCruzverdeCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setParser(Parser.JSON);
    }
 
    private final int STORE_ID = session.getOptions().optInt("store_id", 1121);
@@ -59,6 +61,22 @@ public class ChileCruzverdeCrawler extends Crawler {
       return headers;
    }
 
+   @Override
+   protected Response fetchResponse() {
+      internalId = getId();
+      String url = "https://api.cruzverde.cl/product-service/products/detail/" + getInternalId() + "?inventoryId=" + STORE_ID;
+      Map<String, String> headers = getHeaders();
+      headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .mustSendContentEncoding(true)
+         .setHeaders(headers)
+         .build();
+
+      return CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+
+   }
 
    @Override
    public void handleCookiesBeforeFetch() {
@@ -85,11 +103,10 @@ public class ChileCruzverdeCrawler extends Crawler {
    }
 
    @Override
-   public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
+   public List<Product> extractInformation(JSONObject productData) throws Exception {
+      super.extractInformation(productData);
       List<Product> products = new ArrayList<>();
-      String internalId = getId();
-      JSONObject productData = getProductList(internalId);
+      String internalId = getInternalId();
 
       if (productData != null && !productData.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
@@ -215,24 +232,6 @@ public class ChileCruzverdeCrawler extends Crawler {
       return id;
    }
 
-
-   private JSONObject getProductList(String internalId) {
-      JSONObject obj = null;
-      String url = "https://api.cruzverde.cl/product-service/products/detail/" + internalId + "?inventoryId=" + STORE_ID;
-      Map<String, String> headers = getHeaders();
-      headers.put("cookie", CommonMethods.cookiesToString(this.cookies));
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .mustSendContentEncoding(true)
-         .setHeaders(headers)
-         .build();
-
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
-      ;
-
-      return CrawlerUtils.stringToJson(response.getBody());
-   }
 
    private Offers getOffer(JSONObject productList) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
