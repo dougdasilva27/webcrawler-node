@@ -81,10 +81,9 @@ public class AbcsupermercadosCrawler extends Crawler {
          String internalId = productJson.optString("Codigo");
          String internalPid = internalId;
          String name = productJson.optString("Descricao");
-         JSONArray imagesJson = productJson.optJSONArray("urls");
+         JSONArray imagesJson = productJson.optJSONArray("Urls");
          List<String> images = imagesJson != null ? CrawlerUtils.scrapImagesListFromJSONArray(imagesJson, "url", null, "", "", session) : null;
          String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
-
 
          boolean available = JSONUtils.getIntegerValueFromJSON(productJson, "EstoqueDisponivel", 0) > 0;
          Offers offers = available ? scrapOffers(productJson) : new Offers();
