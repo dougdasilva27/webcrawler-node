@@ -89,7 +89,7 @@ public class MexicoSingerCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("#vue-pdp-page > div > div > div") != null;
+      return doc.selectFirst(".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > h1") != null;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
