@@ -59,7 +59,7 @@ public class Persistence {
                .append("original_name", product.getName()).append("internal_id", product.getInternalId())
                .append("url", product.getUrl()).append("status", status.toString());
 
-            if (!productJson.isEmpty()) {
+            if (product != null && !productJson.isEmpty()) {
                result.append("created", productJson.optString("created")).append("lett_id", productJson.optString("lett_id"))
                   .append("is_master", productJson.optString("unification_is_master")).append("old_name", productJson.optString("name"))
                   .append("is_new", false);
