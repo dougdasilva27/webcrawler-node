@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
@@ -37,21 +38,24 @@ public class BrasilMuniCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "muni-tienda";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+
    public BrasilMuniCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
    }
+
    private Map<String, String> getHeaders() {
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put("origin", "https://shop.munitienda.com.br/");
       headers.put("authority", "api.munitienda.com.br");
       headers.put("referer", "https://shop.munitienda.com.br/");
       headers.put("accept", "application/json, text/plain, /");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36");
 
       return headers;
    }
+
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
@@ -89,28 +93,28 @@ public class BrasilMuniCrawler extends Crawler {
    }
 
    private String getDescription(JSONObject productList) {
-      String name = "";
-      Object objName = productList.optQuery("/content_description");
-      if (objName != null) {
-         name = objName.toString();
+      String description = "";
+      String objDescription = productList.optString("/content_description");
+      if (objDescription != null) {
+         description = objDescription;
       }
-      return name;
+      return description;
    }
 
    private String getPrimaryImage(JSONObject productList) {
       String primaryImg = "";
-      Object objImg = productList.optQuery("/image");
+      String objImg = productList.optString("/image");
       if (objImg != null) {
-         primaryImg = objImg.toString();
+         primaryImg = objImg;
       }
       return primaryImg;
    }
 
    private String getName(JSONObject productList) {
-      String name = "";
-      Object objName = productList.optQuery("/name");
+      String name = null;
+      String objName = productList.optString("name");
       if (objName != null) {
-         name = objName.toString();
+         name = objName;
       }
       return name;
    }
@@ -138,17 +142,25 @@ public class BrasilMuniCrawler extends Crawler {
 
 
    private JSONObject getProductList(String internalId) {
-      JSONObject obj = null;
       String url = "https://api.munitienda.com.br/cata/v1/client/product/" + internalId;
       Map<String, String> headers = getHeaders();
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .mustSendContentEncoding(true)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX
+         ))
          .setHeaders(headers)
+         .setSendUserAgent(true)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
 
       return CrawlerUtils.stringToJson(response.getBody());
    }
@@ -172,7 +184,7 @@ public class BrasilMuniCrawler extends Crawler {
    }
 
    private Pricing getPrice(JSONObject productList) throws MalformedPricingException {
-      Object priceObj = productList.optQuery("/price");
+      Object priceObj = productList.optJSONObject("/price");
 
       if (priceObj instanceof JSONObject) {
          JSONObject prices = (JSONObject) priceObj;

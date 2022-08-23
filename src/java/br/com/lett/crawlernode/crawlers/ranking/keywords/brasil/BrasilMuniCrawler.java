@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.amazonaws.services.dynamodbv2.xspec.S;
 import com.google.gson.JsonParser;
 import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
@@ -50,10 +51,10 @@ public class BrasilMuniCrawler extends CrawlerRankingKeywords {
 
          for (Object product : arraySkus) {
             JSONObject jsonSku = (JSONObject) product;
-            String name = JSONUtils.getStringValue(jsonSku, "slug_name");
-            String internalId = JSONUtils.getStringValue(jsonSku, "uuid");
+            String name = jsonSku.optString("slug_name");
+            String internalId = jsonSku.optString("uuid");
             String productUrl = "https://shop.munitienda.com.br/BR-SAO/mp/" + internalId + "/" + name;
-            String imgUrl = JSONUtils.getStringValue(jsonSku, "image");
+            String imgUrl = jsonSku.optString("image");
             Integer price = crawlPrice(jsonSku);
             boolean isAvailable = jsonSku.optBoolean("isActive");
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -86,22 +87,22 @@ public class BrasilMuniCrawler extends CrawlerRankingKeywords {
 
    private Integer crawlPrice(JSONObject product) {
       Integer price;
-      String priceStr = product.optQuery("/price/value").toString();
-      if (priceStr == null) {
-         priceStr = product.optQuery("/price/market_price").toString();
+      Double pricePrimary = JSONUtils.getValueRecursive(product, "price.value", Double.class);
+      if (pricePrimary == null) {
+         pricePrimary = JSONUtils.getValueRecursive(product, "price.market_price", Double.class);
       }
-      Double priceDouble = Double.parseDouble(priceStr) * 100;
+      Double priceDouble = pricePrimary * 100;
       price = priceDouble.intValue();
       return price;
    }
 
    private void setTotalProducts(JSONObject search) {
       JSONArray arraySkus = JSONUtils.getValueRecursive(search, "results", JSONArray.class);
-      String holder = arraySkus.optQuery("/0/nbHits").toString();
-      if (holder != null){
-         this.totalProducts = Integer.parseInt(holder);
+      Integer holder = JSONUtils.getValueRecursive(arraySkus, "0.nbHits", Integer.class);
+      if (holder != null) {
+         this.totalProducts = holder;
          this.log("Total: " + this.totalProducts);
-      }else {
+      } else {
          this.totalProducts = 0;
          this.log("Total: " + this.totalProducts);
       }
@@ -143,10 +144,9 @@ public class BrasilMuniCrawler extends CrawlerRankingKeywords {
 
    protected boolean hasNextPage(JSONObject search) {
       JSONArray arraySkus = JSONUtils.getValueRecursive(search, "results", JSONArray.class);
-      String holder = arraySkus.optQuery("/0/nbPages").toString();
+      Integer holder = JSONUtils.getValueRecursive(arraySkus,"0.nbPages", Integer.class);
       if (holder != null) {
-         Integer quantity = Integer.parseInt(holder);
-         if (pageNumber <= quantity) {
+         if (pageNumber <= holder) {
             pageNumber++;
             return true;
          } else {
