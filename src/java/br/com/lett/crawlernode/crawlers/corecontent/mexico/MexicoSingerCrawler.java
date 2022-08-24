@@ -1,14 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -17,19 +13,16 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -95,12 +88,14 @@ public class MexicoSingerCrawler extends Crawler {
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(pricing);
 
       if (pricing != null) {
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
             .setSellerFullName("Singer")
             .setSellersPagePosition(1)
+            .setSales(sales)
             .setIsBuybox(false)
             .setIsMainRetailer(true)
             .setPricing(pricing)
@@ -110,42 +105,54 @@ public class MexicoSingerCrawler extends Crawler {
       return offers;
    }
 
+   private List<String> scrapSales(Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+      String sale = CrawlerUtils.calculateSales(pricing);
+      if (sale != null) {
+         sales.add(sale);
+      }
+      return sales;
+   }
+
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property='product:price:amount']", "content", false, '.', session);
       Double priceFrom = scrapPriceFrom(doc, spotlightPrice);
-      if (priceFrom == null) {
-         priceFrom = spotlightPrice;
-      }
 
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
-         .setBankSlip(bankSlip)
          .build();
    }
 
    private Double scrapPriceFrom(Document doc, Double spot) {
+      Double priceFrom = null;
       String holderPrice;
       Double price = null;
       String regex = "\\$(.*)en";
       String holder = CrawlerUtils.scrapStringSimpleInfo(doc, ".simpleLens-container > span > span:nth-child(even)", false);
-      final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-      final Matcher matcher = pattern.matcher(holder);
-      if (holder !=null){
-         if (matcher.find()) {
-            holderPrice = ((matcher.group(1)));
-            price = Double.valueOf(holderPrice);
+      if (holder != null) {
+         final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+         final Matcher matcher = pattern.matcher(holder);
+         if (holder != null) {
+            if (matcher.find()) {
+               holderPrice = ((matcher.group(1)));
+               price = Double.valueOf(holderPrice);
+            }
+            priceFrom = spot + price;
          }
-         return spot + price;
+      } else {
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property='product:price:amount']", "content", false, '.', session);
       }
-      else {
-         return CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property='product:price:amount']", "content", false, '.', session);
+
+      if (priceFrom != null && Objects.equals(priceFrom, spot)) {
+         priceFrom = null;
       }
+
+      return priceFrom;
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
