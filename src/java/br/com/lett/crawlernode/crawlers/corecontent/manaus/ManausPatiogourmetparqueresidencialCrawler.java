@@ -5,9 +5,11 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
@@ -49,6 +51,17 @@ public class ManausPatiogourmetparqueresidencialCrawler extends VTEXOldScraper {
    }
 
    @Override
+   protected Object fetch() {
+      Request request = Request.RequestBuilder.create()
+         .setCookies(this.cookies)
+         .setUrl(session.getOriginalURL())
+         .build();
+      Response response = CrawlerUtils.retryRequest(request, session, this.dataFetcher, true);
+
+      return response;
+   }
+
+   @Override
    protected String getHomePage() {
       return session.getOptions().optString("home_page");
    }
@@ -60,7 +73,21 @@ public class ManausPatiogourmetparqueresidencialCrawler extends VTEXOldScraper {
 
    @Override
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
-      return super.crawlProductApi(internalPid, "&sc=" + storeId);
+      JSONObject productApi = new JSONObject();
+
+      String url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid + "&sc=" + storeId;
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(this.cookies)
+         .build();
+      JSONArray array = CrawlerUtils.stringToJsonArray(CrawlerUtils.retryRequest(request, session, this.dataFetcher, true).getBody());
+
+      if (!array.isEmpty()) {
+         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
+      }
+
+      return productApi;
    }
 
    @Override
