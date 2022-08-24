@@ -34,6 +34,10 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       return session.getOptions().optString("storeId");
    }
 
+   protected boolean checkNewUnification() {
+      return session.getOptions().optBoolean("newUnification", false);
+   }
+
    private String getCurrentLocation() {
       return session.getOptions().optString("currentLocation");
    }
@@ -93,7 +97,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
          for (int i = 0; i < products.length(); i++) {
             JSONObject product = products.getJSONObject(i);
 
-            String internalId = product.optString("product_id");
+            String internalId = checkNewUnification() ? product.optString("product_id") : product.optString("id");
             String id = product.optString("id", "");
             String url = !id.equals("") ? PRODUCT_BASE_URL + id : "";
             String name = product.optString("name");
