@@ -49,6 +49,10 @@ public abstract class RappiCrawler extends Crawler {
       return session.getOptions().optString("storeId");
    }
 
+   protected boolean checkNewUnification() {
+      return session.getOptions().optBoolean("newUnification", false);
+   }
+
    private String getCurrentLocation() {
       return session.getOptions().optString("currentLocation");
    }
@@ -146,6 +150,19 @@ public abstract class RappiCrawler extends Crawler {
       JSONObject rankingPageJson = CrawlerUtils.selectJsonFromHtml(docRanking, "#__NEXT_DATA__", null, null, false, false);
       JSONArray searchProducts = JSONUtils.getValueRecursive(rankingPageJson, "props.pageProps.products", JSONArray.class, new JSONArray());
 
+      if (searchProducts.isEmpty()) {
+         JSONObject fallback = JSONUtils.getValueRecursive(rankingPageJson, "props.pageProps.fallback", JSONObject.class, new JSONObject());
+         if (!fallback.isEmpty()) {
+            Iterator<String> keys = fallback.keys();
+            while(keys.hasNext()) {
+               String key = keys.next();
+               if (fallback.get(key) instanceof JSONObject) {
+                  searchProducts = JSONUtils.getValueRecursive(fallback.get(key), "products", JSONArray.class, new JSONArray());
+               }
+            }
+         }
+      }
+
       String productFoundInternalId = null;
       if (searchProducts.length() > 0) {
          for (int i = 0; i < searchProducts.length(); i++) {
@@ -232,7 +249,7 @@ public abstract class RappiCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalPid = productJson.optString("master_product_id");
-         String internalId = productJson.optString("product_id");
+         String internalId = checkNewUnification() ? productJson.optString("product_id") : productJson.optString("id");
          String description = productJson.optString("description");
          JSONArray images = productJson.optJSONArray("images");
          String primaryImage = images.length() > 0 ? CrawlerUtils.completeUrl(images.optString(0), "https", getImagePrefix()) : null;
