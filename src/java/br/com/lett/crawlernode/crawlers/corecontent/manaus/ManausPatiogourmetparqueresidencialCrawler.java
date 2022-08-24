@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.manaus;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
@@ -55,7 +58,14 @@ public class ManausPatiogourmetparqueresidencialCrawler extends VTEXOldScraper {
       Request request = Request.RequestBuilder.create()
          .setCookies(this.cookies)
          .setUrl(session.getOriginalURL())
+         .setProxyservice(List.of(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.BUY_HAPROXY
+         ))
          .build();
+
       Response response = CrawlerUtils.retryRequest(request, session, this.dataFetcher, true);
 
       return response;
@@ -80,7 +90,14 @@ public class ManausPatiogourmetparqueresidencialCrawler extends VTEXOldScraper {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(this.cookies)
+         .setProxyservice(List.of(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.BUY_HAPROXY
+         ))
          .build();
+
       JSONArray array = CrawlerUtils.stringToJsonArray(CrawlerUtils.retryRequest(request, session, this.dataFetcher, true).getBody());
 
       if (!array.isEmpty()) {
