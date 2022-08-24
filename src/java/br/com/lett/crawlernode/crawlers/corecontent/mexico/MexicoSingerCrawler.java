@@ -1,6 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -14,16 +21,8 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,11 +34,18 @@ public class MexicoSingerCrawler extends Crawler {
 
    public MexicoSingerCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.HTML);
    }
 
-   public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 20);
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+   @Override
+   protected Response fetchResponse() {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.BUY))
+         .build();
+
+      return CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+
    }
 
    @Override
@@ -142,9 +148,12 @@ public class MexicoSingerCrawler extends Crawler {
                holderPrice = ((matcher.group(1)));
                price = Double.valueOf(holderPrice);
             }
-            priceFrom = spot + price;
+            if (price != null) {
+               priceFrom = spot + price;
+            }
          }
-      } else {
+      }
+      if (priceFrom == null) {
          priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property='product:price:amount']", "content", false, '.', session);
       }
 
