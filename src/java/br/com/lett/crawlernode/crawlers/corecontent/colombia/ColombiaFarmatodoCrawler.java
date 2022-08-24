@@ -73,6 +73,7 @@ public class ColombiaFarmatodoCrawler extends Crawler {
    public List<Product> extractInformation(JSONObject json) throws Exception {
       List<Product> products = new ArrayList<>();
 
+
       if (isProductPage(json)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -81,7 +82,7 @@ public class ColombiaFarmatodoCrawler extends Crawler {
          String internalId = JSONUtils.getStringValue(seo, "sku");
          String internalPid = JSONUtils.getStringValue(json, "id");
          String name = scrapName(seo);
-         String description = json.optString("largeDescription");
+         String description = json.optString("mediaDescription");
          String primaryImage = JSONUtils.getStringValue(seo, "image");
 
          List<String> secundaryImages = scrapImages(json);
