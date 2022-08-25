@@ -1,17 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -20,11 +16,18 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class MexicoSingerCrawler extends Crawler {
 
@@ -34,18 +37,49 @@ public class MexicoSingerCrawler extends Crawler {
 
    public MexicoSingerCrawler(Session session) {
       super(session);
-      super.config.setParser(Parser.HTML);
    }
 
    @Override
-   protected Response fetchResponse() {
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.BUY))
-         .build();
+   protected Object fetch() {
+      Document doc = new Document("");
+      ChromeOptions options = new ChromeOptions();
+      options.addArguments("--window-size=1920,1080");
+      options.addArguments("--headless");
+      options.addArguments("--no-sandbox");
+      options.addArguments("--disable-dev-shm-usage");
+      int attempt = 0;
+      boolean sucess = false;
+      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY);
+      do {
+         try {
+            Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-      return CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempt), session, this.cookiesWD, "https://www.singer.com/mx/", options);
+            webdriver.waitLoad(10000);
+            waitForElement(webdriver.driver, ".price .current");
 
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            sucess = doc.selectFirst(".col-xs-12.col-sm-12.col-md-6.pdp-content-wrapper.no-padding-left.no-padding-right > div > h1") != null;
+            attempt++;
+
+         } catch (Exception e) {
+            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, "Página não capturada");
+
+         } finally {
+            if (webdriver != null) {
+               webdriver.terminate();
+            }
+         }
+
+      } while (attempt < 3 && !sucess);
+
+      return doc;
+   }
+
+   public static void waitForElement(WebDriver driver, String cssSelector) {
+      WebDriverWait wait = new WebDriverWait(driver, 20);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
    @Override
@@ -94,7 +128,7 @@ public class MexicoSingerCrawler extends Crawler {
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = scrapSales(pricing);
+      List<String> sales = scrapSales(doc);
 
       if (pricing != null) {
          offers.add(Offer.OfferBuilder.create()
@@ -111,19 +145,20 @@ public class MexicoSingerCrawler extends Crawler {
       return offers;
    }
 
-   private List<String> scrapSales(Pricing pricing) {
+   private List<String> scrapSales(Document doc) {
       List<String> sales = new ArrayList<>();
-      String sale = CrawlerUtils.calculateSales(pricing);
+      String sale = CrawlerUtils.scrapStringSimpleInfo(doc, ".percent.d-md-inline", false);
       if (sale != null) {
          sales.add(sale);
       }
+
       return sales;
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property='product:price:amount']", "content", false, '.', session);
-      Double priceFrom = scrapPriceFrom(doc, spotlightPrice);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price .current", null, false, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price .before.d-md-inline", null, false, '.', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
@@ -132,36 +167,6 @@ public class MexicoSingerCrawler extends Crawler {
          .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .build();
-   }
-
-   private Double scrapPriceFrom(Document doc, Double spot) {
-      Double priceFrom = null;
-      String holderPrice;
-      Double price = null;
-      String regex = "\\$(.*)en";
-      String holder = CrawlerUtils.scrapStringSimpleInfo(doc, ".simpleLens-container > span > span:nth-child(even)", false);
-      if (holder != null) {
-         final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-         final Matcher matcher = pattern.matcher(holder);
-         if (holder != null) {
-            if (matcher.find()) {
-               holderPrice = ((matcher.group(1)));
-               price = Double.valueOf(holderPrice);
-            }
-            if (price != null) {
-               priceFrom = spot + price;
-            }
-         }
-      }
-      if (priceFrom == null) {
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property='product:price:amount']", "content", false, '.', session);
-      }
-
-      if (priceFrom != null && Objects.equals(priceFrom, spot)) {
-         priceFrom = null;
-      }
-
-      return priceFrom;
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
