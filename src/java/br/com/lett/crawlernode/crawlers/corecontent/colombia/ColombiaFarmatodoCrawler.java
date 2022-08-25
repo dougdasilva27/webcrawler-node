@@ -179,11 +179,11 @@ public class ColombiaFarmatodoCrawler extends Crawler {
       String priceFromStr = JSONUtils.getValueRecursive(product, "offers.price", String.class);
       String priceStr = JSONUtils.getValueRecursive(product, "offers.lowPrice", String.class);
 
-      if(priceStr != null) {
+      if(priceStr != null && priceFromStr != null) {
          spotlightPrice = Double.parseDouble(priceStr);
          priceFrom = Double.parseDouble(priceFromStr);
       }
-      else{
+      else if(priceFromStr != null){
          spotlightPrice = Double.parseDouble(priceFromStr);
       }
 
