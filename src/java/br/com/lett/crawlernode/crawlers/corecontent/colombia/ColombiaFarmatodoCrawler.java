@@ -87,7 +87,6 @@ public class ColombiaFarmatodoCrawler extends Crawler {
 
          List<String> secundaryImages = scrapImages(json);
          CategoryCollection categories = scrapCategories(json);
-         Integer stock = JSONUtils.getIntegerValueFromJSON(json, "globalStock", 0);
          RatingsReviews ratingsReviews = scrapRatingsReviews(internalPid);
          boolean available = !json.optBoolean("outofstore", false);
          Offers offers = available ? scrapOffers(seo) : new Offers();
@@ -103,7 +102,6 @@ public class ColombiaFarmatodoCrawler extends Crawler {
             .setSecondaryImages(secundaryImages)
             .setCategories(categories)
             .setOffers(offers)
-            .setStock(stock)
             .setRatingReviews(ratingsReviews)
             .build();
 
@@ -179,11 +177,10 @@ public class ColombiaFarmatodoCrawler extends Crawler {
       String priceFromStr = JSONUtils.getValueRecursive(product, "offers.price", String.class);
       String priceStr = JSONUtils.getValueRecursive(product, "offers.lowPrice", String.class);
 
-      if(priceStr != null && priceFromStr != null) {
+      if (priceStr != null && priceFromStr != null) {
          spotlightPrice = Double.parseDouble(priceStr);
          priceFrom = Double.parseDouble(priceFromStr);
-      }
-      else if(priceFromStr != null){
+      } else if (priceFromStr != null) {
          spotlightPrice = Double.parseDouble(priceFromStr);
       }
 
