@@ -43,7 +43,7 @@ public class ManausPatiogourmetparqueresidencialCrawler extends VTEXOldScraper {
    @Override
    public void handleCookiesBeforeFetch() {
       Request request = Request.RequestBuilder.create().setUrl(homePage + "?sc=" + storeId).setCookies(cookies).build();
-      Response response = this.dataFetcher.get(session, request);
+      Response response = new ApacheDataFetcher().get(session, request);
 
       for (Cookie cookieResponse : response.getCookies()) {
          BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
@@ -64,9 +64,11 @@ public class ManausPatiogourmetparqueresidencialCrawler extends VTEXOldScraper {
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.BUY_HAPROXY
          ))
+         .setFollowRedirects(true)
+         .setTimeout(8000)
          .build();
 
-      Response response = CrawlerUtils.retryRequest(request, session, this.dataFetcher, true);
+      Response response = CrawlerUtils.retryRequest(request, session, new ApacheDataFetcher(), true);
 
       return response;
    }
@@ -96,6 +98,7 @@ public class ManausPatiogourmetparqueresidencialCrawler extends VTEXOldScraper {
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.BUY_HAPROXY
          ))
+         .setTimeout(8000)
          .build();
 
       JSONArray array = CrawlerUtils.stringToJsonArray(CrawlerUtils.retryRequest(request, session, this.dataFetcher, true).getBody());
