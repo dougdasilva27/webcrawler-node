@@ -1,11 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -49,12 +51,23 @@ public class BrasilSephoraCrawler extends Crawler {
 
    public BrasilSephoraCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.HTML);
    }
 
    @Override
-   public boolean shouldVisit() {
-      String href = this.session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   protected Response fetchResponse() {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX))
+         .build();
+
+      //Response response = this.dataFetcher.get(session, request);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
+
+      return response;
    }
 
    @Override
@@ -71,7 +84,8 @@ public class BrasilSephoraCrawler extends Crawler {
          Elements variants = doc.select(".product-detail .product-variations .no-bullet li div[itemprop]");
          for (Element variant : variants) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
-            Document variantProductPage = fetchVariantProductPage(internalId);
+            String variantUrl = "https://www.sephora.com.br/on/demandware.store/Sites-Sephora_BR-Site/pt_BR/Product-Variation?pid=" + internalId;
+            Document variantProductPage = fetchVariantProductPage(variantUrl);
             String name = scrapName(variantProductPage);
             List<String> secondaryImages = crawlImages(variantProductPage);
             String primaryImage = secondaryImages.isEmpty() ? null : secondaryImages.remove(0);
@@ -81,7 +95,7 @@ public class BrasilSephoraCrawler extends Crawler {
             RatingsReviews ratingsReviews = crawlRatingReviews(internalPid);
 
             Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
+               .setUrl(variantUrl)
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
@@ -107,9 +121,9 @@ public class BrasilSephoraCrawler extends Crawler {
    }
 
    private String scrapName(Document doc) {
-      return CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small-wrapper", false)
+      return CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small .product-name", true)
          + " - "
-         + CrawlerUtils.scrapStringSimpleInfo(doc, "span.selected-value-name", false);
+         + CrawlerUtils.scrapStringSimpleInfo(doc, "span.selected-value-name", true);
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -230,10 +244,16 @@ public class BrasilSephoraCrawler extends Crawler {
       return secondaryImagesArray;
    }
 
-   private Document fetchVariantProductPage(String internalPid) {
-      String url = "https://www.sephora.com.br/on/demandware.store/Sites-Sephora_BR-Site/pt_BR/Product-Variation?pid=" + internalPid + "&format=ajax";
+   private Document fetchVariantProductPage(String url) {
 
-      Request request = Request.RequestBuilder.create().setUrl(url).build();
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX))
+         .build();
+
       String response = this.dataFetcher.get(session, request).getBody();
 
       return Jsoup.parse(response);
