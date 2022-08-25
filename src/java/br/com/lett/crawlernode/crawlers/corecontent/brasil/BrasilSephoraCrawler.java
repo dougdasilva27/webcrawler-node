@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * date: 05/09/2018
@@ -80,25 +82,29 @@ public class BrasilSephoraCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-number.show-for-medium>span", "data-masterid");
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".tabs-panel.is-active", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.breadcrumb-element", true);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small .product-name", true);
+         List<String> secondaryImages = crawlImages(doc);
+         String defaultId = scrapImageID(null, secondaryImages.get(0));
 
-         Elements variants = doc.select(".product-detail .product-variations .no-bullet li div[itemprop]");
+         Elements variants = doc.select(".variation-content li");
          for (Element variant : variants) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
             String variantUrl = "https://www.sephora.com.br/on/demandware.store/Sites-Sephora_BR-Site/pt_BR/Product-Variation?pid=" + internalId;
-            Document variantProductPage = fetchVariantProductPage(variantUrl);
-            String name = scrapName(variantProductPage);
-            List<String> secondaryImages = crawlImages(variantProductPage);
-            String primaryImage = secondaryImages.isEmpty() ? null : secondaryImages.remove(0);
+            String variantName = scrapName(variant, name);
+            String imageId = scrapImageID(variant, null);
 
-            boolean isAvailable = variantProductPage.select(".not-available-msg").isEmpty();
-            Offers offers = isAvailable ? scrapOffers(variantProductPage) : new Offers();
+            List<String> imagesVariant = scrapImagesVariant(secondaryImages, defaultId, imageId);
+            String primaryImage = imagesVariant.isEmpty() ? null : imagesVariant.remove(0);
+
+            boolean isAvailable = variant.select(".not-selectable").isEmpty();
+            Offers offers = isAvailable ? scrapOffers(doc) : new Offers();
             RatingsReviews ratingsReviews = crawlRatingReviews(internalPid);
 
             Product product = ProductBuilder.create()
                .setUrl(variantUrl)
                .setInternalId(internalId)
                .setInternalPid(internalPid)
-               .setName(name)
+               .setName(variantName)
                .setCategories(categories)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
@@ -116,14 +122,27 @@ public class BrasilSephoraCrawler extends Crawler {
       return products;
    }
 
+   private List<String> scrapImagesVariant(List<String> secondaryImages, String defaultId, String imageId) {
+      for (int i = 0; i < secondaryImages.size(); i++){
+         String aux = secondaryImages.remove(0);
+         aux.replace(defaultId, imageId);
+         secondaryImages.add(aux);
+      }
+      return secondaryImages;
+   }
+
    private boolean isProductPage(Document document) {
       return document.selectFirst(".product-cart") != null;
    }
 
-   private String scrapName(Document doc) {
-      return CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small .product-name", true)
-         + " - "
-         + CrawlerUtils.scrapStringSimpleInfo(doc, "span.selected-value-name", true);
+   private String scrapName(Element variant, String name) {
+      String variantName = CrawlerUtils.scrapStringSimpleInfo(variant, "span.selected-value-name", true);
+
+      if (variantName == null) {
+         return name + " - " + variantName;
+      }
+
+      return name;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -234,29 +253,34 @@ public class BrasilSephoraCrawler extends Crawler {
       List<String> secondaryImagesArray = new ArrayList<>();
 
       Elements imagesList = productPage.select("div.show-for-small-only.text-center ul li.thumb>a");
-
       if (!imagesList.isEmpty()) {
          for (Element imageElement : imagesList) {
             secondaryImagesArray.add(CrawlerUtils.scrapStringSimpleInfoByAttribute(imageElement, "a", "href"));
          }
       }
 
+
       return secondaryImagesArray;
    }
 
-   private Document fetchVariantProductPage(String url) {
+   private String scrapImageID(Element variant, String imageID) {
+      String regex = "\\/([0-9]*).";
+      String dataImage;
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX))
-         .build();
+      if (variant == null) {
+         dataImage = imageID;
+      } else {
+         dataImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, ".variation-display-name", "data-lgimg");
+      }
 
-      String response = this.dataFetcher.get(session, request).getBody();
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(dataImage);
 
-      return Jsoup.parse(response);
+      if (matcher.find()) {
+         return matcher.group(1);
+      }
+
+      return null;
    }
 
    private RatingsReviews crawlRatingReviews(String partnerId) {
