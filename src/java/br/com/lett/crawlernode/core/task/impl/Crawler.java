@@ -14,7 +14,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RequestMethod;
-import br.com.lett.crawlernode.core.session.SentinelCrawlerSession;
+import br.com.lett.crawlernode.core.session.sentinel.SentinelCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.*;

@@ -1,15 +1,13 @@
 package br.com.lett.crawlernode.core.task.base;
 
 
-import br.com.lett.crawlernode.core.session.SentinelCrawlerSession;
+import br.com.lett.crawlernode.core.session.sentinel.SentinelCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.TestType;
 import br.com.lett.crawlernode.core.session.crawler.*;
 import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 

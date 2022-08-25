@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSe
 import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
+import br.com.lett.crawlernode.core.session.sentinel.SentinelCrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.ScraperInformation;
 import enums.ScrapersTypes;
