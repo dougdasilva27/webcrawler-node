@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.manaus;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
@@ -98,7 +97,6 @@ public class ManausPatiogourmetparqueresidencialCrawler extends VTEXOldScraper {
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.BUY_HAPROXY
          ))
-         .setTimeout(8000)
          .build();
 
       JSONArray array = CrawlerUtils.stringToJsonArray(CrawlerUtils.retryRequest(request, session, this.dataFetcher, true).getBody());
