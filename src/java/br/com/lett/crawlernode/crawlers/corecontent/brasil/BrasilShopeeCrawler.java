@@ -13,7 +13,7 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import jdk.jfr.Category;
+
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
@@ -32,7 +32,7 @@ public class BrasilShopeeCrawler extends Crawler {
       super(session);
    }
 
-   public List<Product> extractInformation(Document document) throws Exception {
+   public List<Product> extractInformation(Document document) throws Exception{
       JSONObject productObj = getProduct(this.session.getOriginalURL());
       List<Product> products = new ArrayList<>();
       if (productObj != null) {

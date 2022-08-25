@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSe
 import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
+import br.com.lett.crawlernode.core.session.sentinel.SentinelCrawlerSession;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.ScraperInformation;
 import enums.ScrapersTypes;
@@ -43,6 +44,8 @@ public class SessionFactory {
          return new EqiRankingDiscoverKeywordsSession(request, scraperType, market);
       } else if (scraperType.equals(ScrapersTypes.TO_BUY.toString())) {
          return new ToBuyCrawlerSession(request, scraperType, market);
+      } else if (scraperType.equals(ScrapersTypes.SENTINEL.toString())) {
+         return new SentinelCrawlerSession(request, scraperType,market);
       } else {
          Logging.printLogDebug(logger, "Scraper type not recognized." + "[" + scraperType + "]");
          return null;

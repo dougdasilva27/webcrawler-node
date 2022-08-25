@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RequestMethod;
+import br.com.lett.crawlernode.core.session.sentinel.SentinelCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.*;
@@ -23,6 +24,7 @@ import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.dto.ProductDTO;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.exceptions.NotFoundProductException;
 import br.com.lett.crawlernode.exceptions.RequestException;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.integration.redis.CrawlerCache;
@@ -405,7 +407,9 @@ public abstract class Crawler extends Task {
          } else if (obj instanceof JSONArray) {
             products = extractInformation((JSONArray) obj);
          }
-
+         if(session instanceof SentinelCrawlerSession && products.isEmpty()) {
+            throw new NotFoundProductException("No products found in Sentinel");
+         }
          for (Product p : products) {
             processedProducts.add(ProductDTO.processCaptureData(p, session));
          }
