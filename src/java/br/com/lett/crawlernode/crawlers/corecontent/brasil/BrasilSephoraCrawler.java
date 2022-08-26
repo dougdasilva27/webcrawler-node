@@ -24,7 +24,6 @@ import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -84,16 +83,14 @@ public class BrasilSephoraCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.breadcrumb-element", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small .product-name", true);
          List<String> secondaryImages = crawlImages(doc);
-         String defaultId = scrapImageID(null, secondaryImages.get(0));
 
          Elements variants = doc.select(".variation-content li");
          for (Element variant : variants) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
             String variantUrl = "https://www.sephora.com.br/on/demandware.store/Sites-Sephora_BR-Site/pt_BR/Product-Variation?pid=" + internalId;
             String variantName = scrapName(variant, name);
-            String imageId = scrapImageID(variant, null);
 
-            List<String> imagesVariant = scrapImagesVariant(secondaryImages, defaultId, imageId);
+            List<String> imagesVariant = scrapImagesVariant(secondaryImages, variant);
             String primaryImage = imagesVariant.isEmpty() ? null : imagesVariant.remove(0);
 
             boolean isAvailable = variant.select(".not-selectable").isEmpty();
@@ -122,11 +119,13 @@ public class BrasilSephoraCrawler extends Crawler {
       return products;
    }
 
-   private List<String> scrapImagesVariant(List<String> secondaryImages, String defaultId, String imageId) {
-      for (int i = 0; i < secondaryImages.size(); i++){
-         String aux = secondaryImages.remove(0);
-         aux.replace(defaultId, imageId);
-         secondaryImages.add(aux);
+   private List<String> scrapImagesVariant(List<String> secondaryImages, Element variant) {
+      String imageId = scrapImageID(variant);
+
+      if(imageId != null) {
+         for (String secondaryImage : secondaryImages) {
+            secondaryImage.replaceAll("\\\\/([0-9]*)", imageId);
+         }
       }
       return secondaryImages;
    }
@@ -263,7 +262,7 @@ public class BrasilSephoraCrawler extends Crawler {
       return secondaryImagesArray;
    }
 
-   private String scrapImageID(Element variant, String imageID) {
+   private String scrapImageID(Element variant) {
       String regex = "\\/([0-9]*).";
       String dataImage;
 
