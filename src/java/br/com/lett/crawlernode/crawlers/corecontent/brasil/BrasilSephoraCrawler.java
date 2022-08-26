@@ -29,10 +29,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -66,7 +63,6 @@ public class BrasilSephoraCrawler extends Crawler {
             ProxyCollection.NETNUT_RESIDENTIAL_MX))
          .build();
 
-      //Response response = this.dataFetcher.get(session, request);
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
 
       return response;
@@ -83,20 +79,20 @@ public class BrasilSephoraCrawler extends Crawler {
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".tabs-panel.is-active", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.breadcrumb-element", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small .product-name", true);
-         List<String> secondaryImages = crawlImages(doc);
 
          Elements variants = doc.select(".variation-content li");
          for (Element variant : variants) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
             String variantUrl = "https://www.sephora.com.br/on/demandware.store/Sites-Sephora_BR-Site/pt_BR/Product-Variation?pid=" + internalId;
             String variantName = scrapName(variant, name);
+
             Document variantProductPage = fetchVariantProductPage(variantUrl);
 
-            List<String> imagesVariant = scrapImagesVariant(secondaryImages, variant);
-            String primaryImage = imagesVariant.isEmpty() ? null : imagesVariant.remove(0);
+            List<String> secondaryImages = crawlImages(variantProductPage);
+            String primaryImage = secondaryImages.isEmpty() ? null : secondaryImages.remove(0);
 
             boolean isAvailable = variant.select(".not-selectable").isEmpty();
-            Offers offers = isAvailable ? scrapOffers(doc, variant) : new Offers();
+            Offers offers = isAvailable ? scrapOffers(variantProductPage) : new Offers();
             RatingsReviews ratingsReviews = crawlRatingReviews(internalPid);
 
             Product product = ProductBuilder.create()
@@ -126,11 +122,21 @@ public class BrasilSephoraCrawler extends Crawler {
    }
 
    //cpa uns cookies
-   private Document fetchVariantProductPage(String internalPid) {
-      String url = "https://www.sephora.com.br/on/demandware.store/Sites-Sephora_BR-Site/pt_BR/Product-Variation?pid=" + internalPid + "&format=ajax";
+   private Document fetchVariantProductPage(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "*/*");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Connection", "keep-alive");
 
-      Request request = Request.RequestBuilder.create().setUrl(url).build();
-      String response = this.dataFetcher.get(session, request).getBody();
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX))
+         .build();
+
+      String response = CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
 
       return Jsoup.parse(response);
    }
@@ -189,10 +195,10 @@ public class BrasilSephoraCrawler extends Crawler {
       return null;
    }
 
-   private Offers scrapOffers(Document doc, Element variant) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
-      Pricing pricing = scrapPricing(doc, variant);
+      Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(pricing);
 
       offers.add(Offer.OfferBuilder.create()
@@ -207,9 +213,9 @@ public class BrasilSephoraCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document doc, Element variant) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "meta[itemprop=price] ", "content", false, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-standard", null, false, ',', session);
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-sales span", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-box .price-standard", null, false, ',', session);
 
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
