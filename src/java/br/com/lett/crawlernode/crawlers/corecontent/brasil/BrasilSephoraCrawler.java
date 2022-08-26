@@ -94,7 +94,7 @@ public class BrasilSephoraCrawler extends Crawler {
             String primaryImage = imagesVariant.isEmpty() ? null : imagesVariant.remove(0);
 
             boolean isAvailable = variant.select(".not-selectable").isEmpty();
-            Offers offers = isAvailable ? scrapOffers(doc) : new Offers();
+            Offers offers = isAvailable ? scrapOffers(doc, variant) : new Offers();
             RatingsReviews ratingsReviews = crawlRatingReviews(internalPid);
 
             Product product = ProductBuilder.create()
@@ -122,9 +122,9 @@ public class BrasilSephoraCrawler extends Crawler {
    private List<String> scrapImagesVariant(List<String> secondaryImages, Element variant) {
       String imageId = scrapImageID(variant);
 
-      if(imageId != null) {
+      if (imageId != null && !imageId.isEmpty()) {
          for (String secondaryImage : secondaryImages) {
-            secondaryImage.replaceAll("\\\\/([0-9]*)", imageId);
+            secondaryImage.replaceAll("\\/([0-9]*)", imageId);
          }
       }
       return secondaryImages;
@@ -135,19 +135,19 @@ public class BrasilSephoraCrawler extends Crawler {
    }
 
    private String scrapName(Element variant, String name) {
-      String variantName = CrawlerUtils.scrapStringSimpleInfo(variant, "span.selected-value-name", true);
+      String variantName = CrawlerUtils.scrapStringSimpleInfo(variant, ".variation-text-name", true);;
 
-      if (variantName == null) {
+      if (variantName != null) {
          return name + " - " + variantName;
       }
 
       return name;
    }
 
-   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc, Element variant) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
-      Pricing pricing = scrapPricing(doc);
+      Pricing pricing = scrapPricing(doc, variant);
       List<String> sales = scrapSales(pricing);
 
       offers.add(Offer.OfferBuilder.create()
@@ -162,8 +162,8 @@ public class BrasilSephoraCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-sales span", null, false, ',', session);
+   private Pricing scrapPricing(Document doc, Element variant) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "meta[itemprop=price] ", "content", false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-standard", null, false, ',', session);
 
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
@@ -251,7 +251,11 @@ public class BrasilSephoraCrawler extends Crawler {
    private List<String> crawlImages(Document productPage) {
       List<String> secondaryImagesArray = new ArrayList<>();
 
-      Elements imagesList = productPage.select("div.show-for-small-only.text-center ul li.thumb>a");
+      Elements imagesList = productPage.select(".show-for-medium .product-thumbnails .thumb > a");
+
+      if (imagesList.isEmpty()) {
+         imagesList = productPage.select(" .product-thumbnails .thumb > a");
+      }
       if (!imagesList.isEmpty()) {
          for (Element imageElement : imagesList) {
             secondaryImagesArray.add(CrawlerUtils.scrapStringSimpleInfoByAttribute(imageElement, "a", "href"));
@@ -264,13 +268,7 @@ public class BrasilSephoraCrawler extends Crawler {
 
    private String scrapImageID(Element variant) {
       String regex = "\\/([0-9]*).";
-      String dataImage;
-
-      if (variant == null) {
-         dataImage = imageID;
-      } else {
-         dataImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, ".variation-display-name", "data-lgimg");
-      }
+      String dataImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, ".variation-display-name", "data-lgimg");
 
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
       Matcher matcher = pattern.matcher(dataImage);
