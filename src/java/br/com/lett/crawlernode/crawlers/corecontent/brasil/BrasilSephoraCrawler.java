@@ -24,6 +24,7 @@ import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -89,6 +90,7 @@ public class BrasilSephoraCrawler extends Crawler {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
             String variantUrl = "https://www.sephora.com.br/on/demandware.store/Sites-Sephora_BR-Site/pt_BR/Product-Variation?pid=" + internalId;
             String variantName = scrapName(variant, name);
+            Document variantProductPage = fetchVariantProductPage(variantUrl);
 
             List<String> imagesVariant = scrapImagesVariant(secondaryImages, variant);
             String primaryImage = imagesVariant.isEmpty() ? null : imagesVariant.remove(0);
@@ -119,6 +121,31 @@ public class BrasilSephoraCrawler extends Crawler {
       return products;
    }
 
+   private boolean isProductPage(Document document) {
+      return document.selectFirst(".product-cart") != null;
+   }
+
+   //cpa uns cookies
+   private Document fetchVariantProductPage(String internalPid) {
+      String url = "https://www.sephora.com.br/on/demandware.store/Sites-Sephora_BR-Site/pt_BR/Product-Variation?pid=" + internalPid + "&format=ajax";
+
+      Request request = Request.RequestBuilder.create().setUrl(url).build();
+      String response = this.dataFetcher.get(session, request).getBody();
+
+      return Jsoup.parse(response);
+   }
+
+   private String scrapName(Element variant, String name) {
+      String variantName = CrawlerUtils.scrapStringSimpleInfo(variant, ".variation-text-name", true);
+      ;
+
+      if (variantName != null) {
+         return name + " - " + variantName;
+      }
+
+      return name;
+   }
+
    private List<String> scrapImagesVariant(List<String> secondaryImages, Element variant) {
       String imageId = scrapImageID(variant);
 
@@ -127,21 +154,39 @@ public class BrasilSephoraCrawler extends Crawler {
             secondaryImage.replaceAll("\\/([0-9]*)", imageId);
          }
       }
+
       return secondaryImages;
    }
 
-   private boolean isProductPage(Document document) {
-      return document.selectFirst(".product-cart") != null;
-   }
+   private List<String> crawlImages(Document productPage) {
+      List<String> secondaryImagesArray = new ArrayList<>();
 
-   private String scrapName(Element variant, String name) {
-      String variantName = CrawlerUtils.scrapStringSimpleInfo(variant, ".variation-text-name", true);;
+      Elements imagesList = productPage.select(".show-for-medium .product-thumbnails .thumb > a");
 
-      if (variantName != null) {
-         return name + " - " + variantName;
+      if (imagesList.isEmpty()) {
+         imagesList = productPage.select(" .product-thumbnails .thumb > a");
+      }
+      if (!imagesList.isEmpty()) {
+         for (Element imageElement : imagesList) {
+            secondaryImagesArray.add(CrawlerUtils.scrapStringSimpleInfoByAttribute(imageElement, "a", "href"));
+         }
       }
 
-      return name;
+      return secondaryImagesArray;
+   }
+
+   private String scrapImageID(Element variant) {
+      String regex = "\\/([0-9]*).";
+      String dataImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, ".variation-display-name", "data-lgimg");
+
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(dataImage);
+
+      if (matcher.find()) {
+         return matcher.group(1);
+      }
+
+      return null;
    }
 
    private Offers scrapOffers(Document doc, Element variant) throws OfferException, MalformedPricingException {
@@ -246,38 +291,6 @@ public class BrasilSephoraCrawler extends Crawler {
       }
 
       return installments;
-   }
-
-   private List<String> crawlImages(Document productPage) {
-      List<String> secondaryImagesArray = new ArrayList<>();
-
-      Elements imagesList = productPage.select(".show-for-medium .product-thumbnails .thumb > a");
-
-      if (imagesList.isEmpty()) {
-         imagesList = productPage.select(" .product-thumbnails .thumb > a");
-      }
-      if (!imagesList.isEmpty()) {
-         for (Element imageElement : imagesList) {
-            secondaryImagesArray.add(CrawlerUtils.scrapStringSimpleInfoByAttribute(imageElement, "a", "href"));
-         }
-      }
-
-
-      return secondaryImagesArray;
-   }
-
-   private String scrapImageID(Element variant) {
-      String regex = "\\/([0-9]*).";
-      String dataImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, ".variation-display-name", "data-lgimg");
-
-      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-      Matcher matcher = pattern.matcher(dataImage);
-
-      if (matcher.find()) {
-         return matcher.group(1);
-      }
-
-      return null;
    }
 
    private RatingsReviews crawlRatingReviews(String partnerId) {
@@ -392,7 +405,6 @@ public class BrasilSephoraCrawler extends Crawler {
 
       return request.toString();
    }
-
 
    private JSONObject getReviewStatisticsJSON(JSONObject ratingReviewsEndpointResponse, String skuInternalPid) {
       if (ratingReviewsEndpointResponse.has("Includes")) {
