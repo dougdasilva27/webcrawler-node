@@ -30,8 +30,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * date: 05/09/2018
@@ -128,7 +126,6 @@ public class BrasilSephoraCrawler extends Crawler {
       return document.selectFirst(".product-cart") != null;
    }
 
-   //cpa uns cookies
    private Document fetchVariantProductPage(String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "*/*");
@@ -152,7 +149,6 @@ public class BrasilSephoraCrawler extends Crawler {
 
    private String scrapName(Element variant, String name) {
       String variantName = CrawlerUtils.scrapStringSimpleInfo(variant, ".variation-text-name", true);
-      ;
 
       if (variantName != null) {
          return name + " - " + variantName;
@@ -193,6 +189,7 @@ public class BrasilSephoraCrawler extends Crawler {
          .setPricing(pricing)
          .setSales(sales)
          .build());
+
       return offers;
    }
 
@@ -373,9 +370,11 @@ public class BrasilSephoraCrawler extends Crawler {
 
    private Double getAverageOverallRating(JSONObject reviewStatistics) {
       Double avgOverallRating = 0d;
+
       if (reviewStatistics.has("AverageOverallRating")) {
          avgOverallRating = reviewStatistics.optDouble("AverageOverallRating");
       }
+
       return avgOverallRating;
    }
 
