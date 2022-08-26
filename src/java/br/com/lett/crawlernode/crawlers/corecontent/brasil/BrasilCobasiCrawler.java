@@ -42,7 +42,7 @@ public class BrasilCobasiCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
 
       List<Product> products = new ArrayList<>();
-      JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, true, false);
+      JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
 
 
       if ((pageJson != null && !pageJson.isEmpty()) && pageJson.query("/props/pageProps/productDetail") != null) {
