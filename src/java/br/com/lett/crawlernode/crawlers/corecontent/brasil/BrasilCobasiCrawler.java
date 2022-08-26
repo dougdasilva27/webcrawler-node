@@ -42,7 +42,7 @@ public class BrasilCobasiCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
 
       List<Product> products = new ArrayList<>();
-      JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, true, false);
+      JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
 
 
       if ((pageJson != null && !pageJson.isEmpty()) && pageJson.query("/props/pageProps/productDetail") != null) {
@@ -105,10 +105,6 @@ public class BrasilCobasiCrawler extends Crawler {
       String name = productsObj.optString("name");
       String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".styles__BrandLink-sc-1rue5eb-14", true);
       String nameVariant = variant.optString("name");
-
-      if (name != null) {
-         name = CommonMethods.camelcaseToText(name);
-      }
 
       if (nameVariant != null) {
          name = name + " " + nameVariant;
