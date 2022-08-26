@@ -106,10 +106,6 @@ public class BrasilCobasiCrawler extends Crawler {
       String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".styles__BrandLink-sc-1rue5eb-14", true);
       String nameVariant = variant.optString("name");
 
-      if (name != null) {
-         name = CommonMethods.camelcaseToText(name);
-      }
-
       if (nameVariant != null) {
          name = name + " " + nameVariant;
       }
