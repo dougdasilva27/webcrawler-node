@@ -55,8 +55,15 @@ public class BrasilSephoraCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "*/*");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Connection", "keep-alive");
+      headers.put("x-requested-with", "XMLHttpRequest");
+
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
+         .setHeaders(headers)
          .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
@@ -127,9 +134,11 @@ public class BrasilSephoraCrawler extends Crawler {
       headers.put("accept", "*/*");
       headers.put("Accept-Encoding", "gzip, deflate, br");
       headers.put("Connection", "keep-alive");
+      headers.put("x-requested-with", "XMLHttpRequest");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
+         .setHeaders(headers)
          .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
@@ -152,18 +161,6 @@ public class BrasilSephoraCrawler extends Crawler {
       return name;
    }
 
-   private List<String> scrapImagesVariant(List<String> secondaryImages, Element variant) {
-      String imageId = scrapImageID(variant);
-
-      if (imageId != null && !imageId.isEmpty()) {
-         for (String secondaryImage : secondaryImages) {
-            secondaryImage.replaceAll("\\/([0-9]*)", imageId);
-         }
-      }
-
-      return secondaryImages;
-   }
-
    private List<String> crawlImages(Document productPage) {
       List<String> secondaryImagesArray = new ArrayList<>();
 
@@ -179,20 +176,6 @@ public class BrasilSephoraCrawler extends Crawler {
       }
 
       return secondaryImagesArray;
-   }
-
-   private String scrapImageID(Element variant) {
-      String regex = "\\/([0-9]*).";
-      String dataImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, ".variation-display-name", "data-lgimg");
-
-      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-      Matcher matcher = pattern.matcher(dataImage);
-
-      if (matcher.find()) {
-         return matcher.group(1);
-      }
-
-      return null;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
