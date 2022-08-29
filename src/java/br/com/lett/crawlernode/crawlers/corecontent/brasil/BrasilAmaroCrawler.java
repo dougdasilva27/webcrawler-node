@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -45,33 +46,6 @@ public class BrasilAmaroCrawler extends Crawler {
       super(session);
    }
 
-   @Override
-   protected Object fetch() {
-      Document doc = new Document("");
-      int attempt = 0;
-      boolean sucess = false;
-      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY);
-      do {
-         try {
-            Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
-
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempt), session);
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
-            sucess = doc.selectFirst("div[class*=ProductView_container]") != null;
-            attempt++;
-            webdriver.waitLoad(10000);
-
-         } catch (Exception e) {
-            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-            Logging.printLogWarn(logger, "Página não capturada");
-         }
-
-      } while (attempt < 3 && !sucess);
-
-      return doc;
-   }
-
    public List<Product> extractInformation(Document document) throws Exception {
       super.extractInformation(document);
       List<Product> products = new ArrayList<>();
@@ -79,8 +53,8 @@ public class BrasilAmaroCrawler extends Crawler {
 
       if (isProductPage(document) && json != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         JSONObject data = JSONUtils.getValueRecursive(json, "props.pageProps.dehydratedState.queries.4.state.data", JSONObject.class);
-
+         JSONObject data = findData(json);
+         
          if (data != null) {
             JSONArray variants = JSONUtils.getValueRecursive(data, "baseOptions.0.options", JSONArray.class);
 
@@ -136,6 +110,17 @@ public class BrasilAmaroCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private JSONObject findData(JSONObject json) {
+      JSONArray arr = JSONUtils.getValueRecursive(json, "props.pageProps.dehydratedState.queries", JSONArray.class);
+      for (Object obj : arr){
+         JSONObject jObj = (JSONObject) obj;
+         if(JSONUtils.getValueRecursive(jObj, "state.data.baseProduct", String.class) != null){
+            return JSONUtils.getValueRecursive(jObj, "state.data", JSONObject.class);
+         }
+      }
+      return  null;
    }
 
    private String scrapName(JSONObject variantColor, JSONObject variant, String name) {
