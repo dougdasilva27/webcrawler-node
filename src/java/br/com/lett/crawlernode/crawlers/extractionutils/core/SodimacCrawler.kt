@@ -180,8 +180,8 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
    }
 
    open fun scrapPricing(doc: Document): Pricing {
-      var spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".primary", null, false, '.', session)
-      var priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".secondary", null, false, '.', session)
+      var spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".primary", null, false, ',', session)
+      var priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".secondary", null, false, ',', session)
 
       val bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null)
       val creditCards: CreditCards = scrapCreditCards(spotlightPrice)
