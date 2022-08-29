@@ -54,8 +54,7 @@ public class BrasilAmaroCrawler extends Crawler {
       if (isProductPage(document) && json != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          JSONObject data = findData(json);
-         //JSONObject data = JSONUtils.getValueRecursive(json, "props.pageProps.dehydratedState.queries.3.state.data", JSONObject.class);
-
+         
          if (data != null) {
             JSONArray variants = JSONUtils.getValueRecursive(data, "baseOptions.0.options", JSONArray.class);
 
