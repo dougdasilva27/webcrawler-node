@@ -99,7 +99,7 @@ public class BrasilMuniCrawler extends Crawler {
 
    private String getDescription(JSONObject productList) {
       String description = "";
-      String objDescription = productList.optString("/content_description");
+      String objDescription = productList.optString("content_description");
       if (objDescription != null) {
          description = objDescription;
       }
@@ -108,7 +108,7 @@ public class BrasilMuniCrawler extends Crawler {
 
    private String getPrimaryImage(JSONObject productList) {
       String primaryImg = "";
-      String objImg = productList.optString("/image");
+      String objImg = productList.optString("image");
       if (objImg != null) {
          primaryImg = objImg;
       }
