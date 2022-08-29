@@ -29,11 +29,12 @@ public class BrasilCasadochocolateonlineCrawler extends CrawlerRankingKeywords {
             setTotalProducts();
 
             for(Element product : products){
-               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "review-stars.mt-0", "data-id");
+               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".review-stars.mt-0", "data-id");
                String productUrl = CrawlerUtils.scrapUrl(product, ".product-card.p-3.p-md-4.d-flex.flex-column.align-items-strech.h-100.position-relative.final a", "href", "https", "www.casadochocolateonline.com.br");
                String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".product-card .product-title .text",false);
-               String imageUrl = "https:"+ CrawlerUtils.scrapStringSimpleInfoByAttribute(product, " a > figure > img", "loading");
+               String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".img-fluid", "src");
                Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".product-card-price.m-final .price", null, false, ',', session, null);
+               Integer priceFrom = CrawlerUtils.scrapPriceInCentsFromHtml(product,".product-card-price .discount",null,false,',',session,price);
                boolean isAvailable = price != null;
 
                RankingProduct productRanking = RankingProductBuilder.create()
@@ -41,6 +42,7 @@ public class BrasilCasadochocolateonlineCrawler extends CrawlerRankingKeywords {
                   .setInternalId(internalId)
                   .setName(productName)
                   .setPriceInCents(price)
+                  .setPriceInCents(priceFrom)
                   .setAvailability(isAvailable)
                   .setImageUrl(imageUrl)
                   .build();

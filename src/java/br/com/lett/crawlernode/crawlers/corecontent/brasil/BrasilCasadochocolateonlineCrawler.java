@@ -40,8 +40,8 @@ public class BrasilCasadochocolateonlineCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title .h1", false);
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=\"variation_id\"]", "value");
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title .h1", false);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".review-stars", "data-id");
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-description-item", false);
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
          boolean available = doc.selectFirst(".product-action-buy.btn") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
@@ -86,12 +86,14 @@ public class BrasilCasadochocolateonlineCrawler extends Crawler {
    }
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-final", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-discount", null, false, ',', session);
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
