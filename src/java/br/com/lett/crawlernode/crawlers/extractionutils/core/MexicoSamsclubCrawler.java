@@ -105,7 +105,6 @@ public class MexicoSamsclubCrawler extends Crawler {
          String description = crawlDescription(apiJson);
          boolean available = crawlAvailability(apiJson);
          List<String> eans = new ArrayList<>();
-         eans.add(internalId);
 
          Offers offers = available ? scrapOffers(apiJson) : new Offers();
 
@@ -119,7 +118,6 @@ public class MexicoSamsclubCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            .setEans(eans)
             .setOffers(offers)
             .build();
 
