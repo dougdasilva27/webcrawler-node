@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -30,7 +31,7 @@ import java.util.List;
 public class BrasilAmaroCrawler extends CrawlerRankingKeywords {
    public BrasilAmaroCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.JSOUP;
+      super.fetchMode = FetchMode.FETCHER;
    }
 
    @Override
@@ -48,7 +49,7 @@ public class BrasilAmaroCrawler extends CrawlerRankingKeywords {
    public void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
-      String url = "https://cerberus.amaro.pro/search/products?q="+this.keywordWithoutAccents+"&sort=relevance&curr=BRL&lang=pt&currentPage="+this.currentPage+"&pageSize=24";
+      String url = "https://cerberus.amaro.pro/search/products?q=" + this.keywordWithoutAccents + "&sort=relevance&curr=BRL&lang=pt&currentPage=" + this.currentPage + "&pageSize=24";
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
@@ -58,7 +59,9 @@ public class BrasilAmaroCrawler extends CrawlerRankingKeywords {
       headers.put("origin", "https://amaro.com/");
 
       Request request = Request.RequestBuilder.create()
-         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
          .setUrl(url)
          .setHeaders(headers)
          .setCookies(this.cookies)
@@ -85,7 +88,7 @@ public class BrasilAmaroCrawler extends CrawlerRankingKeywords {
                .setName(name)
                .setImageUrl(image)
                .setPriceInCents(price)
-               .setAvailability(price!=null)
+               .setAvailability(price != null)
                .build();
 
             saveDataProduct(productRanking);
@@ -94,7 +97,7 @@ public class BrasilAmaroCrawler extends CrawlerRankingKeywords {
                break;
             }
          }
-      }else {
+      } else {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
