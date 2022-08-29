@@ -7,7 +7,10 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.*
+import br.com.lett.crawlernode.util.CrawlerUtils
+import br.com.lett.crawlernode.util.JSONUtils
+import br.com.lett.crawlernode.util.htmlOf
+import br.com.lett.crawlernode.util.toJson
 import com.google.common.collect.Sets
 import models.AdvancedRatingReview
 import models.Offer.OfferBuilder
@@ -21,8 +24,10 @@ import org.jsoup.nodes.Document
 
 open class SodimacCrawler(session: Session?) : Crawler(session) {
 
-   protected var cards: Set<String> = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString())
+   protected var cards: Set<String> = Sets.newHashSet(
+      Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString()
+   )
 
    override fun shouldVisit(): Boolean {
       val href = session.originalURL.toLowerCase()
@@ -39,8 +44,7 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
       val products: MutableList<Product> = ArrayList()
       if (doc.selectFirst(".product-basic-info") != null) {
          val internalPid = doc.selectFirst(".product-cod").text().split(" ")[1]
-         val productBrand = CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-brand", true);
-         val productName = productBrand + " - " + CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-title", false);
+         val productName = scrapName(doc)
 
          val images = scrapImages(internalPid)
          val primaryImage = images.removeFirstOrNull()
@@ -76,6 +80,27 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
       }
       return products
    }
+
+   private fun scrapName(doc: Document): String? {
+      val productBrand = CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-brand", true);
+      val productModel = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-model", true);
+      var productName = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-title", false);
+
+      if (productName != null) {
+         if (productBrand != null) {
+            productName = "$productBrand - $productName"
+
+         }
+
+         if (productModel != null) {
+            productName = "$productName - $productModel"
+         }
+      }
+
+      return productName
+
+   }
+
 
    private fun scrapImages(internalPid: String): MutableList<String> {
       val urlImageApi = "https://sodimac.scene7.com/is/image/" + session.options?.optString("region") + "/$internalPid?req=set,json&handler=s7Res&id=imgSet"
@@ -124,15 +149,17 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
 
       val pricing: Pricing = scrapPricing(doc)
 
-      offers.add(OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(session.options?.optString("sellerFullName"))
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .setSales(sales)
-         .build())
+      offers.add(
+         OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(session.options?.optString("sellerFullName"))
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build()
+      )
 
       return offers
    }
@@ -153,12 +180,8 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
    }
 
    open fun scrapPricing(doc: Document): Pricing {
-      val spotlightPrice = doc.selectFirst("div.main div.price")?.toDoubleDot()!!
-      var priceFrom: Double? = null
-
-      if (doc.selectFirst("div.secondary") != null) {
-         priceFrom = doc.selectFirst("div.secondary .price")?.toDoubleDot()!!
-      }
+      var spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".primary", null, false, '.', session)
+      var priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".secondary", null, false, '.', session)
 
       val bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null)
       val creditCards: CreditCards = scrapCreditCards(spotlightPrice)
@@ -175,17 +198,21 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
       val creditCards = CreditCards()
       val installments = Installments()
       if (installments.installments.isEmpty()) {
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build())
+         installments.add(
+            Installment.InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build()
+         )
       }
       for (card in cards) {
-         creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build())
+         creditCards.add(
+            CreditCard.CreditCardBuilder.create()
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build()
+         )
       }
       return creditCards
    }
