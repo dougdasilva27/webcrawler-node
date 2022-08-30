@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
@@ -12,6 +15,7 @@ import com.sun.jdi.IntegerValue;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -119,9 +123,23 @@ public class MerqueoCrawler extends CrawlerRankingKeywords {
       if (included.has("attributes") && !included.isNull("attributes")) {
          JSONObject attributes = included.getJSONObject("attributes");
          productUrl = productUrl
-            .concat("https://merqueo.com/")
-            .concat(attributes.optString("city"))
+            .concat("https://merqueo.com");
+         String country = session.getOptions().optString("country");
+         if(country != null && !country.isEmpty()){
+            productUrl = productUrl.concat(".").concat(country);
+
+         }
+         productUrl = productUrl
             .concat("/")
+            .concat(attributes.optString("city"))
+            .concat("/");
+         String locate = session.getOptions().optString("locate");
+            if(locate != null && !locate.isEmpty()){
+               productUrl = productUrl .concat(locate)
+                  .concat("/");
+            }
+
+         productUrl = productUrl
             .concat(attributes.optString("department"))
             .concat("/")
             .concat(attributes.optString("shelf"))
@@ -137,10 +155,11 @@ public class MerqueoCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder
          .create()
          .setUrl(url)
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .mustSendContentEncoding(false)
          .build();
 
-      return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
+      return CrawlerUtils.stringToJson(CrawlerUtils.retryRequestString(request,List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()),session));
    }
 
 }

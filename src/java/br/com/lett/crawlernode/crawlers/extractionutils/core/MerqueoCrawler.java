@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
@@ -19,10 +22,7 @@ import models.pricing.*;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class MerqueoCrawler extends Crawler {
 
@@ -114,11 +114,11 @@ public class MerqueoCrawler extends Crawler {
       Request request = Request.RequestBuilder
          .create()
          .setUrl(apiUrl.toString())
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .mustSendContentEncoding(false)
          .build();
 
-
-      return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
+      return CrawlerUtils.stringToJson( CrawlerUtils.retryRequestString(request,List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()),session));
    }
 
    /*
