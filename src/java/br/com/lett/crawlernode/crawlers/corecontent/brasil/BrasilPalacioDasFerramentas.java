@@ -50,7 +50,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#maincontent > div.columns > div > div.product-info-main > div.page-title-wrapper.product > h1 > span", false);
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-stock-sku > div.product.attribute.sku > div", false);
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-price > div", "data-product-id");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".price-box", "data-product-id");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#maincontent > div.columns > div > div.product.media > div.gallery-placeholder._block-content-loading > img", Arrays.asList("src"), "https", HOST);
          List<String> images = scrapImages(doc, primaryImage);
          CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, "#html-body > div.page-wrapper > div.breadcrumbs > ul li a", true);
@@ -82,8 +82,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
                products.add(product);
             }
          } else {
-            product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
+            product = ProductBuilder.create().setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
@@ -200,18 +199,13 @@ public class BrasilPalacioDasFerramentas extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-price > div > span > meta:nth-child(2)", "content", true, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price", null, false, ',', session);
       if (priceFrom == null) {
          priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-price > div > span > span > meta:nth-child(3)", "content", true, '.', session);
 
       }
-      Double spotlightPrice = null;
-      if (priceFrom != null) {
-         Double discount = priceFrom * 0.06;
-         spotlightPrice = priceFrom - discount;
-      }
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".pricewithdiscount.final_price .price", null, false, ',', session);;
 
-      spotlightPrice = MathUtils.normalizeTwoDecimalPlaces(spotlightPrice);
       Double priceBankSlip = spotlightPrice;
 
       if (Objects.equals(priceFrom, spotlightPrice)) priceFrom = null;

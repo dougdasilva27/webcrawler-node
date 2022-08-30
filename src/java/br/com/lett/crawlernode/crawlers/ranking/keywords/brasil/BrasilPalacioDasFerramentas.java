@@ -2,6 +2,9 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -17,6 +20,7 @@ import org.jsoup.select.Elements;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
@@ -114,13 +118,15 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .setSendUserAgent(false)
          .build();
 
-      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher, true);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session );
 
       return Jsoup.parse(response.getBody());
    }
