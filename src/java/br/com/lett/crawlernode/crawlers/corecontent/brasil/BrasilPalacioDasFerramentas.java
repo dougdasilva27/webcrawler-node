@@ -192,15 +192,16 @@ public class BrasilPalacioDasFerramentas extends Crawler {
    private JSONArray getVariations(Document doc) {
 
       String variationsString = CrawlerUtils.scrapScriptFromHtml(doc, ".fieldset script");
-      if (variationsString != null) {
+      if (variationsString != null && JSONUtils.stringToJsonArray(variationsString) != null) {
          JSONArray variationsArr = JSONUtils.stringToJsonArray(variationsString);
          JSONObject vatiationObj = JSONUtils.getValueRecursive(variationsArr, "0.#product_addtocart_form.configurable.spConfig.attributes", JSONObject.class);
-         Iterator<String> it = vatiationObj.keys();
-         String key = it.next();
-         vatiationObj = vatiationObj.optJSONObject(key);
-         return vatiationObj.optJSONArray("options");
-
-
+         if(vatiationObj != null){
+            Iterator<String> it = vatiationObj.keys();
+            String key = it.next();
+            vatiationObj = vatiationObj.optJSONObject(key);
+            return vatiationObj.optJSONArray("options");
+         }
+         return null;
       } else {
          return null;
       }
