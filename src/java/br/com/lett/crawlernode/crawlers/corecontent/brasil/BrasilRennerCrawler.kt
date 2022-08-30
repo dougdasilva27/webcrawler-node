@@ -2,11 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.Request
-import br.com.lett.crawlernode.core.fetcher.models.Response
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
@@ -23,11 +19,8 @@ import models.pricing.CreditCards
 import models.pricing.Installment
 import models.pricing.Installments
 import models.pricing.Pricing
-import org.json.JSONArray
 import org.json.JSONObject
-import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
 
 
 /**
@@ -49,9 +42,14 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
    override fun fetch(): Document {
       val request = Request.RequestBuilder.create()
          .setUrl(this.session.originalURL)
+         .setProxyservice(
+            listOf(
+               ProxyCollection.LUMINATI_SERVER_BR
+            )
+         )
          .build()
 
-      val response = CrawlerUtils.retryRequest(request, session, ApacheDataFetcher(), true)
+      val response = dataFetcher.get(session, request)
 
       return response.body.toDoc() ?: Document(session.originalURL)
    }
@@ -70,8 +68,8 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
          val urlPath = pageJson?.optJSONObject("props")?.optJSONObject("pageProps")?.optJSONObject("content")?.optJSONArray("mainContent")?.optJSONObject(0)?.optJSONObject("record")?.optJSONObject("attributes")?.optString("prop.product.url")
          val url = "$urlBase$urlPath?sku=$internalId"
          val baseName = productJson?.optString("displayName") ?: ""
-         val currentVariantName = productJson?.optString("variants") ?: ""
-         val name = baseName + currentVariantName
+         val currentVariantName = productJson?.optString("variants")?.replace("indefinido", "")?.replace("|", " ") ?: ""
+         val name = "$baseName $currentVariantName"
          val categories = CrawlerUtils.crawlCategories(doc, "ul[aria-label='breadcrumb'] li:not(:first-child):not(:last-child) a", true)
          val description = pageJson?.optJSONObject("props")?.optJSONObject("pageProps")?.optJSONObject("content")?.optJSONArray("mainContent")?.optJSONObject(0)?.optJSONObject("record")?.optJSONObject("attributes")?.optString("prop.product.metaDescription")
          val images = productJson?.optJSONArray("mediaSets")?.map { "https:${(it as JSONObject).optString("largeImageUrl")}" }
@@ -206,46 +204,4 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
       val trustVox = TrustvoxRatingCrawler(session, "110773", logger)
       return trustVox.extractRatingAndReviews(internalPid, doc, dataFetcher)
    }
-
-   private fun unavailableProducts(doc: Document): MutableList<Product> {
-
-      val imageAtt = doc.selectFirst(".product .product_404 .image-product")?.attr("src") ?: ""
-
-      if (imageAtt.isEmpty()) {
-         return mutableListOf()
-      }
-
-      val primaryImage = "http:$imageAtt"
-
-      val internalId = internalPidFromImageLink(primaryImage)
-
-      val name = doc.selectFirst(".product .product_404 .content-wrapper h1")?.text()
-
-      val product = ProductBuilder()
-         .setUrl(session.originalURL)
-         .setInternalId(internalId)
-         .setName(name)
-         .setPrimaryImage(primaryImage)
-         .setOffers(Offers())
-         .setRatingReviews(null)
-         .build()
-
-      return mutableListOf(product)
-   }
-
-   // http://img.lojasrenner.com.br/item/551942660/small/1.jpg
-   private fun internalPidFromImageLink(imageLink: String): String {
-      val split1 = imageLink.split("/item/")
-
-      if (split1.size <= 1) {
-         return ""
-      }
-
-      val split2 = split1[1].split("/small")
-      if (split2.size <= 1) {
-         return ""
-      }
-      return split2[0]
-   }
-
 }
