@@ -49,13 +49,6 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
    override fun fetch(): Document {
       val request = Request.RequestBuilder.create()
          .setUrl(this.session.originalURL)
-//         .setProxyservice(
-//            listOf(
-//               ProxyCollection.BUY_HAPROXY,
-//               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-//               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-//            )
-//         )
          .build()
 
       val response = CrawlerUtils.retryRequest(request, session, ApacheDataFetcher(), true)
