@@ -17,8 +17,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,6 +37,11 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
    protected String password = getPassword();
    protected String login = getLogin();
    protected String cnpj = getCnpj();
+   protected String codCli = getCodCli();
+
+   protected String getCodCli() {
+      return session.getOptions().optString("cod_cliente");
+   }
 
    protected String getPassword() {
       return session.getOptions().optString("pass");
@@ -112,7 +115,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put("authority", "www.martinsatacado.com.br");
       headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
-      String payload = "{\"grant_type\":\"password\",\"cnpj\":\"" + cnpj + "\",\"username\":\"" + getLogin() + "\",\"codCli\":\"6659973\",\"password\":\"" + getPassword() + "\",\"codedevnd\":\"\",\"profile\":\"ROLE_CLIENT\"}";
+      String payload = "{\"grant_type\":\"password\",\"cnpj\":\"" + cnpj + "\",\"username\":\"" + getLogin() + "\",\"codCli\":\"" + codCli + "\",\"password\":\"" + getPassword() + "\",\"codedevnd\":\"\",\"profile\":\"ROLE_CLIENT\"}";
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://ssd.martins.com.br/oauth-marketplace-portal/access-tokens")
@@ -160,8 +163,8 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          JSONObject product = (JSONObject) o;
          String cod = product.optString("productSku");
          List<String> parts = List.of(cod.split("_"));
-         if(flag){
-            payload = payload +",";
+         if (flag) {
+            payload = payload + ",";
          }
          payload = payload + "{\"seller\":\"" + parts.get(0) + "\",\"CodigoMercadoria\":\"" + cod + "\",\"Quantidade\":0}";
          flag = true;
@@ -190,7 +193,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
    protected String fetchJson() {
       login();
       String id = catureId();
-      String url = "https://www.martinsatacado.com.br/_next/data/"+ id +"/busca/" + this.keywordWithoutAccents.replace(" ", "%20") + ".json?page=" + this.currentPage + "&perPage=" + this.pageSize;
+      String url = "https://www.martinsatacado.com.br/_next/data/" + id + "/busca/" + this.keywordWithoutAccents.replace(" ", "%20") + ".json?page=" + this.currentPage + "&perPage=" + this.pageSize;
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setProxyservice(Arrays.asList(
@@ -202,7 +205,8 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
 
       return response;
    }
-   protected String catureId(){
+
+   protected String catureId() {
       String id = null;
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.martinsatacado.com.br/")
@@ -213,9 +217,9 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          .build();
       String response = this.dataFetcher.get(session, request).getBody();
       Document doc = Jsoup.parse(response);
-      String script = CrawlerUtils.scrapScriptFromHtml(doc,"#__NEXT_DATA__");
+      String script = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
       JSONArray obj = JSONUtils.stringToJsonArray(script);
-      id = JSONUtils.getValueRecursive(obj,"0.buildId", String.class);
+      id = JSONUtils.getValueRecursive(obj, "0.buildId", String.class);
       return id;
    }
 
