@@ -58,7 +58,8 @@ public class BrasilNutriiCrawler extends Crawler {
             JSONObject jsonOffers = JSONUtils.getJSONValue(jsonInfo, "offers");
 
 
-            String internalId = jsonInfo.optString("sku");
+            String productId = jsonInfo.optString("productId");
+            String internalId = productId != null ? productId.replace("sku:", "") : null;
             String name = jsonInfo.optString("name");
             CategoryCollection categories = crawlCategories(name);
             String primaryImage = jsonInfo.optString("image");
