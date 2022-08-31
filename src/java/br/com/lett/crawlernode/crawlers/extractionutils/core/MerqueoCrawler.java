@@ -60,11 +60,7 @@ public class MerqueoCrawler extends Crawler {
          String primaryImage = attributes.optString("image_large_url");
          String description = data.optString("description");
          Integer stock = crawlStock(data);
-         String country = session.getOptions().optString("country");
-         String url = session.getOriginalURL();
-         if (country != null && country.equals("br")) {
-            url = formatUrl(url);
-         }
+         String url = verifyUrl();
          // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(url)
@@ -85,9 +81,16 @@ public class MerqueoCrawler extends Crawler {
       return products;
    }
 
-   private String formatUrl(String url) {
+   private String verifyUrl() {
+      String country = session.getOptions().optString("country");
+      if (country != null && country.equals("br")) {
+         return formatUrl();
+      }
+      return session.getOriginalURL();
+   }
 
-      return url.replace("https://merqueo.com/sao-paulo/", "https://merqueo.com.br/sao-paulo/"+session.getOptions().optString("locate"));
+   private String formatUrl(){
+      return session.getOriginalURL().replace("https://merqueo.com/sao-paulo/", "https://merqueo.com.br/" + session.getOptions().optString("city") + "/" + session.getOptions().optString("locate") + "/");
    }
 
    private String scrapName(JSONObject attributes) {
