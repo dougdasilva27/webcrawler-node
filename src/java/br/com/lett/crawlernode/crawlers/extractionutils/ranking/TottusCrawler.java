@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
@@ -19,8 +20,9 @@ import java.util.List;
 
 public class TottusCrawler extends CrawlerRankingKeywords {
 
-   protected String homePage;
-   private String urlWithCode;
+   protected String homePage = "https://www.tottus.com.pe";
+
+   private String channel = session.getOptions().optString("channel", "");
 
    public TottusCrawler(Session session) {
       super(session);
@@ -32,16 +34,12 @@ public class TottusCrawler extends CrawlerRankingKeywords {
       this.pageSize = 48;
       this.log("Página " + this.currentPage);
 
-      if (urlWithCode == null) {
-         urlWithCode = getUrl();
-      }
 
-      String url = urlWithCode + "&page=" + this.currentPage;
+      String url = homePage + "/api/product-search?q=" + this.keywordEncoded + "&sort=score&" + channel + "&page=" + this.currentPage + "&perPage=48";
 
-      this.currentDoc = fetchDocument(url);
+      JSONObject jsonInfo = fetchJsonFromApi(url);
 
-      JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "#__NEXT_DATA__", null, null, false, false);
-      JSONArray results = JSONUtils.getValueRecursive(jsonInfo, "props.pageProps.products.results", JSONArray.class);
+      JSONArray results = jsonInfo.optJSONArray("results");
 
       if (results != null && !results.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -51,12 +49,12 @@ public class TottusCrawler extends CrawlerRankingKeywords {
          for (Object e : results) {
 
             JSONObject skuInfo = (JSONObject) e;
-            String internalId = skuInfo.optString("sku");
-            String productUrl = CrawlerUtils.completeUrl(skuInfo.optString("key"), "https://", homePage) + "/p/";
-            String name = scrapName(skuInfo);
-            String imgUrl = scrapImg(skuInfo);
+            String internalId = skuInfo.optString("id");
+            String productUrl = CrawlerUtils.completeUrl(skuInfo.optString("key"), "https", "www.tottus.com.pe") + "/p/";
+            String name = skuInfo.optString("name");
+            String imgUrl = JSONUtils.getValueRecursive(skuInfo, "images.0", String.class);
             Integer price = scrapPrice(skuInfo);
-            boolean isAvailable = scrapAvailable(skuInfo);
+            boolean isAvailable = price != null;
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalId(internalId)
@@ -79,7 +77,27 @@ public class TottusCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   private Integer scrapPrice(JSONObject skuInfo) {
+      JSONObject prices = skuInfo.optJSONObject("prices");
+      Double priceRanking;
+      Double spotlightPrice = null;
+      Double priceFrom = null;
+      if (prices != null) {
+         spotlightPrice = JSONUtils.getDoubleValueFromJSON(prices, "currentPrice", true);
+         priceFrom = JSONUtils.getDoubleValueFromJSON(prices, "regularPrice", true);
+      }
+      if (spotlightPrice != null) {
+         priceRanking = spotlightPrice;
+      } else {
+         priceRanking = priceFrom;
+      }
+
+      return CommonMethods.doublePriceToIntegerPrice(priceRanking, null);
+
+   }
+
    private JSONObject fetchJsonFromApi(String url) {
+
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
@@ -91,65 +109,8 @@ public class TottusCrawler extends CrawlerRankingKeywords {
 
    }
 
-   private String getUrl() {
-
-      String url = "https://www.tottus.com.pe/api/product-search?q=" + keywordEncoded + "&perPage=48&channel=912_RegularDelivery12&categoryId=";
-      JSONObject json = fetchJsonFromApi(url);
-      if (json != null && json.has("redirect")) {
-         urlWithCode = json.optString("redirect");
-      } else {
-         urlWithCode = "https://www.tottus.com.pe/buscar?q=" + this.keywordEncoded.replace(" ", "%20");
-      }
-
-      return urlWithCode;
-
-   }
-
-   private String scrapName(JSONObject prod) {
-      String name = prod.optString("name");
-      String marca = JSONUtils.getValueRecursive(prod, "attributes.marca", String.class);
-      String format = JSONUtils.getValueRecursive(prod, "attributes.formato", String.class);
-      StringBuilder fullName = new StringBuilder();
-      if (name != null && !name.isEmpty()) {
-         fullName.append(name);
-      }
-      if (marca != null && !marca.isEmpty()) {
-         fullName.append(" ");
-         fullName.append(marca);
-      }
-      if (format != null && !format.isEmpty()) {
-         fullName.append(" ");
-         fullName.append(format);
-      }
-      return fullName.toString();
-
-   }
-
-   private String scrapImg(JSONObject prod) {
-      return prod.optJSONArray("images").optString(0);
-   }
-
-   private Integer scrapPrice(JSONObject prod) {
-      Double priceDouble = JSONUtils.getValueRecursive(prod, "prices.cmrPrice", Double.class, 0.0);
-      if (priceDouble == 0.0) {
-         priceDouble = JSONUtils.getValueRecursive(prod, "prices.currentPrice", Double.class, 0.0);
-         if (priceDouble == 0.0) {
-            return JSONUtils.getValueRecursive(prod, "prices.currentPrice", Integer.class, 0);
-         }
-      }
-      Integer price = (int) Math.round(100 * priceDouble);
-      return price;
-   }
-
-   private boolean scrapAvailable(JSONObject prod) {
-      String state = JSONUtils.getValueRecursive(prod, "attributes.estado", String.class);
-
-      return state != null && state.equals("activo");
-   }
-
-   @Override
-   protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".Facets .facet-total-products", true, 0);
+   protected void setTotalProducts(JSONObject jsonInfo) {
+      this.totalProducts = JSONUtils.getValueRecursive(jsonInfo, "pagination.totalProducts", Integer.class, 0);
       this.log("Total da busca: " + this.totalProducts);
    }
 
