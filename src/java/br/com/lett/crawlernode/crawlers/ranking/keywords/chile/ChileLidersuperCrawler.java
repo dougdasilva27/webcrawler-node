@@ -183,7 +183,7 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
 
       for (int i = 0; i < jsonArray.length(); i++) {
          JSONObject jsonObject = jsonArray.optJSONObject(i);
-         if (jsonObject.optString("productNumber").equals(internalId)) {
+         if (jsonObject.optString("productNumber") != null && jsonObject.optString("productNumber").equals(internalId)) {
             String level = jsonObject.optString("stockLevel");
             if (level != null && level.contains("1")) {
                return true;
