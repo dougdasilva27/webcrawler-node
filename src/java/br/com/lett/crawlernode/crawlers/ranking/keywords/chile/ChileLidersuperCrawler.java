@@ -88,9 +88,9 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
       headers.put("authority", "www.lider.cl");
-      headers.put("referer", "https://www.lider.cl/supermercado/");
+      headers.put("referer", url);
       headers.put("cookie", "cookieSearchTerms=" + keywordEncoded + ";" + CommonMethods.cookiesToString(cookies));
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("accept-language", "en-US,en;q=0.9,pt;q=0.8,pt-PT;q=0.7");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -122,7 +122,7 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       StringBuilder payload = new StringBuilder();
       payload.append("productNumbers=");
 
-      Elements products = this.currentDoc.select(".product-item-box");
+      Elements products = this.currentDoc.select(".box-product.product-item-box");
 
       products.forEach(p -> {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(p, ".box-product.product-item-box", "prod-number");
@@ -138,9 +138,8 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
             setTotalProducts();
          }
 
-         for (Object o : jsonArray) {
-            JSONObject product = (JSONObject) o;
-            String internalId = product.optString("productNumber");
+         for (Element element : products) {
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".box-product.product-item-box", "prod-number");
             Element e = this.currentDoc.selectFirst("." + internalId);
             String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-details a", "href"), "https:", "www.lider.cl");
             String name = scrapName(e);
@@ -152,7 +151,7 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
                .setInternalId(internalId)
                .setName(name)
                .setPriceInCents(price)
-               .setAvailability(setAvailability(product))
+               .setAvailability(setAvailability(jsonArray, internalId))
                .setImageUrl(imageUrl)
                .build();
 
@@ -180,9 +179,21 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       return name;
    }
 
-   protected boolean setAvailability(JSONObject jsonObject) {
-      String available = jsonObject.optString("stockLevel");
-      return available != null && available.contains("1");
+   protected boolean setAvailability(JSONArray jsonArray, String internalId) {
+
+      for (int i = 0; i < jsonArray.length(); i++) {
+         JSONObject jsonObject = jsonArray.optJSONObject(i);
+         if (jsonObject.optString("productNumber").equals(internalId)) {
+            String level = jsonObject.optString("stockLevel");
+            if (level != null && level.contains("1")) {
+               return true;
+            } else {
+               return false;
+            }
+
+         }
+      }
+      return false;
    }
 
    protected JSONArray fetchAvaibility(StringBuilder payload) {
