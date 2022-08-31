@@ -80,7 +80,13 @@ public class BrasilPalacioDasFerramentas extends Crawler {
                JSONObject jsonObj = (JSONObject) variation;
                String voltsOrModel = jsonObj.optString("label");
                String nameVariation = scrapName(name, voltsOrModel);
-               String internalIdVariation = internalId + voltsOrModel;
+               String internalIdVariation;
+               if(internalId != null){
+                  internalIdVariation = internalId + voltsOrModel;
+               }else{
+                  internalIdVariation = internalId;
+               }
+
                product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
                   .setInternalId(internalIdVariation)
