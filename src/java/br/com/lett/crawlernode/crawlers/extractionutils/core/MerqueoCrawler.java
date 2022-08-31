@@ -60,10 +60,10 @@ public class MerqueoCrawler extends Crawler {
          String primaryImage = attributes.optString("image_large_url");
          String description = data.optString("description");
          Integer stock = crawlStock(data);
-
+         String url = verifyUrl();
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
+            .setUrl(url)
             .setInternalId(internalId)
             .setName(name)
             .setOffers(offers)
@@ -79,6 +79,18 @@ public class MerqueoCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String verifyUrl() {
+      String country = session.getOptions().optString("country");
+      if (country != null && country.equals("br")) {
+         return formatUrl();
+      }
+      return session.getOriginalURL();
+   }
+
+   private String formatUrl(){
+      return session.getOriginalURL().replace("https://merqueo.com/sao-paulo/", "https://merqueo.com.br/" + session.getOptions().optString("city") + "/" + session.getOptions().optString("locate") + "/");
    }
 
    private String scrapName(JSONObject attributes) {
@@ -118,7 +130,7 @@ public class MerqueoCrawler extends Crawler {
          .mustSendContentEncoding(false)
          .build();
 
-      return CrawlerUtils.stringToJson( CrawlerUtils.retryRequestString(request,List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()),session));
+      return CrawlerUtils.stringToJson(CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session));
    }
 
    /*
