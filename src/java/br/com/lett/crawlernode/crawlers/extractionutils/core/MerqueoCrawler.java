@@ -86,12 +86,8 @@ public class MerqueoCrawler extends Crawler {
    }
 
    private String formatUrl(String url) {
-      String[] partsUrl = url.split(".com\\/sao-paulo\\/");
-      if (partsUrl.length == 2) {
-         return partsUrl[0] + ".com.br/sao-paulo/" + session.getOptions().optString("locate") + "/" + partsUrl[1];
-      }
 
-      return url;
+      return url.replace("https://merqueo.com/sao-paulo/", "https://merqueo.com.br/sao-paulo/"+session.getOptions().optString("locate"));
    }
 
    private String scrapName(JSONObject attributes) {
