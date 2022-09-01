@@ -72,28 +72,15 @@ public class BrasilAmazonCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
          .build();
-
-//      Response response = dataFetcher.get(session, request);
-//
-//      int statusCode = response.getLastStatusCode();
-//
-//      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-//         Integer.toString(statusCode).charAt(0) != '3'
-//         && statusCode != 404)) {
-//
-//         if (dataFetcher instanceof ApacheDataFetcher) {
-//            response = new FetcherDataFetcher().get(session, request);
-//         } else {
-//            response = new ApacheDataFetcher().get(session, request);
-//         }
-//      }
 
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
 
