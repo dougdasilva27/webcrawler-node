@@ -25,12 +25,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.text.Normalizer;
 import java.util.*;
 
 public class BrasilMartinsCrawler extends Crawler {
 
-   private static final String SELLER_FULL_NAME = "Martins";
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString());
 
    public BrasilMartinsCrawler(Session session) {
@@ -43,6 +41,8 @@ public class BrasilMartinsCrawler extends Crawler {
 
    protected String cnpj = getCnpj();
    protected String codCli = getCodCli();
+   protected String ufBilling = getUfBilling();
+   protected String filDelivery = getFilDelivery();
 
    protected String getPassword() {
       return session.getOptions().optString("pass");
@@ -55,8 +55,17 @@ public class BrasilMartinsCrawler extends Crawler {
    protected String getCnpj() {
       return session.getOptions().optString("cnpj");
    }
+
    protected String getCodCli() {
       return session.getOptions().optString("cod_cliente");
+   }
+
+   protected String getUfBilling() {
+      return session.getOptions().optString("uf_billing");
+   }
+
+   protected String getFilDelivery() {
+      return session.getOptions().optString("fil_delivery");
    }
 
    @Override
@@ -98,8 +107,8 @@ public class BrasilMartinsCrawler extends Crawler {
 
          String description = data.optString("description");
          List<String> secondaryImages = scrapSecondaryImages(data, primaryImage);
-         JSONObject priceObj = fetchPrice(data.optString("productSku"));
-         Offers offers = priceObj != null && getStock(priceObj) ? scrapOffers(priceObj) : new Offers();
+         JSONArray priceObj = getStock(data);
+         Offers offers = priceObj != null && !priceObj.isEmpty() ? scrapOffers(priceObj) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -122,18 +131,29 @@ public class BrasilMartinsCrawler extends Crawler {
       return products;
    }
 
-   protected Boolean getStock(JSONObject priceObj) {
-      JSONArray prices = priceObj.optJSONArray("precos");
-      if (prices == null) {
-         return priceObj.optInt("estoque") > 0;
-      }
-      for (Object p : prices) {
-         JSONObject price = (JSONObject) p;
-         if (price.optDouble("estoque") > 0) {
-            return true;
+   protected JSONArray getStock(JSONObject data) {
+      JSONObject priceObj = fetchPrice(data.optString("productSku"));
+      if (priceObj != null) {
+
+         JSONArray prices = JSONUtils.getValueRecursive(priceObj, "resultado.0.precos", JSONArray.class);
+
+         if (prices != null) {
+            for (Object p : prices) {
+               JSONObject price = (JSONObject) p;
+               if (price.optInt("estoque", 0) > 0) {
+                  return prices;
+               }
+            }
+         } else {
+            JSONArray pricesSellers = priceObj.optJSONArray("lstPrecoSeller");
+            if (pricesSellers != null) {
+               return pricesSellers;
+            }
+
          }
       }
-      return false;
+
+      return new JSONArray();
    }
 
    protected void login() {
@@ -141,6 +161,8 @@ public class BrasilMartinsCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put("authority", "www.martinsatacado.com.br");
+      headers.put("x-requested-with", "XMLHttpRequest");
+      headers.put("referer", "https://www.martinsatacado.com.br/");
       headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
 
       String payload = "{\"grant_type\":\"password\",\"cnpj\":\"" + cnpj + "\",\"username\":\"" + getLogin() + "\",\"codCli\":\"" + codCli + "\",\"password\":\"" + getPassword() + "\",\"codedevnd\":\"\",\"profile\":\"ROLE_CLIENT\"}";
@@ -150,11 +172,15 @@ public class BrasilMartinsCrawler extends Crawler {
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .setHeaders(headers)
          .build();
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
 
       String str = response.getBody();
       JSONObject body = JSONUtils.stringToJson(str);
@@ -171,6 +197,9 @@ public class BrasilMartinsCrawler extends Crawler {
          headers.put("Origin", "www.martinsatacado.com.br");
          headers.put("access_token", accessToken);
          headers.put("client_id", "bb6d8be8-0671-32ea-9a6e-3da4c63525a3");
+         headers.put("authority", "www.martinsatacado.com.br");
+         headers.put("x-requested-with", "XMLHttpRequest");
+         headers.put("referer", "https://www.martinsatacado.com.br/");
          headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
 
          String payloadMartins = parts.get(0).equals("martins") ? "{\"CodigoMercadoria\": \"" + id + "\", \"Quantidade\": 0, \"codGroupMerFrac\": 0, \"codPmc\": null }" : "";
@@ -188,23 +217,20 @@ public class BrasilMartinsCrawler extends Crawler {
             .setPayload(payload)
             .setProxyservice(Arrays.asList(
                ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
             .setHeaders(headers)
             .build();
-         Response response = this.dataFetcher.post(session, request);
+         Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
          String str = response.getBody();
-         JSONObject body = JSONUtils.stringToJson(str);
-
-         return parts.get(0).equals("martins") ? JSONUtils.getValueRecursive(body, "resultado.0", JSONObject.class) : JSONUtils.getValueRecursive(body, "lstPrecoSeller.0", JSONObject.class);
+         return JSONUtils.stringToJson(str);
 
       } catch (Exception e) {
          return null;
       }
-   }
-
-   private boolean isProductPage(Document doc) {
-      return !doc.select("input#id").isEmpty();
    }
 
    private List<String> scrapSecondaryImages(JSONObject data, String primaryImage) {
@@ -221,48 +247,45 @@ public class BrasilMartinsCrawler extends Crawler {
       return list;
    }
 
-   private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(JSONArray prices) throws OfferException, MalformedPricingException {
+      String seller1P = filDelivery + " - " + ufBilling;
       Offers offers = new Offers();
-      String sales = null;
-      Pricing pricing = null;
-      String seller = "";
-      String sellerName = "";
-      JSONArray prices = data.optJSONArray("precos");
-      if (prices == null) {
-         pricing = scrapPricing(data);
-         sales = scrapSales(data);
-         seller = data.optString("RAZAO_SELLER");
 
-      } else {
-         for (Object p : prices) {
-            JSONObject price = (JSONObject) p;
-            if (price.optDouble("estoque") > 0) {
-               pricing = scrapPricing(price);
-               sales = scrapSales(price);
-               sellerName = price.optString("fil_delivery");
-               String sellerLocate = price.optString("uf_Delivery");
-               seller = sellerName + " " + sellerLocate;
-               seller = Normalizer.normalize(seller, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "").toLowerCase();
-               seller = seller.replaceAll(" ", "-");
-               if (seller.equals(session.getOptions().optString("seller"))) {
-                  break;
-               }
-            }
+      for (Object p : prices) {
+         JSONObject price = (JSONObject) p;
+         if (price.optInt("estoque", 0) > 0) {
+            Pricing pricing = scrapPricing(price);
+            String sales = scrapSales(price);
+            String seller = scrapSeller(price);
+
+            offers.add(Offer.OfferBuilder.create()
+               .setIsBuybox(false)
+               .setPricing(pricing)
+               .setSales(Collections.singletonList(sales))
+               .setSellerFullName(seller)
+               .setIsMainRetailer(seller.equalsIgnoreCase(seller1P))
+               .setUseSlugNameAsInternalSellerId(true)
+               .build());
          }
-
       }
-      offers.add(Offer.OfferBuilder.create()
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setPricing(pricing)
-         .setSales(Collections.singletonList(sales))
-         .setSellerFullName(seller)
-         .setIsMainRetailer(seller.equalsIgnoreCase(session.getOptions().optString("seller")))
-         .setUseSlugNameAsInternalSellerId(true)
-         .build());
-
 
       return offers;
+   }
+
+   private String scrapSeller(JSONObject price) {
+      String seller = null;
+      String sellerName = price.optString("fil_delivery");
+      if (sellerName == null || sellerName.isEmpty()) {
+         sellerName = price.optString("seller");
+      }
+
+      if (sellerName != null) {
+         String sellerLocate = price.optString("uf_Billing");
+         seller = sellerName + " - " + sellerLocate;
+      }
+
+      return seller;
+
    }
 
    private String scrapSales(JSONObject obj) {
@@ -278,7 +301,6 @@ public class BrasilMartinsCrawler extends Crawler {
          }
 
       }
-
 
       if (salesFromDoc != null) {
          sales.add(salesFromDoc);
