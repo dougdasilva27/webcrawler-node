@@ -80,20 +80,22 @@ public class BrasilAmazonCrawler extends Crawler {
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
          .build();
 
-      Response response = dataFetcher.get(session, request);
+//      Response response = dataFetcher.get(session, request);
+//
+//      int statusCode = response.getLastStatusCode();
+//
+//      if ((Integer.toString(statusCode).charAt(0) != '2' &&
+//         Integer.toString(statusCode).charAt(0) != '3'
+//         && statusCode != 404)) {
+//
+//         if (dataFetcher instanceof ApacheDataFetcher) {
+//            response = new FetcherDataFetcher().get(session, request);
+//         } else {
+//            response = new ApacheDataFetcher().get(session, request);
+//         }
+//      }
 
-      int statusCode = response.getLastStatusCode();
-
-      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-         Integer.toString(statusCode).charAt(0) != '3'
-         && statusCode != 404)) {
-
-         if (dataFetcher instanceof ApacheDataFetcher) {
-            response = new FetcherDataFetcher().get(session, request);
-         } else {
-            response = new ApacheDataFetcher().get(session, request);
-         }
-      }
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
 
       return response.getBody();
    }
