@@ -178,6 +178,7 @@ public class BrasilMartinsCrawler extends Crawler {
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .setHeaders(headers)
+         .setSendUserAgent(true)
          .build();
 
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
@@ -197,9 +198,6 @@ public class BrasilMartinsCrawler extends Crawler {
          headers.put("Origin", "www.martinsatacado.com.br");
          headers.put("access_token", accessToken);
          headers.put("client_id", "bb6d8be8-0671-32ea-9a6e-3da4c63525a3");
-         headers.put("authority", "www.martinsatacado.com.br");
-         headers.put("x-requested-with", "XMLHttpRequest");
-         headers.put("referer", "https://www.martinsatacado.com.br/");
          headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
 
          String payloadMartins = parts.get(0).equals("martins") ? "{\"CodigoMercadoria\": \"" + id + "\", \"Quantidade\": 0, \"codGroupMerFrac\": 0, \"codPmc\": null }" : "";
@@ -224,6 +222,7 @@ public class BrasilMartinsCrawler extends Crawler {
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
             .setHeaders(headers)
             .build();
+
          Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
          String str = response.getBody();
          return JSONUtils.stringToJson(str);
