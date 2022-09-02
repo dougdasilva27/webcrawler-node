@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -61,44 +63,46 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
       String response = fetchJson();
       JSONObject obj = JSONUtils.stringToJson(response);
-      obj = JSONUtils.getValueRecursive(obj, "pageProps.fallback./api/search", JSONObject.class);
+      if (obj != null) {
+         obj = JSONUtils.getValueRecursive(obj, "pageProps.fallback./api/search", JSONObject.class);
+         if (obj != null) {
 
-      JSONArray products = obj.optJSONArray("products");
+            JSONArray products = obj.optJSONArray("products");
 
-      if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            this.totalProducts = obj.optInt("productTotal");
-         }
-         fetchPrices(products);
-         for (Object o : products) {
-            JSONObject productObj = (JSONObject) o;
-            String internalPid = null;
-            String id = productObj.optString("productSku");
-            if (id != null) {
-               internalPid = CommonMethods.getLast(id.split("_"));
+            if (!products.isEmpty()) {
+               if (this.totalProducts == 0) {
+                  this.totalProducts = obj.optInt("productTotal");
+               }
+               fetchPrices(products);
+               for (Object o : products) {
+                  JSONObject productObj = (JSONObject) o;
+                  String internalPid = null;
+                  String id = productObj.optString("productSku");
+                  if (id != null) {
+                     internalPid = CommonMethods.getLast(id.split("_"));
+                  }
+                  String urlProduct = "https://www.martinsatacado.com.br" + productObj.optString("productUrl");
+                  String name = productObj.optString("name");
+                  String imageUrl = JSONUtils.getValueRecursive(productObj, "images.0.value", String.class);
+                  Integer price = getPrice(productObj.optString("productSku"));
+                  boolean isAvailable = price != 0;
+
+                  RankingProduct productRanking = RankingProductBuilder.create()
+                     .setUrl(urlProduct)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setPriceInCents(price)
+                     .setAvailability(isAvailable)
+                     .setImageUrl(imageUrl)
+                     .build();
+
+                  saveDataProduct(productRanking);
+
+                  if (this.arrayProducts.size() == productsLimit) {
+                     break;
+                  }
+               }
             }
-            String urlProduct = "https://www.martinsatacado.com.br" + productObj.optString("productUrl");
-            String name = productObj.optString("name");
-            String imageUrl = JSONUtils.getValueRecursive(productObj, "images.0.value", String.class);
-            Integer price = getPrice(productObj.optString("productSku"));
-            boolean isAvailable = price != 0;
-
-            RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(urlProduct)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPriceInCents(price)
-               .setAvailability(isAvailable)
-               .setImageUrl(imageUrl)
-               .build();
-
-            saveDataProduct(productRanking);
-
-
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
-            }
-
          }
       } else {
          this.result = false;
@@ -122,11 +126,15 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .setHeaders(headers)
+         .setHeaders(headers)
          .build();
-      Response response = this.dataFetcher.post(session, request);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
       String str = response.getBody();
       JSONObject body = JSONUtils.stringToJson(str);
       accessToken = body.optString("access_token");
@@ -146,11 +154,15 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .setHeaders(headers)
+         .setHeaders(headers)
          .build();
-      Response response = this.dataFetcher.post(session, request);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
       String str = response.getBody();
       JSONObject body = JSONUtils.stringToJson(str);
       this.prices = JSONUtils.getValueRecursive(body, "lstPrecoSeller", JSONArray.class);
