@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import cdjd.org.apache.calcite.avatica.com.fasterxml.jackson.databind.node.BigIntegerNode;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -58,16 +59,13 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
          String internalId = String.valueOf(data.optInt("id"));
          String name = crawlName(data);
-         boolean available = data.optBoolean("availability");
-
-         CategoryCollection categories = crawlCategories(data);
+         boolean available = JSONUtils.getValueRecursive(data, "attributes.status", Boolean.class);
 
          Offers offers = available ? crawlOffers(data) : new Offers();
 
          String primaryImage = crawlPrimaryImage(data);
          List<String> secondaryImages = crawlSecondaryImage(data);
-         String description = data.optString("description");
-         Integer stock = crawlStock(data);
+         String description =  JSONUtils.getValueRecursive(data, "attributes.description", String.class);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -75,13 +73,10 @@ public class ColombiaMerqueoCrawler extends Crawler {
             .setInternalId(internalId)
             .setName(name)
             .setOffers(offers)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            .setStock(stock)
+
             .build();
 
          products.add(product);
@@ -99,17 +94,13 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
       Pricing pricing = crawlpricing(data);
 
-
       offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_FULL_NAME)
-         .setMainPagePosition(1)
          .setIsBuybox(false)
-         .setIsMainRetailer(!data.optBoolean("isMarketplace", true))
          .setPricing(pricing)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setIsMainRetailer(true)
+         .setUseSlugNameAsInternalSellerId(true)
          .build());
-
-
       return offers;
    }
 
@@ -137,8 +128,8 @@ public class ColombiaMerqueoCrawler extends Crawler {
    private String crawlPrimaryImage(JSONObject data) {
       String primaryImage;
 
-      JSONArray jsonArrImg = JSONUtils.getJSONArrayValue(data, "images");
-      if (jsonArrImg.length() > 0) {
+      JSONArray jsonArrImg = JSONUtils.getValueRecursive(data, "attributes.images", JSONArray.class);
+      if (jsonArrImg != null && jsonArrImg.length() > 0) {
          primaryImage = getLargestImage(jsonArrImg.get(0) instanceof JSONObject ? jsonArrImg.getJSONObject(0) : new JSONObject());
       } else {
          primaryImage = getLargestImage(data);
@@ -148,13 +139,14 @@ public class ColombiaMerqueoCrawler extends Crawler {
    }
 
    private List<String> crawlSecondaryImage(JSONObject data) {
-      JSONArray jsonArrImg = JSONUtils.getJSONArrayValue(data, "images");
+      JSONArray jsonArrImg = JSONUtils.getValueRecursive(data, "attributes.images", JSONArray.class);
 
       List<String> secondaryImages = new ArrayList<>();
-
-      for (int i = 1; i < jsonArrImg.length(); i++) {
-         JSONObject jsonObjImg = jsonArrImg.get(i) instanceof JSONObject ? jsonArrImg.getJSONObject(i) : new JSONObject();
-         secondaryImages.add(getLargestImage(jsonObjImg));
+      if (jsonArrImg != null) {
+         for (int i = 1; i < jsonArrImg.length(); i++) {
+            JSONObject jsonObjImg = jsonArrImg.get(i) instanceof JSONObject ? jsonArrImg.getJSONObject(i) : new JSONObject();
+            secondaryImages.add(getLargestImage(jsonObjImg));
+         }
       }
 
 
@@ -163,48 +155,54 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
    private String getLargestImage(JSONObject jsonObjImg) {
       String image = null;
+      jsonObjImg = jsonObjImg.optJSONObject("attributes");
 
-      if (jsonObjImg.has("imageLargeUrl") && !jsonObjImg.isNull("imageLargeUrl")) {
-         image = jsonObjImg.getString("imageLargeUrl");
+      if (jsonObjImg.has("image_large_url") && !jsonObjImg.isNull("image_large_url")) {
+         image = jsonObjImg.optString("image_large_url");
 
-      } else if (jsonObjImg.has("imageMediumUrl") && !jsonObjImg.isNull("imageMediumUrl")) {
-         image = jsonObjImg.getString("imageMediumUrl");
+      } else if (jsonObjImg.has("image_medium_url") && !jsonObjImg.isNull("image_medium_url")) {
+         image = jsonObjImg.optString("image_medium_url");
 
-      } else if (jsonObjImg.has("imageSmallUrl") && !jsonObjImg.isNull("imageSmallUrl")) {
-         image = jsonObjImg.getString("imageSmallUrl");
+      } else if (jsonObjImg.has("image_small_url") && !jsonObjImg.isNull("image_small_url")) {
+         image = jsonObjImg.optString("image_small_url");
       }
       return image;
    }
 
 
    private String crawlName(JSONObject data) {
-      StringBuilder name = new StringBuilder();
-      name.append(data.optString("name")).append(" ");
-      name.append(data.optString("quantity")).append(" ");
-      name.append(data.optString("unit"));
-
-      return name.toString();
+      String name  = JSONUtils.getValueRecursive(data, "attributes.name", String.class);
+      if( name != null){
+         String quantity = JSONUtils.getValueRecursive(data, "attributes.quantity", String.class);
+         String unit = JSONUtils.getValueRecursive(data, "attributes.unit", String.class);
+         if(quantity != null && unit != null){
+            name += " " + quantity + " " + unit;
+         }
+      }
+      return name;
    }
 
+
+   //https://merqueo.com/api/3.1/stores/63/department/mascotas/shelf/higiene-de-la-mascota/products/shampoo-iki-pets-perros-botella-240-ml?zoneId=40
    private JSONObject scrapApiJson(String originalURL) {
       List<String> slugs = scrapSlugs(originalURL);
 
       StringBuilder apiUrl = new StringBuilder();
-      apiUrl.append("https://merqueo.com/api/2.0/stores/63/find?");
+      apiUrl.append("https://merqueo.com/api/3.1/stores/63/");
 
       if (slugs.size() == 3) {
-         apiUrl.append("department_slug=").append(slugs.get(0));
-         apiUrl.append("&shelf_slug=").append(slugs.get(1));
-         apiUrl.append("&product_slug=").append(slugs.get(2));
+         apiUrl.append("department/").append(slugs.get(0));
+         apiUrl.append("/shelf/").append(slugs.get(1));
+         apiUrl.append(slugs.get(2));
       } else {
-         apiUrl.append("department_slug=").append(slugs.get(1));
-         apiUrl.append("&shelf_slug=").append(slugs.get(2));
-         apiUrl.append("&product_slug=").append(slugs.get(3));
+         apiUrl.append("department/").append(slugs.get(1));
+         apiUrl.append("/shelf/").append(slugs.get(2));
+         apiUrl.append("/products/").append(slugs.get(3));
       }
 
-      apiUrl.append("&limit=7&zoneId=");
+      apiUrl.append("?zoneId=");
       apiUrl.append(zoneId);
-      apiUrl.append("&adq=1");
+      // apiUrl.append("&adq=1");
 
       Request request = RequestBuilder
          .create()
@@ -249,13 +247,22 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
 
    private Pricing crawlpricing(JSONObject data) throws MalformedPricingException {
+      Integer spotLightPriceInt = JSONUtils.getValueRecursive(data, "attributes.special_price", Integer.class);
+      Double spotLightprice = null;
+      if(spotLightPriceInt != null){
+        spotLightprice = (double) spotLightPriceInt;
+         spotLightprice = spotLightprice == 0d ? null : spotLightprice;
+      }
+      Integer priceFromInt = JSONUtils.getValueRecursive(data, "attributes.price", Integer.class);
+      Double priceFrom = null;
+      if(priceFromInt != null){
+         priceFrom = (double) priceFromInt;
+      }
 
-      Double spotLightprice = (double) data.optInt("specialPrice", 0);
-      spotLightprice = spotLightprice == 0d ? null : spotLightprice;
-      Double priceFrom = (double) data.optInt("price", 0);
+      ;
       priceFrom = priceFrom == 0d ? null : priceFrom;
 
-      if (spotLightprice == null && priceFrom != null) {
+      if (spotLightPriceInt == null && priceFrom != null) {
          spotLightprice = priceFrom;
          priceFrom = null;
       }
