@@ -30,7 +30,7 @@ public class ArgentinaFarmacityCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
       this.pageSize = 20;
 
-      String url = "https://www.farmacity.com/" + this.keywordWithoutAccents.replace(" ", "%20") + "?PageNumber=" + this.currentPage;
+      String url = "https://www.farmacity.com/" + this.keywordWithoutAccents.replace(" ", "") + "# " + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
