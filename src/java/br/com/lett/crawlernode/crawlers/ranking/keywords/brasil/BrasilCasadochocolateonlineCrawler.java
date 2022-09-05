@@ -29,7 +29,7 @@ public class BrasilCasadochocolateonlineCrawler extends CrawlerRankingKeywords {
             setTotalProducts();
 
             for(Element product : products){
-               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".review-stars.mt-0", "data-id");
+               String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".review-stars.mt-0", "data-id");
                String productUrl = CrawlerUtils.scrapUrl(product, ".product-card.p-3.p-md-4.d-flex.flex-column.align-items-strech.h-100.position-relative.final a", "href", "https", "www.casadochocolateonline.com.br");
                String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".product-card .product-title .text",false);
                String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".img-fluid", "src");
@@ -39,7 +39,7 @@ public class BrasilCasadochocolateonlineCrawler extends CrawlerRankingKeywords {
 
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
-                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
                   .setName(productName)
                   .setPriceInCents(price)
                   .setPriceInCents(priceFrom)
