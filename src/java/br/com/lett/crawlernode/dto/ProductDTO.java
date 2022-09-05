@@ -1,11 +1,5 @@
 package br.com.lett.crawlernode.dto;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.SkuStatus;
@@ -14,12 +8,8 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Marketplace;
-import models.Offer;
+import models.*;
 import models.Offer.OfferBuilder;
-import models.Offers;
-import models.RatingsReviews;
-import models.Seller;
 import models.prices.Prices;
 import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
@@ -28,6 +18,13 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class ProductDTO {
 
@@ -87,11 +84,14 @@ public class ProductDTO {
                r.setAdvancedRatingReview(p.getRatingReviews().getAdvancedRatingReview());
             }
          }
-
          p.setRatingReviews(r);
-      }
 
-      p.setUrl(session.getOriginalURL());
+      }
+      if (product.getUrl() != null && !product.getUrl().isEmpty()) {
+         p.setUrl(product.getUrl());
+      } else {
+         p.setUrl(session.getOriginalURL());
+      }
       p.setMarketId(session.getMarket().getNumber());
 
       return p;
@@ -121,13 +121,13 @@ public class ProductDTO {
 
          if (product.getAvailable()) {
             offers.add(OfferBuilder.create()
-                  .setInternalSellerId(session.getMarket().getName())
-                  .setSellerFullName(session.getMarket().getFullName())
-                  .setIsBuybox(false)
-                  .setMainPagePosition(1)
-                  .setIsMainRetailer(true)
-                  .setPricing(pricesToPricing(product.getPrices(), product.getPrice()))
-                  .build());
+               .setInternalSellerId(session.getMarket().getName())
+               .setSellerFullName(session.getMarket().getFullName())
+               .setIsBuybox(false)
+               .setMainPagePosition(1)
+               .setIsMainRetailer(true)
+               .setPricing(pricesToPricing(product.getPrices(), product.getPrice()))
+               .build());
          }
 
          Marketplace mkt = product.getMarketplace();
@@ -136,13 +136,13 @@ public class ProductDTO {
                Seller seller = mkt.get(i);
 
                offers.add(OfferBuilder.create()
-                     .setUseSlugNameAsInternalSellerId(true)
-                     .setSellerFullName(seller.getName())
-                     .setIsBuybox(mkt.size() > 1 || (product.getAvailable() && mkt.size() > 0))
-                     .setMainPagePosition(i + 2)
-                     .setIsMainRetailer(false)
-                     .setPricing(pricesToPricing(seller.getPrices(), MathUtils.normalizeTwoDecimalPlaces(seller.getPrice().floatValue())))
-                     .build());
+                  .setUseSlugNameAsInternalSellerId(true)
+                  .setSellerFullName(seller.getName())
+                  .setIsBuybox(mkt.size() > 1 || (product.getAvailable() && mkt.size() > 0))
+                  .setMainPagePosition(i + 2)
+                  .setIsMainRetailer(false)
+                  .setPricing(pricesToPricing(seller.getPrices(), MathUtils.normalizeTwoDecimalPlaces(seller.getPrice().floatValue())))
+                  .build());
             }
          }
 
@@ -164,27 +164,27 @@ public class ProductDTO {
 
             for (Entry<Integer, Double> entry : installmentsMap.entrySet()) {
                installments.add(InstallmentBuilder.create()
-                     .setInstallmentNumber(entry.getKey())
-                     .setInstallmentPrice(entry.getValue())
-                     .build());
+                  .setInstallmentNumber(entry.getKey())
+                  .setInstallmentPrice(entry.getValue())
+                  .build());
             }
 
             creditCards.add(CreditCardBuilder.create()
-                  .setBrand(card.toString())
-                  .setInstallments(installments)
-                  .setIsShopCard(card.toString().equalsIgnoreCase(Card.SHOP_CARD.toString()))
-                  .build());
+               .setBrand(card.toString())
+               .setInstallments(installments)
+               .setIsShopCard(card.toString().equalsIgnoreCase(Card.SHOP_CARD.toString()))
+               .build());
          }
       }
 
       return PricingBuilder.create()
-            .setSpotlightPrice(MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()))
-            .setCreditCards(creditCards)
-            .setBankSlip(
-                  BankSlipBuilder.create()
-                        .setFinalPrice(prices.getBankTicketPrice())
-                        .build()
-            )
-            .build();
+         .setSpotlightPrice(MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()))
+         .setCreditCards(creditCards)
+         .setBankSlip(
+            BankSlipBuilder.create()
+               .setFinalPrice(prices.getBankTicketPrice())
+               .build()
+         )
+         .build();
    }
 }
