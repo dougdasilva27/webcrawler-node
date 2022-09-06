@@ -11,15 +11,14 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.AdvancedRatingReview;
+import models.Offer;
+import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -27,12 +26,21 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+
 public class BrasilNutricaototalCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.nutricaototal.com.br/";
+   private static final String SELLER_FULL_NAME = "Nutrição total brasil";
 
    public BrasilNutricaototalCrawler(Session session) {
       super(session);
    }
+
+   protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(),
+      Card.DINERS.toString());
 
    @Override
    public boolean shouldVisit() {
@@ -59,17 +67,25 @@ public class BrasilNutricaototalCrawler extends Crawler {
          List<String> secondaryImages = !images.isEmpty() ? images : new ArrayList<>();
 
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div.product.attribute.overview > div > b", "div.product.attribute.overview > div"));
-         Integer stock = null;
-         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "span.price", null, true, ',', session);
-         Prices prices = crawlPrices(price, doc);
+
          boolean available = checkAvaliability(doc, "#product-addtocart-button > span");
+         Offers offers = available ? scrapOffers(doc) : new Offers();
+
          RatingsReviews ratingReviews = crawlRating(doc, internalId);
 
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-               .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setStock(stock).setRatingReviews(ratingReviews).build();
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setOffers(offers)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setRatingReviews(ratingReviews)
+            .build();
 
          products.add(product);
 
@@ -114,6 +130,71 @@ public class BrasilNutricaototalCrawler extends Crawler {
       }
 
       return images;
+   }
+
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(pricing);
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+   }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[data-price-type=oldPrice] .price", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[data-price-type=finalPrice] .price", null, true, ',', session);
+
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+   private List<String> scrapSales(Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+
+      String salesOnPrice = CrawlerUtils.calculateSales(pricing);
+      if (salesOnPrice != null) {
+         sales.add(salesOnPrice);
+      }
+      return sales;
    }
 
    private RatingsReviews crawlRating(Document doc, String internalId) {
@@ -198,16 +279,15 @@ public class BrasilNutricaototalCrawler extends Crawler {
          }
 
 
-
       }
 
       return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
    }
 
    private Double crawlAvgRating(Document doc, String selector) {
@@ -221,26 +301,6 @@ public class BrasilNutricaototalCrawler extends Crawler {
       }
 
       return num;
-   }
-
-   private Prices crawlPrices(Float price, Document doc) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         installmentPriceMap.put(1, price);
-
-         Element priceFrom = doc.select("div.price-box.price-final_price > span > span.preco-desconto > b > span").first();
-         if (priceFrom != null) {
-            prices.setBankTicketPrice(MathUtils.parseDoubleWithComma(priceFrom.text()));
-         }
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-      }
-
-      return prices;
    }
 
    private boolean checkAvaliability(Document doc, String selector) {
