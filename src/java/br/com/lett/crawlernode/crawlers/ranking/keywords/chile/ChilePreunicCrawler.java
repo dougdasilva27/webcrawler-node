@@ -74,7 +74,7 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
 
             Boolean isAvailable = getAvaiability(product);
 
-            String imgUrl = isAvailable ? product.optString("catalog_image_url") : null;
+            String imgUrl = product.optString("catalog_image_url");
             Integer price = product.optInt("offer_price");
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -86,7 +86,6 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
                .setAvailability(isAvailable)
                .build();
             saveDataProduct(productRanking);
-
 
             if (this.arrayProducts.size() == productsLimit)
                break;
