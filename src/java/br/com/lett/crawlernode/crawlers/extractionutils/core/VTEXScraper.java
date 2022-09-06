@@ -112,10 +112,11 @@ public abstract class VTEXScraper extends Crawler {
       RatingsReviews rating = scrapRating(internalId, pidFromApi, doc, jsonSku);
       List<String> eans = jsonSku.has("ean") ? Arrays.asList(jsonSku.get("ean").toString()) : null;
       String internalPid = scrapInternalPid(doc, productJson, pidFromApi);
+      String url = scrapUrl(internalId);
 
       // Creating the product
       return ProductBuilder.create()
-         .setUrl(session.getOriginalURL())
+         .setUrl(url)
          .setInternalId(internalId)
          .setInternalPid(internalPid)
          .setName(name)
@@ -127,6 +128,10 @@ public abstract class VTEXScraper extends Crawler {
          .setEans(eans)
          .setRatingReviews(rating)
          .build();
+   }
+
+   protected String scrapUrl(String internalId) {
+      return session.getOriginalURL();
    }
 
    public String scrapInternalPid(Document doc, JSONObject jsonObject, String pidFromApi) {
