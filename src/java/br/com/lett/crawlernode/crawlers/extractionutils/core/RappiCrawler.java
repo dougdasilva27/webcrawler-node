@@ -273,7 +273,7 @@ public abstract class RappiCrawler extends Crawler {
          List<String> eans = List.of(productJson.optString("ean"));
          boolean available = productJson.optBoolean("in_stock");
          Offers offers = available ? scrapOffers(productJson) : new Offers();
-         String url = getHomeCountry() + getUrlPrefix() + getStoreId() + "_" + productJson.optString("product_id");
+         String url = getHomeCountry() + getUrlPrefix() + getStoreId() + "_" + productJson.optString("product_id", "");
 
          Product product = ProductBuilder.create()
             .setUrl(url)
