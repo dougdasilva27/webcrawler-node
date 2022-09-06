@@ -146,8 +146,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .build();
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
-      String str = response.getBody();
-      JSONObject body = JSONUtils.stringToJson(str);
+      JSONObject body = JSONUtils.stringToJson(response.getBody());
       accessToken = body.optString("access_token");
    }
 
@@ -155,10 +154,13 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put("Origin", "www.martinsatacado.com.br");
-      headers.put("access_token", accessToken);
       headers.put("client_id", "bb6d8be8-0671-32ea-9a6e-3da4c63525a3");
       headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
       String payload = "{\"produtos\":[" + getPayload(products) + "],\"uid\":" + codCli + ",\"ufTarget\":\"SP\",\"email\":\"" + login + "\"}";
+      if (accessToken == null || accessToken.isEmpty()) {
+         login();
+      }
+      headers.put("access_token", accessToken);
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://ssd.martins.com.br/b2b-partner/v1/produtosBuyBox")
@@ -204,7 +206,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          String cod = price.optString("codigoMercadoria");
          String uf = price.optString("uf_billing");
          String seller = price.optString("fil_delivery");
-         if (cod.equals(id) && uf.equals(ufBilling) && filDelivery.equals(seller)) {
+         if (cod.equals(id) && ufBilling.equals(uf) && filDelivery.equals(seller)) {
             Double priceNormal = price.optDouble("precoNormal");
             Integer priceInt = CommonMethods.doublePriceToIntegerPrice(priceNormal, null);
 
