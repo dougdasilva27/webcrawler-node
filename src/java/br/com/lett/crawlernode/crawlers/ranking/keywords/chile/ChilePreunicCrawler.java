@@ -75,7 +75,7 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
             Boolean isAvailable = getAvaiability(product);
 
             String imgUrl = product.optString("catalog_image_url");
-            Integer price = product.optInt("offer_price");
+            Integer price = isAvailable ? product.optInt("offer_price") : null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -103,11 +103,9 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
 
    private Boolean getAvaiability(JSONObject product) {
       if (product.has("stock")) {
-         Integer stock = product.optInt("stock");
+         Integer stock = product.optInt("stock", 0);
          return stock > 0;
-      } else {
-         String status = product.optString("state");
-         return status.equals("active");
       }
+      return true;
    }
 }
