@@ -2421,7 +2421,7 @@ public class CrawlerUtils {
 
          response = isGet ? dataFetcherList.get(n).get(session, request) : dataFetcherList.get(n).post(session, request);
          if (response.isSuccess()) {
-            Logging.printLogDebug(LOGGER, session, "Request sucess after " + attemps + " attemps");
+            Logging.printLogInfo(LOGGER, session, "Request sucess after " + attemps + " attemps");
             break;
          }
 
@@ -2430,7 +2430,7 @@ public class CrawlerUtils {
       }
 
       if (!response.isSuccess()) {
-         Logging.printLogWarn(LOGGER, session, "Request failed " + attemps +  "times");
+         Logging.printLogWarn(LOGGER, session, "Request failed " + attemps +  " attemps");
       }
 
 
