@@ -143,8 +143,8 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .setHeaders(headers)
-         .setHeaders(headers)
          .build();
+
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
       JSONObject body = JSONUtils.stringToJson(response.getBody());
       accessToken = body.optString("access_token");
@@ -155,6 +155,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put("Origin", "www.martinsatacado.com.br");
       headers.put("client_id", "bb6d8be8-0671-32ea-9a6e-3da4c63525a3");
+      headers.put("host", "ssd.martins.com.br");
       headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
       String payload = "{\"produtos\":[" + getPayload(products) + "],\"uid\":" + codCli + ",\"ufTarget\":\"SP\",\"email\":\"" + login + "\"}";
       if (accessToken == null || accessToken.isEmpty()) {
@@ -173,8 +174,8 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .setHeaders(headers)
-         .setHeaders(headers)
          .build();
+
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
       JSONObject body = JSONUtils.stringToJson(response.getBody());
       if (body != null) {
@@ -204,16 +205,29 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       for (Object o : this.prices) {
          JSONObject price = (JSONObject) o;
          String cod = price.optString("codigoMercadoria");
-         String uf = price.optString("uf_billing");
-         String seller = price.optString("fil_delivery");
-         if (cod.equals(id) && ufBilling.equals(uf) && filDelivery.equals(seller)) {
-            Double priceNormal = price.optDouble("precoNormal");
-            Integer priceInt = CommonMethods.doublePriceToIntegerPrice(priceNormal, null);
+         if (cod.equals(id)) {
+            JSONArray priceProducts = price.optJSONArray("precos");
+            for (Object o1 : priceProducts) {
+               if (o1 instanceof JSONObject) {
+                  JSONObject priceProduct = (JSONObject) o1;
+                  String uf = priceProduct.optString("uf_Billing");
+                  String seller = priceProduct.optString("fil_delivery");
 
-            return priceInt;
+                  if (ufBilling.equals(uf) && filDelivery.equals(seller)) {
+                     Double priceNormal = priceProduct.optDouble("precoNormal");
+                     Integer priceInt = CommonMethods.doublePriceToIntegerPrice(priceNormal, null);
+                     if (priceInt == 0){
+                        priceInt = null;
+                     }
+
+                     return priceInt;
+                  }
+               }
+            }
+            break;
          }
-      }
 
+      }
 
       return null;
    }

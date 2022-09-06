@@ -196,6 +196,7 @@ public class BrasilMartinsCrawler extends Crawler {
          headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
          headers.put("Origin", "www.martinsatacado.com.br");
          headers.put("access_token", accessToken);
+         headers.put("host", "ssd.martins.com.br");
          headers.put("client_id", "bb6d8be8-0671-32ea-9a6e-3da4c63525a3");
          headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
 
@@ -223,8 +224,7 @@ public class BrasilMartinsCrawler extends Crawler {
             .build();
 
          Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
-         String str = response.getBody();
-         return JSONUtils.stringToJson(str);
+         return JSONUtils.stringToJson(response.getBody());
 
       } catch (Exception e) {
          return null;
