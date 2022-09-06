@@ -2,6 +2,9 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -37,6 +40,8 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
    protected String password = getPassword();
    protected String login = getLogin();
    protected String cnpj = getCnpj();
+   protected String ufBilling = getUfBilling();
+   protected String filDelivery = getFilDelivery();
    protected String codCli = getCodCli();
 
    protected String getCodCli() {
@@ -55,50 +60,60 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       return session.getOptions().optString("login");
    }
 
+   protected String getUfBilling() {
+      return session.getOptions().optString("uf_billing");
+   }
+
+   protected String getFilDelivery() {
+      return session.getOptions().optString("fil_delivery");
+   }
+
+
    @Override
    public void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 12;
       this.log("Página " + this.currentPage);
-      String response = fetchJson();
-      JSONObject obj = JSONUtils.stringToJson(response);
-      obj = JSONUtils.getValueRecursive(obj, "pageProps.fallback./api/search", JSONObject.class);
+      JSONObject obj = fetchJson();
+      if (obj != null) {
+         obj = JSONUtils.getValueRecursive(obj, "pageProps.fallback./api/search", JSONObject.class);
+         if (obj != null) {
 
-      JSONArray products = obj.optJSONArray("products");
+            JSONArray products = obj.optJSONArray("products");
 
-      if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            this.totalProducts = obj.optInt("productTotal");
-         }
-         fetchPrices(products);
-         for (Object o : products) {
-            JSONObject productObj = (JSONObject) o;
-            String internalPid = null;
-            String id = productObj.optString("productSku");
-            if (id != null) {
-               internalPid = CommonMethods.getLast(id.split("_"));
+            if (!products.isEmpty()) {
+               if (this.totalProducts == 0) {
+                  this.totalProducts = obj.optInt("productTotal");
+               }
+               JSONArray prices = fetchPrices(products);
+               for (Object o : products) {
+                  JSONObject productObj = (JSONObject) o;
+                  String internalPid = null;
+                  String id = productObj.optString("productSku");
+                  if (id != null) {
+                     internalPid = CommonMethods.getLast(id.split("_"));
+                  }
+                  String urlProduct = "https://www.martinsatacado.com.br" + productObj.optString("productUrl");
+                  String name = productObj.optString("name");
+                  String imageUrl = JSONUtils.getValueRecursive(productObj, "images.0.value", String.class);
+                  Integer price = getPrice(id, prices);
+                  boolean isAvailable = price != null;
+
+                  RankingProduct productRanking = RankingProductBuilder.create()
+                     .setUrl(urlProduct)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setPriceInCents(price)
+                     .setAvailability(isAvailable)
+                     .setImageUrl(imageUrl)
+                     .build();
+
+                  saveDataProduct(productRanking);
+
+                  if (this.arrayProducts.size() == productsLimit) {
+                     break;
+                  }
+               }
             }
-            String urlProduct = "https://www.martinsatacado.com.br" + productObj.optString("productUrl");
-            String name = productObj.optString("name");
-            String imageUrl = JSONUtils.getValueRecursive(productObj, "images.0.value", String.class);
-            Integer price = getPrice(productObj.optString("productSku"));
-            boolean isAvailable = price != 0;
-
-            RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(urlProduct)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPriceInCents(price)
-               .setAvailability(isAvailable)
-               .setImageUrl(imageUrl)
-               .build();
-
-            saveDataProduct(productRanking);
-
-
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
-            }
-
          }
       } else {
          this.result = false;
@@ -122,38 +137,55 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .setHeaders(headers)
          .build();
-      Response response = this.dataFetcher.post(session, request);
-      String str = response.getBody();
-      JSONObject body = JSONUtils.stringToJson(str);
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
+      JSONObject body = JSONUtils.stringToJson(response.getBody());
       accessToken = body.optString("access_token");
    }
 
-   protected void fetchPrices(JSONArray products) {
+   protected JSONArray fetchPrices(JSONArray products) {
+      JSONArray prices = new JSONArray();
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put("Origin", "www.martinsatacado.com.br");
-      headers.put("access_token", accessToken);
       headers.put("client_id", "bb6d8be8-0671-32ea-9a6e-3da4c63525a3");
+      headers.put("host", "ssd.martins.com.br");
       headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
-      String payload = "{\"asm\":0,\"produtos\":[],\"ProdutosExclusaoEan\":[],\"produtosSeller\":[" + getPayload(products) + "],\"codeWarehouseDelivery\":0,\"codeWarehouseBilling\":0,\"condicaoPagamento\":111,\"uid\":6659973,\"segment\":0,\"tipoLimiteCred\":\"C\",\"precoEspecial\":\"S\",\"ie\":\"127285489112\",\"territorioRca\":0,\"classEstadual\":10,\"tipoSituacaoJuridica\":\"M\",\"codSegNegCliTer\":0,\"tipoConsulta\":1,\"commercialActivity\":5,\"groupMartins\":171,\"codCidadeEntrega\":3232,\"codCidade\":3232,\"codRegiaoPreco\":250,\"temVendor\":\"S\",\"codigoCanal\":9,\"ufTarget\":\"SP\",\"bu\":1,\"manual\":\"N\",\"email\":\"patriciaf3001@gmail.com\",\"numberSpinPrice\":\"64\",\"codeDeliveryRegion\":\"322\",\"ufFilialFaturamento\":\"GO\",\"cupons_novos\":[],\"codopdtrcetn\":10,\"origemChamada\":\"PLP\"}";
+      String payload = "{\"produtos\":[" + getPayload(products) + "],\"uid\":" + codCli + ",\"ufTarget\":\"SP\",\"email\":\"" + login + "\"}";
+      if (accessToken == null || accessToken.isEmpty()) {
+         login();
+      }
+      if (accessToken != null && !accessToken.isEmpty()) {
+         headers.put("access_token", accessToken);
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl("https://ssd.martins.com.br/b2b-partner/v1/produtosBuyBox")
-         .setPayload(payload)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
-         .setHeaders(headers)
-         .build();
-      Response response = this.dataFetcher.post(session, request);
-      String str = response.getBody();
-      JSONObject body = JSONUtils.stringToJson(str);
-      this.prices = JSONUtils.getValueRecursive(body, "lstPrecoSeller", JSONArray.class);
+         Request request = Request.RequestBuilder.create()
+            .setUrl("https://ssd.martins.com.br/b2b-partner/v1/produtosBuyBox")
+            .setPayload(payload)
+            .setProxyservice(Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+            .setHeaders(headers)
+            .build();
+
+         Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
+         JSONObject body = JSONUtils.stringToJson(response.getBody());
+         if (body != null) {
+            prices = body.optJSONArray("resultado");
+         }
+      }
+
+      return prices;
    }
 
    protected String getPayload(JSONArray products) {
@@ -162,37 +194,52 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       for (Object o : products) {
          JSONObject product = (JSONObject) o;
          String cod = product.optString("productSku");
-         List<String> parts = List.of(cod.split("_"));
          if (flag) {
             payload = payload + ",";
          }
-         payload = payload + "{\"seller\":\"" + parts.get(0) + "\",\"CodigoMercadoria\":\"" + cod + "\",\"Quantidade\":0}";
+         payload = payload + "{\"CodigoMercadoria\":\"" + cod + "\"}";
          flag = true;
       }
 
       return payload;
    }
 
-   protected Integer getPrice(String id) {
+   protected Integer getPrice(String id, JSONArray prices) {
+      if (prices != null) {
+         for (Object o : prices) {
+            JSONObject price = (JSONObject) o;
+            String cod = price.optString("codigoMercadoria");
+            if (cod.equals(id)) {
+               JSONArray priceProducts = price.optJSONArray("precos");
+               for (Object o1 : priceProducts) {
+                  if (o1 instanceof JSONObject) {
+                     JSONObject priceProduct = (JSONObject) o1;
+                     String uf = priceProduct.optString("uf_Billing");
+                     String seller = priceProduct.optString("fil_delivery");
 
-      for (Object o : this.prices) {
-         JSONObject price = (JSONObject) o;
-         String cod = price.optString("codigoMercadoria");
-         if (cod.equals(id)) {
-            String priceStr = price.optString("preco");
-            priceStr = priceStr.replaceAll("\\.", "");
-            Integer priceInt = Integer.parseInt(priceStr);
-            return priceInt;
+                     if (ufBilling.equals(uf) && filDelivery.equals(seller)) {
+                        Double priceNormal = priceProduct.optDouble("precoNormal");
+                        Integer priceInt = CommonMethods.doublePriceToIntegerPrice(priceNormal, null);
+                        if (priceInt == 0) {
+                           priceInt = null;
+                        }
+
+                        return priceInt;
+                     }
+                  }
+               }
+               break;
+            }
          }
-      }
 
+      }
 
       return null;
    }
 
-   protected String fetchJson() {
+   protected JSONObject fetchJson() {
       login();
-      String id = catureId();
+      String id = captureIdToRequestApi();
       String url = "https://www.martinsatacado.com.br/_next/data/" + id + "/busca/" + this.keywordWithoutAccents.replace(" ", "%20") + ".json?page=" + this.currentPage + "&perPage=" + this.pageSize;
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -201,26 +248,32 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .build();
-      String response = this.dataFetcher.get(session, request).getBody();
 
-      return response;
+      return JSONUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
    }
 
-   protected String catureId() {
+   protected String captureIdToRequestApi() {
       String id = null;
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.martinsatacado.com.br/")
          .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .build();
-      String response = this.dataFetcher.get(session, request).getBody();
-      Document doc = Jsoup.parse(response);
-      String script = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
-      JSONArray obj = JSONUtils.stringToJsonArray(script);
-      id = JSONUtils.getValueRecursive(obj, "0.buildId", String.class);
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+      Document doc = Jsoup.parse(response.getBody());
+      if (doc != null) {
+         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
+         if (json != null) {
+            id = json.optString("buildId");
+         }
+
+      }
       return id;
    }
-
 }
