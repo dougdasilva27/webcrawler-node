@@ -84,7 +84,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
                if (this.totalProducts == 0) {
                   this.totalProducts = obj.optInt("productTotal");
                }
-               fetchPrices(products);
+               JSONArray prices = fetchPrices(products);
                for (Object o : products) {
                   JSONObject productObj = (JSONObject) o;
                   String internalPid = null;
@@ -95,7 +95,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
                   String urlProduct = "https://www.martinsatacado.com.br" + productObj.optString("productUrl");
                   String name = productObj.optString("name");
                   String imageUrl = JSONUtils.getValueRecursive(productObj, "images.0.value", String.class);
-                  Integer price = getPrice(id);
+                  Integer price = getPrice(id, prices);
                   boolean isAvailable = price != null;
 
                   RankingProduct productRanking = RankingProductBuilder.create()
@@ -150,7 +150,8 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       accessToken = body.optString("access_token");
    }
 
-   protected void fetchPrices(JSONArray products) {
+   protected JSONArray fetchPrices(JSONArray products) {
+      JSONArray prices = new JSONArray();
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put("Origin", "www.martinsatacado.com.br");
@@ -161,27 +162,30 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       if (accessToken == null || accessToken.isEmpty()) {
          login();
       }
-      headers.put("access_token", accessToken);
+      if (accessToken != null && !accessToken.isEmpty()) {
+         headers.put("access_token", accessToken);
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl("https://ssd.martins.com.br/b2b-partner/v1/produtosBuyBox")
-         .setPayload(payload)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
-         .setHeaders(headers)
-         .build();
+         Request request = Request.RequestBuilder.create()
+            .setUrl("https://ssd.martins.com.br/b2b-partner/v1/produtosBuyBox")
+            .setPayload(payload)
+            .setProxyservice(Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+            .setHeaders(headers)
+            .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
-      JSONObject body = JSONUtils.stringToJson(response.getBody());
-      if (body != null) {
-         this.prices = body.optJSONArray("resultado");
+         Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
+         JSONObject body = JSONUtils.stringToJson(response.getBody());
+         if (body != null) {
+            prices = body.optJSONArray("resultado");
+         }
       }
 
+      return prices;
    }
 
    protected String getPayload(JSONArray products) {
@@ -200,31 +204,32 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       return payload;
    }
 
-   protected Integer getPrice(String id) {
+   protected Integer getPrice(String id, JSONArray prices) {
+      if (prices != null) {
+         for (Object o : prices) {
+            JSONObject price = (JSONObject) o;
+            String cod = price.optString("codigoMercadoria");
+            if (cod.equals(id)) {
+               JSONArray priceProducts = price.optJSONArray("precos");
+               for (Object o1 : priceProducts) {
+                  if (o1 instanceof JSONObject) {
+                     JSONObject priceProduct = (JSONObject) o1;
+                     String uf = priceProduct.optString("uf_Billing");
+                     String seller = priceProduct.optString("fil_delivery");
 
-      for (Object o : this.prices) {
-         JSONObject price = (JSONObject) o;
-         String cod = price.optString("codigoMercadoria");
-         if (cod.equals(id)) {
-            JSONArray priceProducts = price.optJSONArray("precos");
-            for (Object o1 : priceProducts) {
-               if (o1 instanceof JSONObject) {
-                  JSONObject priceProduct = (JSONObject) o1;
-                  String uf = priceProduct.optString("uf_Billing");
-                  String seller = priceProduct.optString("fil_delivery");
+                     if (ufBilling.equals(uf) && filDelivery.equals(seller)) {
+                        Double priceNormal = priceProduct.optDouble("precoNormal");
+                        Integer priceInt = CommonMethods.doublePriceToIntegerPrice(priceNormal, null);
+                        if (priceInt == 0) {
+                           priceInt = null;
+                        }
 
-                  if (ufBilling.equals(uf) && filDelivery.equals(seller)) {
-                     Double priceNormal = priceProduct.optDouble("precoNormal");
-                     Integer priceInt = CommonMethods.doublePriceToIntegerPrice(priceNormal, null);
-                     if (priceInt == 0){
-                        priceInt = null;
+                        return priceInt;
                      }
-
-                     return priceInt;
                   }
                }
+               break;
             }
-            break;
          }
 
       }

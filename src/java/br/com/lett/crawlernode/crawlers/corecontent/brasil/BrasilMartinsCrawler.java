@@ -40,6 +40,8 @@ public class BrasilMartinsCrawler extends Crawler {
    protected String accessToken;
 
    protected String cnpj = getCnpj();
+
+   protected String login = getLogin();
    protected String codCli = getCodCli();
    protected String ufBilling = getUfBilling();
    protected String filDelivery = getFilDelivery();
@@ -83,7 +85,10 @@ public class BrasilMartinsCrawler extends Crawler {
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .build();
-      return CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
+
+      return response;
    }
 
    @Override
@@ -132,7 +137,7 @@ public class BrasilMartinsCrawler extends Crawler {
 
    protected JSONArray getOffersFromApi(JSONObject data) {
       JSONObject priceObj = fetchPrice(data.optString("productSku"));
-      if (priceObj != null) {
+      if (priceObj != null && !priceObj.isEmpty()) {
 
          JSONArray prices = JSONUtils.getValueRecursive(priceObj, "resultado.0.precos", JSONArray.class);
 
@@ -184,38 +189,47 @@ public class BrasilMartinsCrawler extends Crawler {
 
       String str = response.getBody();
       JSONObject body = JSONUtils.stringToJson(str);
-      accessToken = body.optString("access_token");
+      if (body != null) {
+         accessToken = body.optString("access_token");
+      }
+
    }
 
    private JSONObject fetchPrice(String id) {
-      try {
-         login();
-         List<String> parts = List.of(id.split("_"));
+      JSONObject priceJson = new JSONObject();
 
-         Map<String, String> headers = new HashMap<>();
-         headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-         headers.put("Origin", "www.martinsatacado.com.br");
+      login();
+      List<String> parts = List.of(id.split("_"));
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      headers.put("Origin", "www.martinsatacado.com.br");
+      headers.put("Referer", "https://www.martinsatacado.com.br/");
+      headers.put("Host", "ssd.martins.com.br");
+      headers.put("client_id", "bb6d8be8-0671-32ea-9a6e-3da4c63525a3");
+      headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
+
+      if (accessToken == null || accessToken.isEmpty()) {
+         login();
+      }
+      if (accessToken != null && !accessToken.isEmpty()) {
          headers.put("access_token", accessToken);
-         headers.put("host", "ssd.martins.com.br");
-         headers.put("client_id", "bb6d8be8-0671-32ea-9a6e-3da4c63525a3");
-         headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
 
          String payloadMartins = parts.get(0).equals("martins") ? "{\"CodigoMercadoria\": \"" + id + "\", \"Quantidade\": 0, \"codGroupMerFrac\": 0, \"codPmc\": null }" : "";
          String payload3P = !parts.get(0).equals("martins") ? "{\"seller\":\"" + parts.get(0) + "\",\"CodigoMercadoria\":\"" + id + "\",\"Quantidade\":0}" : "";
 
-         String payload = "{\"asm\":0,\"produtos\":[" + payloadMartins + "]," +
-            "\"ProdutosExclusaoEan\":[],\"produtosSeller\":[" + payload3P + "],\"codeWarehouseDelivery\":0,\"codeWarehouseBilling\":0,\"condicaoPagamento\":111,\"uid\":6659973,\"segment\":0," +
-            "\"tipoLimiteCred\":\"C\",\"precoEspecial\":\"S\",\"ie\":\"127285489112\",\"territorioRca\":0,\"classEstadual\":10,\"tipoSituacaoJuridica\":\"M\",\"codSegNegCliTer\":0," +
-            "\"tipoConsulta\":1,\"commercialActivity\":5,\"groupMartins\":171,\"codCidadeEntrega\":3232,\"codCidade\":3232,\"codRegiaoPreco\":250,\"temVendor\":\"S\",\"codigoCanal\":9," +
-            "\"ufTarget\":\"SP\",\"bu\":1,\"manual\":\"N\",\"email\":\"" + getLogin() + "\",\"numberSpinPrice\":\"64\",\"codeDeliveryRegion\":\"322\",\"ufFilialFaturamento\":\"GO\"," +
-            "\"cupons_novos\":[],\"codopdtrcetn\":10,\"origemChamada\":\"PLP\"}";
+         String payload = "{\"produtos\":[" + payloadMartins + "]," +
+            "\"produtosSeller\":[" + payload3P + "],\"uid\":" + codCli + "," +
+            "\"ufTarget\":\"SP\",\"email\":\"" + login + "\"}";
 
          Request request = Request.RequestBuilder.create()
             .setUrl("https://ssd.martins.com.br/b2b-partner/v1/produtosBuyBox")
             .setPayload(payload)
+            .setCookies(cookies)
             .setProxyservice(Arrays.asList(
                ProxyCollection.BUY_HAPROXY,
                ProxyCollection.BUY,
+               ProxyCollection.LUMINATI_SERVER_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
@@ -224,11 +238,11 @@ public class BrasilMartinsCrawler extends Crawler {
             .build();
 
          Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
-         return JSONUtils.stringToJson(response.getBody());
 
-      } catch (Exception e) {
-         return null;
+         priceJson = JSONUtils.stringToJson(response.getBody());
       }
+
+      return priceJson;
    }
 
    private List<String> scrapSecondaryImages(JSONObject data, String primaryImage) {
@@ -280,9 +294,8 @@ public class BrasilMartinsCrawler extends Crawler {
       if (sellerName != null) {
          seller = sellerName;
          String sellerLocate = price.optString("uf_Billing");
-         if (sellerLocate == null || sellerLocate.isEmpty()) {
-            sellerLocate = price.optString("uf_delivery");
-            seller = " - " + sellerLocate;
+         if (sellerLocate != null || sellerLocate.isEmpty()) {
+            seller = seller + " - " + sellerLocate;
 
          }
       }
