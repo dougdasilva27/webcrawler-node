@@ -83,8 +83,7 @@ public class BrasilMartinsCrawler extends Crawler {
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .build();
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
-      return response;
+      return CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
    }
 
    @Override
@@ -107,7 +106,7 @@ public class BrasilMartinsCrawler extends Crawler {
 
          String description = data.optString("description");
          List<String> secondaryImages = scrapSecondaryImages(data, primaryImage);
-         JSONArray priceObj = getStock(data);
+         JSONArray priceObj = getOffersFromApi(data);
          Offers offers = priceObj != null && !priceObj.isEmpty() ? scrapOffers(priceObj) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -131,7 +130,7 @@ public class BrasilMartinsCrawler extends Crawler {
       return products;
    }
 
-   protected JSONArray getStock(JSONObject data) {
+   protected JSONArray getOffersFromApi(JSONObject data) {
       JSONObject priceObj = fetchPrice(data.optString("productSku"));
       if (priceObj != null) {
 
@@ -279,8 +278,13 @@ public class BrasilMartinsCrawler extends Crawler {
       }
 
       if (sellerName != null) {
+         seller = sellerName;
          String sellerLocate = price.optString("uf_Billing");
-         seller = sellerName + " - " + sellerLocate;
+         if (sellerLocate == null || sellerLocate.isEmpty()) {
+            sellerLocate = price.optString("uf_delivery");
+            seller = " - " + sellerLocate;
+
+         }
       }
 
       return seller;

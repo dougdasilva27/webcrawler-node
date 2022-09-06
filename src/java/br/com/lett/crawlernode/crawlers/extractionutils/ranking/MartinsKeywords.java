@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -39,6 +40,8 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
    protected String password = getPassword();
    protected String login = getLogin();
    protected String cnpj = getCnpj();
+   protected String ufBilling = getUfBilling();
+   protected String filDelivery = getFilDelivery();
    protected String codCli = getCodCli();
 
    protected String getCodCli() {
@@ -57,12 +60,20 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       return session.getOptions().optString("login");
    }
 
+   protected String getUfBilling() {
+      return session.getOptions().optString("uf_billing");
+   }
+
+   protected String getFilDelivery() {
+      return session.getOptions().optString("fil_delivery");
+   }
+
+
    @Override
    public void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 12;
       this.log("Página " + this.currentPage);
-      String response = fetchJson();
-      JSONObject obj = JSONUtils.stringToJson(response);
+      JSONObject obj = fetchJson();
       if (obj != null) {
          obj = JSONUtils.getValueRecursive(obj, "pageProps.fallback./api/search", JSONObject.class);
          if (obj != null) {
@@ -84,8 +95,8 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
                   String urlProduct = "https://www.martinsatacado.com.br" + productObj.optString("productUrl");
                   String name = productObj.optString("name");
                   String imageUrl = JSONUtils.getValueRecursive(productObj, "images.0.value", String.class);
-                  Integer price = getPrice(productObj.optString("productSku"));
-                  boolean isAvailable = price != 0;
+                  Integer price = getPrice(id);
+                  boolean isAvailable = price != null;
 
                   RankingProduct productRanking = RankingProductBuilder.create()
                      .setUrl(urlProduct)
@@ -147,7 +158,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       headers.put("access_token", accessToken);
       headers.put("client_id", "bb6d8be8-0671-32ea-9a6e-3da4c63525a3");
       headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
-      String payload = "{\"asm\":0,\"produtos\":[],\"ProdutosExclusaoEan\":[],\"produtosSeller\":[" + getPayload(products) + "],\"codeWarehouseDelivery\":0,\"codeWarehouseBilling\":0,\"condicaoPagamento\":111,\"uid\":6659973,\"segment\":0,\"tipoLimiteCred\":\"C\",\"precoEspecial\":\"S\",\"ie\":\"127285489112\",\"territorioRca\":0,\"classEstadual\":10,\"tipoSituacaoJuridica\":\"M\",\"codSegNegCliTer\":0,\"tipoConsulta\":1,\"commercialActivity\":5,\"groupMartins\":171,\"codCidadeEntrega\":3232,\"codCidade\":3232,\"codRegiaoPreco\":250,\"temVendor\":\"S\",\"codigoCanal\":9,\"ufTarget\":\"SP\",\"bu\":1,\"manual\":\"N\",\"email\":\"patriciaf3001@gmail.com\",\"numberSpinPrice\":\"64\",\"codeDeliveryRegion\":\"322\",\"ufFilialFaturamento\":\"GO\",\"cupons_novos\":[],\"codopdtrcetn\":10,\"origemChamada\":\"PLP\"}";
+      String payload = "{\"produtos\":[" + getPayload(products) + "],\"uid\":" + codCli + ",\"ufTarget\":\"SP\",\"email\":\"" + login + "\"}";
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://ssd.martins.com.br/b2b-partner/v1/produtosBuyBox")
@@ -163,9 +174,11 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .build();
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
-      String str = response.getBody();
-      JSONObject body = JSONUtils.stringToJson(str);
-      this.prices = JSONUtils.getValueRecursive(body, "lstPrecoSeller", JSONArray.class);
+      JSONObject body = JSONUtils.stringToJson(response.getBody());
+      if (body != null) {
+         this.prices = body.optJSONArray("resultado");
+      }
+
    }
 
    protected String getPayload(JSONArray products) {
@@ -174,11 +187,10 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       for (Object o : products) {
          JSONObject product = (JSONObject) o;
          String cod = product.optString("productSku");
-         List<String> parts = List.of(cod.split("_"));
          if (flag) {
             payload = payload + ",";
          }
-         payload = payload + "{\"seller\":\"" + parts.get(0) + "\",\"CodigoMercadoria\":\"" + cod + "\",\"Quantidade\":0}";
+         payload = payload + "{\"CodigoMercadoria\":\"" + cod + "\"}";
          flag = true;
       }
 
@@ -190,10 +202,12 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       for (Object o : this.prices) {
          JSONObject price = (JSONObject) o;
          String cod = price.optString("codigoMercadoria");
-         if (cod.equals(id)) {
-            String priceStr = price.optString("preco");
-            priceStr = priceStr.replaceAll("\\.", "");
-            Integer priceInt = Integer.parseInt(priceStr);
+         String uf = price.optString("uf_billing");
+         String seller = price.optString("fil_delivery");
+         if (cod.equals(id) && uf.equals(ufBilling) && filDelivery.equals(seller)) {
+            Double priceNormal = price.optDouble("precoNormal");
+            Integer priceInt = CommonMethods.doublePriceToIntegerPrice(priceNormal, null);
+
             return priceInt;
          }
       }
@@ -202,9 +216,9 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       return null;
    }
 
-   protected String fetchJson() {
+   protected JSONObject fetchJson() {
       login();
-      String id = catureId();
+      String id = captureIdToRequestApi();
       String url = "https://www.martinsatacado.com.br/_next/data/" + id + "/busca/" + this.keywordWithoutAccents.replace(" ", "%20") + ".json?page=" + this.currentPage + "&perPage=" + this.pageSize;
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -213,26 +227,32 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .build();
-      String response = this.dataFetcher.get(session, request).getBody();
 
-      return response;
+      return JSONUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
    }
 
-   protected String catureId() {
+   protected String captureIdToRequestApi() {
       String id = null;
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.martinsatacado.com.br/")
          .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .build();
-      String response = this.dataFetcher.get(session, request).getBody();
-      Document doc = Jsoup.parse(response);
-      String script = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
-      JSONArray obj = JSONUtils.stringToJsonArray(script);
-      id = JSONUtils.getValueRecursive(obj, "0.buildId", String.class);
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+      Document doc = Jsoup.parse(response.getBody());
+      if (doc != null) {
+         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
+         if (json != null) {
+            id = json.optString("buildId");
+         }
+
+      }
       return id;
    }
-
 }
