@@ -55,6 +55,7 @@ public class BrasilPeixotoCrawler extends Crawler {
          chromeOptions.addArguments("--no-sandbox");
          chromeOptions.addArguments("--disable-dev-shm-usage");
 
+
          webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/customer/account/login/", proxy, session, this.cookiesWD, "https://www.peixoto.com.br", chromeOptions);
 
          webdriver.waitLoad(10000);
@@ -101,9 +102,10 @@ public class BrasilPeixotoCrawler extends Crawler {
    protected Response fetchResponse() {
 
       List<String> proxies = Arrays.asList(
+         ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
          ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-         ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-         ProxyCollection.BUY_HAPROXY);
+         ProxyCollection.BUY_HAPROXY,
+         ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
       int attemp = 0;
 
