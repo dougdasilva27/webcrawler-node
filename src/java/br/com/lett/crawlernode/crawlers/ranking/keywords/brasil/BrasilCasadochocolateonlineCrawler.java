@@ -19,7 +19,7 @@ public class BrasilCasadochocolateonlineCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      String url = "https://www.casadochocolateonline.com.br/produtos?q="+ this.keywordEncoded;
+      String url = "https://www.casadochocolateonline.com.br/produtos?q="+ this.keywordEncoded + "&page=" + this.currentPage;
       this.currentDoc = fetchDocument(url);
 
      Elements products = this.currentDoc.select(".row.no-gutters .container-fluid.mb-4 .row.mt-4 .col-6");
