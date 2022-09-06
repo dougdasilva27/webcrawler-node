@@ -32,18 +32,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    private static final String MAIN_SELLER_NAME_LOWER = "americanas.com";
    private static final String MAIN_SELLER_NAME_LOWER_FROM_HTML = "Americanas";
 
-   private static final List<String> UserAgent = Arrays.asList(
-      "Mozilla/5.0 (iPhone; CPU iPhone OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
-      "Mozilla/5.0 (iPad; CPU OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
-      "Mozilla/5.0 (iPod; CPU iPhone OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
-      "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
-      "Mozilla/5.0 (Linux; Android 10; SM-A205U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
-      "Mozilla/5.0 (Linux; Android 10; SM-A102U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
-      "Mozilla/5.0 (Linux; Android 10; SM-G960U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
-      "Mozilla/5.0 (Linux; Android 10; LM-X420) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
-      "Mozilla/5.0 (Linux; Android 10; LM-Q710(FGN)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36"
-   );
-
    public SaopauloAmericanasCrawler(Session session) {
       super(session);
       super.subSellers = Arrays.asList("b2w", "lojas americanas", "lojas americanas mg", "lojas americanas rj", "lojas americanas sp", "lojas americanas rs", "Lojas Americanas", "americanas");
@@ -53,61 +41,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.urlPageOffers = URL_PAGE_OFFERS;
       super.config.setFetcher(FetchMode.JSOUP);
    }
-
-
-   @Override
-   protected Document fetch() {
-      Map<String, String> headersAmericanas = getHeaders();
-
-      return Jsoup.parse(fetchPage(session.getOriginalURL(), this.dataFetcher, cookies, headersAmericanas, session));
-   }
-
-   public static Map<String, String> getHeaders() {
-      Random random = new Random();
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("sec-ch-ua", "\"Chromium\";v=\"92\", \" Not A;Brand\";v=\"99\", \"Google Chrome\";v=\"92\"");
-      headers.put("sec-ch-ua-mobile", "?0");
-      headers.put("upgrade-insecure-requests", "1");
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("user-agent", UserAgent.get(random.nextInt(UserAgent.size())));
-
-      return headers;
-   }
-
-   public static String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .setSendUserAgent(false)
-         .setFetcheroptions(
-            FetcherOptions.FetcherOptionsBuilder.create()
-               .mustUseMovingAverage(false)
-               .mustRetrieveStatistics(true)
-               .setForbiddenCssSelector("#px-captcha")
-               .build()
-         )
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
-            )
-         )
-         .build();
-
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
-
-      return response.getBody();
-
-   }
-
-
+   
    private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject reviews) {
       int star1 = 0;
       int star2 = 0;
