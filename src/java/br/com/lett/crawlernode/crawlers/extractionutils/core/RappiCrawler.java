@@ -135,7 +135,6 @@ public abstract class RappiCrawler extends Crawler {
 
    protected String getProductIdFromRanking(JSONObject productJson) {
       String productName = productJson.optString("name");
-      String productImage = productJson.optString("image");
       String productNameEncoded = productName != null ? StringUtils.stripAccents(productName).replace(" ", "%20") : null;
       String url = getMarketBaseUrl() + getStoreId() + "/s?term=" + productNameEncoded;
       Request request = Request.RequestBuilder.create()
@@ -167,8 +166,8 @@ public abstract class RappiCrawler extends Crawler {
       if (searchProducts.length() > 0) {
          for (int i = 0; i < searchProducts.length(); i++) {
             JSONObject searchProduct = searchProducts.getJSONObject(i);
-            String imageProductSearch = searchProduct.optString("image");
-            if (imageProductSearch.equals(productImage)) {
+            boolean productEquals = checkProductEquals(productJson, searchProduct);
+            if (productEquals) {
                productFoundInternalId = searchProduct.optString("product_id");
                break;
             }
@@ -176,6 +175,21 @@ public abstract class RappiCrawler extends Crawler {
       }
 
       return productFoundInternalId;
+   }
+
+   private boolean checkProductEquals(JSONObject productJson, JSONObject searchProduct) {
+      String productName = productJson.optString("name");
+      String productDescription = productJson.optString("description");
+      String productImage = productJson.optString("image");
+      String nameProductSearch = searchProduct.optString("name");
+      String descriptionProductSearch = searchProduct.optString("description");
+      String imageProductSearch = searchProduct.optString("image");
+
+      if (imageProductSearch != null && imageProductSearch.equals(productImage)) {
+         return true;
+      }
+
+      return productName != null && productDescription != null && productName.equals(nameProductSearch) && productDescription.equals(descriptionProductSearch);
    }
 
    protected String fetchToken() {
@@ -259,7 +273,7 @@ public abstract class RappiCrawler extends Crawler {
          List<String> eans = List.of(productJson.optString("ean"));
          boolean available = productJson.optBoolean("in_stock");
          Offers offers = available ? scrapOffers(productJson) : new Offers();
-         String url = getHomeCountry() + getUrlPrefix() + getStoreId() + "_" + internalId;
+         String url = getHomeCountry() + getUrlPrefix() + getStoreId() + "_" + productJson.optString("product_id", "");
 
          Product product = ProductBuilder.create()
             .setUrl(url)
