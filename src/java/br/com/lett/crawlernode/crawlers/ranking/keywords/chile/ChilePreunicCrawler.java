@@ -2,9 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -12,7 +9,6 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -77,10 +73,6 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
             String name = product.optString("brand") + product.optString("name");
 
             Boolean isAvailable = getAvaiability(product);
-            Integer stock = 0;
-            if(product.has("stock")){
-               stock = product.optInt("stock");
-            }
 
             String imgUrl = isAvailable ? product.optString("catalog_image_url") : null;
             Integer price = product.optInt("offer_price");
@@ -111,5 +103,12 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
    }
 
    private Boolean getAvaiability(JSONObject product) {
+      if (product.has("stock")) {
+         Integer stock = product.optInt("stock");
+         return stock > 0;
+      } else {
+         String status = product.optString("state");
+         return status.equals("active");
+      }
    }
 }
