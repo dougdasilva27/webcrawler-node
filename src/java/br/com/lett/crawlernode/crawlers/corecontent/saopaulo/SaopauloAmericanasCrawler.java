@@ -2,8 +2,10 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -14,7 +16,6 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import models.AdvancedRatingReview;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.cookie.Cookie;
-import org.apache.kafka.common.security.JaasUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -56,7 +57,9 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    @Override
    protected Document fetch() {
-      return Jsoup.parse(fetchPage(session.getOriginalURL(), this.dataFetcher, cookies, headers, session));
+      Map<String, String> headersAmericanas = getHeaders();
+
+      return Jsoup.parse(fetchPage(session.getOriginalURL(), this.dataFetcher, cookies, headersAmericanas, session));
    }
 
    public static Map<String, String> getHeaders() {
@@ -74,12 +77,10 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    public static String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
 
-      Map<String, String> headersAmericanas = getHeaders();
-
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
-         .setHeaders(headersAmericanas)
+         .setHeaders(headers)
          .setSendUserAgent(false)
          .setFetcheroptions(
             FetcherOptions.FetcherOptionsBuilder.create()
@@ -90,6 +91,8 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          )
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
@@ -98,21 +101,10 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          )
          .build();
 
-      Response response = df.get(session, request);
-      String content = response.getBody();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
 
-      int statusCode = response.getLastStatusCode();
+      return response.getBody();
 
-      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-         Integer.toString(statusCode).charAt(0) != '3'
-         && statusCode != 404)) {
-
-
-         request.setHeaders(getHeaders());
-         content = new FetcherDataFetcher().get(session, request).getBody();
-      }
-
-      return content;
    }
 
 
@@ -175,18 +167,18 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
             description.append(e);
          }
       }
-      if(description.length() == 0){
+      if (description.length() == 0) {
          String descriptionAux = JSONUtils.getValueRecursive(apolloJson, "ROOT_QUERY.description", String.class);
-         if(descriptionAux != null ){
+         if (descriptionAux != null) {
             description.append(descriptionAux);
             description.append(" ");
          }
-         JSONArray attributes = JSONUtils.getValueRecursive(apolloJson,"ROOT_QUERY.product:{\"productId\":\""+ internalPid +"\"}.attributes", JSONArray.class);
-         for(Object obj : attributes){
+         JSONArray attributes = JSONUtils.getValueRecursive(apolloJson, "ROOT_QUERY.product:{\"productId\":\"" + internalPid + "\"}.attributes", JSONArray.class);
+         for (Object obj : attributes) {
             JSONObject attribute = (JSONObject) obj;
             String attributeName = attribute.optString("name");
             String attributeValue = attribute.optString("value");
-            if ( attributeName != null && attributeValue != null){
+            if (attributeName != null && attributeValue != null) {
                description.append(attributeName);
                description.append(" ");
                description.append(attributeValue);
