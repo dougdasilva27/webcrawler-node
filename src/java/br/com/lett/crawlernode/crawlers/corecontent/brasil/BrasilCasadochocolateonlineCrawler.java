@@ -43,6 +43,7 @@ public class BrasilCasadochocolateonlineCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".review-stars", "data-id");
          String internalId= CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[type=\"hidden\"]","value");
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-description-item", false);
+         List<String> categories =CrawlerUtils.crawlCategories(doc, ".col-auto .breadcrumb-link");
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
          boolean available = doc.selectFirst(".product-action-buy.btn") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
@@ -54,6 +55,7 @@ public class BrasilCasadochocolateonlineCrawler extends Crawler {
             .setName(productName)
             .setPrimaryImage(primaryImage)
             .setDescription(description)
+            .setCategories(categories)
             .setOffers(offers)
             .build();
          products.add(product);
