@@ -2,16 +2,11 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.config.Config;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.JSONUtils;
@@ -27,21 +22,17 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
    public ChilePreunicCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.JSOUP;
-
    }
 
    @Override
    protected JSONObject fetchJSONObject(String url) {
       Map<String, String> headers = new HashMap<>();
-      headers.put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36");
       headers.put("Accept-Encoding", "gzip, deflate, br");
-      headers.put("accept", "*/*");
       headers.put("content-type", "application/json");
-      headers.put("Referer", "https://preunic.cl/");
+      headers.put("Connection", "keep-alive");
+      headers.put("Origin", "https://preunic.cl");
 
-      String jsonParams = "query=" + this.keywordEncoded.replace(" ", "%20") + "&hitsPerPage=20&maxValuesPerFacet=500&page=" + (this.currentPage - 1) + "&facetingAfterDistinct=true&filters=(state%3A%22active%22%20OR%20state%3A%22discontinue%22)&facets=%5B%22normal_price%22%2C%22brand%22%2C%22has_promotions%22%2C%22sku%22%2C%22has_sbpay_promotions%22%2C%22categories.lvl0%22%2C%22categories.lvl0%22%5D&tagFilters=";
-
-
+      String jsonParams = "query=" + this.keywordEncoded.replace(" ", "%20") + "&hitsPerPage=21&maxValuesPerFacet=500&page=" + (this.currentPage - 1) + "&facetingAfterDistinct=true&filters=(state%3A'active'%20OR%20state%3A'discontinue')%20AND%20(is_store_exclusive%3Afalse%20OR%20in_communes%3A322)&facets=%5B%22normal_price%22%2C%22brand%22%2C%22has_promotions%22%2C%22sku%22%2C%22has_sbpay_promotions%22%2C%22categories.lvl0%22%2C%22categories.lvl0%22%5D&tagFilters=";
       String payload = "{\"requests\":[{\"indexName\":\"PreunicVariants_production\",\"params\":\"" + jsonParams + "\"}]}";
 
       Request request = Request.RequestBuilder.create()
@@ -70,7 +61,7 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
 
       JSONArray products = JSONUtils.getValueRecursive(json, "results.0.hits", JSONArray.class);
 
-      if (!products.isEmpty()) {
+      if (products != null && !products.isEmpty()) {
          if (this.totalProducts == 0) {
             this.totalProducts = JSONUtils.getValueRecursive(json, "results.0.nbHits", Integer.class);
          }
@@ -80,11 +71,12 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
             String internalPid = product.optString("sku");
             String productUrl = "https://preunic.cl/products/" + product.optString("product_slug") + "?default_sku=" + internalPid;
             String name = product.optString("brand") + product.optString("name");
-            String stock = product.getString("state");
-            Boolean isAvailable = stock.equals("active");
-            String imgUrl = isAvailable ? product.optString("catalog_image_url") : null;
 
-            Integer price = product.optInt("offer_price");
+            Boolean isAvailable = getAvaiability(product);
+
+            String imgUrl = product.optString("catalog_image_url");
+            Integer price = isAvailable ? product.optInt("offer_price") : null;
+
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalPid(internalPid)
@@ -94,12 +86,6 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
                .setAvailability(isAvailable)
                .build();
             saveDataProduct(productRanking);
-
-            this.log(
-               "Position: " + this.position +
-                  " - InternalId: " + null +
-                  " - InternalPid: " + internalPid +
-                  " - Url: " + productUrl);
 
             if (this.arrayProducts.size() == productsLimit)
                break;
@@ -113,5 +99,13 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
          + this.arrayProducts.size() + " produtos crawleados");
 
+   }
+
+   private Boolean getAvaiability(JSONObject product) {
+      if (product.has("stock")) {
+         Integer stock = product.optInt("stock", 0);
+         return stock > 0;
+      }
+      return true;
    }
 }
