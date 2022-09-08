@@ -24,6 +24,7 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.avro.data.Json;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -179,8 +180,8 @@ public abstract class RappiCrawler extends Crawler {
 
    private boolean checkProductEquals(JSONObject productJson, JSONObject searchProduct) {
       String productName = productJson.optString("name");
-      String productDescription = productJson.optString("description");
-      String productImage = productJson.optString("image");
+      String productDescription = crawlDescription(productJson);
+      String productImage = crawlImage(productJson);
       String nameProductSearch = searchProduct.optString("name");
       String descriptionProductSearch = searchProduct.optString("description");
       String imageProductSearch = searchProduct.optString("image");
@@ -190,6 +191,44 @@ public abstract class RappiCrawler extends Crawler {
       }
 
       return productName != null && productDescription != null && productName.equals(nameProductSearch) && productDescription.equals(descriptionProductSearch);
+   }
+
+   private String crawlImage(JSONObject productJson) {
+      String productImage = productJson.optString("image");
+      if (productImage != null && productImage.equals("NO-IMAGE")) {
+         JSONArray stores = JSONUtils.getJSONArrayValue(productJson, "stores");
+            for (int i = 0; i < stores.length(); i++) {
+               JSONObject store = stores.optJSONObject(i);
+               if (store != null) {
+                  JSONObject productInfo = store.optJSONObject("product");
+                  if (productInfo != null && !productInfo.optString("image").equals("NO-IMAGE")) {
+                     productImage = productInfo.optString("image");
+                     break;
+                  }
+               }
+            }
+      }
+
+      return productImage;
+   }
+
+   private String crawlDescription(JSONObject productJson) {
+      String productDescription = productJson.optString("description");
+      if (productDescription != null && productDescription.equals("")) {
+         JSONArray stores = JSONUtils.getJSONArrayValue(productJson, "stores");
+         for (int i = 0; i < stores.length(); i++) {
+            JSONObject store = stores.optJSONObject(i);
+            if (store != null) {
+               JSONObject productInfo = store.optJSONObject("product");
+               if (productInfo != null && !productInfo.optString("description").equals("")) {
+                  productDescription = productInfo.optString("description");
+                  break;
+               }
+            }
+         }
+      }
+
+      return productDescription;
    }
 
    protected String fetchToken() {
