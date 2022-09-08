@@ -2,8 +2,10 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -46,19 +48,48 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class B2WCrawler extends Crawler {
-   protected Map<String, String> headers = new HashMap<>();
+   protected Map<String, String> headers = getHeaders();
    private static final String MAIN_B2W_NAME_LOWER = "b2w";
    private static final Card DEFAULT_CARD = Card.VISA;
    protected String sellerNameLower;
    protected String sellerNameLowerFromHTML; // Americanas // Submarino
    protected List<String> subSellers;
-   protected String homePage;
+   protected static String homePage;
    protected String urlPageOffers;
    protected Map<String, String> listSelectors = getListSelectors();
    protected Set<String> cards = Sets.newHashSet(DEFAULT_CARD.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
    protected boolean allow3PSellers = isAllow3PSellers();
    protected String seller1P = getSeller1P();
+
+   private static final List<String> UserAgent = Arrays.asList(
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (iPad; CPU OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (iPod; CPU iPhone OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; SM-A205U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; SM-A102U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; SM-G960U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; LM-X420) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; LM-Q710(FGN)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36"
+   );
+
+   public static Map<String, String> getHeaders() {
+      Random random = new Random();
+
+      Map<String, String> headers = new HashMap<>();
+
+      headers.put("user-agent", UserAgent.get(random.nextInt(UserAgent.size())));
+      headers.put(HttpHeaders.REFERER, homePage);
+      headers.put(
+         HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9"
+      );
+      headers.put(HttpHeaders.CACHE_CONTROL, "max-age=0");
+      headers.put(HttpHeaders.CONNECTION, "keep-alive");
+      headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+
+      return headers;
+   }
 
    public String getSeller1P() {
       return session.getOptions().optString("seller");
@@ -72,22 +103,6 @@ public class B2WCrawler extends Crawler {
    public B2WCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.JSOUP);
-      this.setHeaders();
-   }
-
-   protected void setHeaders() {
-      headers.put(HttpHeaders.REFERER, this.homePage);
-      headers.put(
-         HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3"
-      );
-      headers.put(HttpHeaders.CACHE_CONTROL, "max-age=0");
-      headers.put(HttpHeaders.CONNECTION, "keep-alive");
-      headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
-      headers.put(HttpHeaders.ACCEPT_ENCODING, "");
-      headers.put("Upgrade-Insecure-Requests", "1");
-      headers.put("sec-fetch-mode", "navigate");
-      headers.put("sec-fetch-user", "?1");
-      headers.put("sec-fetch-site", "none");
    }
 
    private Map<String, String> getListSelectors() {
@@ -128,6 +143,8 @@ public class B2WCrawler extends Crawler {
          )
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
@@ -136,42 +153,9 @@ public class B2WCrawler extends Crawler {
          )
          .build();
 
-      Request requestFetcher = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .setSendUserAgent(false)
-         .setFetcheroptions(
-            FetcherOptions.FetcherOptionsBuilder.create()
-               .mustUseMovingAverage(false)
-               .mustRetrieveStatistics(true)
-               .setForbiddenCssSelector("#px-captcha")
-               .build()
-         )
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
-            )
-         )
-         .build();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
 
-      Response response = df.get(session, request);
-      String content = response.getBody();
-
-      int statusCode = response.getLastStatusCode();
-
-      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-         Integer.toString(statusCode).charAt(0) != '3'
-         && statusCode != 404)) {
-
-         request.setHeaders(headers);
-         content = new FetcherDataFetcher().get(session, requestFetcher).getBody();
-      }
-
-      return content;
+      return response.getBody();
    }
 
    @Override

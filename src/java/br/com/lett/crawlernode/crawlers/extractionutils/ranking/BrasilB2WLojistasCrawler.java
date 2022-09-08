@@ -1,19 +1,26 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.apache.http.cookie.Cookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,26 +42,46 @@ public class BrasilB2WLojistasCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
+
    @Override
    protected Document fetchDocument(String url) {
-
       this.log("Link onde são feitos os crawlers: " + url);
 
       Map<String, String> headers = new HashMap<>();
 
-      headers.put("authority", "www.americanas.com.br");
-      headers.put("sec-ch-ua", " \" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\"");
-      headers.put("sec-ch-ua-mobile", "?0");
+      headers.put("authority", homePage);
       headers.put("upgrade-insecure-requests", "1");
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("sec-fetch-site", "none");
-      headers.put("sec-fetch-mode", "navigate");
-      headers.put("sec-fetch-user", "?1");
-      headers.put("sec-fetch-dest", "document");
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
 
-      return Jsoup.parse(br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloAmericanasCrawler.fetchPage(url, this.dataFetcher, this.cookies, headers, session));
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setSendUserAgent(false)
+         .setFetcheroptions(
+            FetcherOptions.FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .setForbiddenCssSelector("#px-captcha")
+               .build()
+         )
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
+            )
+         )
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+
+      return Jsoup.parse(response.getBody());
+
    }
 
    @Override
@@ -67,14 +94,14 @@ public class BrasilB2WLojistasCrawler extends CrawlerRankingKeywords {
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".product-grid-item");
+      Elements products = this.currentDoc.select("[class^=\"inStockCard\"]");
 
       if (!products.isEmpty()) {
          for (Element e : products) {
             String internalPid = scraperInternalPid(e);
             String productUrl = CrawlerUtils.completeUrl("produto/" + internalPid, "https", homePage);
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, "[class^=\"TitleUI\"]", true);
-            Integer price = CrawlerUtils.scrapIntegerFromHtml(e, "[class^=\"PriceUI\"]", true, 0);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "[class^=\"product-name\"]", true);
+            Integer price = CrawlerUtils.scrapIntegerFromHtml(e, "[class^=\"price-info\"] span", true, 0);
             String imageUrl = scraperImage(internalPid, name);
             boolean isAvailable = price != null;
 
@@ -129,7 +156,7 @@ public class BrasilB2WLojistasCrawler extends CrawlerRankingKeywords {
 
    private String scraperInternalPid(Element e) {
       String internalPid = "";
-      String pid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[class^=\"RippleContainer\"] a", "href");
+      String pid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[class^=\"inStockCard\"] a", "href");
 
       if (pid != null) {
          String regex = "produto\\/([0-9]+)";
