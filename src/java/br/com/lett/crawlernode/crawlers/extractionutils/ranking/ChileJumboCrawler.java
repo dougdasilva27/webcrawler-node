@@ -116,13 +116,13 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
       String url = "https://apijumboweb.smdigital.cl/catalog/api/v1/search/" + keywordWithoutAccents.toLowerCase().replace(" ", "%20") + "?page=" + this.currentPage;
 
       Map<String, String> headers = new HashMap<>();
-      //headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36");
       headers.put("x-api-key", API_KEY);
       headers.put("authority", "apijumboweb.smdigital.cl");
       headers.put("content-type", "application/json");
       headers.put("Connection", "keep-alive");
       headers.put("origin", "https://www.jumbo.cl");
       headers.put("referer", "https://www.jumbo.cl/");
+      headers.put("x-requested-with", "XMLHttpRequest");
 
       String payload = "{\"selectedFacets\":[{\"key\":\"trade-policy\",\"value\":\"" + getStoreCode() + "\"}]}";
 
