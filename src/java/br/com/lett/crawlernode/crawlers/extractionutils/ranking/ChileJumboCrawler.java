@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -17,12 +20,14 @@ import org.json.JSONObject;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ChileJumboCrawler extends CrawlerRankingKeywords {
 
    public ChileJumboCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.APACHE;
    }
 
    protected String storeCode = getStoreCode();
@@ -111,10 +116,11 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
       String url = "https://apijumboweb.smdigital.cl/catalog/api/v1/search/" + keywordWithoutAccents.toLowerCase().replace(" ", "%20") + "?page=" + this.currentPage;
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36");
+      //headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36");
       headers.put("x-api-key", API_KEY);
+      headers.put("authority", "apijumboweb.smdigital.cl");
       headers.put("content-type", "application/json");
-      headers.put("accept", "*/*");
+      headers.put("Connection", "keep-alive");
       headers.put("origin", "https://www.jumbo.cl");
       headers.put("referer", "https://www.jumbo.cl/");
 
@@ -124,17 +130,18 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
+         .setSendUserAgent(true)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR
             )
          )
          .build();
 
-      Response response = new JsoupDataFetcher().post(session, request);
-
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
       return CrawlerUtils.stringToJson(response.getBody());
    }
 
@@ -151,5 +158,4 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
 
       return CrawlerUtils.completeUrl(productUrl, "https", HOST);
    }
-
 }
