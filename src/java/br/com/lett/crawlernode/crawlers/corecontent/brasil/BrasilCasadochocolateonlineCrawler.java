@@ -28,7 +28,6 @@ public class BrasilCasadochocolateonlineCrawler extends Crawler {
 
    public BrasilCasadochocolateonlineCrawler(Session session) {
       super(session);
-      SELLER_NAME = session.getMarket().getName();
    }
 
    @Override
@@ -37,13 +36,13 @@ public class BrasilCasadochocolateonlineCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         Logging.printLogDebug(logger, session, "Página de produto identificada: " + this.session.getOriginalURL());
 
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title .h1", false);
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".review-stars", "data-id");
-         String internalId= CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[type=\"hidden\"]","value");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[type=\"hidden\"]", "value");
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-description-item", false);
-         List<String> categories =CrawlerUtils.crawlCategories(doc, ".col-auto .breadcrumb-link");
+         List<String> categories = CrawlerUtils.crawlCategories(doc, ".col-auto .breadcrumb-link");
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
          boolean available = doc.selectFirst(".product-action-buy.btn") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
@@ -61,7 +60,7 @@ public class BrasilCasadochocolateonlineCrawler extends Crawler {
          products.add(product);
 
       } else {
-         Logging.printLogDebug(logger, session, "Not a product page:   " + this.session.getOriginalURL());
+         Logging.printLogDebug(logger, session, "Não é uma página de produto:   " + this.session.getOriginalURL());
       }
       return products;
    }
@@ -87,6 +86,7 @@ public class BrasilCasadochocolateonlineCrawler extends Crawler {
 
       return offers;
    }
+
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-final", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-discount", null, false, ',', session);
