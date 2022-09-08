@@ -36,7 +36,7 @@ public class BrasilCasadochocolateonlineCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         Logging.printLogDebug(logger, session, "Identified product page: " + this.session.getOriginalURL());
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title .h1", false);
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".review-stars", "data-id");
@@ -60,7 +60,7 @@ public class BrasilCasadochocolateonlineCrawler extends Crawler {
          products.add(product);
 
       } else {
-         Logging.printLogDebug(logger, session, "Not a product page:   " + this.session.getOriginalURL());
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
       return products;
    }
