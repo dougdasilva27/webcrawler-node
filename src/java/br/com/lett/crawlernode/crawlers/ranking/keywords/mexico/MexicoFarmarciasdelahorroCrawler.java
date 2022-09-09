@@ -1,0 +1,98 @@
+package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
+
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Parser;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
+   public MexicoFarmarciasdelahorroCrawler(Session session) {
+      super(session);
+      super.dataFetcher = new FetcherDataFetcher();
+   }
+
+   @Override
+   public Document fetchDocument(String url) {
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("authority","www.fahorro.com");
+      headers.put("accept","text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("accept-language","pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_PT, ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX))
+         .build();
+
+      String response = CrawlerUtils.retryRequestString(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session);
+
+      //String body = this.dataFetcher.get(session, request).getBody();
+
+      return Jsoup.parse(response);
+   }
+
+   @Override
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
+
+      String url = "https://www.fahorro.com/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
+      this.currentDoc = fetchDocument(url);
+
+      Elements products = this.currentDoc.select("div > ol > li > .product-item-info");
+
+      if (!products.isEmpty()) {
+
+         for (Element product : products) {
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".price-box.price-final_price", "data-product-id");
+            String productUrl = CrawlerUtils.scrapUrl(product, ".product-item-link", "href", "https", "www.fahorro.com");
+            String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".product.name.product-item-name", false);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-image-photo", "src");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "#product-price-58803", "data-price-amount", false, '.', session, null);
+            Integer priceFrom = CrawlerUtils.scrapPriceInCentsFromHtml(product, "#old-price-58803", "data-price-amount", false, '.', session, price);
+            boolean isAvailable = price != null;
+
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalPid(internalPid)
+               .setName(productName)
+               .setPriceInCents(price)
+               .setPriceInCents(priceFrom)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
+
+            saveDataProduct(productRanking);
+            if (this.arrayProducts.size() == productsLimit)
+               break;
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
+      }
+      this.log("Finishing page products crawler: " + this.currentPage + " - yet " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      return !this.currentDoc.select(".pages .items.pages-items .item.pages-item-next").isEmpty();
+   }
+}
+
