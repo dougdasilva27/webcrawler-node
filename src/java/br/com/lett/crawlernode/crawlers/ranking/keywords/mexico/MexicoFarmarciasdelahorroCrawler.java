@@ -2,11 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -21,7 +17,6 @@ import org.jsoup.select.Elements;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
@@ -58,7 +53,7 @@ public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
       String url = "https://www.fahorro.com/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select("div > ol > li > div > .product.details.product-item-details");
+      Elements products = this.currentDoc.select(".products.wrapper.grid.products-grid li");
 
       if (!products.isEmpty()) {
 
@@ -66,9 +61,8 @@ public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".price-box.price-final_price", "data-product-id");
             String productUrl = CrawlerUtils.scrapUrl(product, ".product-item-link", "href", "https", "www.fahorro.com");
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".product.name.product-item-name", false);
-            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-image-container .product-image-photo", "src");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "#product-price-58803", "data-price-amount", false, '.', session, null);
-            Integer priceFrom = CrawlerUtils.scrapPriceInCentsFromHtml(product, "#old-price-58803", "data-price-amount", false, '.', session, price);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-image-photo", "src");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "span[data-price-type=finalPrice] .price", null, false, ',', session, null);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -76,7 +70,6 @@ public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
                .setInternalPid(internalPid)
                .setName(productName)
                .setPriceInCents(price)
-               .setPriceInCents(priceFrom)
                .setAvailability(isAvailable)
                .setImageUrl(imageUrl)
                .build();
@@ -96,5 +89,7 @@ public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
    protected boolean hasNextPage() {
       return !this.currentDoc.select(".pages .items.pages-items .item.pages-item-next").isEmpty();
    }
+
+
 }
 
