@@ -3,6 +3,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -23,7 +26,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
@@ -32,10 +34,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class BrasilPeixotoCrawler extends Crawler {
 
@@ -49,15 +48,9 @@ public class BrasilPeixotoCrawler extends Crawler {
       try {
          Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-         ChromeOptions chromeOptions = new ChromeOptions();
-         chromeOptions.addArguments("--window-size=1920,1080");
-         chromeOptions.addArguments("--headless");
-         chromeOptions.addArguments("--no-sandbox");
-         chromeOptions.addArguments("--disable-dev-shm-usage");
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/customer/account/login/", proxy, session);
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/customer/account/login/", proxy, session, this.cookiesWD, "https://www.peixoto.com.br", chromeOptions);
-
-         webdriver.waitLoad(10000);
+         webdriver.waitLoad(1000);
 
          waitForElement(webdriver.driver, ".page-main #email");
          WebElement username = webdriver.driver.findElement(By.cssSelector(".page-main #email"));
@@ -69,14 +62,14 @@ public class BrasilPeixotoCrawler extends Crawler {
          pass.sendKeys(session.getOptions().optString("pass"));
 
          waitForElement(webdriver.driver, ".page-main button.login");
-         webdriver.findAndClick(".page-main button.login", 15000);
+         webdriver.findAndClick(".page-main button.login", 10000);
 
          //chose catalão - GO
          waitForElement(webdriver.driver, "#branch-select option[value='5']");
-         webdriver.findAndClick("#branch-select option[value='5']", 15000);
+         webdriver.findAndClick("#branch-select option[value='5']", 10000);
 
          waitForElement(webdriver.driver, "button.b2b-choices");
-         webdriver.findAndClick("button.b2b-choices", 15000);
+         webdriver.findAndClick("button.b2b-choices", 10000);
 
          Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
 
@@ -87,37 +80,49 @@ public class BrasilPeixotoCrawler extends Crawler {
             basicClientCookie.setExpiryDate(cookie.getExpiry());
             this.cookies.add(basicClientCookie);
          }
-         webdriver.terminate();
 
       } catch (Exception e) {
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-         webdriver.terminate();
-
          Logging.printLogWarn(logger, "login não realizado");
+      } finally {
+         if (webdriver != null) {
+            webdriver.terminate();
+         }
       }
    }
 
    @Override
    protected Response fetchResponse() {
 
+      int attemp = 0;
+
       List<String> proxies = Arrays.asList(
          ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-         ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-         ProxyCollection.BUY_HAPROXY);
-
-      int attemp = 0;
+         ProxyCollection.BUY_HAPROXY,
+         ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+         ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
       while (this.cookies.isEmpty() && attemp < 3) {
          getCookiesFromWD(proxies.get(attemp));
          attemp++;
       }
 
+      Map<String, String> headers = new HashMap<>();
+      headers.put("authority", "www.peixoto.com.br");
+      headers.put("accept-language", "en-US,en;q=0.9,pt;q=0.8,pt-PT;q=0.7");
+      headers.put("referer", "https://www.peixoto.com.br/cms/index/index");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
+         .setHeaders(headers)
          .setCookies(cookies)
+         .setProxyservice(proxies)
          .build();
 
-      return this.dataFetcher.get(session, request);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+
+      return response;
 
    }
 
@@ -169,12 +174,12 @@ public class BrasilPeixotoCrawler extends Crawler {
 
    private List<String> getImageListFromScript(Document doc) {
       Element imageScript = doc.selectFirst("script:containsData(mage/gallery/gallery)");
-      if(imageScript != null) {
+      if (imageScript != null) {
          JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
          JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class);
          List<String> imagesList = new ArrayList<>();
          for (int i = 0; i < imageArray.length(); i++) {
-            String imageList = JSONUtils.getValueRecursive(imageArray, i+".img", String.class);
+            String imageList = JSONUtils.getValueRecursive(imageArray, i + ".img", String.class);
             imagesList.add(imageList);
          }
          return imagesList;
