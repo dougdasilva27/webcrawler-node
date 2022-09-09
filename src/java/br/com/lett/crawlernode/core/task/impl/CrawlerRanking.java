@@ -380,6 +380,10 @@ public abstract class CrawlerRanking extends Task {
                Logging.printLogDebug(logger, session, "Product already discovered but it was void in the last month - " + product.getUrl());
                saveProductUrlToQueue(product, resultJson);
 
+            } else if (!isCotainsSku(product, resultJson)) {
+               Logging.printLogDebug(logger, session, "Product already discovered but internalId changed -" + product.getUrl());
+               saveProductUrlToQueue(product, resultJson);
+
             } else {
                Logging.printLogDebug(logger, session, "Product already discoverer " + product.getUrl());
             }
@@ -398,6 +402,25 @@ public abstract class CrawlerRanking extends Task {
       }
 
       this.arrayProducts.add(product);
+   }
+
+   private boolean isCotainsSku(RankingProduct product, JSONObject result) {
+      String internalId = product.getInternalId();
+      if (internalId != null && !internalId.isEmpty()){
+         JSONArray skus = result.optJSONArray("found_skus");
+         if(skus != null && !skus.isEmpty()){
+            for(Object s : skus){
+               JSONObject sku = (JSONObject) s;
+               String skuInternalId = sku.optString("internal_id");
+               if(skuInternalId != null && skuInternalId.equals(internalId)){
+                  return true;
+               }
+            }
+         }
+      }
+
+
+         return false;
    }
 
    public boolean hasReadBeforeOneMonth(String finishAt) {
