@@ -82,7 +82,7 @@ public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
-      this.log("Finishing page products crawler: " + this.currentPage + " - yet " + this.arrayProducts.size() + " produtos crawleados");
+      this.log("Finalizando Crawler de produtos da página: " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
    @Override
