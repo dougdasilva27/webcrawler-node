@@ -19,6 +19,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,26 +27,27 @@ import java.util.Map;
 public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
    public MexicoFarmarciasdelahorroCrawler(Session session) {
       super(session);
-      super.dataFetcher = new FetcherDataFetcher();
+      super.fetchMode = FetchMode.JSOUP;
    }
 
    @Override
-   public Document fetchDocument(String url) {
+   protected Document fetchDocument(String url) {
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("authority","www.fahorro.com");
-      headers.put("accept","text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("accept-language","pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("Connection", "keep-alive");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
-         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_PT, ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX))
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
          .build();
 
-      String response = CrawlerUtils.retryRequestString(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session);
-
-      //String body = this.dataFetcher.get(session, request).getBody();
+      String response = dataFetcher.get(session, request).getBody();
 
       return Jsoup.parse(response);
    }
@@ -56,7 +58,7 @@ public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
       String url = "https://www.fahorro.com/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select("div > ol > li > .product-item-info");
+      Elements products = this.currentDoc.select("div > ol > li > div > .product.details.product-item-details");
 
       if (!products.isEmpty()) {
 
@@ -64,7 +66,7 @@ public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".price-box.price-final_price", "data-product-id");
             String productUrl = CrawlerUtils.scrapUrl(product, ".product-item-link", "href", "https", "www.fahorro.com");
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".product.name.product-item-name", false);
-            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-image-photo", "src");
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-image-container .product-image-photo", "src");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "#product-price-58803", "data-price-amount", false, '.', session, null);
             Integer priceFrom = CrawlerUtils.scrapPriceInCentsFromHtml(product, "#old-price-58803", "data-price-amount", false, '.', session, price);
             boolean isAvailable = price != null;
