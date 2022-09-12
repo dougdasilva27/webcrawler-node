@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -139,7 +140,9 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setHeaders(headers)
          .build();
 
-      return new ApacheDataFetcher().get(session, request);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "get");
+
+      return response;
    }
 
    @Override

@@ -3,6 +3,8 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -113,7 +115,9 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
          ))
          .build();
 
-      return Jsoup.parse(new ApacheDataFetcher().get(session, request).getBody());
+      String response = CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+
+      return Jsoup.parse(response);
    }
 
    @Override
