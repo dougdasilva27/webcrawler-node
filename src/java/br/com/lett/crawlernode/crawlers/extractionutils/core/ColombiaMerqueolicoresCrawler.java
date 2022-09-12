@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
@@ -60,6 +63,11 @@ public class ColombiaMerqueolicoresCrawler extends Crawler {
             JSONObject attributes = data.optJSONObject("attributes");
             String internalId = String.valueOf(data.optInt("id"));
             String name = attributes.optString("name");
+            String quantity = attributes.optString("quantity");
+            String unit = attributes.optString("unit");
+            if(quantity != null && !quantity.isEmpty() && unit != null && !unit.isEmpty()){
+               name =  name + " " + quantity + " " + unit;
+            }
             Offers offers = crawlOffers(attributes);
             String primaryImage = attributes.optString("image_large_url");
             String description = data.optString("description");
@@ -135,10 +143,11 @@ public class ColombiaMerqueolicoresCrawler extends Crawler {
       Request request = Request.RequestBuilder
          .create()
          .setUrl(apiUrl.toString())
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
 
-      return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
+      return CrawlerUtils.stringToJson(CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session));
    }
 
    /*
