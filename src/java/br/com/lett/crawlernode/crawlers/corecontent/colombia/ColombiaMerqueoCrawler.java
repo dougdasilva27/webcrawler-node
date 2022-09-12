@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -212,7 +214,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
          .build();
 
 
-      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      return CrawlerUtils.stringToJson(CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session));
    }
 
    /*

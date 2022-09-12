@@ -126,7 +126,7 @@ public class MerqueoCrawler extends Crawler {
       Request request = Request.RequestBuilder
          .create()
          .setUrl(apiUrl.toString())
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR,  ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
 
