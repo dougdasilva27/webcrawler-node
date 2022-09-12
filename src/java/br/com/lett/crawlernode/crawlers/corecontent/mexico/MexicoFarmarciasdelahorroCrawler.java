@@ -158,7 +158,7 @@ public class MexicoFarmarciasdelahorroCrawler extends Crawler {
       Element imageScript = doc.selectFirst("script:containsData(mage/gallery/gallery)");
       if (imageScript != null) {
          JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
-         JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class);
+         JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class, new JSONArray());
          List<String> imagesList = new ArrayList<>();
          for (int i = 1; i < imageArray.length(); i++) {
             String imageList = JSONUtils.getValueRecursive(imageArray, i + ".img", String.class);
