@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -82,7 +83,8 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          ))
          .build();
 
@@ -116,7 +118,8 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          ))
          .setHeaders(headers)
          .build();
@@ -134,12 +137,15 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          ))
          .setHeaders(headers)
          .build();
 
-      return new ApacheDataFetcher().get(session, request);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "get");
+
+      return response;
    }
 
    @Override
