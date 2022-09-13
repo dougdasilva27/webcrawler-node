@@ -106,7 +106,6 @@ public class TottusCrawler extends CrawlerRankingKeywords {
          .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
          .build();
 
-      //Response response = this.dataFetcher.get(session, request);
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
 
       return CrawlerUtils.stringToJson(response.getBody());
