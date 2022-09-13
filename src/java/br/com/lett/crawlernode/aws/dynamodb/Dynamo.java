@@ -96,12 +96,14 @@ public class Dynamo {
    public static boolean scheduledMoreThanOneHour(String scheduled, Session session) {
       if (scheduled != null && !scheduled.isEmpty()) {
          try {
+            Date dateNow = new Date();
             Date scheduledDate = new SimpleDateFormat(
                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(scheduled);
-            Date oneHour = DateUtils.addHours(new Date(), +1);
-            Logging.printLogDebug(logger, session, scheduled + " - " + oneHour + " has more than 1 hours: " + (scheduledDate.after(oneHour)));
+            Date scheduledDateMoreOneHour = DateUtils.addHours(scheduledDate, +1);
 
-            return scheduledDate.after(oneHour);
+            Logging.printLogDebug(logger, session, scheduled + " - " + dateNow + " has more than 1 hours: " + (dateNow.after(scheduledDateMoreOneHour)));
+
+            return dateNow.after(scheduledDateMoreOneHour);
 
          } catch (Exception e) {
             Logging.printLogError(logger, session, "Error parsing lrt date: " + scheduled);
