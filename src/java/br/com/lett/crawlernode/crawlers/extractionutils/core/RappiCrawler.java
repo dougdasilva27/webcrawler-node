@@ -36,6 +36,7 @@ import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
@@ -45,6 +46,8 @@ public abstract class RappiCrawler extends Crawler {
       super(session);
       this.config.setFetcher(FetchMode.APACHE);
    }
+
+   private final String grammatureRegex = "(\\d+[.,]?\\d*\\s?)(ml|l|g|gr|mg|kg)";
 
    protected String getStoreId() {
       return session.getOptions().optString("storeId");
@@ -308,7 +311,7 @@ public abstract class RappiCrawler extends Crawler {
          String primaryImage = images.length() > 0 ? CrawlerUtils.completeUrl(images.optString(0), "https", getImagePrefix()) : null;
          List<String> secondaryImages = crawlSecondaryImages(images);
          CategoryCollection categories = crawlCategories(productJson);
-         String name = productJson.optString("name");
+         String name = scrapName(productJson);
          List<String> eans = List.of(productJson.optString("ean"));
          boolean available = productJson.optBoolean("in_stock");
          Offers offers = available ? scrapOffers(productJson) : new Offers();
@@ -333,6 +336,31 @@ public abstract class RappiCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private boolean stringHasGrammature(String string) {
+      Pattern pattern = Pattern.compile(grammatureRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+      Matcher matcher = pattern.matcher(string);
+
+      return matcher.find();
+   }
+
+   private String extractGrammature(String string) {
+      Pattern pattern = Pattern.compile(grammatureRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+      final Matcher matcher = pattern.matcher(string);
+
+      return matcher.find() ? matcher.group(0) : "";
+   }
+
+   private String scrapName(JSONObject productJson) {
+      String name = productJson.optString("name");
+      String description = productJson.optString("description");
+
+      if (!stringHasGrammature(name) && stringHasGrammature(description)) {
+         name += " " + extractGrammature(description);
+      }
+
+      return name;
    }
 
    public Offers scrapOffers(JSONObject productJson) {
