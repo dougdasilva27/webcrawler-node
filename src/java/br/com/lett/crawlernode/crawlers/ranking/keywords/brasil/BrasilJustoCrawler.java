@@ -84,28 +84,20 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
    private JSONObject fetchJSON(String url) {
       int offset = this.currentPage == 1 ? 0 : (this.currentPage - 1) * this.pageSize;
 
-      String payload = "{\"operationName\":\"search\",\"variables\":{\"first\":" + this.pageSize + ",\"query\":\"" + this.location + "\",\"offset\":" + offset + ","
-         + "\"filter\":{\"postalCode\":\"" + POSTAL_CODE + "\",\"categories\":null}},\"query\":\"fragment TaxedMoneyFragment on"
-         + " TaxedMoney {\\n  gross {\\n    amount\\n    currency\\n    localized\\n    __typename\\n  }\\n  __typename\\n}"
-         + "\\n\\nfragment CategoryFragment on Category {\\n  id\\n  name\\n  __typename\\n}\\n\\nfragment ShoppingListFragment "
-         + "on ShoppingList {\\n  id\\n  name\\n  __typename\\n}\\n\\nquery search($query: String!, $first: Int, $offset: Int, "
-         + "$orderOptions: String, $filter: ProductFilterInput) {\\n  search(query: $query) {\\n    pages\\n    total\\n    categories "
-         + "{\\n      ...CategoryFragment\\n      __typename\\n    }\\n    products(\\n      first: $first\\n      offset: $offset\\n"
-         + "      orderOptions: $orderOptions\\n      filter: $filter\\n    ) {\\n      edges {\\n        node {\\n          id\\n          "
-         + "name\\n          isAvailable\\n          url\\n          action\\n          sku\\n          maxQuantityAllowed\\n          "
-         + "useWeightPicker\\n          searchIndex\\n          variants {\\n            id\\n            name\\n            stockQuantity"
-         + "\\n            weightUnit\\n            isPiece\\n            availability {\\n              price {\\n                ...TaxedMoneyFragment"
-         + "\\n                __typename\\n              }\\n              __typename\\n            }\\n            maturationOptions {\\n              "
-         + "description\\n              name\\n              type\\n              __typename\\n            }\\n            __typename\\n          }\\n          "
-         + "shoppingList {\\n            ...ShoppingListFragment\\n            __typename\\n          }\\n          category {\\n            ...CategoryFragment"
-         + "\\n            __typename\\n          }\\n          thumbnail {\\n            url\\n            __typename\\n          }\\n          "
-         + "availability {\\n            discountPercentage\\n            lineMaturationOptions\\n            quantityOnCheckout\\n            "
-         + "variantOnCheckout\\n            priceRange {\\n              start {\\n                ...TaxedMoneyFragment\\n                __typename"
-         + "\\n              }\\n              stop {\\n                ...TaxedMoneyFragment\\n                __typename\\n              }\\n"
-         + "              __typename\\n            }\\n            priceRangeUndiscounted {\\n              start {\\n                ...TaxedMoneyFragment"
-         + "\\n                __typename\\n              }\\n              stop {\\n                ...TaxedMoneyFragment\\n                __typename"
-         + "\\n              }\\n              __typename\\n            }\\n            __typename\\n          }\\n          __typename\\n        }\\n"
-         + "        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\"}";
+      String payload = "{\n" +
+         "    \"operationName\": \"search\",\n" +
+         "    \"variables\": {\n" +
+         "        \"first\": " + this.pageSize + ",\n" +
+         "        \"query\": \"" + this.location + "\",\n" +
+         "        \"offset\": " + offset + ",\n" +
+         "        \"filter\": {\n" +
+         "            \"postalCode\": \"" + POSTAL_CODE + "\",\n" +
+         "            \"categories\": null\n" +
+         "        },\n" +
+         "        \"onlyEnabledVariants\": true\n" +
+         "    },\n" +
+         "    \"query\": \"fragment CategoryFragment on Category {\\n  id\\n  name\\n  __typename\\n}\\n\\nfragment TaxedMoneyFragment on TaxedMoney {\\n  gross {\\n    amount\\n    currency\\n    localized\\n    __typename\\n  }\\n  __typename\\n}\\n\\nfragment ShoppingListFragment on ShoppingList {\\n  id\\n  name\\n  __typename\\n}\\n\\nfragment MoneyFragment on Money {\\n  localized\\n  amount\\n  currency\\n  __typename\\n}\\n\\nfragment ProductFragment on Product {\\n  id\\n  name\\n  isAvailable\\n  url\\n  sku\\n  maxQuantityAllowed\\n  label\\n  labelFontColor\\n  labelBackgroundColor\\n  showPriceWeightUnit\\n  variants {\\n    id\\n    name\\n    stockQuantity\\n    weightUnit\\n    isPiece\\n    bundle {\\n      discountPrice {\\n        ...MoneyFragment\\n        __typename\\n      }\\n      discountMinQuantity\\n      discountLabel\\n      __typename\\n    }\\n    maturationOptions {\\n      description\\n      name\\n      type\\n      __typename\\n    }\\n    __typename\\n  }\\n  shoppingList {\\n    ...ShoppingListFragment\\n    __typename\\n  }\\n  category {\\n    ...CategoryFragment\\n    __typename\\n  }\\n  thumbnail {\\n    url\\n    __typename\\n  }\\n  availability {\\n    discountPercentage\\n    lineMaturationOptions\\n    quantityOnCheckout\\n    variantOnCheckout\\n    priceRange {\\n      start {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      stop {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      __typename\\n    }\\n    priceRangeUndiscounted {\\n      start {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      stop {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n  __typename\\n}\\n\\nquery search($query: String!, $first: Int, $offset: Int, $orderOptions: String, $filter: ProductFilterInput, $onlyEnabledVariants: Boolean) {\\n  search(query: $query) {\\n    pages\\n    total\\n    queryId\\n    categories {\\n      ...CategoryFragment\\n      __typename\\n    }\\n    promotionalRule {\\n      promotionalContent\\n      urlContent\\n      imageContent\\n      __typename\\n    }\\n    products(\\n      first: $first\\n      offset: $offset\\n      orderOptions: $orderOptions\\n      filter: $filter\\n      onlyEnabledVariants: $onlyEnabledVariants\\n    ) {\\n      edges {\\n        node {\\n          ...ProductFragment\\n          searchIndex\\n          __typename\\n        }\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\"\n" +
+         "}";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
