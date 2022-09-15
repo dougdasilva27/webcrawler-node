@@ -380,11 +380,14 @@ public abstract class CrawlerRanking extends Task {
                Logging.printLogDebug(logger, session, "Product already discovered but it was void in the last month - " + product.getUrl());
                saveProductUrlToQueue(product, resultJson);
 
-            } else if (!isContainsSku(product, resultJson)) {
-               Logging.printLogDebug(logger, session, "Product already discovered but internalId changed -" + product.getUrl());
-               saveProductUrlToQueue(product, resultJson);
-
-            } else {
+            }
+// está é uma medida palhativa e a lógica precisa ser revisada por isso está comentado
+//            else if (!isContainsSku(product, resultJson)) {
+//               Logging.printLogDebug(logger, session, "Product already discovered but internalId changed -" + product.getUrl());
+//               saveProductUrlToQueue(product, resultJson);
+//
+//            }
+            else {
                Logging.printLogDebug(logger, session, "Product already discoverer " + product.getUrl());
             }
 
