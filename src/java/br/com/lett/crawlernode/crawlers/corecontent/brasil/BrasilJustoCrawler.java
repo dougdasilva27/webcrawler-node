@@ -56,21 +56,19 @@ public class BrasilJustoCrawler extends Crawler {
       super.extractInformation(doc);
 
       List<Product> products = new ArrayList<>();
-
-      if (isProductPage(doc)) {
+      String jsonString = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
+      if(jsonString != null && !jsonString.isEmpty() && isProductPage(jsonString)){
+         JSONArray dataArr = JSONUtils.stringToJsonArray(jsonString);
+         JSONObject data = JSONUtils.getValueRecursive(dataArr,"0", JSONObject.class);
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+
 
          JSONObject contextSchema = CrawlerUtils.selectJsonFromHtml(doc, ".row.product.product__container > script", null, ";", true, true);
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".shopping-list__content", "data-id");
          String internalId = internalPid;
          List<String> eans = new ArrayList<>();
-         if (contextSchema != null) {
-            String sku = JSONUtils.getValueRecursive(contextSchema, "offers.0.sku", String.class, internalPid);
-            internalId = !contextSchema.isEmpty() ? sku : internalPid;
-            if (sku != null) {
-               eans.add(sku);
-            }
-         }
+
          String name = CrawlerUtils.scrapStringSimpleInfo(doc,".product-details__name", false);
          boolean isAvailable = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
@@ -99,8 +97,13 @@ public class BrasilJustoCrawler extends Crawler {
       return products;
    }
 
-   private boolean isProductPage(Document doc) {
-      return !doc.select(".product__container").isEmpty();
+   private boolean isProductPage(String  obj) {
+      JSONArray data = JSONUtils.stringToJsonArray(obj);
+      String id = JSONUtils.getValueRecursive(data,"0.data.product.id", String.class);
+      if(id == null){
+         return false;
+      }
+      return !id.isEmpty();
    }
 
    private Offers crawlOffers(Document doc) throws OfferException, MalformedPricingException {
