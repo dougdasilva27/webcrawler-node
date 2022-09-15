@@ -55,13 +55,13 @@ public class MrestoqueunidasulCrawler extends CrawlerRankingKeywords {
          this.webdriver.waitLoad(5000);
          this.products = scrapTotalProducts(doc);
          webdriver.terminate();
+
       } catch (Exception e) {
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
       }
 
       return doc;
    }
-
 
    @Override
    public void extractProductsFromCurrentPage() throws MalformedProductException {
@@ -104,7 +104,6 @@ public class MrestoqueunidasulCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-
    }
 
    private Integer scrapTotalProducts(Document doc) {

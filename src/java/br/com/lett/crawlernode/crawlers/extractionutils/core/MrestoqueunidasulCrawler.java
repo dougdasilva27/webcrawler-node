@@ -1,12 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -17,7 +15,6 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -27,8 +24,6 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MrestoqueunidasulCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Mr Estoque Unidasul";
@@ -38,15 +33,15 @@ public class MrestoqueunidasulCrawler extends Crawler {
    public MrestoqueunidasulCrawler(Session session) {
       super(session);
       config.setFetcher(FetchMode.FETCHER);
+      super.config.setParser(Parser.HTML);
    }
 
    @Override
-   protected Object fetch() {
+   protected Response fetchResponse() {
       String login = session.getOptions().optString("login");
       String password = session.getOptions().optString("password");
 
       Map<String, String> headers = new HashMap<>();
-
       headers.put("content-type", "application/x-www-form-urlencoded");
       headers.put("authority", "www.mrestoque.com.br");
 
@@ -59,6 +54,12 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setPayload(payload)
          .setFollowRedirects(false)
          .setCookies(cookies)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
          .build();
 
       Response responseLogin = this.dataFetcher.post(session, requestLogin);
@@ -69,6 +70,11 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setUrl("https://www.mrestoque.com.br" + responseLogin.getHeaders().get("location"))
          .setFollowRedirects(false)
          .setCookies(cookies)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
          .build();
 
       Response responseLogin2 = this.dataFetcher.get(session, requestLogin2);
@@ -77,6 +83,11 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setUrl("https://www.mrestoque.com.br" + responseLogin2.getHeaders().get("location"))
          .setFollowRedirects(false)
          .setCookies(cookies)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
          .build();
 
       Response responseLogin3 = this.dataFetcher.get(session, requestLogin3);
@@ -84,12 +95,17 @@ public class MrestoqueunidasulCrawler extends Crawler {
       Request requestProduct = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
          .setCookies(cookies)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
          .build();
 
       Response response = CrawlerUtils.retryRequest(requestProduct, session, this.dataFetcher, true);
 
-      return Jsoup.parse(response.getBody());
-
+      return response;
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
@@ -108,7 +124,7 @@ public class MrestoqueunidasulCrawler extends Crawler {
 
          String internalId = scrapInternalId(doc);
          String internalPid = scrapPid(doc);
-         String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product__images__grid img", "alt");
+         String name = scrapName(doc);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:nth-child(2)):not(:first-child) a");
          List<String> images = scrapImage(doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
@@ -138,6 +154,16 @@ public class MrestoqueunidasulCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapName(Document doc) {
+      String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product__images__grid img", "alt");
+
+      if (name == null || name.isEmpty()) {
+         name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-data h1", true);
+      }
+
+      return name;
    }
 
    private String scrapInternalId(Document doc) {
@@ -195,7 +221,6 @@ public class MrestoqueunidasulCrawler extends Crawler {
       }
 
       return description.toString();
-
    }
 
    private List<String> scrapImage(Document doc) {
@@ -223,7 +248,6 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .build());
 
       return offers;
-
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
@@ -244,7 +268,6 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setInstallmentNumber(1)
          .setInstallmentPrice(spotlightPrice)
          .build());
-
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
