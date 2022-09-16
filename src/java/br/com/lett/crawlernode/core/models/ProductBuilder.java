@@ -132,7 +132,12 @@ public class ProductBuilder {
    }
 
    public ProductBuilder setSecondaryImages(List<String> secondaryImages) {
-      this.secondaryImages = secondaryImages == null ? new ArrayList<>() : secondaryImages;
+      if (secondaryImages != null) {
+         this.secondaryImages = secondaryImages.size() > 32 ? secondaryImages.subList(0, 32) : secondaryImages;
+      } else {
+         this.secondaryImages = new ArrayList<>();
+      }
+
       return this;
    }
 
