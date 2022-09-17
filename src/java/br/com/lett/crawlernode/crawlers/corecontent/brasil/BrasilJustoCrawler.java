@@ -1,5 +1,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -15,14 +22,13 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.HttpHeaders;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class BrasilJustoCrawler extends Crawler {
    private static final String HOME_PAGE = "https://soujusto.com.br/";
@@ -31,9 +37,12 @@ public class BrasilJustoCrawler extends Crawler {
 
    public BrasilJustoCrawler(Session session) {
       super(session);
+
    }
 
-   private String getPostalCode() { return session.getOptions().getString("postal_code"); }
+   private String getPostalCode() {
+      return session.getOptions().getString("postal_code");
+   }
 
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(), Card.DINERS.toString());
 
@@ -54,27 +63,29 @@ public class BrasilJustoCrawler extends Crawler {
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
-
+      JSONObject data = new JSONObject();
       List<Product> products = new ArrayList<>();
       String jsonString = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
-      if(jsonString != null && !jsonString.isEmpty() && isProductPage(jsonString)){
+      JSONArray arr = JSONUtils.stringToJsonArray(jsonString);
+      if (arr != null && !arr.isEmpty()) {
+         String buildId = JSONUtils.getValueRecursive(arr, "0.props.pageProps.product.id", String.class);
+         data = fetchJSON(buildId);
+      }
+
+      if (jsonString != null && !jsonString.isEmpty() && data != null && !data.isEmpty()) {
          JSONArray dataArr = JSONUtils.stringToJsonArray(jsonString);
-         JSONObject data = JSONUtils.getValueRecursive(dataArr,"0", JSONObject.class);
+         JSONObject productJson = JSONUtils.getValueRecursive(dataArr,"0.props.pageProps.product", JSONObject.class);
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-
-
-         JSONObject contextSchema = CrawlerUtils.selectJsonFromHtml(doc, ".row.product.product__container > script", null, ";", true, true);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".shopping-list__content", "data-id");
+         String internalPid = productJson.optString("sku");
          String internalId = internalPid;
          List<String> eans = new ArrayList<>();
 
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc,".product-details__name", false);
-         boolean isAvailable = crawlAvailability(doc);
-         CategoryCollection categories = crawlCategories(doc);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image > img", List.of("data-src"), "https", "media.soujusto.com.br");
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__info-description-text", false);
-         Offers offers = isAvailable ? crawlOffers(doc) : new Offers();
+         String name = productJson.optString("name");
+         boolean isAvailable = crawlAvailability(productJson);
+         CategoryCollection categories = crawlCategories(productJson);
+         String primaryImage = JSONUtils.getValueRecursive(productJson, "images.0.url", String.class);
+         String description = productJson.optString("description");
+         Offers offers = isAvailable ? crawlOffers(data) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -90,28 +101,57 @@ public class BrasilJustoCrawler extends Crawler {
             .build();
 
          products.add(product);
-      }else {
+      } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
       return products;
    }
 
-   private boolean isProductPage(String  obj) {
+   private JSONObject fetchJSON(String buildId) {
+
+
+      String payload = "{\"operationName\":\"getProduct\",\"variables\":{\"productId\":\""+buildId+"\",\"onlyEnabledVariants\":true},\"query\":\"fragment TaxedMoneyFragment on TaxedMoney {\\n  gross {\\n    amount\\n    currency\\n    localized\\n    __typename\\n  }\\n  __typename\\n}\\n\\nfragment CategoryFragment on Category {\\n  id\\n  name\\n  __typename\\n}\\n\\nfragment ShoppingListFragment on ShoppingList {\\n  id\\n  name\\n  __typename\\n}\\n\\nfragment MoneyFragment on Money {\\n  localized\\n  amount\\n  currency\\n  __typename\\n}\\n\\nfragment ProductFragment on Product {\\n  id\\n  name\\n  isAvailable\\n  url\\n  sku\\n  maxQuantityAllowed\\n  label\\n  labelFontColor\\n  labelBackgroundColor\\n  showPriceWeightUnit\\n  variants {\\n    id\\n    name\\n    stockQuantity\\n    weightUnit\\n    isPiece\\n    bundle {\\n      discountPrice {\\n        ...MoneyFragment\\n        __typename\\n      }\\n      discountMinQuantity\\n      discountLabel\\n      __typename\\n    }\\n    maturationOptions {\\n      description\\n      name\\n      type\\n      __typename\\n    }\\n    __typename\\n  }\\n  shoppingList {\\n    ...ShoppingListFragment\\n    __typename\\n  }\\n  category {\\n    ...CategoryFragment\\n    __typename\\n  }\\n  thumbnail {\\n    url\\n    __typename\\n  }\\n  availability {\\n    discountPercentage\\n    lineMaturationOptions\\n    quantityOnCheckout\\n    variantOnCheckout\\n    priceRange {\\n      start {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      stop {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      __typename\\n    }\\n    priceRangeUndiscounted {\\n      start {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      stop {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n  __typename\\n}\\n\\nquery getProduct($productId: ID!, $onlyEnabledVariants: Boolean) {\\n  product(id: $productId, onlyEnabledVariants: $onlyEnabledVariants) {\\n    ...ProductFragment\\n    showPriceWeightUnit\\n    __typename\\n  }\\n}\\n\"}";
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      headers.put("authority", "soujusto.com.br");
+      headers.put("origin", "https://soujusto.com.br");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://soujusto.com.br/graphql/")
+         .setHeaders(headers)
+         .setCookies(this.cookies)
+         .setProxyservice(Arrays.asList(
+        
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
+         .mustSendContentEncoding(false)
+         .setPayload(payload)
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of( new FetcherDataFetcher(),new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
+
+      return CrawlerUtils.stringToJson(response.getBody());
+   }
+
+
+   private boolean isProductPage(String obj) {
       JSONArray data = JSONUtils.stringToJsonArray(obj);
-      String id = JSONUtils.getValueRecursive(data,"0.data.product.id", String.class);
-      if(id == null){
+      String id = JSONUtils.getValueRecursive(data, "0.data.product.id", String.class);
+      if (id == null) {
          return false;
       }
       return !id.isEmpty();
    }
 
-   private Offers crawlOffers(Document doc) throws OfferException, MalformedPricingException {
+   private Offers crawlOffers(JSONObject obj) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
+      Pricing pricing = scrapPricing(obj);
       List<String> sales = scrapSales(pricing);
 
-      if(pricing != null){
+      if (pricing != null) {
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
             .setSellerFullName(SELLER_FULL_NAME)
@@ -126,8 +166,8 @@ public class BrasilJustoCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double[] prices = scrapPrices(doc);
+   private Pricing scrapPricing(JSONObject obj) throws MalformedPricingException {
+      Double[] prices = scrapPrices(obj);
       Double priceFrom = null;
       Double spotlightPrice = null;
       if (prices.length >= 2) {
@@ -135,7 +175,7 @@ public class BrasilJustoCrawler extends Crawler {
          spotlightPrice = prices[1];
       }
 
-      if(spotlightPrice != null){
+      if (spotlightPrice != null) {
          CreditCards creditCards = scrapCreditCards(spotlightPrice);
          BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
@@ -147,22 +187,14 @@ public class BrasilJustoCrawler extends Crawler {
             .setCreditCards(creditCards)
             .setBankSlip(bankSlip)
             .build();
-      }else{
+      } else {
          return null;
       }
    }
 
-   private Double[] scrapPrices(Document doc){
-      Double spotlightPrice;
-      Double priceFrom;
-
-      if (doc.select(".product-details__discount").isEmpty()){
-         priceFrom = null;
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-details__price > span > span", null, true, ',', session);
-      }else{
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-details__discount", null, true, ',', session);
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-details__price > span > span", null, true, ',', session);
-      }
+   private Double[] scrapPrices(JSONObject obj) {
+      Double spotlightPrice = JSONUtils.getValueRecursive(obj, "data.product.availability.priceRange.start.gross.amount", Double.class);
+      Double priceFrom= JSONUtils.getValueRecursive(obj, "data.product.availability.priceRangeUndiscounted.start.gross.amount", Double.class);
 
       return new Double[]{priceFrom, spotlightPrice};
    }
@@ -196,20 +228,22 @@ public class BrasilJustoCrawler extends Crawler {
       return sales;
    }
 
-   private boolean crawlAvailability(Document doc){
-      return !doc.select(".product-details__price").isEmpty();
+   private boolean crawlAvailability(JSONObject obj) {
+      return obj.optBoolean("isAvailable");
    }
 
-   private CategoryCollection crawlCategories(Document doc){
+   private CategoryCollection crawlCategories(JSONObject obj) {
 
       CategoryCollection categories = new CategoryCollection();
-      JSONArray jsonCategories = CrawlerUtils.selectJsonArrayFromHtml(doc, "script#legacy-breadcrumb", null, ";", true, true);
+      JSONArray jsonCategories = JSONUtils.getValueRecursive(obj, "category.ancestors.edges", JSONArray.class);
+      categories.add(JSONUtils.getValueRecursive(obj, "category.name", String.class));
 
-      for (int i = 0; i < jsonCategories.length() - 1; i++) {
-         categories.add(jsonCategories.getJSONObject(i).optString("category"));
+      for (Object o:jsonCategories) {
+         JSONObject json = (JSONObject) o;
+         categories.add(JSONUtils.getValueRecursive(json, "node.name", String.class));
       }
 
-      categories.removeIf(c -> c.equals(""));
+
 
       return categories;
    }

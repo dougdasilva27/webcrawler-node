@@ -1,6 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -10,12 +14,15 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class BrasilJustoCrawler extends CrawlerRankingKeywords {
@@ -54,7 +61,7 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
          JSONObject product = products.getJSONObject(i).optJSONObject("node");
          String urlPath = product != null ? product.optString("url") : null;
          String internalId = product != null ? product.optString("sku") : null;
-         String internalPid = scrapInternalPid(urlPath);
+         String internalPid =internalId;
          String productUrl = HOME_PAGE + urlPath;
          String name = product != null ? product.optString("name") : null;;
          String imageUrl = product != null ? product.optJSONObject("thumbnail").optString("url") : null;
@@ -100,30 +107,29 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
          "}";
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/json");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      headers.put("authority", "soujusto.com.br");
+      headers.put("origin", "https://soujusto.com.br");
 
       Request request = Request.RequestBuilder.create()
-         .setUrl(url)
+         .setUrl("https://soujusto.com.br/graphql/")
          .setHeaders(headers)
          .setCookies(this.cookies)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
          .mustSendContentEncoding(false)
          .setPayload(payload)
          .build();
 
-      Response response = dataFetcher.post(session, request);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of( new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
+
 
       return CrawlerUtils.stringToJson(response.getBody());
    }
 
-   private String scrapInternalPid(String urlPath) {
-      String internalPid = null;
 
-      if (urlPath != null) {
-         if ( urlPath.split("/").length > 0) {
-            internalPid = urlPath.split("/")[urlPath.split("/").length - 1];
-         }
-      }
-
-      return internalPid;
-   }
 }
