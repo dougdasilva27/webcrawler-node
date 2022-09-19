@@ -74,7 +74,7 @@ public class BrasilJustoCrawler extends Crawler {
 
       if (jsonString != null && !jsonString.isEmpty() && data != null && !data.isEmpty()) {
          JSONArray dataArr = JSONUtils.stringToJsonArray(jsonString);
-         JSONObject productJson = JSONUtils.getValueRecursive(dataArr,"0.props.pageProps.product", JSONObject.class);
+         JSONObject productJson = JSONUtils.getValueRecursive(dataArr, "0.props.pageProps.product", JSONObject.class);
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalPid = productJson.optString("sku");
          String internalId = internalPid;
@@ -111,7 +111,7 @@ public class BrasilJustoCrawler extends Crawler {
    private JSONObject fetchJSON(String buildId) {
 
 
-      String payload = "{\"operationName\":\"getProduct\",\"variables\":{\"productId\":\""+buildId+"\",\"onlyEnabledVariants\":true},\"query\":\"fragment TaxedMoneyFragment on TaxedMoney {\\n  gross {\\n    amount\\n    currency\\n    localized\\n    __typename\\n  }\\n  __typename\\n}\\n\\nfragment CategoryFragment on Category {\\n  id\\n  name\\n  __typename\\n}\\n\\nfragment ShoppingListFragment on ShoppingList {\\n  id\\n  name\\n  __typename\\n}\\n\\nfragment MoneyFragment on Money {\\n  localized\\n  amount\\n  currency\\n  __typename\\n}\\n\\nfragment ProductFragment on Product {\\n  id\\n  name\\n  isAvailable\\n  url\\n  sku\\n  maxQuantityAllowed\\n  label\\n  labelFontColor\\n  labelBackgroundColor\\n  showPriceWeightUnit\\n  variants {\\n    id\\n    name\\n    stockQuantity\\n    weightUnit\\n    isPiece\\n    bundle {\\n      discountPrice {\\n        ...MoneyFragment\\n        __typename\\n      }\\n      discountMinQuantity\\n      discountLabel\\n      __typename\\n    }\\n    maturationOptions {\\n      description\\n      name\\n      type\\n      __typename\\n    }\\n    __typename\\n  }\\n  shoppingList {\\n    ...ShoppingListFragment\\n    __typename\\n  }\\n  category {\\n    ...CategoryFragment\\n    __typename\\n  }\\n  thumbnail {\\n    url\\n    __typename\\n  }\\n  availability {\\n    discountPercentage\\n    lineMaturationOptions\\n    quantityOnCheckout\\n    variantOnCheckout\\n    priceRange {\\n      start {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      stop {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      __typename\\n    }\\n    priceRangeUndiscounted {\\n      start {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      stop {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n  __typename\\n}\\n\\nquery getProduct($productId: ID!, $onlyEnabledVariants: Boolean) {\\n  product(id: $productId, onlyEnabledVariants: $onlyEnabledVariants) {\\n    ...ProductFragment\\n    showPriceWeightUnit\\n    __typename\\n  }\\n}\\n\"}";
+      String payload = "{\"operationName\":\"getProduct\",\"variables\":{\"productId\":\"" + buildId + "\",\"onlyEnabledVariants\":true},\"query\":\"fragment TaxedMoneyFragment on TaxedMoney {\\n  gross {\\n    amount\\n    currency\\n    localized\\n    __typename\\n  }\\n  __typename\\n}\\n\\nfragment CategoryFragment on Category {\\n  id\\n  name\\n  __typename\\n}\\n\\nfragment ShoppingListFragment on ShoppingList {\\n  id\\n  name\\n  __typename\\n}\\n\\nfragment MoneyFragment on Money {\\n  localized\\n  amount\\n  currency\\n  __typename\\n}\\n\\nfragment ProductFragment on Product {\\n  id\\n  name\\n  isAvailable\\n  url\\n  sku\\n  maxQuantityAllowed\\n  label\\n  labelFontColor\\n  labelBackgroundColor\\n  showPriceWeightUnit\\n  variants {\\n    id\\n    name\\n    stockQuantity\\n    weightUnit\\n    isPiece\\n    bundle {\\n      discountPrice {\\n        ...MoneyFragment\\n        __typename\\n      }\\n      discountMinQuantity\\n      discountLabel\\n      __typename\\n    }\\n    maturationOptions {\\n      description\\n      name\\n      type\\n      __typename\\n    }\\n    __typename\\n  }\\n  shoppingList {\\n    ...ShoppingListFragment\\n    __typename\\n  }\\n  category {\\n    ...CategoryFragment\\n    __typename\\n  }\\n  thumbnail {\\n    url\\n    __typename\\n  }\\n  availability {\\n    discountPercentage\\n    lineMaturationOptions\\n    quantityOnCheckout\\n    variantOnCheckout\\n    priceRange {\\n      start {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      stop {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      __typename\\n    }\\n    priceRangeUndiscounted {\\n      start {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      stop {\\n        ...TaxedMoneyFragment\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n  __typename\\n}\\n\\nquery getProduct($productId: ID!, $onlyEnabledVariants: Boolean) {\\n  product(id: $productId, onlyEnabledVariants: $onlyEnabledVariants) {\\n    ...ProductFragment\\n    showPriceWeightUnit\\n    __typename\\n  }\\n}\\n\"}";
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put("authority", "soujusto.com.br");
@@ -122,7 +122,7 @@ public class BrasilJustoCrawler extends Crawler {
          .setHeaders(headers)
          .setCookies(this.cookies)
          .setProxyservice(Arrays.asList(
-        
+
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
@@ -131,7 +131,7 @@ public class BrasilJustoCrawler extends Crawler {
          .setPayload(payload)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of( new FetcherDataFetcher(),new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
 
       return CrawlerUtils.stringToJson(response.getBody());
    }
@@ -194,8 +194,10 @@ public class BrasilJustoCrawler extends Crawler {
 
    private Double[] scrapPrices(JSONObject obj) {
       Double spotlightPrice = JSONUtils.getValueRecursive(obj, "data.product.availability.priceRange.start.gross.amount", Double.class);
-      Double priceFrom= JSONUtils.getValueRecursive(obj, "data.product.availability.priceRangeUndiscounted.start.gross.amount", Double.class);
-
+      Double priceFrom = JSONUtils.getValueRecursive(obj, "data.product.availability.priceRangeUndiscounted.start.gross.amount", Double.class);
+      if (Objects.equals(spotlightPrice, priceFrom)) {
+         priceFrom = null;
+      }
       return new Double[]{priceFrom, spotlightPrice};
    }
 
@@ -238,11 +240,10 @@ public class BrasilJustoCrawler extends Crawler {
       JSONArray jsonCategories = JSONUtils.getValueRecursive(obj, "category.ancestors.edges", JSONArray.class);
       categories.add(JSONUtils.getValueRecursive(obj, "category.name", String.class));
 
-      for (Object o:jsonCategories) {
+      for (Object o : jsonCategories) {
          JSONObject json = (JSONObject) o;
          categories.add(JSONUtils.getValueRecursive(json, "node.name", String.class));
       }
-
 
 
       return categories;
