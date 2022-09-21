@@ -53,7 +53,7 @@ public class MexicoDespensabodegaaurreraCrawler extends Crawler {
          .setPayload(body)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY
             )
          )
