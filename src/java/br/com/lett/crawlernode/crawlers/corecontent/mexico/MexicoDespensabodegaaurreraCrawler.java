@@ -4,10 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -37,10 +34,11 @@ public class MexicoDespensabodegaaurreraCrawler extends Crawler {
    public MexicoDespensabodegaaurreraCrawler(Session session) {
       super(session);
       config.setFetcher(FetchMode.JSOUP);
+      super.config.setParser(Parser.JSON);
    }
 
    @Override
-   protected JSONObject fetch() {
+   protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
       String slugUrl = CommonMethods.getLast(session.getOriginalURL().split("/"));
 
@@ -63,7 +61,7 @@ public class MexicoDespensabodegaaurreraCrawler extends Crawler {
          .build();
 
       Response response = this.dataFetcher.post(session, request);
-      return JSONUtils.stringToJson(response.getBody());
+      return response;
    }
 
    @Override
@@ -73,34 +71,36 @@ public class MexicoDespensabodegaaurreraCrawler extends Crawler {
 
       JSONArray productsArray = JSONUtils.getValueRecursive(json, "data.getProducts.products", JSONArray.class);
 
-      if (!productsArray.isEmpty()) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      if (productsArray != null) {
+         if(!productsArray.isEmpty()) {
+            Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONObject jsonProduct = productsArray.optJSONObject(0);
+            JSONObject jsonProduct = productsArray.optJSONObject(0);
 
-         String internalPid = jsonProduct.optString("sku");
-         String internalId = jsonProduct.optString("id");
-         String name = jsonProduct.optString("name");
-         CategoryCollection categories = scrapCategories(jsonProduct);
-         List<String> images = JSONUtils.jsonArrayToStringList(jsonProduct.optJSONArray("photosUrls"));
-         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-         String description = jsonProduct.optString("description");
-         boolean isAvailable = jsonProduct.getInt("stock") != 0;
-         Offers offers = isAvailable ? scrapOffers(jsonProduct) : new Offers();
+            String internalPid = jsonProduct.optString("sku");
+            String internalId = jsonProduct.optString("id");
+            String name = jsonProduct.optString("name");
+            CategoryCollection categories = scrapCategories(jsonProduct);
+            List<String> images = JSONUtils.jsonArrayToStringList(jsonProduct.optJSONArray("photosUrls"));
+            String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+            String description = jsonProduct.optString("description");
+            boolean isAvailable = jsonProduct.getInt("stock") != 0;
+            Offers offers = isAvailable ? scrapOffers(jsonProduct) : new Offers();
 
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setCategories(categories)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(images)
-            .setDescription(description)
-            .setOffers(offers)
-            .build();
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategories(categories)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(images)
+               .setDescription(description)
+               .setOffers(offers)
+               .build();
 
-         products.add(product);
+            products.add(product);
+         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
