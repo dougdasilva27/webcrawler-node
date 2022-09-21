@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -19,6 +20,8 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.kafka.common.security.JaasUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
@@ -43,9 +46,11 @@ public class MerqueoCrawler extends Crawler {
       JSONObject apiJson = scrapApiJson(session.getOriginalURL());
       JSONObject data = new JSONObject();
       JSONObject attributes = new JSONObject();
+      JSONArray included = new JSONArray();
 
       if (apiJson.has("data") && !apiJson.isNull("data")) {
-         data = apiJson.getJSONObject("data");
+         data = apiJson.optJSONObject("data");
+         included = apiJson.optJSONArray("included");
          attributes = data.optJSONObject("attributes");
       }
 
@@ -55,11 +60,12 @@ public class MerqueoCrawler extends Crawler {
          String internalId = String.valueOf(data.optInt("id"));
          String name = scrapName(attributes);
 
-         Offers offers = crawlOffers(attributes);
 
          String primaryImage = attributes.optString("image_large_url");
-         String description = data.optString("description");
+         List<String> secondaryImages = included != null ? scrapSecondaryImages(included, primaryImage) : new ArrayList<>();
+         String description = attributes.optString("description");
          Integer stock = crawlStock(data);
+         Offers offers = JSONUtils.getValueRecursive(data, "attributes.status", Boolean.class) ? crawlOffers(attributes) : new Offers();
          String url = verifyUrl();
          // Creating the product
          Product product = ProductBuilder.create()
@@ -68,6 +74,7 @@ public class MerqueoCrawler extends Crawler {
             .setName(name)
             .setOffers(offers)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setStock(stock)
             .build();
@@ -81,6 +88,22 @@ public class MerqueoCrawler extends Crawler {
       return products;
    }
 
+   List<String> scrapSecondaryImages(JSONArray data, String primaryImage) {
+      List<String> list = new ArrayList<>();
+      for (Object o : data) {
+         JSONObject obj = (JSONObject) o;
+         String type = obj.optString("type");
+         if (type != null && type.equals("images")) {
+            String image = JSONUtils.getValueRecursive(obj, "attributes.image_large_url", String.class);
+            if (image != null && !image.equals(primaryImage)) {
+               list.add(image);
+            }
+         }
+      }
+
+      return list;
+   }
+
    private String verifyUrl() {
       String country = session.getOptions().optString("country");
       if (country != null && country.equals("br")) {
@@ -89,7 +112,7 @@ public class MerqueoCrawler extends Crawler {
       return session.getOriginalURL();
    }
 
-   private String formatUrl(){
+   private String formatUrl() {
       return session.getOriginalURL().replace("https://merqueo.com/sao-paulo/", "https://merqueo.com.br/" + session.getOptions().optString("city") + "/" + session.getOptions().optString("locate") + "/");
    }
 
@@ -126,7 +149,7 @@ public class MerqueoCrawler extends Crawler {
       Request request = Request.RequestBuilder
          .create()
          .setUrl(apiUrl.toString())
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR,  ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
 
@@ -151,7 +174,11 @@ public class MerqueoCrawler extends Crawler {
 
 
    private Integer crawlStock(JSONObject data) {
-      return data.optInt("quantity", 0);
+      String quantity = JSONUtils.getValueRecursive(data, "attributes.status", String.class);
+      if (quantity != null) {
+         return Integer.parseInt(quantity);
+      }
+      return 0;
    }
 
    private Offers crawlOffers(JSONObject attributes) throws MalformedPricingException, OfferException {
