@@ -11,9 +11,11 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import models.Offer;
 import models.Offers;
 import models.pricing.CreditCard;
@@ -27,9 +29,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawler {
-   private static final String HOME_PAGE = "https://supermercado.laanonimaonline.com/";
    private static final String SELLER_FULL_NAME = "La anonima";
 
+   private String getLaAnonimaSucursalNombre(){return session.getOptions().optString("laanonimasucursalnombre");}
+
+   private String getLaAnonimaSucursal(){return session.getOptions().optString("laanonimasucursal");}
 
    public ArgentinaSupermercadolaanonimaonlinecipollettiCrawler(Session session) {
       super(session);
@@ -38,14 +42,14 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
    @Override
    public void handleCookiesBeforeFetch() {
 
-      BasicClientCookie cookie = new BasicClientCookie("laanonimasucursalnombre", "CIPOLLETTI");
-      cookie.setDomain("www.laanonimaonline.com");
+      BasicClientCookie cookie = new BasicClientCookie("laanonimasucursalnombre", getLaAnonimaSucursalNombre());
+      cookie.setDomain("supermercado.laanonimaonline.com");
       cookie.setPath("/");
       this.cookies.add(cookie);
 
 
-      BasicClientCookie cookie2 = new BasicClientCookie("laanonimasucursal", "22");
-      cookie2.setDomain("www.laanonimaonline.com");
+      BasicClientCookie cookie2 = new BasicClientCookie("laanonimasucursal", getLaAnonimaSucursal());
+      cookie2.setDomain("supermercado.laanonimaonline.com");
       cookie2.setPath("/");
       this.cookies.add(cookie2);
    }
@@ -112,7 +116,7 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
 
 
       CreditCards creditCards = new CreditCards();
-      Installments  installments = new Installments();
+      Installments installments = new Installments();
 
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentPrice(spotlightPrice)
@@ -172,9 +176,6 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
 
       return categories;
    }
-
-
-
 
 
 }
