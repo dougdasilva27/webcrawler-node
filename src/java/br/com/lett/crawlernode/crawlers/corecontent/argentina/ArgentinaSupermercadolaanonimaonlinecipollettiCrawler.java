@@ -31,9 +31,9 @@ import org.jsoup.select.Elements;
 public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "La anonima";
 
-   private String getLaAnonimaSucursalNombre(){return session.getOptions().optString("laanonimasucursalnombre");}
+   private String getLaAnonimaSucursalNombre(){return session.getOptions().optString("laanonimasucursalnombre","CIPOLLETTI");}
 
-   private String getLaAnonimaSucursal(){return session.getOptions().optString("laanonimasucursal");}
+   private String getLaAnonimaSucursal(){return session.getOptions().optString("laanonimasucursal","22");}
 
    public ArgentinaSupermercadolaanonimaonlinecipollettiCrawler(Session session) {
       super(session);
