@@ -16,7 +16,6 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import cdjd.org.apache.calcite.avatica.com.fasterxml.jackson.databind.node.BigIntegerNode;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -44,7 +43,6 @@ public class ColombiaMerqueoCrawler extends Crawler {
       Card.AMEX.toString());
    private static final String SELLER_FULL_NAME = "Merqueo Colombia";
 
-
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
@@ -67,11 +65,12 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
          String primaryImage = crawlPrimaryImage(data);
          List<String> secondaryImages = crawlSecondaryImage(data);
-         String description =  JSONUtils.getValueRecursive(data, "attributes.description", String.class);
+         String description = JSONUtils.getValueRecursive(data, "attributes.description", String.class);
+         String url = assembleProductUrl(session.getOriginalURL());
 
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
+            .setUrl(url)
             .setInternalId(internalId)
             .setName(name)
             .setOffers(offers)
@@ -91,6 +90,11 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
    }
 
+   private String assembleProductUrl(String originalURL) {
+      String slug = getSlug(originalURL);
+      return "https://merqueo.com/bogota/" + slug;
+   }
+
    private Offers crawlOffers(JSONObject data) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
 
@@ -105,27 +109,6 @@ public class ColombiaMerqueoCrawler extends Crawler {
          .build());
       return offers;
    }
-
-   private Integer crawlStock(JSONObject data) {
-      return data.optInt("quantity", 0);
-   }
-
-   private CategoryCollection crawlCategories(JSONObject data) {
-      CategoryCollection categories = new CategoryCollection();
-      JSONObject shelf = data.getJSONObject("shelf");
-
-      if (shelf != null && shelf.has("name")) {
-         categories.add(shelf.optString("name"));
-      }
-      shelf = data.getJSONObject("department");
-
-      if (shelf != null && shelf.has("name")) {
-         categories.add(shelf.optString("name"));
-      }
-
-      return categories;
-   }
-
 
    private String crawlPrimaryImage(JSONObject data) {
       String primaryImage;
@@ -171,19 +154,17 @@ public class ColombiaMerqueoCrawler extends Crawler {
       return image;
    }
 
-
    private String crawlName(JSONObject data) {
-      String name  = JSONUtils.getValueRecursive(data, "attributes.name", String.class);
-      if( name != null){
+      String name = JSONUtils.getValueRecursive(data, "attributes.name", String.class);
+      if (name != null) {
          String quantity = JSONUtils.getValueRecursive(data, "attributes.quantity", String.class);
          String unit = JSONUtils.getValueRecursive(data, "attributes.unit", String.class);
-         if(quantity != null && unit != null){
+         if (quantity != null && unit != null) {
             name += " " + quantity + " " + unit;
          }
       }
       return name;
    }
-
 
    //https://merqueo.com/api/3.1/stores/63/department/mascotas/shelf/higiene-de-la-mascota/products/shampoo-iki-pets-perros-botella-240-ml?zoneId=40
    private JSONObject scrapApiJson(String originalURL) {
@@ -204,10 +185,8 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
       apiUrl.append("?zoneId=");
       apiUrl.append(zoneId);
-      // apiUrl.append("&adq=1");
 
-      Request request = RequestBuilder
-         .create()
+      Request request = RequestBuilder.create()
          .setUrl(apiUrl.toString())
          .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
          .mustSendContentEncoding(false)
@@ -247,17 +226,16 @@ public class ColombiaMerqueoCrawler extends Crawler {
       return data.has("id");
    }
 
-
    private Pricing crawlpricing(JSONObject data) throws MalformedPricingException {
       Integer spotLightPriceInt = JSONUtils.getValueRecursive(data, "attributes.special_price", Integer.class);
       Double spotLightprice = null;
-      if(spotLightPriceInt != null){
-        spotLightprice = (double) spotLightPriceInt;
+      if (spotLightPriceInt != null) {
+         spotLightprice = (double) spotLightPriceInt;
          spotLightprice = spotLightprice == 0d ? null : spotLightprice;
       }
       Integer priceFromInt = JSONUtils.getValueRecursive(data, "attributes.price", Integer.class);
       Double priceFrom = null;
-      if(priceFromInt != null){
+      if (priceFromInt != null) {
          priceFrom = (double) priceFromInt;
       }
 
