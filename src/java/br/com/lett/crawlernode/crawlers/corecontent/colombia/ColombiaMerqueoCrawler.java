@@ -43,7 +43,6 @@ public class ColombiaMerqueoCrawler extends Crawler {
       Card.AMEX.toString());
    private static final String SELLER_FULL_NAME = "Merqueo Colombia";
 
-
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
@@ -67,7 +66,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
          String primaryImage = crawlPrimaryImage(data);
          List<String> secondaryImages = crawlSecondaryImage(data);
          String description = JSONUtils.getValueRecursive(data, "attributes.description", String.class);
-         String url = assemblyUrl(session.getOriginalURL());
+         String url = assembleProductUrl(session.getOriginalURL());
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -91,7 +90,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
    }
 
-   private String assemblyUrl(String originalURL) {
+   private String assembleProductUrl(String originalURL) {
       String slug = getSlug(originalURL);
       return "https://merqueo.com/bogota/" + slug;
    }
@@ -110,27 +109,6 @@ public class ColombiaMerqueoCrawler extends Crawler {
          .build());
       return offers;
    }
-
-   private Integer crawlStock(JSONObject data) {
-      return data.optInt("quantity", 0);
-   }
-
-   private CategoryCollection crawlCategories(JSONObject data) {
-      CategoryCollection categories = new CategoryCollection();
-      JSONObject shelf = data.getJSONObject("shelf");
-
-      if (shelf != null && shelf.has("name")) {
-         categories.add(shelf.optString("name"));
-      }
-      shelf = data.getJSONObject("department");
-
-      if (shelf != null && shelf.has("name")) {
-         categories.add(shelf.optString("name"));
-      }
-
-      return categories;
-   }
-
 
    private String crawlPrimaryImage(JSONObject data) {
       String primaryImage;
@@ -176,7 +154,6 @@ public class ColombiaMerqueoCrawler extends Crawler {
       return image;
    }
 
-
    private String crawlName(JSONObject data) {
       String name = JSONUtils.getValueRecursive(data, "attributes.name", String.class);
       if (name != null) {
@@ -188,7 +165,6 @@ public class ColombiaMerqueoCrawler extends Crawler {
       }
       return name;
    }
-
 
    //https://merqueo.com/api/3.1/stores/63/department/mascotas/shelf/higiene-de-la-mascota/products/shampoo-iki-pets-perros-botella-240-ml?zoneId=40
    private JSONObject scrapApiJson(String originalURL) {

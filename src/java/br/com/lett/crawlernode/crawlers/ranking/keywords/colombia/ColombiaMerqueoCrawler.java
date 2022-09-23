@@ -1,19 +1,18 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
-import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,12 +24,13 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
    public ColombiaMerqueoCrawler(Session session) {
       super(session);
    }
+
    private final String zoneId = session.getOptions().optString("zoneId");
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
-      String url = "https://merqueo.com/api/3.1/stores/63/search?q=" + this.keywordEncoded + "&page=" + this.currentPage + "&per_page=50&zoneId="+zoneId+"&sort_by=relevance";
+      String url = "https://merqueo.com/api/3.1/stores/63/search?q=" + this.keywordEncoded + "&page=" + this.currentPage + "&per_page=50&zoneId=" + zoneId + "&sort_by=relevance";
       this.log("Link onde são feitos os crawlers: " + url);
 
       JSONObject apiJson = fetchApiProducts(url);
@@ -58,7 +58,9 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
                String image = attributes.optString("image_large_url");
                Integer price = crawlPrice(attributes);
                boolean available = attributes.getBoolean("status");
-               if(!available){ price = null;}
+               if (!available) {
+                  price = null;
+               }
 
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
@@ -116,20 +118,17 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
 
       if (included.has("attributes") && !included.isNull("attributes")) {
          JSONObject attributes = included.getJSONObject("attributes");
-            productUrl = productUrl
-               .concat("https://merqueo.com/")
-               .concat(attributes.optString("city"))
-               .concat("/")
-               .concat("super-ahorro/")
-               .concat(attributes.optString("department"))
-               .concat("/")
-               .concat(attributes.optString("shelf"))
-               .concat("/")
-               .concat(attributes.optString("product"))
-               .concat("?viewImage=1&search=")
-               .concat(keywordEncoded);
+         productUrl = productUrl
+            .concat("https://merqueo.com/")
+            .concat(attributes.optString("city"))
+            .concat("/")
+            .concat("super-ahorro/")
+            .concat(attributes.optString("department"))
+            .concat("/")
+            .concat(attributes.optString("shelf"))
+            .concat("/")
+            .concat(attributes.optString("product"));
       }
-
 
       return productUrl;
    }
@@ -143,16 +142,15 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
-            ))
+         ))
          .build();
       Response responseApi = this.dataFetcher.post(session, request);
 
       int tries = 0;
-      while(!responseApi.isSuccess() && tries < 3) {
+      while (!responseApi.isSuccess() && tries < 3) {
          tries++;
          responseApi = new JsoupDataFetcher().post(session, request);
       }
       return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
    }
-
 }
