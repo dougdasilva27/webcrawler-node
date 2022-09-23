@@ -31,14 +31,6 @@ import org.jsoup.select.Elements;
 public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "La anonima";
 
-   private String getLaAnonimaSucursalNombre() {
-      return session.getOptions().optString("laanonimasucursalnombre", "CIPOLLETTI");
-   }
-
-   private String getLaAnonimaSucursal() {
-      return session.getOptions().optString("laanonimasucursal", "22");
-   }
-
    public ArgentinaSupermercadolaanonimaonlinecipollettiCrawler(Session session) {
       super(session);
    }
@@ -46,13 +38,13 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
    @Override
    public void handleCookiesBeforeFetch() {
 
-      BasicClientCookie cookie = new BasicClientCookie("laanonimasucursalnombre", getLaAnonimaSucursalNombre());
+      BasicClientCookie cookie = new BasicClientCookie("laanonimasucursalnombre", "CIPOLLETTI");
       cookie.setDomain("supermercado.laanonimaonline.com");
       cookie.setPath("/");
       this.cookies.add(cookie);
 
 
-      BasicClientCookie cookie2 = new BasicClientCookie("laanonimasucursal", getLaAnonimaSucursal());
+      BasicClientCookie cookie2 = new BasicClientCookie("laanonimasucursal", "22");
       cookie2.setDomain("supermercado.laanonimaonline.com");
       cookie2.setPath("/");
       this.cookies.add(cookie2);
@@ -145,12 +137,10 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
       return doc.selectFirst("#id_item") != null;
    }
 
-
    private String crawlInternalPid(Document doc) {
       String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[id*=prod_]", "id");
       return CommonMethods.getLast(internalPid.split("prod_"));
    }
-
 
    private Double crawlPrice(Document doc) {
       return CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precio.destacado", null, false, ',', session);
@@ -160,7 +150,6 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
       String style = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[id*=btnagregarcarritosinstock]", "style");
       return style != null && style.contains("display:none");
    }
-
 
    private String crawlPrimaryImage(Document doc) {
       return CrawlerUtils.scrapSimplePrimaryImage(doc, "#img_producto img", Arrays.asList("src"), "https:", "d1on8qs0xdu5jz.cloudfront.net");
@@ -180,6 +169,4 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
 
       return categories;
    }
-
-
 }
