@@ -16,7 +16,6 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import cdjd.org.apache.calcite.avatica.com.fasterxml.jackson.databind.node.BigIntegerNode;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -67,11 +66,12 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
          String primaryImage = crawlPrimaryImage(data);
          List<String> secondaryImages = crawlSecondaryImage(data);
-         String description =  JSONUtils.getValueRecursive(data, "attributes.description", String.class);
+         String description = JSONUtils.getValueRecursive(data, "attributes.description", String.class);
+         String url = assemblyUrl(session.getOriginalURL());
 
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
+            .setUrl(url)
             .setInternalId(internalId)
             .setName(name)
             .setOffers(offers)
@@ -89,6 +89,11 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private String assemblyUrl(String originalURL) {
+      String slug = getSlug(originalURL);
+      return "https://merqueo.com/bogota/" + slug;
    }
 
    private Offers crawlOffers(JSONObject data) throws MalformedPricingException, OfferException {
@@ -173,11 +178,11 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
 
    private String crawlName(JSONObject data) {
-      String name  = JSONUtils.getValueRecursive(data, "attributes.name", String.class);
-      if( name != null){
+      String name = JSONUtils.getValueRecursive(data, "attributes.name", String.class);
+      if (name != null) {
          String quantity = JSONUtils.getValueRecursive(data, "attributes.quantity", String.class);
          String unit = JSONUtils.getValueRecursive(data, "attributes.unit", String.class);
-         if(quantity != null && unit != null){
+         if (quantity != null && unit != null) {
             name += " " + quantity + " " + unit;
          }
       }
@@ -204,10 +209,8 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
       apiUrl.append("?zoneId=");
       apiUrl.append(zoneId);
-      // apiUrl.append("&adq=1");
 
-      Request request = RequestBuilder
-         .create()
+      Request request = RequestBuilder.create()
          .setUrl(apiUrl.toString())
          .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
          .mustSendContentEncoding(false)
@@ -247,17 +250,16 @@ public class ColombiaMerqueoCrawler extends Crawler {
       return data.has("id");
    }
 
-
    private Pricing crawlpricing(JSONObject data) throws MalformedPricingException {
       Integer spotLightPriceInt = JSONUtils.getValueRecursive(data, "attributes.special_price", Integer.class);
       Double spotLightprice = null;
-      if(spotLightPriceInt != null){
-        spotLightprice = (double) spotLightPriceInt;
+      if (spotLightPriceInt != null) {
+         spotLightprice = (double) spotLightPriceInt;
          spotLightprice = spotLightprice == 0d ? null : spotLightprice;
       }
       Integer priceFromInt = JSONUtils.getValueRecursive(data, "attributes.price", Integer.class);
       Double priceFrom = null;
-      if(priceFromInt != null){
+      if (priceFromInt != null) {
          priceFrom = (double) priceFromInt;
       }
 
