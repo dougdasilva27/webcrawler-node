@@ -16,6 +16,7 @@ import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,11 +57,11 @@ public class BrasilAlegrapetCrawler extends CrawlerRankingKeywords {
 
          for (Element product : products) {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "li >div > div.variants.hide-on-mobile > form", "data-id");
-            String productUrl = CrawlerUtils.scrapUrl(product, "div > ul > li > div > div.image > a.href", "", "https", "www.alegrapet.com.br");
+            String productUrl = CrawlerUtils.scrapUrl(product, "body > div.application > div.wrapper > main > div > div > div > div.col-content > div.catalog-content > div > ul > li > div > a", "href", "https", "www.alegrapet.com.br");
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, "li >div > a > div.product-name", false);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "ul > li > div > div.image > a > img", "data-src");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "div > ul > li > div > a > div.down-line > div > div.price > div > span", null, true, ',', session, null);
-            boolean isAvailable = price != null;
+            boolean isAvailable = product.selectFirst("li > div > div.variants.hide-on-mobile > form > div > button") != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
