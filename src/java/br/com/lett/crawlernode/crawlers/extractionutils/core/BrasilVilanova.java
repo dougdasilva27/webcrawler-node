@@ -175,7 +175,7 @@ public class BrasilVilanova extends Crawler {
             for (Element variation : variations) {
                String name = getName(doc, variation);
                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, ".item.picking", "data-sku-id");
-               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(variation, ".product-gallery-image", Arrays.asList("src"), "https", "www.vilanova.com.br");
+               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-gallery-image", Arrays.asList("src"), "https", "www.vilanova.com.br");
 
                boolean isAvailable = doc.selectFirst(".product-details-footer .btn.btn-primary.btn-comprar-produto") != null;
                Offers offers = isAvailable ? scrapOffers(variation) : new Offers();
