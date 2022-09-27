@@ -53,7 +53,21 @@ public class ProxyCollection {
    public static final String NETNUT_RESIDENTIAL_US_HAPROXY = "netnut_residential_us_haproxy";
    public static final String NETNUT_RESIDENTIAL_PT_HAPROXY = "netnut_residential_pt_haproxy";
 
+   public static final String SMART_PROXY_BR_HAPROXY = "smart_proxy_br_haproxy";
+   public static final String SMART_PROXY_US_HAPROXY = "smart_proxy_us_haproxy";
+   public static final String SMART_PROXY_CL_HAPROXY = "smart_proxy_cl_haproxy";
+   public static final String SMART_PROXY_PE_HAPROXY = "smart_proxy_pe_haproxy";
+   public static final String SMART_PROXY_AR_HAPROXY = "smart_proxy_ar_haproxy";
+   public static final String SMART_PROXY_MX_HAPROXY = "smart_proxy_mx_haproxy";
+   public static final String SMART_PROXY_CO_HAPROXY = "smart_proxy_co_haproxy";
 
+   public static final String SMART_PROXY_BR = "smart_proxy_br";
+   public static final String SMART_PROXY_US = "smart_proxy_us";
+   public static final String SMART_PROXY_CL = "smart_proxy_cl";
+   public static final String SMART_PROXY_PE = "smart_proxy_pe";
+   public static final String SMART_PROXY_AR = "smart_proxy_ar";
+   public static final String SMART_PROXY_MX = "smart_proxy_mx";
+   public static final String SMART_PROXY_CO = "smart_proxy_co";
 
    // EQI PROXIES
    public static final String INFATICA_RESIDENTIAL_BR_EQI = "infatica_residential_br_eqi";
