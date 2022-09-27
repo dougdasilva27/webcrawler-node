@@ -81,10 +81,9 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setPayload(payloadString)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
          ))
          .build();
 
@@ -116,10 +115,9 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setUrl(LOGIN_URL)
          .setPayload(payload.toString())
          .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
          ))
          .setHeaders(headers)
          .build();
@@ -135,15 +133,14 @@ public class BrasilLojamondelezCrawler extends Crawler {
       Request request = RequestBuilder.create()
          .setUrl(session.getOriginalURL())
          .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
          ))
          .setHeaders(headers)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), this.dataFetcher, new ApacheDataFetcher()), session, "get");
 
       return response;
    }
