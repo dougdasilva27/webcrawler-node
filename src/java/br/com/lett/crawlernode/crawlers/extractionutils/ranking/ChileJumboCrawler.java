@@ -115,7 +115,6 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
    private JSONObject fetchProducts() {
       String url = "https://apijumboweb.smdigital.cl/catalog/api/v1/search/" + keywordWithoutAccents.toLowerCase().replace(" ", "%20") + "?page=" + this.currentPage;
 
-                  //https://apijumboweb.smdigital.cl/catalog/api/v1/search/afeitadora?page=1
       Map<String, String> headers = new HashMap<>();
       headers.put("x-api-key", API_KEY);
       headers.put("authority", "apijumboweb.smdigital.cl");
