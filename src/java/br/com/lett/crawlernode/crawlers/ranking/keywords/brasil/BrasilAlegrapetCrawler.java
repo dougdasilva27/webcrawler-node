@@ -28,8 +28,8 @@ public class BrasilAlegrapetCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url) {
-      Map<String,String> headers = new HashMap<>();
-      headers.put("Connection","keep-alive");
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Connection", "keep-alive");
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
@@ -57,10 +57,10 @@ public class BrasilAlegrapetCrawler extends CrawlerRankingKeywords {
 
          for (Element product : products) {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "li >div > div.variants.hide-on-mobile > form", "data-id");
-            String productUrl = CrawlerUtils.scrapUrl(product, "body > div.application > div.wrapper > main > div > div > div > div.col-content > div.catalog-content > div > ul > li > div > a", "href", "https", "www.alegrapet.com.br");
+            String productUrl = CrawlerUtils.scrapUrl(product, ".product.nb.show-down > a", "href", "https", "www.alegrapet.com.br");
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, "li >div > a > div.product-name", false);
-            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "ul > li > div > div.image > a > img", "data-src");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "div > ul > li > div > a > div.down-line > div > div.price > div > span", null, true, ',', session, null);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".lazyload.transform", "data-src");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".price-off", null, true, ',', session, null);
             boolean isAvailable = product.selectFirst("li > div > div.variants.hide-on-mobile > form > div > button") != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
