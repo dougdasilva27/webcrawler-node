@@ -83,6 +83,7 @@ public class BrasilAlegrapetCrawler extends Crawler {
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setName(productName)
+            .setInternalId(internalPid)
             .setInternalPid(internalPid)
             .setDescription(description)
             .setCategories(categories)
