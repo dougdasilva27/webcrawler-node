@@ -115,11 +115,11 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
    private JSONObject fetchProducts() {
       String url = "https://apijumboweb.smdigital.cl/catalog/api/v1/search/" + keywordWithoutAccents.toLowerCase().replace(" ", "%20") + "?page=" + this.currentPage;
 
+                  //https://apijumboweb.smdigital.cl/catalog/api/v1/search/afeitadora?page=1
       Map<String, String> headers = new HashMap<>();
       headers.put("x-api-key", API_KEY);
       headers.put("authority", "apijumboweb.smdigital.cl");
       headers.put("content-type", "application/json");
-      headers.put("Connection", "keep-alive");
       headers.put("origin", "https://www.jumbo.cl");
       headers.put("referer", "https://www.jumbo.cl/");
       headers.put("x-requested-with", "XMLHttpRequest");
@@ -130,7 +130,6 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
-         .setSendUserAgent(true)
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
@@ -141,7 +140,7 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
          )
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
       return CrawlerUtils.stringToJson(response.getBody());
    }
 
