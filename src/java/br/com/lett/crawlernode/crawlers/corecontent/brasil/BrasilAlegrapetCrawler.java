@@ -101,7 +101,7 @@ public class BrasilAlegrapetCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document document) {
-      return document.selectFirst(".page-content") != null;
+      return document.selectFirst("#product-container > div.clearfix") != null;
    }
 
    private List<String> getSecondaryImages(Document doc) {
