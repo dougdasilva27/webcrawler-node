@@ -182,12 +182,19 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    private boolean checkProductEquals(JSONObject productJson, JSONObject searchProduct) {
+      String productId = productJson.optString("product_id");
       String productName = productJson.optString("name");
       String productDescription = crawlDescription(productJson);
       String productImage = crawlImage(productJson);
+
+      String idProductSearch = searchProduct.optString("product_id");
       String nameProductSearch = searchProduct.optString("name");
       String descriptionProductSearch = searchProduct.optString("description");
       String imageProductSearch = searchProduct.optString("image");
+
+      if (productId != null && productId.equals(idProductSearch)) {
+         return true;
+      }
 
       if (imageProductSearch != null && imageProductSearch.equals(productImage)) {
          return true;
