@@ -1,130 +1,106 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.peru;
 
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.VtexRankingKeywordsNew;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-import java.util.Collections;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Arrays;
 
-public class PeruWongCrawler extends CrawlerRankingKeywords {
+public class PeruWongCrawler extends VtexRankingKeywordsNew {
 
+   private static final String HOME_PAGE = "https://www.wong.pe";
+   private String storeSaleChannel = session.getOptions().optString("store-sale-channel");
+   private String storeName = session.getOptions().optString("store-name");
    public PeruWongCrawler(Session session) {
       super(session);
    }
 
-   private Document fetchPage(String url){
-      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(url).build();
-      Response response = new ApacheDataFetcher().get(session, request);
-      return Jsoup.parse(response.getBody());
+   @Override
+   protected String setHomePage() {return HOME_PAGE;}
+
+   @Override
+   protected JSONArray fetchPage(String url) {
+      BasicClientCookie cookie = new BasicClientCookie("store-sale-channel", storeSaleChannel);
+      cookie.setPath("/");
+      cookie.setDomain(".www.wong.pe");
+      cookies.add(cookie);
+
+      BasicClientCookie cookie2 = new BasicClientCookie("store-name", storeName);
+      cookie2.setPath("/");
+      cookie2.setDomain(".www.wong.pe");
+      cookies.add(cookie2);
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_MX,ProxyCollection.BONANZA,ProxyCollection.BUY))
+         .build();
+
+      Response response = dataFetcher.get(session, request);
+
+      return CrawlerUtils.stringToJsonArray(response.getBody());
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      this.pageSize = 18;
-      this.log("Página " + this.currentPage);
+   protected void extractProductsFromCurrentPage() {
+      String url = HOME_PAGE + "/api/catalog_system/pub/products/search/" + keywordEncoded.replace("+", "%20")+"?&" + storeSaleChannel+ "&_from=" + ((currentPage - 1) * pageSize) +
+         "&_to=" + ((currentPage) * pageSize);
 
-      String url =
-         "https://www.wong.pe/busca/?ft=" + this.keywordEncoded + "&PageNumber=" + this.currentPage;
+      JSONArray products = fetchPage(url);
 
-      this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = fetchPage(url);
-      Elements products = this.currentDoc.select(".product-shelf .product-item");
+      for (Object object : products) {
 
-      if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts();
+         JSONObject product = (JSONObject) object;
+         String productUrl = product.optString("link");
+         String internalPid = product.optString("productId");
+         String name = product.optString("productName");
+
+         JSONObject itemData = (JSONObject) product.optQuery("/items/0");
+         String image = null;
+         int priceInCents = 0;
+         boolean isAvailable = false;
+
+         if(itemData != null) {
+            JSONArray images = itemData.optJSONArray("images");
+            JSONArray sellers = itemData.optJSONArray("sellers");
+            image = crawlImage(images);
+
+            if(sellers != null && sellers.length() > 0) {
+               JSONObject seller = sellers.optJSONObject(0);
+               JSONObject commertialOffer = seller.optJSONObject("commertialOffer");
+
+               priceInCents = crawlPrice(commertialOffer);
+               isAvailable = commertialOffer.optBoolean("IsAvailable");
+            }
          }
-         for (Element e : products) {
 
-            String internalId = crawlInternalId(e);
-            String productPid = crawlProductPid(e);
-            String productUrl = crawlProductUrl(e);
-            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-item__image-link img", Collections.singletonList("src"), "https", "wongfood.vteximg.com.br");
-            String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item__name", "title");
-            Integer price = crawlPrice(e, 0);
-            boolean isAvailable = price != 0;
-
-            RankingProduct productRanking = RankingProductBuilder.create()
+         try {
+            RankingProduct rankingProduct = RankingProductBuilder.create()
+               .setInternalPid(internalPid)
                .setUrl(productUrl)
-               .setInternalId(internalId)
-               .setInternalPid(productPid)
-               .setImageUrl(imgUrl)
                .setName(name)
-               .setPriceInCents(price)
+               .setImageUrl(image)
+               .setPriceInCents(priceInCents)
                .setAvailability(isAvailable)
                .build();
 
-            saveDataProduct(productRanking);
-
-            if (this.arrayProducts.size() == productsLimit)
-               break;
-         }
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
-      }
-
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-         + this.arrayProducts.size() + " produtos crawleados");
-   }
-
-   @Override
-   protected void setTotalProducts() {
-      Element totalElement = this.currentDoc.select(".resultado-busca-numero .value").first();
-
-      if (totalElement != null) {
-         String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
-
-         if (!text.isEmpty()) {
-            this.totalProducts = Integer.parseInt(text);
+            saveDataProduct(rankingProduct);
+         } catch (MalformedProductException e) {
+            this.log(e.getMessage());
          }
 
-         this.log("Total da busca: " + this.totalProducts);
-      }
-   }
-
-   private String crawlInternalId(Element e) { //.
-      String text = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item__data--sku ul li", false);
-      return text != null && !text.isEmpty() ? CommonMethods.substring(text, "{\"", "\":", true) : null;
-
-   }
-
-   private String crawlProductPid(Element e) {
-      return e.attr("data-id");
-   }
-
-   private String crawlProductUrl(Element e) {
-      return e.attr("data-uri");
-   }
-
-   private Integer crawlPrice(Element e, Integer defaultValue) {
-      Integer priceInCents = defaultValue;
-      String priceStr = CrawlerUtils.scrapStringSimpleInfo(e, ".product-prices__value--best-price", false);
-
-      if (priceStr != null) {
-         String regex = "([0-9]+\\.[0-9]+)";
-         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-         Matcher matcher = pattern.matcher(priceStr);
-
-         if (matcher.find()) {
-            priceStr = matcher.group(0);
-            priceInCents = CommonMethods.stringPriceToIntegerPrice(priceStr, '.', defaultValue);
+         if (this.arrayProducts.size() == productsLimit) {
+            break;
          }
       }
-
-      return priceInCents;
    }
 }
