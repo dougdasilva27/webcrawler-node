@@ -56,17 +56,14 @@ public class BrasilVilanova extends Crawler {
 
    public String getPassword() {
       return session.getOptions().optString("password");
-
    }
 
    public String getSellerFullname() {
       return session.getOptions().optString("seller");
-
    }
 
    @Override
    protected Object fetch() {
-
       Document doc = new Document("");
 
       try {
@@ -77,15 +74,13 @@ public class BrasilVilanova extends Crawler {
          options.addArguments("--no-sandbox");
          options.addArguments("--disable-dev-shm-usage");
 
-         List<String> proxies = Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
+         List<String> proxies = Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
          int attemp = 0;
-         do{
-            if (attemp != 0){
-               webdriver.terminate();
-            }
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(),  proxies.get(attemp), session, this.cookiesWD, HOME_PAGE, options);
+         do {
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attemp), session, this.cookiesWD, HOME_PAGE, options);
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
          } while (doc.select("body").isEmpty() && attemp++ < 3);
 
          webdriver.waitLoad(10000);
@@ -104,7 +99,6 @@ public class BrasilVilanova extends Crawler {
          webdriver.clickOnElementViaJavascript(openlogin);
          waitForElement(webdriver.driver, "#fazer-login");
          webdriver.findAndClick("#fazer-login", 2000);
-
 
          Logging.printLogDebug(logger, session, "Sending credentials...");
 
@@ -144,12 +138,14 @@ public class BrasilVilanova extends Crawler {
       } catch (Exception e) {
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
          Logging.printLogWarn(logger, "login não realizado");
+      } finally {
+         if (webdriver != null) {
+            webdriver.terminate();
+         }
       }
 
       return doc;
-
    }
-
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
       WebDriverWait wait = new WebDriverWait(driver, 20);
@@ -173,15 +169,15 @@ public class BrasilVilanova extends Crawler {
             List<String> eans = singletonList(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".variacao-container", "data-produtoean"));
             CategoryCollection categories = scrapCategories(jsonProduct);
             String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".tab-content"));
-            //cannot find any secondary image
-            Elements variations = doc.select(".product-details-body  .owl-item.active");
+
+            Elements variations = doc.select(".product-details-body .owl-item.active");
 
             for (Element variation : variations) {
                String name = getName(doc, variation);
                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, ".item.picking", "data-sku-id");
-               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(variation, ".item", Arrays.asList("data-foto"), "https", "www.vilanova.com.br");
+               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-gallery-image", Arrays.asList("src"), "https", "www.vilanova.com.br");
 
-               boolean isAvailable = doc.selectFirst(".product-details-footer  .btn.btn-primary.btn-comprar-produto") != null;
+               boolean isAvailable = doc.selectFirst(".product-details-footer .btn.btn-primary.btn-comprar-produto") != null;
                Offers offers = isAvailable ? scrapOffers(variation) : new Offers();
 
                Product product = ProductBuilder.create()
