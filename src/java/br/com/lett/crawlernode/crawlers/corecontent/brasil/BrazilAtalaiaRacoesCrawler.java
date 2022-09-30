@@ -54,7 +54,7 @@ public class BrazilAtalaiaRacoesCrawler extends Crawler {
          String internalId = jsonObject.optString("idproduto");
          String name = jsonObject.optString("nome");
          String id = jsonObject.optString("id");
-         String primaryImage = id != null && !id.isEmpty() ? "https://content.lifeapps.com.br/superon/imagens/" + id + ".jpg" : null;
+         String primaryImage = getPrimaryImage(jsonObject);
          String description = jsonObject.optString("descricaolonga");
          String stock = jsonObject.optString("maximo_disponivel");
          Offers offers = checkAvailability(stock) ? scrapOffers(jsonObject) : new Offers();
@@ -77,6 +77,11 @@ public class BrazilAtalaiaRacoesCrawler extends Crawler {
 
       return products;
    }
+   private String getPrimaryImage(JSONObject product) {
+      String id = product.optString("id");
+      return id != null && !id.isEmpty() ? "https://content.lifeapps.com.br/superon/imagens/" + id + ".jpg" : null;
+   }
+
 
    private Integer scrapStock(JSONObject data) {
       int stock = data.optInt("maximo_disponivel");
@@ -87,14 +92,13 @@ public class BrazilAtalaiaRacoesCrawler extends Crawler {
    }
 
    private boolean checkAvailability(String stock) {
-      if (!stock.isEmpty()) {
+      if (stock != null && !stock.isEmpty()) {
          stock = stock.replaceAll("\\.", "");
-         if (stock != null) {
-            Integer stockInt = Integer.parseInt(stock);
-            if (stockInt > 0) {
-               return true;
-            }
+         Integer stockInt = Integer.parseInt(stock);
+         if (stockInt > 0) {
+            return true;
          }
+
       }
       return false;
    }

@@ -35,12 +35,10 @@ public class BrasilAtalaiaRacoesCrawler extends CrawlerRankingKeywords {
       if (products != null && !products.isEmpty()) {
          for (Object e : products) {
             JSONObject product = (JSONObject) e;
-            String slug = product.optString("slug");
-            String productUrl = slug != null && !slug.isEmpty() ? "https://loja.atalaiaracoes.com.br/store/produto/" + slug : null;
+            String productUrl = getUrl(product);
             String internalId = product.optString("idproduto");
             String name = product.optString("nome");
-            String id = product.optString("id");
-            String imgUrl = id != null && !id.isEmpty() ? "https://content.lifeapps.com.br/superon/imagens/" + id + ".jpg" : null;
+            String imgUrl = getPrimaryImage(product);
             Integer price = getPrice(product);
             String stock = product.optString("maximo_disponivel");
             boolean isAvailable = checkAvailability(stock);
@@ -61,6 +59,16 @@ public class BrasilAtalaiaRacoesCrawler extends CrawlerRankingKeywords {
       }
    }
 
+   private String getPrimaryImage(JSONObject product) {
+      String id = product.optString("id");
+      return id != null && !id.isEmpty() ? "https://content.lifeapps.com.br/superon/imagens/" + id + ".jpg" : null;
+   }
+
+   private String getUrl(JSONObject product) {
+      String slug = product.optString("slug");
+      return slug != null && !slug.isEmpty() ? "https://loja.atalaiaracoes.com.br/store/produto/" + slug : null;
+   }
+
    private Integer getPrice(JSONObject product) {
       Double priceDouble = product.optDouble("preco");
       if (priceDouble != null) {
@@ -71,13 +79,11 @@ public class BrasilAtalaiaRacoesCrawler extends CrawlerRankingKeywords {
    }
 
    private boolean checkAvailability(String stock) {
-      if (!stock.isEmpty()) {
+      if (stock != null && !stock.isEmpty()) {
          stock = stock.replaceAll("\\.", "");
-         if (stock != null) {
-            Integer stockInt = Integer.parseInt(stock);
-            if (stockInt > 0) {
-               return true;
-            }
+         Integer stockInt = Integer.parseInt(stock);
+         if (stockInt > 0) {
+            return true;
          }
       }
       return false;
