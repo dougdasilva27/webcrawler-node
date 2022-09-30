@@ -18,7 +18,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class TottusCrawler extends CrawlerRankingKeywords {
@@ -100,8 +102,12 @@ public class TottusCrawler extends CrawlerRankingKeywords {
    }
 
    private JSONObject fetchJsonFromApi(String url) {
-
+      Map<String, String> headers = new HashMap<>();
+      if (channel != null) {
+         headers.put("cookie", channel);
+      }
       Request request = Request.RequestBuilder.create()
+         .setHeaders(headers)
          .setUrl(url)
          .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
          .build();
