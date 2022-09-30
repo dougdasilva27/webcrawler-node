@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -52,7 +53,8 @@ public class BrazilAtalaiaRacoesCrawler extends Crawler {
       if (jsonObject != null) {
          String internalId = jsonObject.optString("idproduto");
          String name = jsonObject.optString("nome");
-         String primaryImage = "https://content.lifeapps.com.br/superon/imagens/" + jsonObject.optString("id") +".jpg";
+         String id = jsonObject.optString("id");
+         String primaryImage = id != null && !id.isEmpty() ? "https://content.lifeapps.com.br/superon/imagens/" + id + ".jpg" : null;
          String description = jsonObject.optString("descricaolonga");
          String stock = jsonObject.optString("maximo_disponivel");
          Offers offers = checkAvailability(stock) ? scrapOffers(jsonObject) : new Offers();
@@ -85,11 +87,13 @@ public class BrazilAtalaiaRacoesCrawler extends Crawler {
    }
 
    private boolean checkAvailability(String stock) {
-      stock = stock.replaceAll("\\.","");
-      if (stock != null) {
-         Integer stockInt = Integer.parseInt(stock);
-         if (stockInt > 0) {
-            return true;
+      if (!stock.isEmpty()) {
+         stock = stock.replaceAll("\\.", "");
+         if (stock != null) {
+            Integer stockInt = Integer.parseInt(stock);
+            if (stockInt > 0) {
+               return true;
+            }
          }
       }
       return false;
@@ -116,10 +120,9 @@ public class BrazilAtalaiaRacoesCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
-
-      Double spotlightPrice = data.optDouble("preco_original");
-      Double priceFrom =  data.optDouble("preco_sem_politica_varejo");;
-      if(priceFrom != null && spotlightPrice != null && priceFrom.equals(spotlightPrice)){
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(data, "preco_original", false);
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(data, "preco_sem_politica_varejo", false);
+      if (priceFrom != null && spotlightPrice != null && priceFrom.equals(spotlightPrice)) {
          priceFrom = null;
       }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);

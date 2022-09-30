@@ -24,25 +24,24 @@ public class BrasilAtalaiaRacoesCrawler extends CrawlerRankingKeywords {
    public BrasilAtalaiaRacoesCrawler(Session session) {
       super(session);
    }
+
    JSONArray products = null;
+
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       String url = "https://superon.lifeapps.com.br/api/v1/app/777d0060-40c1-11ed-a1e1-750c7c041041cc64548c0cbad6cf58d4d3bbd433142b/listaprodutosf/c9ecd9f3-b54f-4ab9-b856-62df3df6960c?sk=" + this.keywordEncoded + "&page=" + (this.currentPage - 1) + "&canalVenda=WEB&tipoentrega=DELIVERY&tagsPesquisa=";
       JSONObject json = fetchJSONObject(url);
       products = JSONUtils.getValueRecursive(json, "dados", JSONArray.class);
-      if (!products.isEmpty()) {
+      if (products != null && !products.isEmpty()) {
          for (Object e : products) {
             JSONObject product = (JSONObject) e;
-            String productUrl = "https://loja.atalaiaracoes.com.br/store/produto/" + product.optString("slug");
+            String slug = product.optString("slug");
+            String productUrl = slug != null && !slug.isEmpty() ? "https://loja.atalaiaracoes.com.br/store/produto/" + slug : null;
             String internalId = product.optString("idproduto");
             String name = product.optString("nome");
-            String imgUrl = "https://content.lifeapps.com.br/superon/imagens/" + product.optString("id") +".jpg";
-            Integer price = null;
-            Double priceDouble = product.optDouble("preco");
-            if (priceDouble != null) {
-               priceDouble = priceDouble * 100;
-               price = CommonMethods.doublePriceToIntegerPrice(priceDouble, 0);
-            }
+            String id = product.optString("id");
+            String imgUrl = id != null && !id.isEmpty() ? "https://content.lifeapps.com.br/superon/imagens/" + id + ".jpg" : null;
+            Integer price = getPrice(product);
             String stock = product.optString("maximo_disponivel");
             boolean isAvailable = checkAvailability(stock);
 
@@ -62,12 +61,23 @@ public class BrasilAtalaiaRacoesCrawler extends CrawlerRankingKeywords {
       }
    }
 
+   private Integer getPrice(JSONObject product) {
+      Double priceDouble = product.optDouble("preco");
+      if (priceDouble != null) {
+         priceDouble = priceDouble * 100;
+         return CommonMethods.doublePriceToIntegerPrice(priceDouble, 0);
+      }
+      return null;
+   }
+
    private boolean checkAvailability(String stock) {
-      stock = stock.replaceAll("\\.","");
-      if (stock != null) {
-         Integer stockInt = Integer.parseInt(stock);
-         if (stockInt > 0) {
-            return true;
+      if (!stock.isEmpty()) {
+         stock = stock.replaceAll("\\.", "");
+         if (stock != null) {
+            Integer stockInt = Integer.parseInt(stock);
+            if (stockInt > 0) {
+               return true;
+            }
          }
       }
       return false;
