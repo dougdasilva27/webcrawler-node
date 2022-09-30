@@ -25,7 +25,7 @@ public class DatabaseManager {
    public DSLContext jooqPostgres = DSL.using(SQLDialect.POSTGRES);
 
    public DatabaseManager(DBCredentials credentials) {
-    setMongoFrozen(credentials);
+     setMongoFrozen(credentials);
      setMongoFetcher(credentials);
    }
 
