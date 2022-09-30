@@ -12,7 +12,6 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -23,8 +22,8 @@ import java.util.Map;
 public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
 
    private static final String HOME_PAGE = "https://www.unimarc.cl";
-   private  Integer page;
-   private  Integer endPage;
+   private Integer page;
+   private Integer endPage;
 
    public ChileUnimarcCrawler(Session session) {
       super(session);
@@ -35,8 +34,8 @@ public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
-      Integer toPage = (totalProducts == -1 || totalProducts > (currentPage*50)) ? currentPage*50 : totalProducts;
-      String url = "https://bff-unimarc-web.unimarc.cl/bff-api/products/intelligence-search/"+keywordEncoded.replace("+", "%20")+"/?from="+(this.currentPage-1)*50+"&to="+ toPage +"&hideUnavailableItems=1";
+      Integer toPage = (totalProducts == -1 || totalProducts > (currentPage * 50)) ? currentPage * 50 : totalProducts;
+      String url = "https://bff-unimarc-web.unimarc.cl/bff-api/products/intelligence-search/" + keywordEncoded.replace("+", "%20") + "/?from=" + (this.currentPage - 1) * 50 + "&to=" + toPage + "&hideUnavailableItems=1";
 
 
       JSONArray products = fetchProducts(url);
@@ -46,8 +45,8 @@ public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
 
          JSONObject product = (JSONObject) object;
          String urlEnd = product.optString("detailUrl");
-         urlEnd = urlEnd.replaceAll("\\/p","");
-         String productUrl = HOME_PAGE +"/product"+ urlEnd;
+         urlEnd = urlEnd.replaceAll("\\/p", "");
+         String productUrl = HOME_PAGE + "/product" + urlEnd;
          String internalPid = product.optString("productId");
          String name = product.optString("name");
          Number numberPrice = JSONUtils.getValueRecursive(product, "sellers.0.price", Number.class);
@@ -67,13 +66,11 @@ public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
          if (this.arrayProducts.size() == productsLimit) {
             break;
          }
-
       }
    }
 
    protected JSONArray fetchProducts(String url) {
       Map<String, String> headers = new HashMap<>();
-
       headers.put("accept", "*/*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_0_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36");
 
@@ -97,14 +94,15 @@ public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
 
       Response response = dataFetcher.get(session, request);
       JSONObject jsonResponse = CrawlerUtils.stringToJson(response.getBody());
-      String totalString = JSONUtils.getValueRecursive(jsonResponse,"data.resources", String.class);
-      totalProducts = Integer.parseInt(totalString);
-      return   JSONUtils.getValueRecursive(jsonResponse,"data.availableProducts", JSONArray.class);
+      String totalString = JSONUtils.getValueRecursive(jsonResponse, "data.resources", String.class);
+      this.totalProducts = Integer.parseInt(totalString);
+      JSONArray value = JSONUtils.getValueRecursive(jsonResponse, "data.availableProducts", JSONArray.class);
 
+      return value;
    }
+
    @Override
    protected boolean hasNextPage() {
-      return ((currentPage-1)*50)< totalProducts;
+      return ((currentPage) * 50) < this.totalProducts;
    }
-
 }
