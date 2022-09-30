@@ -53,7 +53,6 @@ public class BrazilAtalaiaRacoesCrawler extends Crawler {
       if (jsonObject != null) {
          String internalId = jsonObject.optString("idproduto");
          String name = jsonObject.optString("nome");
-         String id = jsonObject.optString("id");
          String primaryImage = getPrimaryImage(jsonObject);
          String description = jsonObject.optString("descricaolonga");
          String stock = jsonObject.optString("maximo_disponivel");
@@ -81,16 +80,7 @@ public class BrazilAtalaiaRacoesCrawler extends Crawler {
       String id = product.optString("id");
       return id != null && !id.isEmpty() ? "https://content.lifeapps.com.br/superon/imagens/" + id + ".jpg" : null;
    }
-
-
-   private Integer scrapStock(JSONObject data) {
-      int stock = data.optInt("maximo_disponivel");
-      if (stock == 0) {
-         stock = data.optInt("other_stock");
-      }
-      return stock;
-   }
-
+   
    private boolean checkAvailability(String stock) {
       if (stock != null && !stock.isEmpty()) {
          stock = stock.replaceAll("\\.", "");
