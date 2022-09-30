@@ -48,7 +48,7 @@ public class TottusCrawler extends CrawlerRankingKeywords {
 
       if (results != null && !results.isEmpty()) {
          if (this.totalProducts == 0) {
-            setTotalProducts();
+            setTotalProducts(jsonInfo);
          }
 
          for (Object e : results) {
