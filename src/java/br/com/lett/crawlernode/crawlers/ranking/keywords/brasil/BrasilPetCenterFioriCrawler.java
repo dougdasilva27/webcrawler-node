@@ -47,7 +47,7 @@ public class BrasilPetCenterFioriCrawler extends CrawlerRankingKeywords {
                null, false, ',', session, 0);
             String productUrl = CrawlerUtils.scrapUrl(product, ".item-link", "href",
                "https", "https://www.petcenterfiore.com.br");
-            boolean isAvaliable = checkIsAvaliable(product);
+            boolean isAvaliable = checkIsAvaliable(product) && spotlitePrice!=0;
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".js-product-form input", "value");
             String pId = internalId;
             String imgUrl = getImage(CrawlerUtils.scrapSimplePrimaryImage(product, ".js-item-image", Collections.singletonList("data-srcset"),
