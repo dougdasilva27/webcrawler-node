@@ -21,7 +21,7 @@ public class BrasilPetCenterFioriCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   String getImage(String values) {
+   private String getImage(String values) {
       // String i[]= CommonMethods.getLast(values.split(" "));
       String imgs[] = values.split(",");
       Integer ult = imgs.length - 1;
@@ -34,7 +34,7 @@ public class BrasilPetCenterFioriCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-//      Integer currentPageUrl = (this.currentPage - 1 ) * 40;
+      // Quando site acrrega os produtos se apresentam de uma forma e quando se atualiaza ou se scrolla a página ele altera a ordem dos produtos
       String url = "https://www.petcenterfiore.com.br/search/?q=" + this.keywordEncoded +
          "&page=" + this.currentPage;
       this.currentDoc = fetchDocument(url);
@@ -47,7 +47,7 @@ public class BrasilPetCenterFioriCrawler extends CrawlerRankingKeywords {
                null, false, ',', session, 0);
             String productUrl = CrawlerUtils.scrapUrl(product, ".item-link", "href",
                "https", "https://www.petcenterfiore.com.br");
-            boolean isAvaliable = spotlitePrice != 0;
+            boolean isAvaliable = checkIsAvaliable(product);
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".js-product-form input", "value");
             String pId = internalId;
             String imgUrl = getImage(CrawlerUtils.scrapSimplePrimaryImage(product, ".js-item-image", Collections.singletonList("data-srcset"),
@@ -70,7 +70,13 @@ public class BrasilPetCenterFioriCrawler extends CrawlerRankingKeywords {
 
       }
    }
-
+   private Boolean checkIsAvaliable(Element doc) {
+      String avaliable = CrawlerUtils.scrapStringSimpleInfo(doc,".label.label-default",false);
+      if (avaliable !=  null) {
+         return !avaliable.contains("Esgotado");
+      };
+      return true;
+   }
    @Override
    protected boolean hasNextPage() {
       Elements textsPages = this.currentDoc.select(".mt-4.page-header.category-body.container");
