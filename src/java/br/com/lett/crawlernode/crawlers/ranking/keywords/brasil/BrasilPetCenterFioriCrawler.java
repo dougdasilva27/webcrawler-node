@@ -77,6 +77,7 @@ public class BrasilPetCenterFioriCrawler extends CrawlerRankingKeywords {
       };
       return true;
    }
+
    @Override
    protected boolean hasNextPage() {
       Elements textsPages = this.currentDoc.select(".mt-4.page-header.category-body.container");

@@ -44,13 +44,14 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(product,".js-product-name.h2.h1-md",false);
          String imgUrl = "https:"+dataJson.getString("image_url");
          String description = CrawlerUtils.scrapStringSimpleInfo(product,".product-description.user-content",false);
-         Offers offers = checkAvailability( dataJson.get("available").toString()) ? scrapOffers(doc) : new Offers();
+         Offers offers = checkAvailability(doc,dataJson.get("available").toString()) ? scrapOffers(doc) : new Offers();
          List<String> imgsSecondaries = getSecondariesImgs(doc,imgUrl);
-
+         List<String> categories = getCategories(doc);
          Product newProduct = ProductBuilder.create()
             .setInternalId(id)
             .setInternalPid(id)
             .setUrl(session.getOriginalURL())
+            .setCategories(categories)
             .setName(name)
             .setOffers(offers)
             .setPrimaryImage(imgUrl)
@@ -60,6 +61,17 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
          products.add(newProduct);
       }
       return products;
+   }
+   private List<String> getCategories(Document doc) {
+      Elements breadcumps = doc.select(".breadcrumbs .crumb");
+      List<String> categories = new ArrayList<String>();
+      for(Element breadcump: breadcumps) {
+         String category = CrawlerUtils.scrapStringSimpleInfo(breadcump,".crumb",false);
+         if(!category.equals("Início")) {
+            categories.add(category);
+         }
+      }
+      return categories;
    }
    private Offers scrapOffers(Element data) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
@@ -122,10 +134,12 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
 
       return creditCards;
    }
-   private boolean checkAvailability(String stock) {
+   private boolean checkAvailability(Document doc, String stock) {
       if (stock != null && !stock.isEmpty()) {
          boolean avaliable =stock.equals("true");
-         return  avaliable;
+         String price = CrawlerUtils.scrapStringSimpleInfo(doc,".js-price-display.text-primary",false);
+         boolean hasPrice =!price.equals("");
+         return  avaliable && hasPrice;
       }
       return false;
    }
