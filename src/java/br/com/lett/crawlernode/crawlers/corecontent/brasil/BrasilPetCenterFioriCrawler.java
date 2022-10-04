@@ -1,12 +1,14 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -19,6 +21,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +32,8 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
    public BrasilPetCenterFioriCrawler(Session session) {
       super(session);
    }
-   private static final String HOME_PAGE="https://www.petcenterfiore.com.br/";
+
+   private static final String HOME_PAGE = "https://www.petcenterfiore.com.br/";
    private static final String SELLER_NAME = "PetCenterFiore";
 
    @Override
@@ -37,42 +41,48 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
       Element product = doc.selectFirst(".js-has-new-shipping.js-product-detail.js-product-container.js-shipping-calculator-container");
-      if( product != null) {
-         String dataVariants = CrawlerUtils.scrapStringSimpleInfoByAttribute(product,".js-has-new-shipping.js-product-detail.js-product-container.js-shipping-calculator-container","data-variants");
-         JSONObject dataJson = CrawlerUtils.stringToJSONObject(dataVariants.replace("[","").replace("]",""));
-         String id = dataJson.getBigInteger("product_id").toString();
-         String name = CrawlerUtils.scrapStringSimpleInfo(product,".js-product-name.h2.h1-md",false);
-         String imgUrl = "https:"+dataJson.getString("image_url");
-         String description = CrawlerUtils.scrapStringSimpleInfo(product,".product-description.user-content",false);
-         Offers offers = checkAvailability(doc,dataJson.get("available").toString()) ? scrapOffers(doc) : new Offers();
-         List<String> imgsSecondaries = getSecondariesImgs(doc,imgUrl);
-         List<String> categories = getCategories(doc);
+      if (product != null) {
+         String dataVariants = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".js-has-new-shipping.js-product-detail.js-product-container.js-shipping-calculator-container", "data-variants");
+         JSONObject dataJson = getDataJson(dataVariants);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".js-product-form input", "value");
+         String name = CrawlerUtils.scrapStringSimpleInfo(product, ".js-product-name.h2.h1-md", false);
+         String primaryImage = getUrlImage(dataJson.optString("image_url", ""));
+         String description = CrawlerUtils.scrapStringSimpleInfo(product, ".product-description.user-content", false);
+         Offers offers = checkAvailability(doc, dataJson.get("available").toString()) ? scrapOffers(doc) : new Offers();
+         List<String> secondaryImages = getSecondaryImages(doc, primaryImage);
+         List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs .crumb", true);
          Product newProduct = ProductBuilder.create()
-            .setInternalId(id)
-            .setInternalPid(id)
+            .setInternalId(internalId)
+            .setInternalPid(internalId)
             .setUrl(session.getOriginalURL())
             .setCategories(categories)
             .setName(name)
             .setOffers(offers)
-            .setPrimaryImage(imgUrl)
-            .setSecondaryImages(imgsSecondaries)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .build();
          products.add(newProduct);
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
       return products;
    }
-   private List<String> getCategories(Document doc) {
-      Elements breadcumps = doc.select(".breadcrumbs .crumb");
-      List<String> categories = new ArrayList<String>();
-      for(Element breadcump: breadcumps) {
-         String category = CrawlerUtils.scrapStringSimpleInfo(breadcump,".crumb",false);
-         if(!category.equals("Início")) {
-            categories.add(category);
-         }
+
+   private JSONObject getDataJson(String data) {
+      if (data != null) {
+         return CrawlerUtils.stringToJSONObject(data.replace("[", "").replace("]", ""));
       }
-      return categories;
+      return new JSONObject();
    }
+
+   private String getUrlImage(String image) {
+      if (!image.isEmpty() && image != null) {
+         return "https:" + image;
+      }
+      return "";
+   }
+
    private Offers scrapOffers(Element data) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       List<String> sales = new ArrayList<>();
@@ -92,10 +102,11 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
 
       return offers;
    }
+
    private Pricing scrapPricing(Element doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,".js-price-display.text-primary",null,true,
-         ',',session);
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc,".js-compare-price-display.price-compare.font-weight-normal",null,true,',',
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".js-price-display.text-primary", null, true,
+         ',', session);
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".js-compare-price-display.price-compare.font-weight-normal", null, true, ',',
          session);
       if (price != null && spotlightPrice != null && price.equals(spotlightPrice)) {
          price = null;
@@ -112,6 +123,7 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
          .setCreditCards(creditCards)
          .build();
    }
+
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
@@ -121,7 +133,7 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
          .build());
 
       Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AMEX.toString(),Card.DINERS.toString(), Card.AURA.toString(),
+         Card.AMEX.toString(), Card.DINERS.toString(), Card.AURA.toString(),
          Card.ELO.toString(), Card.HIPER.toString(), Card.HIPERCARD.toString(), Card.DISCOVER.toString());
 
       for (String card : cards) {
@@ -134,27 +146,29 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
 
       return creditCards;
    }
+
    private boolean checkAvailability(Document doc, String stock) {
       if (stock != null && !stock.isEmpty()) {
-         boolean avaliable =stock.equals("true");
-         String price = CrawlerUtils.scrapStringSimpleInfo(doc,".js-price-display.text-primary",false);
-         boolean hasPrice =!price.equals("");
-         return  avaliable && hasPrice;
+         boolean avaliable = stock.equals("true");
+         String price = CrawlerUtils.scrapStringSimpleInfo(doc, ".js-price-display.text-primary", false);
+         boolean hasPrice = !price.equals("");
+         return avaliable && hasPrice;
       }
       return false;
    }
-   private List<String> getSecondariesImgs(Document doc, String imgUrl ) {
-      List<String> imgs=CrawlerUtils.scrapSecondaryImages(doc,".col-2.d-none.d-md-block a img", Arrays.asList("data-srcset"),"https","",imgUrl);
+
+   private List<String> getSecondaryImages(Document doc, String imgUrl) {
+      List<String> imgs = CrawlerUtils.scrapSecondaryImages(doc, ".col-2.d-none.d-md-block a img", Arrays.asList("data-srcset"), "https", "", imgUrl);
       List<String> returnImgs = new ArrayList<String>();
-      if ( imgs!= null && !imgs.isEmpty()) {
+      if (imgs != null && !imgs.isEmpty()) {
          for (Integer i = 1; i < imgs.size(); i++) {
             returnImgs.add(getImage(imgs.get(i)));
          }
       }
       return returnImgs;
    }
+
    private String getImage(String values) {
-      // String i[]= CommonMethods.getLast(values.split(" "));
       String imgs[] = values.split(",");
       Integer ult = imgs.length - 1;
       String pathImg[] = imgs[ult].split(" ");

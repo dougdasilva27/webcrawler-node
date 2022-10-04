@@ -22,7 +22,6 @@ public class BrasilPetCenterFioriCrawler extends CrawlerRankingKeywords {
    }
 
    private String getImage(String values) {
-      // String i[]= CommonMethods.getLast(values.split(" "));
       String imgs[] = values.split(",");
       Integer ult = imgs.length - 1;
       String pathImg[] = imgs[ult].split(" ");
@@ -34,7 +33,7 @@ public class BrasilPetCenterFioriCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      // Quando site acrrega os produtos se apresentam de uma forma e quando se atualiaza ou se scrolla a página ele altera a ordem dos produtos
+      // Quando o site carrega os produtos eles aparecem um ordenação e quando se atualiaza ou se scrolla a página ele altera esta ordenação.
       String url = "https://www.petcenterfiore.com.br/search/?q=" + this.keywordEncoded +
          "&page=" + this.currentPage;
       this.currentDoc = fetchDocument(url);
@@ -43,11 +42,11 @@ public class BrasilPetCenterFioriCrawler extends CrawlerRankingKeywords {
       if (!products.isEmpty()) {
          for (Element product : products) {
             String name = CrawlerUtils.scrapStringSimpleInfo(product, ".js-item-name.item-name", false);
-            Integer spotlitePrice = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".js-price-display.item-price",
+            Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".js-price-display.item-price",
                null, false, ',', session, null);
             String productUrl = CrawlerUtils.scrapUrl(product, ".item-link", "href",
                "https", "https://www.petcenterfiore.com.br");
-            boolean isAvaliable = checkIsAvaliable(product) && spotlitePrice!=null;
+            boolean available = checkAvailability(product, priceInCents);
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".js-product-form input", "value");
             String pId = internalId;
             String imgUrl = getImage(CrawlerUtils.scrapSimplePrimaryImage(product, ".js-item-image", Collections.singletonList("data-srcset"),
@@ -57,8 +56,8 @@ public class BrasilPetCenterFioriCrawler extends CrawlerRankingKeywords {
                .setInternalPid(pId)
                .setName(name)
                .setImageUrl(imgUrl)
-               .setAvailability(isAvaliable)
-               .setPriceInCents(spotlitePrice)
+               .setAvailability(available)
+               .setPriceInCents(priceInCents)
                .setUrl(productUrl)
                .build();
 
@@ -70,20 +69,21 @@ public class BrasilPetCenterFioriCrawler extends CrawlerRankingKeywords {
 
       }
    }
-   private Boolean checkIsAvaliable(Element doc) {
-      String avaliable = CrawlerUtils.scrapStringSimpleInfo(doc,".label.label-default",false);
-      if (avaliable !=  null) {
-         return !avaliable.contains("Esgotado");
-      };
-      return true;
+
+   private Boolean checkAvailability(Element doc, Integer price) {
+      String available = CrawlerUtils.scrapStringSimpleInfo(doc, ".label.label-default", false);
+      if (available != null) {
+         return !available.contains("Esgotado");
+      }
+      return price != null;
    }
 
    @Override
    protected boolean hasNextPage() {
       Elements textsPages = this.currentDoc.select(".mt-4.page-header.category-body.container");
-      for(Element textPage: textsPages) {
-         String text = CrawlerUtils.scrapStringSimpleInfo(textPage,".text-center",false);
-         if(text.contains("Não há resultados para a sua pesquisa")) {
+      for (Element textPage : textsPages) {
+         String text = CrawlerUtils.scrapStringSimpleInfo(textPage, ".text-center", false);
+         if (text.contains("Não há resultados para a sua pesquisa")) {
             return false;
          }
       }
