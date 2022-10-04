@@ -48,7 +48,7 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(product, ".js-product-name.h2.h1-md", false);
          String primaryImage = getUrlImage(dataJson.optString("image_url", ""));
          String description = CrawlerUtils.scrapStringSimpleInfo(product, ".product-description.user-content", false);
-         Offers offers = checkAvailability(doc, dataJson.get("available").toString()) ? scrapOffers(doc) : new Offers();
+         Offers offers = checkAvailability(doc, dataJson.optBoolean("available")) ? scrapOffers(doc) : new Offers();
          List<String> secondaryImages = getSecondaryImages(doc, primaryImage);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs .crumb", true);
          Product newProduct = ProductBuilder.create()
@@ -80,7 +80,7 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
       if (!image.isEmpty() && image != null) {
          return "https:" + image;
       }
-      return "";
+      return null;
    }
 
    private Offers scrapOffers(Element data) throws OfferException, MalformedPricingException {
@@ -147,12 +147,10 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
       return creditCards;
    }
 
-   private boolean checkAvailability(Document doc, String stock) {
-      if (stock != null && !stock.isEmpty()) {
-         boolean avaliable = stock.equals("true");
+   private boolean checkAvailability(Document doc, Boolean available) {
+      if (available!= null && available) {
          String price = CrawlerUtils.scrapStringSimpleInfo(doc, ".js-price-display.text-primary", false);
-         boolean hasPrice = !price.equals("");
-         return avaliable && hasPrice;
+         return !"".equals(price);
       }
       return false;
    }

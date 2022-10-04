@@ -48,14 +48,13 @@ public class BrasilPetCenterFioriCrawler extends CrawlerRankingKeywords {
                "https", "https://www.petcenterfiore.com.br");
             boolean available = checkAvailability(product, priceInCents);
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".js-product-form input", "value");
-            String pId = internalId;
-            String imgUrl = getImage(CrawlerUtils.scrapSimplePrimaryImage(product, ".js-item-image", Collections.singletonList("data-srcset"),
+            String imageUrl = getImage(CrawlerUtils.scrapSimplePrimaryImage(product, ".js-item-image", Collections.singletonList("data-srcset"),
                "https", ""));
             RankingProduct rankingProduct = RankingProductBuilder.create().
                setInternalId(internalId)
-               .setInternalPid(pId)
+               .setInternalPid(internalId)
                .setName(name)
-               .setImageUrl(imgUrl)
+               .setImageUrl(imageUrl)
                .setAvailability(available)
                .setPriceInCents(priceInCents)
                .setUrl(productUrl)
