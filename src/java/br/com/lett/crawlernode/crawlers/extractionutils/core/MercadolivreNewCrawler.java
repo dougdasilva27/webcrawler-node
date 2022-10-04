@@ -131,6 +131,12 @@ public class MercadolivreNewCrawler {
          availableToBuy = false;
       }
 
+      String unavailableAddress = CrawlerUtils.scrapStringSimpleInfo(doc, ".andes-message__content.untitled .andes-message__text.andes-message__text--warning .ui-vip-shipping-message__text",true);
+
+      if(unavailableAddress != null && unavailableAddress.contains("Este anúncio está indisponível para seu endereço.")){
+         availableToBuy = false;
+      }
+
       return availableToBuy;
    }
 

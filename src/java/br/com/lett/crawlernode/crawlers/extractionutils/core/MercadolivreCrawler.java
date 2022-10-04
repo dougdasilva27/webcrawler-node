@@ -26,6 +26,7 @@ import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 import org.apache.http.HttpHeaders;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.bson.internal.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -50,6 +51,7 @@ import java.util.regex.Pattern;
  */
 public class MercadolivreCrawler extends Crawler {
 
+   private String getCep(){return session.getOptions().getString("cp");}
    private String homePage;
    private String mainSellerNameLower;
    protected boolean allow3PSellers = isAllow3PSellers();
@@ -86,6 +88,11 @@ public class MercadolivreCrawler extends Crawler {
    protected Object fetch() {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
+
+      BasicClientCookie cookie = new BasicClientCookie("cp", getCep());
+      cookie.setDomain(".produto.mercadolivre.com.br");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
 
       Request request = RequestBuilder.create()
          .setUrl(session.getOriginalURL())
