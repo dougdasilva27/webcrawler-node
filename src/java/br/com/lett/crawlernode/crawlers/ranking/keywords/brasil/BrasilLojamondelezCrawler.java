@@ -55,9 +55,10 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
          .setPayload(payloadString)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY
          ))
          .build();
@@ -88,9 +89,10 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
          .setUrl(LOGIN_URL)
          .setPayload(payload.toString())
          .setProxyservice(Arrays.asList(
-            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY
          ))
          .setHeaders(headers)
@@ -111,9 +113,10 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
          .setCookies(cookies)
          .setUrl(url)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY
          ))
          .build();

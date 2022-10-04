@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -81,9 +82,10 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setPayload(payloadString)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY
          ))
          .build();
@@ -116,9 +118,10 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setUrl(LOGIN_URL)
          .setPayload(payload.toString())
          .setProxyservice(Arrays.asList(
-            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY
          ))
          .setHeaders(headers)
@@ -135,15 +138,16 @@ public class BrasilLojamondelezCrawler extends Crawler {
       Request request = RequestBuilder.create()
          .setUrl(session.getOriginalURL())
          .setProxyservice(Arrays.asList(
-            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY
          ))
          .setHeaders(headers)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), this.dataFetcher, new ApacheDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
 
       return response;
    }
