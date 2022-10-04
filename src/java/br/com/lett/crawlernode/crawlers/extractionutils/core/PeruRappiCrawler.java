@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -163,7 +164,7 @@ public class PeruRappiCrawler extends RappiCrawler {
          .setPayload(payload)
          .build();
 
-      String body = CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), false).getBody();
+      String body = CrawlerUtils.retryRequest(request, session, new ApacheDataFetcher(), false).getBody();
 
       JSONObject jsonObject = CrawlerUtils.stringToJSONObject(body);
 
