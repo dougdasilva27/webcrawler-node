@@ -148,9 +148,9 @@ public class BrasilPetCenterFioriCrawler extends Crawler {
    }
 
    private boolean checkAvailability(Document doc, Boolean available) {
-      if (available!= null && available) {
+      if (available != null && available) {
          String price = CrawlerUtils.scrapStringSimpleInfo(doc, ".js-price-display.text-primary", false);
-         return !"".equals(price);
+         return price != null && !price.isEmpty();
       }
       return false;
    }
