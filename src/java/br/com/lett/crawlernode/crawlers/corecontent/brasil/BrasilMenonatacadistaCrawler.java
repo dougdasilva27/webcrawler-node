@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -40,35 +42,45 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
 
    private final String PASSWORD = getPassword();
    private final String LOGIN = getLogin();
+
    protected String getLogin() throws UnsupportedEncodingException {
       String encodeLogin = session.getOptions().optString("email");
       return URLEncoder.encode(encodeLogin, "UTF-8");
    }
+
    protected String getPassword() {
       return session.getOptions().optString("password");
    }
+
    private String cookiePHPSESSID = null;
 
    @Override
    public void handleCookiesBeforeFetch() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/x-www-form-urlencoded");
+      headers.put("x-requested-with", "XMLHttpRequest");
+      headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put("authority", "www.menonatacadista.com.br");
-      String payloadString = "email="+this.LOGIN+"&password="+this.PASSWORD;
+      headers.put("Accept", "*/*");
+      headers.put("Connection", "keep-alive");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+
+      String payloadString = "email=" + this.LOGIN + "&password=" + this.PASSWORD;
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.menonatacadista.com.br/index.php?route=account/login")
          .setPayload(payloadString)
          .setFollowRedirects(false)
+         .setSendUserAgent(true)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.BONANZA,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
          ))
          .build();
 
-      Response response = new FetcherDataFetcher().post(session, request);
+      Response response = new JsoupDataFetcher().post(session, request);
 
       List<Cookie> cookiesResponse = response.getCookies();
 
@@ -90,12 +102,15 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.BONANZA,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
          ))
          .build();
 
-      return new FetcherDataFetcher().get(session, request);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+
+      return response;
    }
 
    public List<Product> extractInformation(Document doc) throws Exception {

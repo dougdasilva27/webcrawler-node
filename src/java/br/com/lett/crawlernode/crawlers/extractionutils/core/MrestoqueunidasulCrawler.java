@@ -56,9 +56,9 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setCookies(cookies)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.LUMINATI_SERVER_BR
          ))
          .build();
 
@@ -72,8 +72,9 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setCookies(cookies)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.LUMINATI_SERVER_BR
          ))
          .build();
 
@@ -85,8 +86,9 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setCookies(cookies)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.LUMINATI_SERVER_BR
          ))
          .build();
 
@@ -97,9 +99,9 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setCookies(cookies)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.LUMINATI_SERVER_BR
          ))
          .build();
 

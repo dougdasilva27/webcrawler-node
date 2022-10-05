@@ -30,7 +30,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -100,7 +99,9 @@ public class BrasilPeixotoCrawler extends Crawler {
          ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
          ProxyCollection.BUY_HAPROXY,
          ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-         ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
+         ProxyCollection.SMART_PROXY_BR_HAPROXY,
+         ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
+      );
 
       while (this.cookies.isEmpty() && attemp < 3) {
          getCookiesFromWD(proxies.get(attemp));
