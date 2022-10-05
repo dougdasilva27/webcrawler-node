@@ -192,14 +192,10 @@ public abstract class RappiCrawler extends Crawler {
       String descriptionProductSearch = searchProduct.optString("description");
       String imageProductSearch = searchProduct.optString("image");
 
-      if (productId != null && productId.equals(idProductSearch)) {
+      if  ((imageProductSearch != null && imageProductSearch.equals(productImage)) && (productId != null && productId.equals(idProductSearch))) {
          return true;
       }
-
-      if (imageProductSearch != null && imageProductSearch.equals(productImage)) {
-         return true;
-      }
-
+      
       return productName != null && productDescription != null && productName.equals(nameProductSearch) && productDescription.equals(descriptionProductSearch);
    }
 
