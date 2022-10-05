@@ -1,10 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -13,19 +10,13 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import org.jboss.marshalling.ObjectTable;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import javax.xml.bind.SchemaOutputResolver;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,6 +47,9 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
                ProxyCollection.NETNUT_RESIDENTIAL_ES,
                ProxyCollection.NETNUT_RESIDENTIAL_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.SMART_PROXY_BR,
+               ProxyCollection.SMART_PROXY_CO,
+               ProxyCollection.SMART_PROXY_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
@@ -113,7 +107,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
             String urlProduct = CrawlerUtils.scrapUrl(e, "> a", "href", "https", "www.magazineluiza.com.br");
             String internalId = getProductId(urlProduct);
             String imageUrl = CrawlerUtils.scrapUrl(e, "img", "src", "https", "a-static.mlcdn.com.br");
-            int price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "p[data-testid='price-value']", null,true, ',',session, 0);
+            int price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "p[data-testid='price-value']", null, true, ',', session, 0);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "h2", true);
             boolean isAvailable = price != 0;
 
