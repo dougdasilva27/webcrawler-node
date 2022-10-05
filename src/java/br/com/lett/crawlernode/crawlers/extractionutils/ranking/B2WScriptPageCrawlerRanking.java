@@ -68,6 +68,8 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
             Arrays.asList(
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_MX,
+               ProxyCollection.SMART_PROXY_BR,
+               ProxyCollection.SMART_PROXY_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,

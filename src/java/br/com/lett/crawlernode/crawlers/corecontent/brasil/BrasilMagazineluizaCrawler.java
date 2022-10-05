@@ -3,7 +3,10 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.*;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.*;
@@ -57,6 +60,9 @@ public class BrasilMagazineluizaCrawler extends Crawler {
             .setProxyservice(Arrays.asList(
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.SMART_PROXY_BR,
+               ProxyCollection.SMART_PROXY_CO,
+               ProxyCollection.SMART_PROXY_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
             ))
@@ -505,7 +511,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
       String internalId = crawlInternalIdNewLayout(json);
       String reference = json.optString("reference");
-      String name = json.optString("title") + (reference != null && !reference.equals("") ? " - " + reference : "");      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
+      String name = json.optString("title") + (reference != null && !reference.equals("") ? " - " + reference : "");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
       List<String> images = crawlImagesNewLayout(skuJsonInfo, json);
       String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
