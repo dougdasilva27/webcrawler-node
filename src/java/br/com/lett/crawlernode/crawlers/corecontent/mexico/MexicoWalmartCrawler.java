@@ -190,18 +190,18 @@ public class MexicoWalmartCrawler extends Crawler {
    private List<String> crawlSecondaryImages(JSONObject sku) {
       List<String> secondaryImages = new ArrayList<>();
       JSONArray secondaryImagesArray = sku.optJSONArray("secondaryImages");
+      if (secondaryImagesArray != null) {
+         for (Object o : secondaryImagesArray) {
+            if (o instanceof JSONObject) {
+               JSONObject imageJson = (JSONObject) o;
+               String img = imageJson.optString("large");
+               if (img != null) {
+                  secondaryImages.add(CrawlerUtils.completeUrl(imageJson.optString("large"), "https", "res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/mg/"));
+               }
 
-      for (Object o : secondaryImagesArray) {
-         if (o instanceof JSONObject) {
-            JSONObject imageJson = (JSONObject) o;
-            String img = imageJson.optString("large");
-            if (img != null) {
-               secondaryImages.add(CrawlerUtils.completeUrl(imageJson.optString("large"), "https", "res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/mg/"));
             }
-
          }
       }
-
 
       return secondaryImages;
    }
