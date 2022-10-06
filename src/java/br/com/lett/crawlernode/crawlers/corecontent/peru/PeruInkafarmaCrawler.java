@@ -25,6 +25,7 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
@@ -137,7 +138,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
          String primaryImage = JSONUtils.getValueRecursive(productJson, "imageList.0.url", String.class);
          CategoryCollection categories = scrapCategories(productJson);
-
+         List<String> secondaryImages = scrapSecondaryImages(productJson, primaryImage);
          boolean available = productJson.optString("productStatus").equalsIgnoreCase("AVAILABLE");
          Offers offers = available ? scrapOffers(productJson) : new Offers();
 
@@ -147,6 +148,7 @@ public class PeruInkafarmaCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setCategories(categories)
             .setOffers(offers)
@@ -159,6 +161,20 @@ public class PeruInkafarmaCrawler extends Crawler {
       }
 
       return products;
+   }
+   private List<String>  scrapSecondaryImages(JSONObject data, String primaryImage){
+     JSONArray array = JSONUtils.getValueRecursive(data, "imageList", JSONArray.class);
+      List<String> list = new ArrayList<>();
+      for (Object o : array) {
+         JSONObject obj = (JSONObject) o;
+
+         String image = obj.optString("url");
+         if (!image.equals(primaryImage)) {
+            list.add(image);
+         }
+      }
+
+      return list;
    }
 
    private CategoryCollection scrapCategories(JSONObject productJson) {
