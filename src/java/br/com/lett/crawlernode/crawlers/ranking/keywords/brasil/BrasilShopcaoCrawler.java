@@ -23,7 +23,6 @@ public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select("div.products.nt_products_holder.row > div");
-      pageSize = products.size();
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) setTotalProducts();
@@ -36,18 +35,10 @@ public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
 
             boolean isAvailable = price != null;
 
-            RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(productUrl)
-               .setInternalPid(internalPid)
-               .setName(productName)
-               .setPriceInCents(price)
-               .setAvailability(isAvailable)
-               .setImageUrl(imageUrl)
-               .build();
+            RankingProduct productRanking = RankingProductBuilder.create().setUrl(productUrl).setInternalPid(internalPid).setName(productName).setPriceInCents(price).setAvailability(isAvailable).setImageUrl(imageUrl).build();
 
             saveDataProduct(productRanking);
-            if (this.arrayProducts.size() == productsLimit)
-               break;
+            if (this.arrayProducts.size() == productsLimit) break;
          }
       } else {
          this.result = false;
@@ -62,22 +53,22 @@ public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
    }
 
    private Integer getPrice(Element element) {
-      String price = CrawlerUtils.scrapStringSimpleInfo(element,".price.dib.mb__5",true);
+      String price = CrawlerUtils.scrapStringSimpleInfo(element, ".price.dib.mb__5", true);
 
-         if(price.isEmpty()){
-            Integer specialPrice = CrawlerUtils.scrapPriceInCentsFromHtml(element,".price ins",null,true,',',session,null);
-            return specialPrice;
-         }
+      if (price.isEmpty()) {
+         Integer specialPrice = CrawlerUtils.scrapPriceInCentsFromHtml(element, ".price ins", null, true, ',', session, null);
+         return specialPrice;
+      }
 
       return priceVariation(price);
    }
 
-   private Integer priceVariation(String price){
+   private Integer priceVariation(String price) {
       String priceString = "";
       String arrayPrice[] = price.split(" ");
-      if(arrayPrice[1] != null && !arrayPrice[1].isEmpty()){
+      if (arrayPrice[1] != null && !arrayPrice[1].isEmpty()) {
          priceString = arrayPrice[1];
-         return CommonMethods.stringPriceToIntegerPrice(priceString,',',null);
+         return CommonMethods.stringPriceToIntegerPrice(priceString, ',', null);
       }
       return null;
    }
