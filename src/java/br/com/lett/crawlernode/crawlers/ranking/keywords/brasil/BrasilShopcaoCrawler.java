@@ -5,15 +5,12 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
    public BrasilShopcaoCrawler(Session session) {
@@ -26,9 +23,10 @@ public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select("div.products.nt_products_holder.row > div");
+      pageSize = products.size();
 
       if (!products.isEmpty()) {
-
+         if (this.totalProducts == 0) setTotalProducts();
          for (Element product : products) {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "div.jdgm-widget.jdgm-preview-badge", "data-id");
             String productUrl = CrawlerUtils.scrapUrl(product, "div.product-info.mt__15 > h3 > a", "href", "https", "www.shopcao.com.br");
@@ -64,12 +62,29 @@ public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
    }
 
    private Integer getPrice(Element element) {
-      Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(element,".price.dib.mb__5",null,true,',',session,null);
+      String price = CrawlerUtils.scrapStringSimpleInfo(element,".price.dib.mb__5",true);
 
-         if(price == null){
+         if(price.isEmpty()){
             Integer specialPrice = CrawlerUtils.scrapPriceInCentsFromHtml(element,".price ins",null,true,',',session,null);
             return specialPrice;
          }
-      return price;
+
+      return priceVariation(price);
+   }
+
+   private Integer priceVariation(String price){
+      String priceString = "";
+      String arrayPrice[] = price.split(" ");
+      if(arrayPrice[1] != null && !arrayPrice[1].isEmpty()){
+         priceString = arrayPrice[1];
+         return CommonMethods.stringPriceToIntegerPrice(priceString,',',null);
+      }
+      return null;
+   }
+
+   @Override
+   protected void setTotalProducts() {
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, " div.col-12.nt_pr__ > h4", true, 0);
+      this.log("Total da busca: " + this.totalProducts);
    }
 }
