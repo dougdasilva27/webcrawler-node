@@ -30,6 +30,7 @@ import models.pricing.Pricing.PricingBuilder;
 import org.apache.commons.lang.WordUtils;
 import org.apache.http.HttpHeaders;
 import org.json.JSONObject;
+import org.jsoup.nodes.Document;
 
 import java.util.*;
 
@@ -53,8 +54,7 @@ public class ChapecoSuperroyalCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE) && href.contains("product/"));
    }
 
-   @Override
-   protected Object fetch() {
+   private JSONObject fetchApi() {
       String id = scrapId();
 
       String payload = "{\"operationName\":\"ProductDetailQuery\",\"variables\":{\"storeId\":\"" + STORE_ID + "\",\"productId\":\"" + id + "\"},"
@@ -94,13 +94,15 @@ public class ChapecoSuperroyalCrawler extends Crawler {
          .build();
 
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new FetcherDataFetcher(), new ApacheDataFetcher()), session, "post");
+      JSONObject jsonObject = JSONUtils.stringToJson(response.getBody());
 
-      return JSONUtils.stringToJson(response.getBody());
+      return jsonObject != null ? jsonObject : new JSONObject();
    }
 
    @Override
-   public List<Product> extractInformation(JSONObject json) throws Exception {
+   public List<Product> extractInformation(Document document) throws Exception {
       List<Product> products = new ArrayList<>();
+      JSONObject json = fetchApi();
 
       JSONObject productObject = JSONUtils.getValueRecursive(json, "data*publicViewer*product", "*", JSONObject.class, new JSONObject());
 
@@ -111,7 +113,7 @@ public class ChapecoSuperroyalCrawler extends Crawler {
          String internalPid = internalId;
          String name = WordUtils.capitalize(productObject.optString("name"));
          CategoryCollection categories = scrapCategories(productObject);
-         String primaryImage = JSONUtils.getValueRecursive(productObject, "image*url", "*", String.class, null);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".active-image img", Arrays.asList("src"), "https", "");
          String description = productObject.optString("description");
 
          Offers offers = scrapOffers(productObject);
@@ -138,6 +140,7 @@ public class ChapecoSuperroyalCrawler extends Crawler {
 
       return products;
    }
+
 
    private String scrapId() {
       return this.session.getOriginalURL().split("/")[4];
