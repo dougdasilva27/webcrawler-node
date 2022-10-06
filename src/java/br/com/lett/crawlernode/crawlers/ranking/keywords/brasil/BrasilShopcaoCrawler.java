@@ -6,11 +6,14 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
    public BrasilShopcaoCrawler(Session session) {
@@ -31,7 +34,8 @@ public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapUrl(product, "div.product-info.mt__15 > h3 > a", "href", "https", "www.shopcao.com.br");
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, "h3 > a", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "span[data-price-type=finalPrice]", "src");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".price.dib.mb__5", null, true, ',', session, null);
+            Integer price = getPrice(product);
+
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -59,4 +63,13 @@ public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
       return !this.currentDoc.select("div.products-footer.tc.mt__40.mb__60 > nav > ul > li > a").isEmpty();
    }
 
+   private Integer getPrice(Element element) {
+      Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(element,".price.dib.mb__5",null,true,',',session,null);
+
+         if(price == null){
+            Integer specialPrice = CrawlerUtils.scrapPriceInCentsFromHtml(element,".price ins",null,true,',',session,null);
+            return specialPrice;
+         }
+      return price;
+   }
 }
