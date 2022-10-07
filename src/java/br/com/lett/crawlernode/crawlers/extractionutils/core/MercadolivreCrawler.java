@@ -219,30 +219,11 @@ https://articulo.mercadolibre.cl/MLC-599229057-pack-6-shampoo-herbal-essences-co
          */
          if (product != null) {
             if (squareVariation.isEmpty() && dropdownVariation.isEmpty()) {
-
                products.add(product);
+
             } else {
-               String urlToCaptureVariations;
 
-               String slug = getCountry();
-
-               switch (slug) {
-                  case ("ar"):
-                     urlToCaptureVariations = "https://articulo.mercadolibre.com.ar";
-                     break;
-                  case ("mx"):
-                     urlToCaptureVariations = "https://articulo.mercadolibre.com.mx";
-                     break;
-                  case ("cl"):
-                     urlToCaptureVariations = "https://articulo.mercadolibre.cl";
-                     break;
-                  case ("co"):
-                     urlToCaptureVariations = "https://articulo.mercadolibre.com.co";
-                     break;
-                  default:
-                     urlToCaptureVariations = "https://www.mercadolivre.com.br";
-
-               }
+               String urlToCaptureVariations = getDomain();
 
                if (!squareVariation.isEmpty()) {
 
@@ -253,7 +234,7 @@ https://articulo.mercadolibre.cl/MLC-599229057-pack-6-shampoo-herbal-essences-co
                            .setCookies(cookies)
                            .build();
 
-                        if ("br".equals(slug)) {
+                        if (urlToCaptureVariations != null && urlToCaptureVariations.contains("br")) {
                            String body = dataFetcher.get(session, request).getBody();
                            Document currentDoc = Jsoup.parse(body);
                            if (currentDoc.selectFirst(".ui-empty-state.not-found-page") != null) {
@@ -331,20 +312,16 @@ https://articulo.mercadolibre.cl/MLC-599229057-pack-6-shampoo-herbal-essences-co
       return encodedParams;
    }
 
-   private String getCountry() {
-
-      String regex;
-      if (session.getOriginalURL().contains("mercadolibre.com") || session.getOriginalURL().contains("mercadolivre")) {
-         regex = "com.([a-z]*)\\/";
-      } else {
-         regex = "mercadolibre.([a-z]*)\\/";
-      }
+   private String getDomain() {
 
       String slug = null;
-      Pattern pattern = Pattern.compile(regex);
+      Pattern pattern = Pattern.compile("https:\\/\\/(.*?)\\/");
       Matcher matcher = pattern.matcher(session.getOriginalURL());
       if (matcher.find()) {
          slug = matcher.group(1);
+      }
+      if (slug != null) {
+         slug = "https://" + slug;
       }
       return slug;
    }
