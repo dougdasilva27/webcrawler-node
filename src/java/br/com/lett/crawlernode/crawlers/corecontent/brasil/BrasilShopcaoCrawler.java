@@ -73,7 +73,7 @@ public class BrasilShopcaoCrawler extends Crawler {
 
          if (variations.isEmpty()) {
 
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "input[type=hidden]:nth-child(3)", "value");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".js_sticky_sl", "value");
             boolean isAvailable = checkIfIsAvailable(document);
             Offers offers = isAvailable ? scrapOffers(document) : new Offers();
 
@@ -95,7 +95,7 @@ public class BrasilShopcaoCrawler extends Crawler {
                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, null, "value");
                String variationName = element.hasText() ? productName + " " + element.text().split(" ")[0].trim() : productName;
                boolean isAvailable = checkIfIsAvailable(document);
-               Offers offers = isAvailable ? scrapOffers(document) : new Offers();
+               Offers offers = isAvailable ? scrapOffersVariations(document, internalId) : new Offers();
 
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
@@ -119,8 +119,8 @@ public class BrasilShopcaoCrawler extends Crawler {
    }
 
    private boolean checkIfIsAvailable(Document document) {
-     String stock = CrawlerUtils.scrapStringSimpleInfo(document,"div.variations_button.in_flex.column.w__100.buy_qv_false > div > button",true);
-     return stock != null;
+      String stock = CrawlerUtils.scrapStringSimpleInfo(document, "div.variations_button.in_flex.column.w__100.buy_qv_false > div > button", true);
+      return stock != null;
    }
 
    private boolean isProductPage(Document document) {
@@ -145,9 +145,43 @@ public class BrasilShopcaoCrawler extends Crawler {
       return offers;
    }
 
+   private Offers scrapOffersVariations(Document doc, String internalId) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricingVariations(doc, internalId);
+      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
+
+      offers.add(new Offer.OfferBuilder()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(this.SELLER_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+   }
+
+   private Pricing scrapPricingVariations(Document doc, String internalId) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".js_sticky_sl [value=\"" + internalId + "\"]", "data-price", false, ',', session);
+      if(spotlightPrice != null){
+         spotlightPrice = spotlightPrice / 100;
+      }
+
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#price_ppr", null, false, ',', session);
-      if(spotlightPrice == null){
+      if (spotlightPrice == null) {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#price_ppr ins", null, false, ',', session);
       }
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#price_ppr del", null, false, ',', session);
@@ -200,7 +234,7 @@ public class BrasilShopcaoCrawler extends Crawler {
    private RatingsReviews ratingsReviews(Document doc) {
       RatingsReviews ratingReviews = new RatingsReviews();
 
-      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtmlAttr(doc,".jdgm-prev-badge","data-number-of-reviews",null);
+      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, ".jdgm-prev-badge", "data-number-of-reviews", null);
       Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".jdgm-prev-badge", "data-average-rating", false, '.', session);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -210,4 +244,3 @@ public class BrasilShopcaoCrawler extends Crawler {
       return ratingReviews;
    }
 }
-
