@@ -1,7 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.costarica;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -14,9 +19,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
 
@@ -70,8 +73,8 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
    private String getUrl(String internalId, String name) {
       String url = null;
       String nameEncoded;
-      if (name != null && !name.isEmpty()){
-          nameEncoded = CommonMethods.toSlug(name);
+      if (name != null && !name.isEmpty()) {
+         nameEncoded = CommonMethods.toSlug(name);
       } else {
          nameEncoded = "%20";
       }
@@ -83,7 +86,7 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
 
 
    private JSONObject fetchProducts() {
-      String payload = "{\"search\":\""+this.keywordWithoutAccents+"\",\"page\":0,\"facetFilters\":{\"brand\":[],\"lifeStyle\":[],\"department\":[],\"category\":null,\"subCategory\":[]}}";
+      String payload = "{\"search\":\"" + this.keywordWithoutAccents + "\",\"page\":0,\"facetFilters\":{\"brand\":[],\"lifeStyle\":[],\"department\":[],\"category\":null,\"subCategory\":[]}}";
 
       String authHeader = session.getOptions().optString("authHeader");
       Map<String, String> headers = new HashMap<>();
@@ -94,17 +97,17 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
          .setUrl("https://automercado.azure-api.net/prod-front/product/searchByAttributes")
          .setPayload(payload)
          .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
          .mustSendContentEncoding(false)
          .build();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
 
-      String content = "{}";
-      int tries = 0;
-
-      while (content.equals("{}") && tries < 3) {
-         content = this.dataFetcher.post(session, request).getBody();
-         tries++;
-      }
-
-      return CrawlerUtils.stringToJson(content);
+      return CrawlerUtils.stringToJson(response.getBody());
    }
 }
