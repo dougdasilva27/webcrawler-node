@@ -64,6 +64,7 @@ public class BrasilShopcaoCrawler extends Crawler {
          String description = CrawlerUtils.scrapStringSimpleInfo(document, "#tab_pr_deskl > div.sp-tab-content", false);
          String productName = CrawlerUtils.scrapStringSimpleInfo(document, "#shopify-section-pr_summary > h1", true);
          String primaryImage = "https:" + CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".img_ptw", "data-src");
+         List<String> secondaryImages = getSecondaryImages(document);
 
 
          Elements variations = document.select("#product-select_ppr > option");
@@ -81,6 +82,7 @@ public class BrasilShopcaoCrawler extends Crawler {
                .setName(productName)
                .setDescription(description)
                .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
                .setOffers(offers)
                .build();
             products.add(product);
@@ -99,6 +101,7 @@ public class BrasilShopcaoCrawler extends Crawler {
                   .setName(variationName)
                   .setDescription(description)
                   .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
                   .setOffers(offers)
                   .build();
                products.add(product);
@@ -174,6 +177,19 @@ public class BrasilShopcaoCrawler extends Crawler {
             .build());
       }
       return creditCards;
+   }
+
+   private List<String> getSecondaryImages(Document doc) {
+      List<String> secondaryImages = new ArrayList<>();
+
+      Elements imagesLi = doc.select("div.p-thumb.p-thumb_ppr.images.sp-pr-gallery.equal_nt.nt_contain.ratio_imgtrue.position_8.nt_slider.pr_carousel > div");
+      for (Element imageLi : imagesLi) {
+         secondaryImages.add(imageLi.attr("src"));
+      }
+      if (secondaryImages.size() > 0) {
+         secondaryImages.remove(0);
+      }
+      return secondaryImages;
    }
 }
 
