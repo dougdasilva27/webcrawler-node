@@ -124,7 +124,7 @@ public class BrasilShopcaoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document document) {
-      return document.selectFirst("div.container.container_cat.cat_default") != null;
+      return document.selectFirst("#shopify-section-pr_summary") != null;
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
