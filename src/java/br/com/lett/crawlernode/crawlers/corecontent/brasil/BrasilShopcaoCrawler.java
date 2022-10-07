@@ -17,6 +17,7 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -65,6 +66,7 @@ public class BrasilShopcaoCrawler extends Crawler {
          String productName = CrawlerUtils.scrapStringSimpleInfo(document, "#shopify-section-pr_summary > h1", true);
          String primaryImage = "https:" + CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".img_ptw", "data-src");
          List<String> secondaryImages = getSecondaryImages(document);
+         RatingsReviews ratingsReviews = ratingsReviews(document);
 
 
          Elements variations = document.select("#product-select_ppr > option");
@@ -83,6 +85,7 @@ public class BrasilShopcaoCrawler extends Crawler {
                .setDescription(description)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
+               .setRatingReviews(ratingsReviews)
                .setOffers(offers)
                .build();
             products.add(product);
@@ -102,6 +105,7 @@ public class BrasilShopcaoCrawler extends Crawler {
                   .setDescription(description)
                   .setPrimaryImage(primaryImage)
                   .setSecondaryImages(secondaryImages)
+                  .setRatingReviews(ratingsReviews)
                   .setOffers(offers)
                   .build();
                products.add(product);
@@ -115,7 +119,8 @@ public class BrasilShopcaoCrawler extends Crawler {
    }
 
    private boolean checkIfIsAvailable(Document document) {
-      return document.selectFirst("div.col-auto.sticky_atc_btn.variations_form.flex.wrap.al_center.fl_center > button") != null;
+     String stock = CrawlerUtils.scrapStringSimpleInfo(document,"div.variations_button.in_flex.column.w__100.buy_qv_false > div > button",true);
+     return stock != null;
    }
 
    private boolean isProductPage(Document document) {
@@ -190,6 +195,19 @@ public class BrasilShopcaoCrawler extends Crawler {
          secondaryImages.remove(0);
       }
       return secondaryImages;
+   }
+
+   private RatingsReviews ratingsReviews(Document doc) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+
+      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtmlAttr(doc,".jdgm-prev-badge","data-number-of-reviews",null);
+      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".jdgm-prev-badge", "data-average-rating", false, '.', session);
+
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+
+      return ratingReviews;
    }
 }
 
