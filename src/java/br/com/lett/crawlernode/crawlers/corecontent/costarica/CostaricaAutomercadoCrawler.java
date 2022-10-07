@@ -23,6 +23,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
@@ -63,7 +64,10 @@ public class CostaricaAutomercadoCrawler extends Crawler {
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.SMART_PROXY_CL,
+            ProxyCollection.SMART_PROXY_CO_HAPROXY
          ))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(true).build())
          .mustSendContentEncoding(false)
@@ -103,6 +107,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          boolean available = data.optBoolean("inStock");
          String name = getName(data, available);
          String primaryImage = JSONUtils.getValueRecursive(data, "gallery.0", String.class);
+         List<String> secondaryImages = getSecundaryImages(data, primaryImage);
          String description = data.optString("description");
          Offers offers = available ? scrapOffers(data) : new Offers();
 
@@ -112,6 +117,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
             .build();
@@ -122,6 +128,21 @@ public class CostaricaAutomercadoCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private List<String> getSecundaryImages(JSONObject data, String primaryImage) {
+      JSONArray arraySecondaryImagens = JSONUtils.getValueRecursive(data, "gallery", JSONArray.class);
+      List<String> list = new ArrayList<>();
+      if (arraySecondaryImagens != null && !arraySecondaryImagens.isEmpty()) {
+         for (Integer i = 0; i < arraySecondaryImagens.length(); i++) {
+            String image = (String) arraySecondaryImagens.get(i);
+            if (image!=null && !image.isEmpty() &&!image.equals(primaryImage)) {
+               list.add(image);
+            }
+         }
+      }
+
+      return list;
    }
 
    private String getName(JSONObject data, boolean available) {
