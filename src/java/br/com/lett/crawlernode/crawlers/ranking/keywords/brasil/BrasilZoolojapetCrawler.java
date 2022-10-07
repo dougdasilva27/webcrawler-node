@@ -36,30 +36,32 @@ public class BrasilZoolojapetCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       JSONObject json = fetchJSONObject("https://m2.zoolojapet.com.br/graphql/V1/products");
-      totalProducts = JSONUtils.getValueRecursive(json, "data.products.total_count", Integer.class);
-      JSONArray products = JSONUtils.getValueRecursive(json, "data.products.items", JSONArray.class);
-      if (products != null && !products.isEmpty()) {
-         for (Object obj : products) {
-            JSONObject product = (JSONObject) obj;
-            String internalId = product.optString("id");
-            String internalPid = product.optString("sku", null);
-            String name = product.optString("name");
-            Boolean available = checkAvailability(product.optString("stock_status", null));
-            String productUrl = getUrl(product);
-            String imageUrl = JSONUtils.getValueRecursive(product, "thumbnail.url", String.class);
-            Integer price = getPrice(product);
-            RankingProduct productRanking = RankingProductBuilder.create()
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setAvailability(available)
-               .setUrl(productUrl)
-               .setImageUrl(imageUrl)
-               .setPriceInCents(price)
-               .build();
-            saveDataProduct(productRanking);
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
+      if (json != null) {
+         totalProducts = JSONUtils.getValueRecursive(json, "data.products.total_count", Integer.class);
+         JSONArray products = JSONUtils.getValueRecursive(json, "data.products.items", JSONArray.class);
+         if (products != null && !products.isEmpty()) {
+            for (Object obj : products) {
+               JSONObject product = (JSONObject) obj;
+               String internalId = product.optString("id");
+               String internalPid = product.optString("sku", null);
+               String name = product.optString("name");
+               Boolean available = checkAvailability(product.optString("stock_status", null));
+               String productUrl = getUrl(product);
+               String imageUrl = JSONUtils.getValueRecursive(product, "thumbnail.url", String.class);
+               Integer price = getPrice(product);
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setAvailability(available)
+                  .setUrl(productUrl)
+                  .setImageUrl(imageUrl)
+                  .setPriceInCents(price)
+                  .build();
+               saveDataProduct(productRanking);
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
             }
          }
       }

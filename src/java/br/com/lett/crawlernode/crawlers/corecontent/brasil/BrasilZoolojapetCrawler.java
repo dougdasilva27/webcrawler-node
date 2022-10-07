@@ -43,8 +43,8 @@ public class BrasilZoolojapetCrawler extends Crawler {
          String name = dataJson.optString("name");
          String description = dataJson.optString("description");
          List<String> images = getImages(dataJson);
-         String primaryImage = images.remove(0);
-         List<String> secondaryImages = images.size() > 0 ? images : null;
+         String primaryImage = images != null ? images.remove(0) : null;
+         List<String> secondaryImages = images != null && images.size() > 0 ? images : null;
          Offers offers = scrapOffers(dataJson);
          Product product = ProductBuilder.create()
             .setInternalId(internalId)
@@ -65,7 +65,7 @@ public class BrasilZoolojapetCrawler extends Crawler {
 
    private String getUrl(JSONObject json) {
       String slug = json.optString("slug");
-      if (!"".equals(slug) && !slug.isEmpty()) {
+      if (slug != null && !slug.isEmpty()) {
          return HOME_PAGE + slug;
       }
       return null;
@@ -74,16 +74,16 @@ public class BrasilZoolojapetCrawler extends Crawler {
    private List<String> getImages(JSONObject json) {
       JSONArray arrayImages = JSONUtils.getValueRecursive(json, "images", JSONArray.class);
       if (!arrayImages.isEmpty() && arrayImages != null) {
-         List<String> secondaryImages = new ArrayList<String>();
+         List<String> images = new ArrayList<String>();
          for (Integer i = 0; i < arrayImages.length(); i++) {
             JSONObject img = arrayImages.optJSONObject(i);
             String urlImage = img.optString("url");
-            if (!"".equals(urlImage) && !urlImage.isEmpty()) {
-               secondaryImages.add(urlImage);
+            if (urlImage != null && !urlImage.isEmpty()) {
+               images.add(urlImage);
             }
          }
-         if (secondaryImages.size() > 0) {
-            return secondaryImages;
+         if (images.size() > 0) {
+            return images;
          }
       }
       return null;
