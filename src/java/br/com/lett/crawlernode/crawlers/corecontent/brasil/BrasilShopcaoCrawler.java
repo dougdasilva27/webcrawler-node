@@ -165,7 +165,7 @@ public class BrasilShopcaoCrawler extends Crawler {
 
    private Pricing scrapPricingVariations(Document doc, String internalId) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".js_sticky_sl [value=\"" + internalId + "\"]", "data-price", false, ',', session);
-      if(spotlightPrice != null){
+      if (spotlightPrice != null) {
          spotlightPrice = spotlightPrice / 100;
       }
 
