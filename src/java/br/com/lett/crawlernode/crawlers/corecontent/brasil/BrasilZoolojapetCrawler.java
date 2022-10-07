@@ -28,20 +28,23 @@ public class BrasilZoolojapetCrawler extends Crawler {
    public BrasilZoolojapetCrawler(Session session) {
       super(session);
    }
-   private String SELLER_NAME="zoolojapet";
+
+   private String SELLER_NAME = "zoolojapet";
    private String HOME_PAGE = "https://zoolojapet.com.br/";
+
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<Product>();
       JSONObject dataJson = getScriptJson(doc);
-      if(dataJson!=null) {
-         String internalId = dataJson.optString("id",null);
-         String internalPid = dataJson.optString("sku",null);
+      if (dataJson != null) {
+         String internalId = dataJson.optString("id", null);
+         String internalPid = dataJson.optString("sku", null);
          String url = getUrl(dataJson);
          String name = dataJson.optString("name");
          String description = dataJson.optString("description");
-         String primaryImage = getPrimaryImage(dataJson);
-         List<String> secondaryImages = getSecondaryImages(dataJson);
+         List<String> images = getImages(dataJson);
+         String primaryImage = images.remove(0);
+         List<String> secondaryImages = images.size() > 0 ? images : null;
          Offers offers = scrapOffers(dataJson);
          Product product = ProductBuilder.create()
             .setInternalId(internalId)
@@ -54,48 +57,38 @@ public class BrasilZoolojapetCrawler extends Crawler {
             .setDescription(description)
             .build();
          products.add(product);
-      }else {
+      } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
       return products;
    }
+
    private String getUrl(JSONObject json) {
-      if(json!=null) {
-         String slug = json.optString("slug");
-         if(!"".equals(slug) && !slug.isEmpty()) {
-            return HOME_PAGE+slug;
-         }
+      String slug = json.optString("slug");
+      if (!"".equals(slug) && !slug.isEmpty()) {
+         return HOME_PAGE + slug;
       }
       return null;
    }
-   private String getPrimaryImage(JSONObject json) {
-      if (json!=null) {
-         String imageUrl = JSONUtils.getValueRecursive(json,"image.url", String.class);
-         if (!imageUrl.isEmpty() && !"".equals(imageUrl)) {
-            return imageUrl;
-         }
-      }
-      return null;
-   }
-   private List<String> getSecondaryImages(JSONObject json) {
-      if (json!=null) {
-         JSONArray arrayImages = JSONUtils.getValueRecursive(json,"images",JSONArray.class);
-         if(!arrayImages.isEmpty() && arrayImages!=null) {
-            List<String> secondaryImages = new ArrayList<String>();
-            for(Integer i=0;i<arrayImages.length();i++) {
-               JSONObject img = arrayImages.optJSONObject(i);
-               String urlImage = img.optString("url");
-               if(!"".equals(urlImage) && !urlImage.isEmpty()) {
-                  secondaryImages.add(urlImage);
-               }
-            }
-            if (secondaryImages.size() > 0) {
-               return secondaryImages;
+
+   private List<String> getImages(JSONObject json) {
+      JSONArray arrayImages = JSONUtils.getValueRecursive(json, "images", JSONArray.class);
+      if (!arrayImages.isEmpty() && arrayImages != null) {
+         List<String> secondaryImages = new ArrayList<String>();
+         for (Integer i = 0; i < arrayImages.length(); i++) {
+            JSONObject img = arrayImages.optJSONObject(i);
+            String urlImage = img.optString("url");
+            if (!"".equals(urlImage) && !urlImage.isEmpty()) {
+               secondaryImages.add(urlImage);
             }
          }
+         if (secondaryImages.size() > 0) {
+            return secondaryImages;
+         }
       }
       return null;
    }
+
    private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       List<String> sales = new ArrayList<>();
@@ -112,8 +105,9 @@ public class BrasilZoolojapetCrawler extends Crawler {
          .build());
       return offers;
    }
+
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
-     Double price = json.optDouble("price");
+      Double price = JSONUtils.getDoubleValueFromJSON(json, "price", false);
 
       CreditCards creditCards = scrapCreditCards(price);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
@@ -126,6 +120,7 @@ public class BrasilZoolojapetCrawler extends Crawler {
          .setCreditCards(creditCards)
          .build();
    }
+
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
@@ -135,7 +130,7 @@ public class BrasilZoolojapetCrawler extends Crawler {
          .build());
 
       Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.HIPERCARD.toString(),
-         Card.DINERS.toString(),Card.HIPER.toString(), Card.ELO.toString(), Card.SOROCRED.toString(),Card.AMEX.toString());
+         Card.DINERS.toString(), Card.HIPER.toString(), Card.ELO.toString(), Card.SOROCRED.toString(), Card.AMEX.toString());
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
@@ -150,11 +145,11 @@ public class BrasilZoolojapetCrawler extends Crawler {
 
 
    private JSONObject getScriptJson(Document doc) {
-      String dataScript = CrawlerUtils.scrapScriptFromHtml(doc,"#__NEXT_DATA__");
-      if(dataScript != null && !dataScript.isEmpty()) {
+      String dataScript = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
+      if (dataScript != null && !dataScript.isEmpty()) {
          JSONArray arrayJson = CrawlerUtils.stringToJsonArray(dataScript);
-         if (arrayJson!=null && !arrayJson.isEmpty()) {
-            return JSONUtils.getValueRecursive(arrayJson,"0.props.pageProps.resource.data",JSONObject.class);
+         if (arrayJson != null && !arrayJson.isEmpty()) {
+            return JSONUtils.getValueRecursive(arrayJson, "0.props.pageProps.resource.data", JSONObject.class);
          }
 
       }
