@@ -1,5 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -7,14 +11,36 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.List;
 
 public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
    public BrasilShopcaoCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.JSOUP;
+   }
+
+   @Override
+   protected Document fetchDocument(String url) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.BONANZA,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
+         .build();
+
+      String response = dataFetcher.get(session, request).getBody();
+
+      return Jsoup.parse(response);
    }
 
    @Override
@@ -30,7 +56,7 @@ public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "div.jdgm-widget.jdgm-preview-badge", "data-id");
             String productUrl = CrawlerUtils.scrapUrl(product, "div.product-info.mt__15 > h3 > a", "href", "https", "www.shopcao.com.br");
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, "h3 > a", true);
-            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "span[data-price-type=finalPrice]", "src");
+            String imageUrl = captureImage(product);
             Integer price = getPrice(product);
 
             boolean isAvailable = price != null;
@@ -77,5 +103,26 @@ public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
    protected void setTotalProducts() {
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, " div.col-12.nt_pr__ > h4", true, 0);
       this.log("Total da busca: " + this.totalProducts);
+   }
+
+   private String captureImage(Element element) {
+      String urlImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".product-image.pr.oh.lazyload", "data-include");
+      if (urlImage != null && !urlImage.isEmpty()) {
+         urlImage = "https://shopcao.com.br" + urlImage;
+         Request request = Request.RequestBuilder.create()
+            .setUrl(urlImage)
+            .setSendUserAgent(true)
+            .build();
+
+         Response response = this.dataFetcher.get(session, request);
+
+         Document document = Jsoup.parse(response.getBody());
+         String imageString = CrawlerUtils.scrapSimplePrimaryImage(document, ".pr_lazy_img.main-img.nt_img_ratio.lazyload.nt_bg_lz", List.of("data-bgset"), "https", "");
+
+         if (imageString != null && !imageString.isEmpty()) {
+            return imageString.replace("_1x1", "");
+         }
+      }
+      return null;
    }
 }
