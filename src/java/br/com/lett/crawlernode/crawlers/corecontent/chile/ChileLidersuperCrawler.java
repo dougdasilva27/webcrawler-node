@@ -2,10 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -20,15 +16,15 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.parser.Parser;
-import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChileLidersuperCrawler extends Crawler {
 
@@ -49,28 +45,27 @@ public class ChileLidersuperCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=productID]", true);
-         String name = scrapName(doc);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a > span");
-         List<String> images = crawlImages(internalId);
-         String primaryImage = !images.isEmpty() ? images.get(0) : null;
-         List<String> secondaryImages = crawlSecondaryImages(images);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-features"));
-         boolean available = isAvailable(doc);
+         String internalId = crawlInternalId(doc);
+         String internalPidString = CrawlerUtils.scrapStringSimpleInfo(doc, ".pdp-desktop-item-number", true);
+         String internalPid = internalPidString != null ? internalPidString.replace("item ", "") : null;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail-display-name", true);
+         CategoryCollection categories = new CategoryCollection();
+         String primaryImage = crawlPrimaryImage(doc);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "div[class*=ShowProductImages] > img", List.of("src"), "https", "images.lider.cl", primaryImage);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, List.of(".product-detail__card-section:contains(Descripción)"));
+         boolean available = doc.selectFirst(".no-available") == null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
-         JSONObject jsonEan = selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]");
-         List<String> eans = scrapEans(jsonEan);
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
+            .setInternalPid(internalPid)
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
-            .setEans(eans)
             .build();
 
          products.add(product);
@@ -83,13 +78,25 @@ public class ChileLidersuperCrawler extends Crawler {
 
    }
 
-   private Boolean isAvailable(Document doc) {
-      String noStock = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "p#pdp-no-stock", "class");
-      if (noStock.equals("agotado")) {
-         return false;
-      }
-      return true;
+   private String crawlInternalId(Document doc) {
+      String imgUrl = crawlPrimaryImage(doc);
+      String regex = "productos\\/(\\d+)[a-z].";
 
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(imgUrl != null ? imgUrl : "");
+
+      return matcher.find() ? matcher.group(1) : null;
+   }
+
+   private String crawlPrimaryImage(Document doc) {
+      Element figure = doc.selectFirst("div[class*=FigureContainer] > figure");
+      String styleValue = figure != null ? figure.attr("style") : "";
+      String regex = "background-image: url\\(\"(.+)\"\\).";
+
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(styleValue);
+
+      return matcher.find() ? matcher.group(1) : null;
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
@@ -112,8 +119,8 @@ public class ChileLidersuperCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#productPrice p[itemprop=\"highPrice\"]", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#productPrice .price", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[class*=product-prices] .saving__price__pdp", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[class*=product-prices] .pdp-mobile-sales-price", null, true, ',', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
@@ -150,102 +157,7 @@ public class ChileLidersuperCrawler extends Crawler {
       return creditCards;
    }
 
-   private List<String> scrapEans(JSONObject jsonEan) {
-      List<String> eans = new ArrayList<>();
-
-      if (jsonEan.has("gtin13")) {
-         eans.add(jsonEan.getString("gtin13"));
-      }
-
-      return eans;
-   }
-
-   private JSONObject selectJsonFromHtml(Document doc, String cssSelector) {
-      Element element = doc.selectFirst(cssSelector);
-      JSONObject json = new JSONObject();
-
-      if (element != null) {
-         String strJson = sanitizeStringJson(element.html());
-         json = CrawlerUtils.stringToJson(strJson);
-      }
-
-      return json;
-   }
-
-   private String sanitizeStringJson(String text) {
-      String result = null;
-      String substring = null;
-
-      if (text.contains("/*") && text.contains("*/")) {
-         substring = text.substring(text.indexOf("/*"), text.indexOf("*/") + 2);
-         result = text.replace(substring, "");
-      }
-
-      return result;
-   }
-
    private boolean isProductPage(Document doc) {
-      return doc.select(".product-info") != null && doc.selectFirst(".product-info .no-available") == null;
-   }
-
-   private String scrapName(Document doc) {
-      StringBuilder name = new StringBuilder();
-
-      Elements names = doc.select(".product-info h1 span, .product-profile h1 span");
-      for (Element e : names) {
-         name.append(e.ownText().trim()).append(" ");
-      }
-
-      return name.toString().trim();
-   }
-
-   private List<String> crawlImages(String id) {
-      List<String> images = new ArrayList<>();
-
-      Request request = RequestBuilder.create()
-         .setUrl("https://wlmstatic.lider.cl/contentassets/galleries/" + id + ".xml")
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
-         .setCookies(cookies)
-         .build();
-
-      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher, true);
-
-      Document docXml = Jsoup.parse(response.getBody(), "", Parser.xmlParser());
-
-      Elements items = docXml.getElementsByTag("image");
-      for (Element e : items) {
-         String image = e.text();
-
-         if (image.contains("file:/")) {
-
-            String format = "";
-
-            if (image.contains(".jpg")) {
-               format = "=format[jpg]";
-            }
-
-            images.add("http://images.lider.cl/wmtcl?source=url[" + image + "]&sink" + format);
-         }
-      }
-
-      return images;
-   }
-
-   private List<String> crawlSecondaryImages(List<String> images) {
-      List<String> secondaryImages2 = new ArrayList<>();
-
-      if (images.size() > 1) {
-         JSONArray imagesArray = new JSONArray();
-
-         for (int i = 1; i < images.size(); i++) {
-            imagesArray.put(images.get(i));
-            secondaryImages2.add(images.get(i));
-         }
-      }
-
-      return secondaryImages2;
+      return doc.select(".product-info") != null && doc.selectFirst(".no-available") == null;
    }
 }
