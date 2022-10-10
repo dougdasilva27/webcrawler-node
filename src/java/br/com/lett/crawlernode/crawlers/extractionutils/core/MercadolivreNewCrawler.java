@@ -440,7 +440,7 @@ public class MercadolivreNewCrawler {
       Double spotlightPrice = findSpotlightPrice(doc);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "del.price-tag", null, false, ',', session);
       if (priceFrom == null) {
-         priceFrom = scrapPricingFromSellersPage(doc);
+         priceFrom = scrapSpotlightPricingFromSellersPage(doc);
          if (priceFrom == spotlightPrice) {
             priceFrom = null;
          }
@@ -482,15 +482,6 @@ public class MercadolivreNewCrawler {
          priceFraction = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__fraction", false, 0);
          priceCents = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__cents", false, 0);
       }
-
-      return priceFraction + (double) priceCents / 100;
-   }
-
-   private Double scrapPricingFromSellersPage(Element doc) {
-
-      Integer priceFraction = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__fraction", false, 0);
-      Integer priceCents = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__cents", false, 0);
-
 
       return priceFraction + (double) priceCents / 100;
    }
