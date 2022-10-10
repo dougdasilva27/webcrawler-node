@@ -51,7 +51,7 @@ import java.util.regex.Pattern;
  */
 public class MercadolivreCrawler extends Crawler {
 
-   private String getCep(){return session.getOptions().getString("cp");}
+   private String getCep(){return session.getOptions().optString("cp");}
    private String homePage;
    private String mainSellerNameLower;
    protected boolean allow3PSellers = isAllow3PSellers();
