@@ -12,6 +12,8 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -170,7 +172,7 @@ public class BrasilShopcaoCrawler extends Crawler {
       }
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
@@ -187,7 +189,7 @@ public class BrasilShopcaoCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#price_ppr del", null, false, ',', session);
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
@@ -198,9 +200,9 @@ public class BrasilShopcaoCrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditCards(Double price) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Document doc, Double price) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-      Installments installments = new Installments();
+      Installments installments = scrapInstallments(doc);
 
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(1)
@@ -216,6 +218,29 @@ public class BrasilShopcaoCrawler extends Crawler {
             .build());
       }
       return creditCards;
+   }
+
+   public Installments scrapInstallments(Document doc, String selector) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(selector, doc, false);
+      if (!pair.isAnyValueNull()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(pair.getFirst())
+            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(((Float) pair.getSecond()).doubleValue()))
+            .build());
+      }
+
+      return installments;
+   }
+
+   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+
+      Installments installments = scrapInstallments(doc, "#shopify-section-pr_summary > span");
+      if (installments != null || installments.getInstallments().isEmpty()) {
+         return installments;
+      }
+      return null;
    }
 
    private List<String> getSecondaryImages(Document doc) {
