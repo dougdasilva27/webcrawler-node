@@ -75,7 +75,7 @@ public class BrasilShopcaoCrawler extends Crawler {
 
          if (variations.isEmpty()) {
 
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".js_sticky_sl", "value");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "#cart-form_ppr > input[name=id]", "value");
             boolean isAvailable = checkIfIsAvailable(document);
             Offers offers = isAvailable ? scrapOffers(document) : new Offers();
 
