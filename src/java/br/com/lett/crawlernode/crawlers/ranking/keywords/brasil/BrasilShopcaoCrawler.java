@@ -91,12 +91,10 @@ public class BrasilShopcaoCrawler extends CrawlerRankingKeywords {
 
    private Integer priceVariation(String price) {
       String priceString = "";
-      if (priceString != null && !priceString.isEmpty()) {
-         String arrayPrice[] = price.split(" ");
-         if (arrayPrice[1] != null && !arrayPrice[1].isEmpty()) {
-            priceString = arrayPrice[1];
-            return CommonMethods.stringPriceToIntegerPrice(priceString, ',', null);
-         }
+      String arrayPrice[] = price.split(" ");
+      if (arrayPrice.length > 1 && arrayPrice[1] != null && !arrayPrice[1].isEmpty()) {
+         priceString = arrayPrice[1];
+         return CommonMethods.stringPriceToIntegerPrice(priceString, ',', null);
       }
       return null;
    }
