@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -8,12 +7,10 @@ import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -24,9 +21,6 @@ import models.Offer;
 import models.Offers;
 import models.pricing.CreditCards;
 import models.pricing.Pricing;
-import org.apache.commons.lang.WordUtils;
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
@@ -70,7 +64,6 @@ public class BrasilMuniCrawler extends Crawler {
 
       if (productData != null && !productData.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
-         String brand = getBrand(productData);
          String name = getName(productData);
          String primaryImage = getPrimaryImage(productData);
          String description = getDescription(productData);
@@ -81,7 +74,7 @@ public class BrasilMuniCrawler extends Crawler {
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setName(brand + " " + name)
+            .setName(name)
             .setPrimaryImage(primaryImage)
             .setDescription(description)
             .setOffers(offers)
@@ -116,22 +109,22 @@ public class BrasilMuniCrawler extends Crawler {
    }
 
    private String getName(JSONObject productList) {
-      String name = null;
-      String objName = productList.optString("name");
-      if (objName != null) {
-         name = objName;
+      String name = productList.optString("name");
+      if (name != null) {
+         String unit = productList.optString("contentDescription");
+         if (unit != null) {
+            name = name + " " + unit;
+         }
+         String brand = JSONUtils.getValueRecursive(productList, "metadata.product_brand", String.class);
+         if (brand != null && !name.contains(brand)) {
+            name = name + " " + brand;
+         }
+
       }
+
       return name;
    }
 
-   private String getBrand(JSONObject productList) {
-      String brand = "";
-      Object objBrand = productList.optQuery("/metadata/product_brand");
-      if (objBrand != null) {
-         brand = objBrand.toString();
-      }
-      return brand;
-   }
 
    private String getId() {
       String id = null;
