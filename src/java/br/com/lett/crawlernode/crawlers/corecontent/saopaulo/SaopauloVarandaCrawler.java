@@ -54,12 +54,11 @@ public class SaopauloVarandaCrawler extends Crawler {
       if (doc.selectFirst(".product-view") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-essential div input[name=\"product\"]", "value");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h2", false);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li a", false);
-         boolean available = doc.selectFirst(".button.btn-cart") != null;
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image.product-image-zoom img", Arrays.asList("src"), "http://", HOME_PAGE);
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#product_tabs_description_contents div", false);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-id", "value");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", false);
+         boolean available = doc.selectFirst(".disponivel") != null;
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".cloud-zoom-gallery.active img", Arrays.asList("src"), "http://", HOME_PAGE);
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".texto-desc", false);
          Offers offers = available ? scrapOffer(doc) : new Offers();
 
          // Creating the product
@@ -68,9 +67,6 @@ public class SaopauloVarandaCrawler extends Crawler {
             .setInternalId(internalId)
             .setInternalPid(internalId)
             .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
             .setDescription(description)
             .setOffers(offers)
