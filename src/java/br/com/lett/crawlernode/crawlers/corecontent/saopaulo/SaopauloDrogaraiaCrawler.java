@@ -22,10 +22,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,7 +62,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          RatingsReviews ratingReviews = crawRating(internalId);
          List<String> categories = CrawlerUtils.crawlCategories(doc, "main ul > li > a");
 
-         List<String> images = scrapListImages(data);
+         List<String> images = scrapListImages(data, doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
 
          String description = scrapDescription(data);
@@ -97,14 +94,20 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return products;
    }
 
-   private List<String> scrapListImages(JSONObject data) {
+   private List<String> scrapListImages(JSONObject data, Document doc) {
       List<String> images = new ArrayList<>();
       JSONArray imagesJson = JSONUtils.getValueRecursive(data, "media_gallery_entries", JSONArray.class);
       if (imagesJson != null) {
          for (int i = 0; i < imagesJson.length(); i++) {
             String imageFile = JSONUtils.getValueRecursive(imagesJson, i+".file", String.class);
-            String image = "https://img.drogaraia.com.br/catalog/product/" + imageFile;
-            images.add(image);
+            if(imageFile != null){
+               String image = "https://img.drogaraia.com.br/catalog/product/" + imageFile;
+               images.add(image);
+            }else {
+               String img = CrawlerUtils.scrapSimplePrimaryImage(doc,".swiper-lazy img", Arrays.asList("src"), "https", "");
+               images.add(img);
+            }
+
          }
       }
       return images;
