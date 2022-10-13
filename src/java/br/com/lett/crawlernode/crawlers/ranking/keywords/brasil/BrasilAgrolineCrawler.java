@@ -30,8 +30,8 @@ public class BrasilAgrolineCrawler extends CrawlerRankingKeywords {
 
          for(Element product : products){
             String productName = CrawlerUtils.scrapStringSimpleInfo(product,".spotTitle",true);
-            String productUrl = HOME_PAGE + CrawlerUtils.scrapUrl(product,".spot-parte-um","href","https","www.agroline.com.br");
-            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product,".spotContent > a > div","src");
+            String productUrl = CrawlerUtils.scrapUrl(product,".spot-parte-um","href","https","www.agroline.com.br");
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product,".jsImgSpot.imagem-primaria","src");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product,".fbits-valor",null,false,',',session,null);
             boolean isAvailable = price != null;
 
