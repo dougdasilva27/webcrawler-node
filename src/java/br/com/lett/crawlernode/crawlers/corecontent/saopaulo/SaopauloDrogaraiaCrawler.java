@@ -99,12 +99,12 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       JSONArray imagesJson = JSONUtils.getValueRecursive(data, "media_gallery_entries", JSONArray.class);
       if (imagesJson != null) {
          for (int i = 0; i < imagesJson.length(); i++) {
-            String imageFile = JSONUtils.getValueRecursive(imagesJson, i+".file", String.class);
-            if(imageFile != null){
+            String imageFile = JSONUtils.getValueRecursive(imagesJson, i + ".file", String.class);
+            if (imageFile != null) {
                String image = "https://img.drogaraia.com.br/catalog/product/" + imageFile;
                images.add(image);
-            }else {
-               String img = CrawlerUtils.scrapSimplePrimaryImage(doc,".swiper-lazy img", Arrays.asList("src"), "https", "");
+            } else {
+               String img = CrawlerUtils.scrapSimplePrimaryImage(doc, ".swiper-lazy img", Arrays.asList("src"), "https", "");
                images.add(img);
             }
 
@@ -210,6 +210,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
       return stringBuilder.toString();
    }
+
    private String isMainSeller(Document doc) {
       String isMarketPlace = CrawlerUtils.scrapStringSimpleInfo(doc, "div[class*='SoldAndDelivered'] a", true);
 
