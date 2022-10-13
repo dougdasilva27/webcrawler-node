@@ -45,7 +45,7 @@ public class BrasilMultinepCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", true);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-form .product-name", true);
       Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "#variacaoPreco", true);
       Prices prices = crawlPrices(price, doc);
       boolean available = doc.select(".botao-nao_indisponivel").isEmpty();
