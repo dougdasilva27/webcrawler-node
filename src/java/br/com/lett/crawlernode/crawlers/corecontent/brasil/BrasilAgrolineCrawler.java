@@ -146,26 +146,20 @@ public class BrasilAgrolineCrawler extends Crawler {
       return creditCards;
    }
 
-   public Installments scrapInstallments(Document doc, String selector) throws MalformedPricingException {
+   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
       Installments installments = new Installments();
 
-      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(selector, doc, false);
-      if (!pair.isAnyValueNull()) {
+      Integer installmentNumber = CrawlerUtils.scrapIntegerFromHtml(doc, ".blocoCartaoCredito .fbits-parcelamento-ultima-parcela.precoParcela .fbits-quantidadeParcelas", true, 0);
+      Double installmentPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".blocoCartaoCredito .fbits-parcelamento-ultima-parcela.precoParcela .fbits-parcela", null, false, ',', session);
+
+      if (installmentNumber != 0 || installmentPrice == null) {
          installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(pair.getFirst())
-            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(((Float) pair.getSecond()).doubleValue()))
+            .setInstallmentNumber(installmentNumber)
+            .setInstallmentPrice(installmentPrice)
             .build());
       }
 
       return installments;
    }
 
-   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
-
-      Installments installments = scrapInstallments(doc, ".fbits-parcelamento-ultima-parcela.precoParcela .fbits-quantidadeParcelas");
-      if (installments != null || installments.getInstallments().isEmpty()) {
-         return installments;
-      }
-      return null;
-   }
 }
