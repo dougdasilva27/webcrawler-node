@@ -1,12 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -14,10 +12,7 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
-import models.RatingsReviews;
 import models.pricing.*;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
@@ -40,15 +35,10 @@ public class BrasilBebidasStoreCrawler extends Crawler {
       List<Product> products = new ArrayList<Product>();
       Element product = doc.selectFirst(".produto-wrapper.product-detail");
       if (product != null) {
-         List<String> categoties = CrawlerUtils.crawlCategories(doc, ".breadcrumb-item", true);
-         if (categoties != null && categoties.size() > 0) {
-            categoties.remove(categoties.size() - 1);
-            categoties = categoties.size() > 0 ? categoties : null;
-         }
+         List<String> categories = getCategories(doc);
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "#form_comprar", "data-id");
-         List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".nav-images .list.swiper-container .swiper-wrapper .item.swiper-slide .box-img.index-list .swiper-lazy", Arrays.asList("data-src"), "", "", null);
-         String primaryImg = images != null && images.size() > 0 ? images.remove(0) : null;
-         List<String> secondaryImgs = images != null && images.size() > 0 ? images : null;
+         String primaryImg =  CrawlerUtils.scrapSimplePrimaryImage(product,".box-img.index-list.active .zoom .swiper-lazy",List.of("data-src"),"","");
+         List<String> secondaryImg = getSecondaryImages(doc,primaryImg);
          String description = CrawlerUtils.scrapStringSimpleInfo(product, ".section-box.description", false);
          String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-name", true);
          Boolean isAvailable = checkIsAvailable(CrawlerUtils.scrapStringSimpleInfo(product, ".botao-commerce.botao-nao_indisponivel", true));
@@ -56,11 +46,11 @@ public class BrasilBebidasStoreCrawler extends Crawler {
          Product newProduct = ProductBuilder.create()
             .setInternalId(internalId)
             .setUrl(this.session.getOriginalURL())
-            .setCategories(categoties)
+            .setCategories(categories)
             .setOffers(offers)
             .setName(name)
             .setPrimaryImage(primaryImg)
-            .setSecondaryImages(secondaryImgs)
+            .setSecondaryImages(secondaryImg)
             .setDescription(description)
             .build();
          products.add(newProduct);
@@ -73,7 +63,23 @@ public class BrasilBebidasStoreCrawler extends Crawler {
    private Boolean checkIsAvailable(String product) {
       return product == null;
    }
-
+   private List<String> getCategories(Document doc) {
+      List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb-item", true);
+      if (categories != null && categories.size() > 0) {
+         categories.remove(categories.size() - 1);
+         return categories.size() > 0 ? categories : null;
+      }
+      return null;
+   }
+   private List<String> getSecondaryImages(Document doc, String primaryImage) {
+      List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".nav-images .list.swiper-container .swiper-wrapper .item.swiper-slide .box-img.index-list .swiper-lazy", Arrays.asList("data-src"), "", "", primaryImage);
+      if(images!=null && images.size()>0) {
+         images.remove(0);
+         images = images.size() > 0 ? images : null;
+         return images;
+      }
+      return null;
+   }
    private Offers scrapOffers(Element data) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       List<String> sales = new ArrayList<>();

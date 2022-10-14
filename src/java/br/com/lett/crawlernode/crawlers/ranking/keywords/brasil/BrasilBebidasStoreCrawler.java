@@ -5,7 +5,6 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 import br.com.lett.crawlernode.util.Logging;
