@@ -49,7 +49,8 @@ public class BrasilAgrolineCrawler extends Crawler {
          List<String> secondaryImages = getSecondaryImages(document);
          String description = CrawlerUtils.scrapElementsDescription(document, List.of(".infoProd > div > p"));
          List<String> categories = CrawlerUtils.crawlCategories(document, ".fbits-breadcrumb");
-
+         String available = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".blocoQuantidadeComprar .avisoIndisponivel ", "style");
+         Offers offers = available != null && !available.isEmpty() ? scrapOffers(document) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -60,6 +61,7 @@ public class BrasilAgrolineCrawler extends Crawler {
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setCategories(categories)
+            .setOffers(offers)
             .build();
          products.add(product);
 
@@ -106,9 +108,10 @@ public class BrasilAgrolineCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property=\"product:price:amount\"]", "content", false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".pagamentoPix .fbits-parcela", null, false, ',', session);
+      Double bankSlipPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".pagamentoBoleto .fbits-parcela", null, false, ',', session);
 
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(bankSlipPrice, null);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
@@ -119,9 +122,13 @@ public class BrasilAgrolineCrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditCards(Document doc, Double price) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = scrapInstallments(doc);
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".blocoCartaoCredito .precoPor", null, false, ',', session);
+      if (price == null) {
+         price = spotlightPrice;
+      }
 
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(1)
