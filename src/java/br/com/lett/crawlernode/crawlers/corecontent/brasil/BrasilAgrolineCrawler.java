@@ -46,7 +46,7 @@ public class BrasilAgrolineCrawler extends Crawler {
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "[property=\"og:image\"]", "content");
          List<String> secondaryImages = getSecondaryImages(document);
          String description = CrawlerUtils.scrapElementsDescription(document, List.of(".infoProd > div > p"));
-         List<String> categories = CrawlerUtils.crawlCategories(document,".fbits-breadcrumb");
+         List<String> categories = CrawlerUtils.crawlCategories(document, ".fbits-breadcrumb");
 
 
          Product product = ProductBuilder.create()
@@ -104,7 +104,7 @@ public class BrasilAgrolineCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#variacaoPreco", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property=\"product:price:amount\"]", "content", false, '.', session);
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
