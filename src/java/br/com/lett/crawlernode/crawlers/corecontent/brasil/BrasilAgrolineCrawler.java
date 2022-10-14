@@ -87,6 +87,24 @@ public class BrasilAgrolineCrawler extends Crawler {
       return secondaryImages;
    }
 
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
+
+      offers.add(new Offer.OfferBuilder()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(this.SELLER_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+   }
+
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property=\"product:price:amount\"]", "content", false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#price_ppr del", null, false, ',', session);
