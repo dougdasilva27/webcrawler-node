@@ -2,7 +2,8 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.models.*;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
@@ -13,11 +14,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
-import org.openqa.selenium.WebElement;
 
-import java.util.*;
+import java.util.Arrays;
 
 public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
    Integer products;
@@ -54,6 +53,10 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
       } catch (Exception e) {
          Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
 
+      } finally {
+         if (webdriver != null) {
+            webdriver.terminate();
+         }
       }
 
       return doc;
@@ -103,7 +106,7 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
 
    private String scrapUrl(Element e) {
       String urlFullPath = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a.ProductItem__ImageWrapper", "href");
-      String [] urlPath = (urlFullPath != null) ? urlFullPath.split("/") : null;
+      String[] urlPath = (urlFullPath != null) ? urlFullPath.split("/") : null;
 
       if (urlPath != null) {
          return "https://www.adegaonline.com.br/products/" + urlPath[urlPath.length - 1];
