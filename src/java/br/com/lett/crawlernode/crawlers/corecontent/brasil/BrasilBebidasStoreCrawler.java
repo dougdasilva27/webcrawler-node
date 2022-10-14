@@ -37,8 +37,8 @@ public class BrasilBebidasStoreCrawler extends Crawler {
       if (product != null) {
          List<String> categories = getCategories(doc);
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "#form_comprar", "data-id");
-         String primaryImg =  CrawlerUtils.scrapSimplePrimaryImage(product,".box-img.index-list.active .zoom .swiper-lazy",List.of("data-src"),"","");
-         List<String> secondaryImg = getSecondaryImages(doc,primaryImg);
+         String primaryImg = CrawlerUtils.scrapSimplePrimaryImage(product, ".box-img.index-list.active .zoom .swiper-lazy", List.of("data-src"), "", "");
+         List<String> secondaryImg = getSecondaryImages(doc, primaryImg);
          String description = CrawlerUtils.scrapStringSimpleInfo(product, ".section-box.description", false);
          String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-name", true);
          Boolean isAvailable = checkIsAvailable(CrawlerUtils.scrapStringSimpleInfo(product, ".botao-commerce.botao-nao_indisponivel", true));
@@ -63,6 +63,7 @@ public class BrasilBebidasStoreCrawler extends Crawler {
    private Boolean checkIsAvailable(String product) {
       return product == null;
    }
+
    private List<String> getCategories(Document doc) {
       List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb-item", true);
       if (categories != null && categories.size() > 0) {
@@ -71,27 +72,25 @@ public class BrasilBebidasStoreCrawler extends Crawler {
       }
       return null;
    }
+
    private List<String> getSecondaryImages(Document doc, String primaryImage) {
       List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".nav-images .list.swiper-container .swiper-wrapper .item.swiper-slide .box-img.index-list .swiper-lazy", Arrays.asList("data-src"), "", "", primaryImage);
-      if(images!=null && images.size()>0) {
+      if (images != null && images.size() > 0) {
          images.remove(0);
          images = images.size() > 0 ? images : null;
          return images;
       }
       return null;
    }
+
    private Offers scrapOffers(Element data) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      List<String> sales = new ArrayList<>();
-
       Pricing pricing = scrapPricing(data);
-      sales.add(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setPricing(pricing)
-         .setSales(sales)
          .setSellerFullName(SELLER_NAME)
          .setIsMainRetailer(true)
          .setUseSlugNameAsInternalSellerId(true)
@@ -102,18 +101,21 @@ public class BrasilBebidasStoreCrawler extends Crawler {
 
    private Pricing scrapPricing(Element doc) throws MalformedPricingException {
       String priceString = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#preco_atual", "value");
-      Double price = Double.parseDouble(priceString);
-      Element installments = doc.selectFirst("#info_preco");
-      CreditCards creditCards = scrapCreditCards(price, installments);
-      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
-         .setFinalPrice(price)
-         .build();
+      if (priceString != null && !priceString.isEmpty()) {
+         Double price = Double.parseDouble(priceString);
+         Element installments = doc.selectFirst("#info_preco");
+         CreditCards creditCards = scrapCreditCards(price, installments);
+         BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+            .setFinalPrice(price)
+            .build();
 
-      return Pricing.PricingBuilder.create()
-         .setSpotlightPrice(price)
-         .setBankSlip(bankSlip)
-         .setCreditCards(creditCards)
-         .build();
+         return Pricing.PricingBuilder.create()
+            .setSpotlightPrice(price)
+            .setBankSlip(bankSlip)
+            .setCreditCards(creditCards)
+            .build();
+      }
+      return null;
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice, Element elementInstallments) throws MalformedPricingException {
