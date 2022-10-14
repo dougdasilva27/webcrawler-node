@@ -170,12 +170,15 @@ public class PeruInkafarmaCrawler extends Crawler {
       List<String> list = new ArrayList<>();
       if (array != null && !array.isEmpty()) {
          JSONArray thumbnails = JSONUtils.getValueRecursive(array, "0.thumbnails", JSONArray.class);
-         for (Integer i = 0; i < thumbnails.length(); i++) {
-            String image = (String) thumbnails.get(i);
-            if (image != null && !image.equals(primaryImage)) {
-               list.add(image);
+         if (thumbnails != null && !thumbnails.isEmpty()) {
+            for (Integer i = 0; i < thumbnails.length(); i++) {
+               String image = (String) thumbnails.get(i);
+               if (image != null && !image.equals(primaryImage)) {
+                  list.add(image);
+               }
             }
          }
+
       }
 
 
