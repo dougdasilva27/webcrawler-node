@@ -152,7 +152,7 @@ public class BrasilAgrolineCrawler extends Crawler {
       Integer installmentNumber = CrawlerUtils.scrapIntegerFromHtml(doc, ".blocoCartaoCredito .fbits-parcelamento-ultima-parcela.precoParcela .fbits-quantidadeParcelas", true, 0);
       Double installmentPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".blocoCartaoCredito .fbits-parcelamento-ultima-parcela.precoParcela .fbits-parcela", null, false, ',', session);
 
-      if (installmentNumber != 0 || installmentPrice == null) {
+      if (installmentNumber != 0 && installmentPrice == null) {
          installments.add(Installment.InstallmentBuilder.create()
             .setInstallmentNumber(installmentNumber)
             .setInstallmentPrice(installmentPrice)
