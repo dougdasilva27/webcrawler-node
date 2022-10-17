@@ -49,7 +49,7 @@ public class BrasilEspacoprimeCrawler extends CrawlerRankingKeywords {
             String name = product.optString("nameProduct");
             String imageUrl = product.optString("urlImage");
             Double price = JSONUtils.getDoubleValueFromJSON(product,"sellPrice", true);
-            Integer priceInCents = price != null ? (int) Math.round((price * 100)) : 0;
+            Integer priceInCents = price != null ? (int) Math.round((price * 100)) : null;
             int stock = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "form[data-id=\"" + internalId + "\"] .qntdProd", true, 0);
             boolean isAvailable = stock > 0;
 
