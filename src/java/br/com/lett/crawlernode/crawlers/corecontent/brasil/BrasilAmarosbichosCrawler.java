@@ -13,10 +13,12 @@ import br.com.lett.crawlernode.util.Pair;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+
 import models.AdvancedRatingReview;
 import models.Offer.OfferBuilder;
 import models.Offers;
@@ -33,12 +35,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class BrasilAmarosbichosCrawler extends Crawler {
-
-   private static final String HOME_PAGE = "www.petshopamarosbichos.com.br";
    private static final String MAIN_SELLER_NAME = "Amaro's Bichos";
-   private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), 
-         Card.ELO.toString(), Card.DINERS.toString(), Card.AMEX.toString());
-   
+   private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.ELO.toString(), Card.DINERS.toString(), Card.AMEX.toString());
+
    public BrasilAmarosbichosCrawler(Session session) {
       super(session);
    }
@@ -51,33 +51,29 @@ public class BrasilAmarosbichosCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".cod-sku [itemprop=\"sku\"]", true);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-container[data-product-id]", "data-product-id");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".container .title-page-product", true);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrump-container > ul > li span[itemprop=\"title\"]", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-sku-image .image-highlight a.main-product img",
-               Arrays.asList("data-zoom-image", "src"), "https:", HOME_PAGE);
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-sku-image .image-highlight a.main-product img",
-               Arrays.asList("data-zoom-image", "src"), "https:", HOME_PAGE, primaryImage);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".descriptions"));
-         Offers offers = scrapOffers(doc);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[id=hdnProdutoVarianteId]", "value");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[id=hdnProdutoId]", "value");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".fbits-produto-nome.prodTitle.title", true);
+         List<String> categories = CrawlerUtils.crawlCategories(doc, "ol > li > a > span");
+         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#zoomImagemProduto", "src");
+         List<String> secondaryImages = getSecondaryImages(doc);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".informacao-abas"));
+         String available = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".avisoIndisponivel", "style");
+         Offers offers = available != null && !available.isEmpty() ? scrapOffers(doc) : new Offers();
          RatingsReviews ratingsReviews = scrapRatingReviews(doc);
 
-         // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setOffers(offers)
-               .setRatingReviews(ratingsReviews)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setOffers(offers)
+            .setRatingReviews(ratingsReviews)
+            .build();
 
          products.add(product);
 
@@ -87,73 +83,72 @@ public class BrasilAmarosbichosCrawler extends Crawler {
 
       return products;
    }
-   
+
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
 
-      if(pricing != null) {
-        offers.add(OfferBuilder.create()
-              .setUseSlugNameAsInternalSellerId(true)
-              .setSellerFullName(MAIN_SELLER_NAME)
-              .setSellersPagePosition(1)
-              .setIsBuybox(false)
-              .setIsMainRetailer(true)
-              .setPricing(pricing)
-              .build());
+      if (pricing != null) {
+         offers.add(OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(MAIN_SELLER_NAME)
+            .setSellersPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .build());
       }
 
       return offers;
    }
-   
+
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product .product-sku-information meta[itemprop=\"price\"]", "content", false, ',', session);
-      
-      if(spotlightPrice != null) {
-        Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product .promotion", null, true, ',', session);
-        CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
-  
-        return PricingBuilder.create()
-              .setSpotlightPrice(spotlightPrice)
-              .setPriceFrom(priceFrom)
-              .setCreditCards(creditCards)
-              .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
-              .build();
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#divFormaPagamento > .precoPor", null, true, ',', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property=\"product:price:amount\"]", "content", true, '.', session);
       }
-      
-      return null;
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#divFormaPagamento > div.precoDe", null, true, ',', session);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+
+      return PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
+         .build();
+
    }
-   
+
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
       installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".parcel-price .cash-payment span", doc, true, "x de");
       if (!pair.isAnyValueNull()) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(pair.getFirst())
-               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
-               .build());
+            .setInstallmentNumber(pair.getFirst())
+            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
+            .build());
       }
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(brand)
-               .setIsShopCard(false)
-               .setInstallments(installments)
-               .build());
+            .setBrand(brand)
+            .setIsShopCard(false)
+            .setInstallments(installments)
+            .build());
       }
 
       return creditCards;
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("#frontend-product .product-container") != null;
+      return doc.selectFirst(".detalhe-produto") != null;
    }
 
    private RatingsReviews scrapRatingReviews(Document doc) {
@@ -207,11 +202,24 @@ public class BrasilAmarosbichosCrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
+   }
+
+   private List<String> getSecondaryImages(Document doc) {
+      List<String> secondaryImages = new ArrayList<>();
+
+      Elements imagesLi = doc.select(".zoom-thumbnail.elevatezoom-gallery");
+      for (Element imageLi : imagesLi) {
+         secondaryImages.add(imageLi.attr("data-image"));
+      }
+      if (secondaryImages.size() > 0) {
+         secondaryImages.remove(0);
+      }
+      return secondaryImages;
    }
 }
