@@ -155,22 +155,21 @@ public class BrasilPetcenterexpressCrawler extends Crawler {
    }
 
    private Double scrapPriceInJson(Document doc) {
-      Elements listScript = doc.select("script");
-      for (int i = 0; i < listScript.size(); i++) {
-         String script = String.valueOf(listScript.get(i));
-         if (script.contains("dataLayer ")) {
-            script = script.replaceAll("dataLayer =", "").replaceAll("<script>", "").replaceAll("</script>", "");
-            if (script != null && !script.isEmpty()) {
-               JSONArray jsonArray = CrawlerUtils.stringToJsonArray(script);
-               String priceStr = JSONUtils.getValueRecursive(jsonArray, "0.price", String.class);
-               if (priceStr != null && !priceStr.isEmpty()) {
-                  return Double.parseDouble(priceStr);
-               }
-            }
 
+      String script = String.valueOf(doc.selectFirst("script:containsData(dataLayer = )"));
+      if (script.contains("dataLayer ")) {
+         script = script.replaceAll("dataLayer =", "").replaceAll("<script>", "").replaceAll("</script>", "");
+         if (script != null && !script.isEmpty()) {
+            JSONArray jsonArray = CrawlerUtils.stringToJsonArray(script);
+            String priceStr = JSONUtils.getValueRecursive(jsonArray, "0.price", String.class);
+            if (priceStr != null && !priceStr.isEmpty()) {
+               return Double.parseDouble(priceStr);
+            }
          }
 
       }
+
+
       return null;
    }
 
