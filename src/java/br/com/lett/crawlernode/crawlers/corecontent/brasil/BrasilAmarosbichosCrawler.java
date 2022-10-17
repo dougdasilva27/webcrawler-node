@@ -5,10 +5,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
+import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -23,6 +20,8 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -49,31 +48,46 @@ public class BrasilAmarosbichosCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[id=hdnProdutoVarianteId]", "value");
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[id=hdnProdutoId]", "value");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".fbits-produto-nome.prodTitle.title", true);
-         List<String> categories = CrawlerUtils.crawlCategories(doc, "ol > li > a > span");
-         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#zoomImagemProduto", "src");
-         List<String> secondaryImages = getSecondaryImages(doc);
+         String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#zoomImagemProduto", "title");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".informacao-abas"));
-         String available = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".avisoIndisponivel", "style");
-         Offers offers = available != null && !available.isEmpty() ? scrapOffers(doc) : new Offers();
+         List<String> categories = CrawlerUtils.crawlCategories(doc, "ol > li > a > span");
+         String script = CrawlerUtils.scrapScriptFromHtml(doc, "script[type=\"application/ld+json\"]");
          RatingsReviews ratingsReviews = scrapRatingReviews(doc);
 
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setCategories(categories)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setOffers(offers)
-            .setRatingReviews(ratingsReviews)
-            .build();
+         if (script != null && !script.isEmpty()) {
+            JSONArray scriptArray = JSONUtils.stringToJsonArray(script);
+            if (scriptArray != null && !scriptArray.isEmpty()) {
+               JSONArray variationOffers = JSONUtils.getValueRecursive(scriptArray, "0.offers", JSONArray.class);
+               if (variationOffers != null && !variationOffers.isEmpty()) {
+                  for (Object o : variationOffers) {
 
-         products.add(product);
+                     JSONObject jsonObject = (JSONObject) o;
+                     String internalId = jsonObject.optString("mpn");
+                     String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#zoomImagemProduto", "src");
+                     List<String> secondaryImages = getSecondaryImages(doc);
+                     String available = jsonObject.optString("availability");
+                     Offers offers = available != null && !available.isEmpty() && available.contains("http://schema.org/InStock") ? scrapOffers(jsonObject) : new Offers();
+
+                     Product product = ProductBuilder.create()
+                        .setUrl(session.getOriginalURL())
+                        .setInternalId(internalId)
+                        .setInternalPid(internalPid)
+                        .setName(name)
+                        .setCategories(categories)
+                        .setPrimaryImage(primaryImage)
+                        .setSecondaryImages(secondaryImages)
+                        .setDescription(description)
+                        .setOffers(offers)
+                        .setRatingReviews(ratingsReviews)
+                        .build();
+
+                     products.add(product);
+
+                  }
+               }
+            }
+         }
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -82,7 +96,7 @@ public class BrasilAmarosbichosCrawler extends Crawler {
       return products;
    }
 
-   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(JSONObject doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
 
@@ -100,24 +114,22 @@ public class BrasilAmarosbichosCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#divFormaPagamento > .precoPor", null, true, ',', session);
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[property=\"product:price:amount\"]", "content", true, '.', session);
-      }
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#divFormaPagamento > div.precoDe", null, true, ',', session);
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+   private Pricing scrapPricing(JSONObject variation) throws MalformedPricingException {
+      String price = variation.optString("price");
+      Double spotlightPrice = Double.parseDouble(price);
+
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
-         .setPriceFrom(priceFrom)
+         //.setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
          .build();
 
    }
 
-   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
@@ -125,14 +137,6 @@ public class BrasilAmarosbichosCrawler extends Crawler {
          .setInstallmentNumber(1)
          .setInstallmentPrice(spotlightPrice)
          .build());
-
-      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".parcel-price .cash-payment span", doc, true, "x de");
-      if (!pair.isAnyValueNull()) {
-         installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(pair.getFirst())
-            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
-            .build());
-      }
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
