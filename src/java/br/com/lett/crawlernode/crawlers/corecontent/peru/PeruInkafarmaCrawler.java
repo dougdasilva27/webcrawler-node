@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import cdjd.org.apache.arrow.flatbuf.Int;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -38,6 +39,7 @@ public class PeruInkafarmaCrawler extends Crawler {
       Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.DINERS.toString());
 
    private final String storeID = getStoreId();
+
    protected String getStoreId() {
       return session.getOptions().optString("store_id");
    }
@@ -80,7 +82,7 @@ public class PeruInkafarmaCrawler extends Crawler {
             headers.put("AndroidVersion", "100000");
             headers.put("content-type", "application/json");
             headers.put(HttpHeaders.REFERER, session.getOriginalURL());
-            if(storeID != null) {
+            if (storeID != null) {
                headers.put("drugstore-stock", storeID);
             }
 
@@ -162,17 +164,23 @@ public class PeruInkafarmaCrawler extends Crawler {
 
       return products;
    }
-   private List<String>  scrapSecondaryImages(JSONObject data, String primaryImage){
-     JSONArray array = JSONUtils.getValueRecursive(data, "imageList", JSONArray.class);
-      List<String> list = new ArrayList<>();
-      for (Object o : array) {
-         JSONObject obj = (JSONObject) o;
 
-         String image = obj.optString("url");
-         if (!image.equals(primaryImage)) {
-            list.add(image);
+   private List<String> scrapSecondaryImages(JSONObject data, String primaryImage) {
+      JSONArray array = JSONUtils.getValueRecursive(data, "imageList", JSONArray.class);
+      List<String> list = new ArrayList<>();
+      if (array != null && !array.isEmpty()) {
+         JSONArray thumbnails = JSONUtils.getValueRecursive(array, "0.thumbnails", JSONArray.class);
+         if (thumbnails != null && !thumbnails.isEmpty()) {
+            for (Integer i = 0; i < thumbnails.length(); i++) {
+               String image = (String) thumbnails.get(i);
+               if (image != null && !image.equals(primaryImage)) {
+                  list.add(image);
+               }
+            }
          }
+
       }
+
 
       return list;
    }
