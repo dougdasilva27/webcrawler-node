@@ -29,8 +29,6 @@ public class BrasilEsalpetCrawler extends CrawlerRankingKeywords {
 
    public BrasilEsalpetCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
-
    }
 
    private Document fetchDocument() {
