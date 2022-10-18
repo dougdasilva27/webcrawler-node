@@ -121,30 +121,34 @@ public class ColombiaMerqueoCrawler extends Crawler {
    private List<String> crawlSecondaryImage(JSONObject apiJson) {
       JSONArray included = JSONUtils.getValueRecursive(apiJson, "included", JSONArray.class);
       Map<String, JSONObject> attributesId = new HashMap<>();
-      for (Object obj : included) {
-         JSONObject jsonObject = (JSONObject) obj;
-         String code = jsonObject.optString("id");
-         JSONObject attributes = jsonObject.optJSONObject("attributes");
-         attributesId.put(code, attributes);
-      }
-
-      JSONArray jsonImgCode = JSONUtils.getValueRecursive(apiJson, "data.relationships.images.data", JSONArray.class);
-      List<String> imagesCode = new ArrayList<>();
-      if (jsonImgCode != null) {
-         for (int i = 1; i < jsonImgCode.length(); i++) {
-            String code = JSONUtils.getValueRecursive(jsonImgCode, i + ".id", String.class);
-            imagesCode.add(code);
+      if (included != null) {
+         for (Object obj : included) {
+            JSONObject jsonObject = (JSONObject) obj;
+            String code = jsonObject.optString("id");
+            JSONObject attributes = jsonObject.optJSONObject("attributes");
+            attributesId.put(code, attributes);
          }
+
+
+         JSONArray jsonImgCode = JSONUtils.getValueRecursive(apiJson, "data.relationships.images.data", JSONArray.class);
+         List<String> imagesCode = new ArrayList<>();
+         if (jsonImgCode != null) {
+            for (int i = 1; i < jsonImgCode.length(); i++) {
+               String code = JSONUtils.getValueRecursive(jsonImgCode, i + ".id", String.class);
+               imagesCode.add(code);
+            }
+         }
+
+         List<String> secondaryImages = new ArrayList<>();
+         for (String code : imagesCode) {
+            JSONObject attributes = attributesId.get(code);
+            String imageUrl = attributes.optString("image_large_url");
+            secondaryImages.add(imageUrl);
+         }
+         return secondaryImages;
       }
 
-      List<String> secondaryImages = new ArrayList<>();
-      for (String code : imagesCode) {
-         JSONObject attributes = attributesId.get(code);
-         String imageUrl = attributes.optString("image_large_url");
-         secondaryImages.add(imageUrl);
-      }
-
-      return secondaryImages;
+      return null;
    }
 
    private String getLargestImage(JSONObject jsonObjImg) {
