@@ -1,12 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -14,79 +10,90 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import br.com.lett.crawlernode.util.Logging;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 public class BrasilEsalpetCrawler extends CrawlerRankingKeywords {
 
    public BrasilEsalpetCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.FETCHER;
+
    }
 
-   private JSONObject fetchApi() {
+   private Document fetchDocument() {
 
-      String url = "https://esal.api.alleshub.com.br/api_ecommerce/getItensBySearchTerm";
+      Document doc = null;
+      int attemp = 0;
+      do {
+         try {
+            Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put("BaseConn", "{\"base\":\"erp_esalpet\",\"emp_id\":1}");
-      headers.put("Content-Type", "application/json");
-      headers.put("Host", "esal.api.alleshub.com.br");
-      headers.put("Origin", "https://www.esalpet.com.br");
-      headers.put("Referer", "https://www.esalpet.com.br/");
-      headers.put("x-requested-with", "XMLHttpRequest");
+            webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.esalpet.com.br/lista/search/" + this.keywordWithoutAccents, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+            webdriver.waitLoad(10000);
 
-      String payload = "{\"term\":\"racao\",\"exactMatch\":false}";
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
-      Request request = RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setPayload(payload)
-         .setProxyservice(List.of(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.SMART_PROXY_BR))
-         .build();
+         } catch (Exception e) {
+            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, "Página não capturada");
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new FetcherDataFetcher(), new ApacheDataFetcher()), session, "post");
-      return CrawlerUtils.stringToJson(response.getBody());
+         } finally {
+            if (webdriver != null) {
+               webdriver.terminate();
+            }
+         }
+      } while (doc == null && attemp++ < 3);
 
+      return doc;
+
+   }
+
+   public static void waitForElement(WebDriver driver, String cssSelector) {
+      WebDriverWait wait = new WebDriverWait(driver, 20);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
-      JSONObject json = fetchApi();
-      JSONArray products = json != null ? json.optJSONArray("data") : null;
-
+      Document doc = fetchDocument();
+      Elements products = doc != null ? doc.select(".col-6.p-1") : null;
+      this.totalProducts = products != null ? products.size() : 0;
       if (products != null && !products.isEmpty()) {
-         for (Object obj : products) {
-            if (obj instanceof JSONObject) {
-               JSONObject product = (JSONObject) obj;
-               String internalId = integerToString(JSONUtils.getValueRecursive(product, "item_linkWeb.item_id", Integer.class));
-               String internalPid = integerToString(JSONUtils.getValueRecursive(product, "item_linkWeb.ecommerce_id", Integer.class));
-               String name = JSONUtils.getValueRecursive(product, "item_linkWeb.linkWeb.titulo", String.class);
-               String productUrl = crawlUrl(name, internalId);
-               String imageUrl = crawlImage(product);
-               boolean available = product.opt("estoque") != null;
-               Integer price = available ? JSONUtils.getValueRecursive(product, "tabela.Vvenda", Integer.class, 0) : null;
+         for (Element product : products) {
+            String productUrl = crawlUrl(product);
+            String internalId = getId(productUrl);
+            String name = CrawlerUtils.scrapStringSimpleInfo(product, ".title.hiddendescricao", true);
+            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".img-wrap img", Arrays.asList("src"), "", "");
+            boolean available = product.select(".alert.alert-light.text-center.div-indisponivel").isEmpty();
+            Integer price = available ? CrawlerUtils.scrapPriceInCentsFromHtml(product, ".price-new", null, false, ',', session, null) : null;
 
-               RankingProduct productRanking = RankingProductBuilder.create()
-                  .setUrl(productUrl)
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPriceInCents(price)
-                  .setAvailability(available)
-                  .setImageUrl(imageUrl)
-                  .build();
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(available)
+               .setImageUrl(imageUrl)
+               .build();
 
-               saveDataProduct(productRanking);
+            saveDataProduct(productRanking);
 
-               if (this.arrayProducts.size() == productsLimit)
-                  break;
-            }
+            if (this.arrayProducts.size() == productsLimit)
+               break;
          }
       } else {
          this.result = false;
@@ -97,26 +104,32 @@ public class BrasilEsalpetCrawler extends CrawlerRankingKeywords {
          + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private String crawlUrl(String name, String internalId) {
-      String url = "https://www.esalpet.com.br/produto/" + CommonMethods.toSlug(name) + "?id=" + internalId;
-
-      return url;
-   }
-
-   private String integerToString(Integer value) {
-      return value != null ? value.toString() : null;
-   }
-
-   private String crawlImage(JSONObject data) {
-
-      JSONArray imagesArray = data.optJSONArray("fotos");
-
-      if (imagesArray != null) {
-         return "https://esal.api.alleshub.com.br/images/erp_esalpet/item/" + imagesArray.get(0) + ".jpg";
+   private String crawlUrl(Element product) {
+      String productUrl = CrawlerUtils.scrapUrl(product, ".item-slide a", Arrays.asList("href"), "https", "");
+      if (productUrl != null && !productUrl.isEmpty()) {
+         return productUrl.replace("///", "//");
       }
 
       return null;
 
+   }
+
+
+   private String getId(String url) {
+      String id = null;
+
+      if (url != null) {
+
+         Pattern pattern = Pattern.compile("id=([0-9]+)", Pattern.MULTILINE);
+         final Matcher matcher = pattern.matcher(url);
+
+         if (matcher.find()) {
+            id = matcher.group(1);
+
+         }
+      }
+
+      return id;
    }
 
 }
