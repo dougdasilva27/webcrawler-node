@@ -164,7 +164,6 @@ public class BrasilEsalpetCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getValueRecursive(data, "tabela.vVenda", Double.class, null);
-      //  Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-discount.mr-4 span", null, true, ',', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
