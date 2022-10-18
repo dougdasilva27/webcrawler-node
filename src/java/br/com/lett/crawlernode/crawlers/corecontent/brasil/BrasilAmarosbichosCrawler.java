@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -44,51 +46,45 @@ public class BrasilAmarosbichosCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
+      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[id=hdnProdutoId]", "value");
+      JSONObject productObject = getFromApi(internalPid);
 
-      if (isProductPage(doc)) {
+      if (isProductPage(doc) && productObject != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[id=hdnProdutoId]", "value");
-         String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#zoomImagemProduto", "title");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".informacao-abas"));
          List<String> categories = CrawlerUtils.crawlCategories(doc, "ol > li > a > span");
-         String script = CrawlerUtils.scrapScriptFromHtml(doc, "script[type=\"application/ld+json\"]");
          RatingsReviews ratingsReviews = scrapRatingReviews(doc);
 
-         if (script != null && !script.isEmpty()) {
-            JSONArray scriptArray = JSONUtils.stringToJsonArray(script);
-            if (scriptArray != null && !scriptArray.isEmpty()) {
-               JSONArray variationOffers = JSONUtils.getValueRecursive(scriptArray, "0.offers", JSONArray.class);
-               if (variationOffers != null && !variationOffers.isEmpty()) {
-                  for (Object o : variationOffers) {
+         JSONArray variants = JSONUtils.getValueRecursive(productObject, "Variantes", JSONArray.class);
+         if (variants != null && !variants.isEmpty()) {
+            for (Object o : variants) {
 
-                     JSONObject jsonObject = (JSONObject) o;
-                     String internalId = jsonObject.optString("mpn");
-                     String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#zoomImagemProduto", "src");
-                     List<String> secondaryImages = getSecondaryImages(doc);
-                     String available = jsonObject.optString("availability");
-                     Offers offers = available != null && !available.isEmpty() && available.contains("http://schema.org/InStock") ? scrapOffers(jsonObject) : new Offers();
+               JSONObject jsonObject = (JSONObject) o;
+               String internalId = jsonObject.optString("SKU");
+               String name = jsonObject.optString("Nome");
+               String primaryImage = JSONUtils.getValueRecursive(jsonObject, "Fotos.0.FotoId", String.class);
+               List<String> secondaryImages = getImageListFromScript(jsonObject.optJSONArray("Fotos"));
+               boolean available = jsonObject.optBoolean("Disponivel");
+               Offers offers = available ? scrapOffers(jsonObject) : new Offers();
 
-                     Product product = ProductBuilder.create()
-                        .setUrl(session.getOriginalURL())
-                        .setInternalId(internalId)
-                        .setInternalPid(internalPid)
-                        .setName(name)
-                        .setCategories(categories)
-                        .setPrimaryImage(primaryImage)
-                        .setSecondaryImages(secondaryImages)
-                        .setDescription(description)
-                        .setOffers(offers)
-                        .setRatingReviews(ratingsReviews)
-                        .build();
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setCategories(categories)
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setOffers(offers)
+                  .setRatingReviews(ratingsReviews)
+                  .build();
 
-                     products.add(product);
+               products.add(product);
 
-                  }
-               }
             }
          }
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -115,18 +111,44 @@ public class BrasilAmarosbichosCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject variation) throws MalformedPricingException {
-      String price = variation.optString("price");
-      Double spotlightPrice = Double.parseDouble(price);
+      Double spotlightPrice;
+      Double priceFrom;
+      JSONObject priceObject = scrapPriceObject(variation.optJSONArray("TabelasPreco"));
+      if (priceObject != null && !priceObject.isEmpty()) {
+         spotlightPrice = priceObject.optDouble("PrecoPor");
+         priceFrom = priceObject.optDouble("PrecoDe");
+         if (spotlightPrice != null && priceFrom != null && spotlightPrice.equals(priceFrom)) {
+            priceFrom = null;
+         }
+      } else {
+         spotlightPrice = variation.optDouble("PrecoPor");
+         priceFrom = variation.optDouble("PrecoDe");
+         if (spotlightPrice != null && priceFrom != null && spotlightPrice.equals(priceFrom)) {
+            priceFrom = null;
+         }
+      }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
-         //.setPriceFrom(priceFrom)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
          .build();
 
+   }
+
+   private JSONObject scrapPriceObject(JSONArray tabelasPreco) {
+      if (tabelasPreco != null && !tabelasPreco.isEmpty()) {
+         for (Object o : tabelasPreco) {
+            JSONObject price = (JSONObject) o;
+            if (price.optBoolean("Ativo")) {
+               return price;
+            }
+         }
+      }
+      return null;
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
@@ -224,4 +246,33 @@ public class BrasilAmarosbichosCrawler extends Crawler {
       }
       return secondaryImages;
    }
+
+   private JSONObject getFromApi(String internalPid) {
+      if (internalPid != null && !internalPid.isEmpty()) {
+         String url = "https://www.petshopamarosbichos.com.br/produto/api/" + internalPid;
+         Request request = Request.RequestBuilder.create()
+            .setUrl(url)
+            .build();
+
+         Response response = this.dataFetcher.get(session, request);
+         String body = response.getBody();
+         if (body != null && !body.isEmpty()) {
+            return JSONUtils.stringToJson(body);
+         }
+      }
+      return null;
+   }
+
+   private List<String> getImageListFromScript(JSONArray secondaryImages) {
+      List<String> imagesList = new ArrayList<>();
+      if (secondaryImages != null && !secondaryImages.isEmpty()) {
+         for (int i = 1; i < secondaryImages.length(); i++) {
+            String imageList = JSONUtils.getValueRecursive(secondaryImages, i + ".FotoId", String.class);
+            imagesList.add(imageList);
+         }
+         return imagesList;
+      }
+      return null;
+   }
 }
+
