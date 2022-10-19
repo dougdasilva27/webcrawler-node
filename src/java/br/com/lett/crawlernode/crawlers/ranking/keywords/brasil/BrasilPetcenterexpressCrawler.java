@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -12,6 +15,8 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 
+import java.util.Arrays;
+
 public class BrasilPetcenterexpressCrawler extends CrawlerRankingKeywords {
 
    private static final String HOST = "www.petcenterexpress.com.br";
@@ -21,79 +26,55 @@ public class BrasilPetcenterexpressCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 15;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.petcenterexpress.com.br/produtos?busca=" + CommonMethods.encondeStringURLToISO8859(this.location, logger, session)
-            + "&pagina=" + this.currentPage;
+      String url = "https://www.petcenterexpress.com.br/loja/busca.php?loja=1059813&palavra_busca=" + CommonMethods.encondeStringURLToISO8859(this.location, logger, session)
+         + "&pg=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      JSONArray productsArray = crawlProductsArray(this.currentDoc);
 
-      if (productsArray.length() > 1) {
+      Elements products = this.currentDoc.select(".showcase__list .showcase__item");
+      if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
-            setTotalProducts();
+            this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".paginate__count strong", false, 0);
          }
 
-         for (Object o : productsArray) {
-            JSONObject skuJson = o instanceof JSONObject ? (JSONObject) o : new JSONObject();
+         for (Element e : products) {
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product__link", "href");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product__quickviwer.quick__button", "data-id");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product__name .product__link", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product__image", Arrays.asList("src"), "https", "");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".prices__price", null, false, '.', session, null);
 
-            if (skuJson.has("sku")) {
-               String internalPid = JSONUtils.getStringValue(skuJson, "sku");
-               String productUrl = CrawlerUtils.completeUrl(JSONUtils.getStringValue(skuJson, "url"), "https", HOST);
-
-               saveDataProduct(null, internalPid, productUrl);
-
-               this.log(
-                     "Position: " + this.position +
-                           " - InternalId: " + null +
-                           " - InternalPid: " + internalPid +
-                           " - Url: " + productUrl);
-
-               if (this.arrayProducts.size() == productsLimit) {
-                  break;
-               }
-            }
-         }
-
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
-      }
-
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-            + this.arrayProducts.size() + " produtos crawleados");
-
-   }
-
-
-   @Override
-   protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".pagination  .itens-found", true, 0);
-      this.log("Total de produtos: " + this.totalProducts);
-   }
-
-   private JSONArray crawlProductsArray(Document doc) {
-      JSONArray productsArray = new JSONArray();
-
-      Elements scripts = doc.select("script[type=\"application/ld+json\"]");
-
-      for (Element e : scripts) {
-         String script = e.html().trim();
-
-         if (script.contains("sku") && script.startsWith("[") && script.endsWith("]")) {
-            try {
-               productsArray = new JSONArray(script);
-            } catch (Exception e1) {
-               Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
+            boolean isAvailable = e.select(".product__unavailable").isEmpty();
+            if (!isAvailable) {
+               price = null;
             }
 
-            break;
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(productRanking);
+
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+
+            this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+               + this.arrayProducts.size() + " produtos crawleados");
+
          }
       }
 
-      return productsArray;
+
    }
 }

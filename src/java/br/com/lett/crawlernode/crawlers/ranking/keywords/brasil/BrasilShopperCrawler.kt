@@ -16,7 +16,7 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
    private fun requestProducts(): JSONObject {
 
-      val url = "https://siteapi.shopper.com.br/catalog/search?query=${keywordEncoded}"
+      val url = "https://siteapi.shopper.com.br/catalog/search?query=${keywordEncoded}"+"&page="+this.currentPage;
 
       val headers: MutableMap<String, String> = HashMap()
 
@@ -34,7 +34,6 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
       val productsApi = requestProducts()
 
       val products = productsApi.optJSONArray("products")
-
       for (p in products) {
          val product = p as JSONObject
          val internalId = product.optInt("id").toString()
@@ -61,6 +60,6 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
    }
 
    override fun hasNextPage(): Boolean {
-      return false
+      return true
    }
 }
