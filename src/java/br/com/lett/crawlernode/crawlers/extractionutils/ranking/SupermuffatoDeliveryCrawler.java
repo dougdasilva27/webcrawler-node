@@ -49,21 +49,21 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
       int attempts = 0;
 
-      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
+      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
       do {
 
          try {
             webdriver = DynamicDataFetcher.fetchPageWebdriver(HOME_PAGE, proxies.get(attempts), session);
 
             waitForElement(webdriver.driver, ".form-control optgroup option[value='13']");
-            webdriver.findAndClick(".form-control optgroup option[value='13']", 10000);
+            webdriver.findAndClick(".form-control optgroup option[value='13']", 30000);
 
             waitForElement(webdriver.driver, "#s-ch-change-channel");
-            webdriver.findAndClick("#s-ch-change-channel", 10000);
+            webdriver.findAndClick("#s-ch-change-channel", 30000);
             webdriver.waitLoad(10000);
 
             waitForElement(webdriver.driver, "#s-ch-change-channel");
-            webdriver.findAndClick("#s-ch-change-channel", 10000);
+            webdriver.findAndClick("#s-ch-change-channel", 30000);
             webdriver.waitLoad(10000);
 
             waitForElement(webdriver.driver, ".fulltext-search-box.ui-autocomplete-input");
@@ -71,7 +71,7 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
             pass.sendKeys(this.keywordEncoded);
 
             waitForElement(webdriver.driver, ".icon.icon-search");
-            webdriver.findAndClick(".icon.icon-search", 10000);
+            webdriver.findAndClick(".icon.icon-search", 30000);
 
             webdriver.waitLoad(30000);
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
@@ -102,7 +102,7 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 48;
       this.log("Página " + this.currentPage);
-      String url = null;
+      String url;
 
       if (currentPage == 1) {
          url = "https://delivery.supermuffato.com.br/" + this.keywordEncoded;
@@ -160,14 +160,8 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
    @Override
    protected void setTotalProducts() {
 
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".resultado-busca-numero span.value", true, 0);
+      this.totalProducts = this.currentDoc != null ? CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".resultado-busca-numero span.value", true, 0) : 0;
       this.log("Total da busca: " + this.totalProducts);
-   }
-
-   private String crawlInternalPid(Element productId) {
-      String id = CrawlerUtils.scrapStringSimpleInfoByAttribute(productId, null, "id");
-      String[] split = id.split("_");
-      return split[1];
    }
 
 }
