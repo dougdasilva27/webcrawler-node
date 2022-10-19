@@ -61,7 +61,9 @@ public class BrasilMerceariadoanimalCrawler extends Crawler {
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(
             "#product-tabs ul> li:not(#tab-reviews)", "#product-tabs .tab-content > div:not(#reviews)"));
          RatingsReviews ratingReviews = scrapRatingsReviews(doc);
-         Offers offers = scrapOffers(doc);
+         boolean available = doc.selectFirst(".CurrentlySoldOut") != null;
+         Offers offers = !available ? scrapOffers(doc) : new Offers();
+
 
          // Creating the product
          Product product = ProductBuilder.create()
