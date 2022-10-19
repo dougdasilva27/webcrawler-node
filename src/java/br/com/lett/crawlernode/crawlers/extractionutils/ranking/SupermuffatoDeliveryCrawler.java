@@ -131,14 +131,15 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
             String internalPid = product.attr("data-product-id");
             String urlProduct = CrawlerUtils.scrapUrl(product, ".prd-list-item-desc > a", "href", "https", BASE_URL);
-            Integer price = CommonMethods.doublePriceToIntegerPrice(CrawlerUtils.scrapDoublePriceFromHtml(product, ".prd-list-item-price-sell", null, true, ',', session), 0);
+            Integer price = CommonMethods.doublePriceToIntegerPrice(CrawlerUtils.scrapDoublePriceFromHtml(product, ".prd-list-item-price-sell", null, true, ',', session), null);
+            boolean available = price != null;
 
             RankingProduct rankingProduct = RankingProductBuilder.create()
                .setName(CrawlerUtils.scrapStringSimpleInfo(product, ".prd-list-item-name", true))
                .setUrl(urlProduct)
                .setInternalPid(internalPid)
                .setImageUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "li[layout] .prd-list-item-img img", "src"))
-               .setAvailability(true)
+               .setAvailability(available)
                .setPriceInCents(price)
                .build();
 
