@@ -239,7 +239,7 @@ public class BrasilMerceariadoanimalCrawler extends Crawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".PriceRow [itemprop=\"price\"]", "content", false, '.', session);
 
       if (spotlightPrice != null) {
-         Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product .promotion", null, true, ',', session);
+         Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.retail-price >strike", null, true, ',', session);
          Double bankSlipPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".MsgBoleto strong", null, true, ',', session);
          Double bankSlipDiscount = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".MsgBoleto span", null, true, ',', session) / 100;
          CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
