@@ -85,6 +85,7 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
             }
          }
       } while (doc == null && attempts++ < 3);
+
       return doc;
    }
 
@@ -131,7 +132,7 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
             String internalPid = product.attr("data-product-id");
             String urlProduct = CrawlerUtils.scrapUrl(product, ".prd-list-item-desc > a", "href", "https", BASE_URL);
-            Integer price = CommonMethods.doublePriceToIntegerPrice(CrawlerUtils.scrapDoublePriceFromHtml(product, ".prd-list-item-price-sell", null, true, ',', session), null);
+            Integer price = crawlPrice(product);
             boolean available = price != null;
 
             RankingProduct rankingProduct = RankingProductBuilder.create()
@@ -156,6 +157,17 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
       if (!(hasNextPage())) setTotalProducts();
+   }
+
+   private Integer crawlPrice(Element product) {
+      Integer price = null;
+      Double priceDoub = CrawlerUtils.scrapDoublePriceFromHtml(product, ".prd-list-item-price-sell", null, true, ',', session);
+     if (priceDoub != null) {
+         price = CommonMethods.doublePriceToIntegerPrice(priceDoub, null);
+      }
+
+     return price;
+
    }
 
    @Override
