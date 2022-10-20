@@ -1,23 +1,26 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 import models.pricing.Pricing;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class SaopauloAraujoCrawler extends VTEXOldScraper {
 
@@ -47,6 +50,69 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
 
    private String decodeHtml(String html) {
       return StringEscapeUtils.unescapeHtml4(html);
+   }
+
+   @Override
+   protected Object fetch() {
+      String html = "";
+//      cookies.add(new BasicClientCookie("VTEXSC", "sc=1"));
+//      cookies.add(new BasicClientCookie("VtexRCSessionIdv7", "3a28b670-2bd4-4898-86a9-2b7aacb61cf3"));
+//      cookies.add(new BasicClientCookie("VtexRCMacIdv7", "60110758-721e-4eaa-8d59-1685dfc5c583"));
+//      cookies.add(new BasicClientCookie("checkout.vtex.com", "__ofid=3dc0a6bed3ef45b1a2f26f116b8d7a23"));
+//      cookies.add(new BasicClientCookie("PBMCookie", "%5B%5D"));
+//
+//
+//      Request request = Request.RequestBuilder.create()
+//         .setCookies(cookies)
+//         .setUrl(session.getOriginalURL())
+//         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(false).mustRetrieveStatistics(true).build())
+//         .mustSendContentEncoding(true)
+//         .setSendUserAgent(true)
+//         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.SMART_PROXY_BR))
+//         .build();
+//
+//      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "get");
+
+      Document document = null;
+      CrawlerWebdriver webdriver;
+      try {
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
+         webdriver.waitLoad(12000);
+
+         if (webdriver != null) {
+            document = Jsoup.parse(webdriver.getCurrentPageSource());
+            webdriver.terminate();
+         }
+      } catch (Exception e) {
+         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
+      }
+      return document;
+   }
+
+   @Override
+   protected JSONObject crawlProductApi(String internalPid, String parameters) {
+      JSONObject productApi = new JSONObject();
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "application/json");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+
+      String url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid + (parameters == null ? "" : parameters);
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setSendUserAgent(true)
+         .build();
+
+      JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
+
+      if (!array.isEmpty()) {
+         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
+      }
+
+      return productApi;
    }
 
 
