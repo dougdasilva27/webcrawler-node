@@ -105,8 +105,7 @@ public class BrasilPeixotoMaisCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc,
-         ".price-box.price-final_price .old-price .price-wrapper", "data-price-amount", false, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-main-content .old-price .price-wrapper", "data-price-amount", false, '.', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,
          ".price-box.price-final_price .price-container .price-wrapper", "data-price-amount", false, '.', session);
 

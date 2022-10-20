@@ -32,7 +32,7 @@ public class BrasilPeixotoMaisCrawler extends CrawlerRankingKeywords {
          if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".price-box.price-final_price", "data-product-id");
-            String productUrl = "https://www.peixotomais.com.br/" + e.select("a").attr("href").replaceAll("(\\r|\\n)", "");
+            String productUrl = CrawlerUtils.scrapUrl(e, "a", "href", "https", "");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-link", true);
             String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image-photo.mplazyload.mplazyload", Collections.singletonList("src"), "https", "www.peixotomais.com.br");
             Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price", null, true, ',', session, 0);
@@ -55,7 +55,7 @@ public class BrasilPeixotoMaisCrawler extends CrawlerRankingKeywords {
 
    private String getPageUrl() {
       int productsShow = this.currentPage == 1 ? 0 : this.pageSize * (this.currentPage - 1);
-      return "https://www.peixotomais.com.br/catalogsearch/result/?q=" + this.keywordEncoded;
+      return "https://www.peixotomais.com.br/catalogsearch/result/?q=" + this.keywordEncoded + "&p=" + this.currentPage;
    }
 
    @Override
