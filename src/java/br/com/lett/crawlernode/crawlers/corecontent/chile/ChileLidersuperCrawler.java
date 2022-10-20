@@ -48,7 +48,7 @@ public class ChileLidersuperCrawler extends Crawler {
          String internalId = crawlInternalId(doc);
          String internalPidString = CrawlerUtils.scrapStringSimpleInfo(doc, ".pdp-desktop-item-number", true);
          String internalPid = internalPidString != null ? internalPidString.replace("item ", "") : null;
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail-display-name", true);
+         String name = scrapNameAndBrand(doc);
          CategoryCollection categories = new CategoryCollection();
          String primaryImage = crawlPrimaryImage(doc);
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "div[class*=ShowProductImages] > img", List.of("src"), "https", "images.lider.cl", primaryImage);
@@ -76,6 +76,13 @@ public class ChileLidersuperCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private String scrapNameAndBrand(Document doc) {
+
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail-display-name", true);
+      String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".prduct-detail-cart__brand-link", true);
+      return name != null && brand != null ? brand + " - " + name : name;
    }
 
    private String crawlInternalId(Document doc) {
