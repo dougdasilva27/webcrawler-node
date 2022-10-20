@@ -32,20 +32,13 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
    }
 
    @Override
-   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
-      String description = "";
-      JSONArray descriptionArr = productJson.optJSONArray("Saiba Mais");
+   protected String getHomePage() {
+      return HOME_PAGE;
+   }
 
-      if (descriptionArr != null && !descriptionArr.isEmpty()) {
-         description = descriptionArr.toString();
-      } else {
-         description = productJson.optString("description");
-      }
-
-      description = decodeHtml(description);
-      description = description.replaceAll("\\<.*?\\>", "");
-      description = description.replaceAll("\"", "");
-      return description;
+   @Override
+   protected List<String> getMainSellersNames() {
+      return SELLERS;
    }
 
    private String decodeHtml(String html) {
@@ -54,24 +47,6 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
 
    @Override
    protected Object fetch() {
-      String html = "";
-//      cookies.add(new BasicClientCookie("VTEXSC", "sc=1"));
-//      cookies.add(new BasicClientCookie("VtexRCSessionIdv7", "3a28b670-2bd4-4898-86a9-2b7aacb61cf3"));
-//      cookies.add(new BasicClientCookie("VtexRCMacIdv7", "60110758-721e-4eaa-8d59-1685dfc5c583"));
-//      cookies.add(new BasicClientCookie("checkout.vtex.com", "__ofid=3dc0a6bed3ef45b1a2f26f116b8d7a23"));
-//      cookies.add(new BasicClientCookie("PBMCookie", "%5B%5D"));
-//
-//
-//      Request request = Request.RequestBuilder.create()
-//         .setCookies(cookies)
-//         .setUrl(session.getOriginalURL())
-//         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(false).mustRetrieveStatistics(true).build())
-//         .mustSendContentEncoding(true)
-//         .setSendUserAgent(true)
-//         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.SMART_PROXY_BR))
-//         .build();
-//
-//      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "get");
 
       Document document = null;
       CrawlerWebdriver webdriver;
@@ -115,15 +90,21 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
       return productApi;
    }
 
-
    @Override
-   protected String getHomePage() {
-      return HOME_PAGE;
-   }
+   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
+      String description = "";
+      JSONArray descriptionArr = productJson.optJSONArray("Saiba Mais");
 
-   @Override
-   protected List<String> getMainSellersNames() {
-      return SELLERS;
+      if (descriptionArr != null && !descriptionArr.isEmpty()) {
+         description = descriptionArr.toString();
+      } else {
+         description = productJson.optString("description");
+      }
+
+      description = decodeHtml(description);
+      description = description.replaceAll("\\<.*?\\>", "");
+      description = description.replaceAll("\"", "");
+      return description;
    }
 
    @Override
