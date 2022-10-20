@@ -23,12 +23,15 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
    private static final String BASE_URL = "delivery.supermuffato.com.br/";
    private String HOME_PAGE = "https://delivery.supermuffato.com.br";
+   private String vtexSegment = getVtexSegment();
 
    public SupermuffatoDeliveryCrawler(Session session) {
       super(session);
@@ -36,6 +39,10 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
    protected String getCityCode() {
       return session.getOptions().optString("cityCode");
+   }
+
+   public String getVtexSegment() {
+      return session.getOptions().optString("vtex_segment", "");
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
@@ -55,8 +62,8 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
          try {
             webdriver = DynamicDataFetcher.fetchPageWebdriver(HOME_PAGE, proxies.get(attempts), session);
 
-            waitForElement(webdriver.driver, ".form-control optgroup option[value='13']");
-            webdriver.findAndClick(".form-control optgroup option[value='13']", 30000);
+            waitForElement(webdriver.driver, ".form-control optgroup option[value='" + city + "']");
+            webdriver.findAndClick(".form-control optgroup option[value='" + city + "']", 30000);
 
             waitForElement(webdriver.driver, "#s-ch-change-channel");
             webdriver.findAndClick("#s-ch-change-channel", 30000);
@@ -91,7 +98,10 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url) {
-      Request request = Request.RequestBuilder.create().setUrl(url)
+      Map<String, String> headers = new HashMap<>();
+      headers.put("cookie", vtexSegment);
+
+      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers)
          .build();
 
       Response response = new JsoupDataFetcher().get(session, request);
@@ -103,20 +113,20 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 48;
       this.log("Página " + this.currentPage);
-      String url;
+      String url = null;
 
       if (currentPage == 1) {
          url = "https://delivery.supermuffato.com.br/" + this.keywordEncoded;
 
          this.currentDoc = fetchDocumentWebDriver(url);
 
-      } else {
+      }
+
+      if (currentPage != 1 || this.currentDoc == null) {
          url = " https://delivery.supermuffato.com.br/buscapagina?ft=" + this.keywordWithoutAccents + "&PS=48&sl=d85149b5-097b-4910-90fd-fa2ce00fe7c9&cc=48&sm=0&PageNumber=" + this.currentPage;
 
          this.currentDoc = fetchDocument(url);
       }
-
-//https://delivery.supermuffato.com.br/buscapagina?ft=cerveja&PS=48&sl=d85149b5-097b-4910-90fd-fa2ce00fe7c9&cc=48&sm=0&PageNumber=1
 
       this.log("Link onde são feitos os crawlers: " + url);
 
@@ -144,7 +154,6 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
                .setPriceInCents(price)
                .build();
 
-
             saveDataProduct(rankingProduct);
 
             if (this.arrayProducts.size() == productsLimit) break;
@@ -162,19 +171,19 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
    private Integer crawlPrice(Element product) {
       Integer price = null;
       Double priceDoub = CrawlerUtils.scrapDoublePriceFromHtml(product, ".prd-list-item-price-sell", null, true, ',', session);
-     if (priceDoub != null) {
+      if (priceDoub != null) {
          price = CommonMethods.doublePriceToIntegerPrice(priceDoub, null);
       }
 
-     return price;
+      return price;
 
    }
 
    @Override
    protected void setTotalProducts() {
-
       this.totalProducts = this.currentDoc != null ? CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".resultado-busca-numero span.value", true, 0) : 0;
       this.log("Total da busca: " + this.totalProducts);
    }
+
 
 }
