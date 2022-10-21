@@ -26,7 +26,7 @@ public class BrasilMerceariadoanimalCrawler extends CrawlerRankingKeywords {
       this.pageSize = 18;
       this.log("Página " + this.currentPage);
 
-      String url = HOME_PAGE + "pesquisa.ecm?search_query=" + this.keywordWithoutAccents + "&x=0&y=0&page=" + this.currentPage + "&section=product#results";
+      String url = HOME_PAGE + "pesquisa.ecm?search_query=" + this.keywordEncoded + "&x=0&y=0&page=" + this.currentPage + "&section=product#results";
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
