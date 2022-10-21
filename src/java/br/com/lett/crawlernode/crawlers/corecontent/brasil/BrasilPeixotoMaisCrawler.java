@@ -39,8 +39,8 @@ public class BrasilPeixotoMaisCrawler extends Crawler {
       if (product != null) {
          List<String> categories = getCategories(doc);
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".price-box.price-final_price", "data-product-id");
-         String primaryImg = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".social-addthis", "data-media");
-         List<String> secondaryImg = getImageListFromScript(doc);
+         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".social-addthis", "data-media");
+         List<String> secondaryImages = getImageListFromScript(doc);
          String description = CrawlerUtils.scrapStringSimpleInfo(product, ".data.item.content", false);
          String name = CrawlerUtils.scrapStringSimpleInfo(product, ".page-title", false);
          boolean available = doc.selectFirst(".stock.available") != null;
@@ -51,8 +51,8 @@ public class BrasilPeixotoMaisCrawler extends Crawler {
             .setCategories(categories)
             .setOffers(offers)
             .setName(name)
-            .setPrimaryImage(primaryImg)
-            .setSecondaryImages(secondaryImg)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .build();
          products.add(newProduct);
@@ -118,7 +118,6 @@ public class BrasilPeixotoMaisCrawler extends Crawler {
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
-
    }
 
    private CreditCards scrapCreditCards(Double price) throws MalformedPricingException {
