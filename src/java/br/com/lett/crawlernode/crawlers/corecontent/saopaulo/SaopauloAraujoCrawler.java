@@ -1,22 +1,17 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 import models.pricing.Pricing;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
@@ -29,6 +24,7 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
 
    public SaopauloAraujoCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.MIRANHA);
    }
 
    @Override
@@ -43,25 +39,6 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
 
    private String decodeHtml(String html) {
       return StringEscapeUtils.unescapeHtml4(html);
-   }
-
-   @Override
-   protected Object fetch() {
-
-      Document document = null;
-      CrawlerWebdriver webdriver;
-      try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
-         webdriver.waitLoad(12000);
-
-         if (webdriver != null) {
-            document = Jsoup.parse(webdriver.getCurrentPageSource());
-            webdriver.terminate();
-         }
-      } catch (Exception e) {
-         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-      }
-      return document;
    }
 
    @Override
