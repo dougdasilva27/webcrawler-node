@@ -27,15 +27,13 @@ public class BrasilPeixotoMaisCrawler extends CrawlerRankingKeywords {
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".item.product.product-item");
-
       if (!products.isEmpty()) {
-         if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".price-box.price-final_price", "data-product-id");
             String productUrl = CrawlerUtils.scrapUrl(e, "a", "href", "https", "");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-link", true);
             String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image-photo.mplazyload.mplazyload", Collections.singletonList("src"), "https", "www.peixotomais.com.br");
-            Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price", null, true, ',', session, 0);
+            Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price", null, true, ',', session, null);
             boolean available = priceInCents != 0;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -49,8 +47,13 @@ public class BrasilPeixotoMaisCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productRanking);
          }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage +
+         " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+
    }
 
    private String getPageUrl() {
@@ -60,6 +63,6 @@ public class BrasilPeixotoMaisCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return true;
+      return !this.currentDoc.select(".pages .item.pages-item-next .action.next").isEmpty();
    }
 }
