@@ -39,10 +39,10 @@ public class BrasilMerceariadoanimalCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".ProductImage.QuickView > a", "href");
             String productName = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "a.TrackLink > img", "alt");
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "div.ProductImage.QuickView > a > img", "src");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "div.ProductPriceRating > em:nth-child(1)", null, false, ',', session, 0);
+            Integer price = getPrice(product);
             String buttonAvailable = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".ProdutoNaoDisponivel", "style");
             boolean isAvailable = buttonAvailable != null && buttonAvailable.contains("display:none;");
-            if(!isAvailable){
+            if (!isAvailable) {
                price = null;
             }
 
@@ -69,5 +69,13 @@ public class BrasilMerceariadoanimalCrawler extends CrawlerRankingKeywords {
    @Override
    protected boolean hasNextPage() {
       return this.currentDoc.selectFirst(".CategoryPagination .FloatRight > a") != null;
+   }
+
+   private Integer getPrice(Element element) {
+      Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(element, " div.ProductPriceRating > em", null, false, ',', session, null);
+      if (price == null) {
+         price = CrawlerUtils.scrapPriceInCentsFromHtml(element, ".RetailPriceValue", null, false, ',', session, null);
+      }
+      return price;
    }
 }
