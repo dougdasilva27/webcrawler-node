@@ -62,8 +62,8 @@ public class MexicoSamsclubCrawler extends Crawler {
             .setUrl(apiUrl)
             .setCookies(cookies)
             .setProxyservice(Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
+               ProxyCollection.BUY,
+               ProxyCollection.SMART_PROXY_MX))
             .build();
 
          response = this.dataFetcher.get(session, request);
@@ -77,12 +77,12 @@ public class MexicoSamsclubCrawler extends Crawler {
             break;
          }
       }
-      while(!response.getBody().startsWith("{"));
+      while (!response.getBody().startsWith("{"));
 
       return response;
    }
 
-   private String getSkuId(){
+   private String getSkuId() {
       String[] skuId = session.getOriginalURL().split("/");
       return CommonMethods.getLast(skuId);
    }
@@ -186,7 +186,7 @@ public class MexicoSamsclubCrawler extends Crawler {
    private boolean crawlAvailability(JSONObject apiJson) {
 
       if (apiJson.has("PickupInStock")) {
-           boolean a = apiJson.optBoolean("PickupInStock");
+         boolean a = apiJson.optBoolean("PickupInStock");
          return a;
 
       }
