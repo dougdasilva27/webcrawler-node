@@ -74,10 +74,10 @@ public class WalmartSuperCrawler extends Crawler {
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.SMART_PROXY_BR,
-               ProxyCollection.SMART_PROXY_PE,
-               ProxyCollection.SMART_PROXY_MX_HAPROXY,
                ProxyCollection.SMART_PROXY_MX,
                ProxyCollection.SMART_PROXY_AR,
+               ProxyCollection.SMART_PROXY_BR_HAPROXY,
+               ProxyCollection.SMART_PROXY_MX_HAPROXY,
                ProxyCollection.SMART_PROXY_AR_HAPROXY))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector(".Mantn-presionado-el").build())
          .build();
@@ -88,10 +88,10 @@ public class WalmartSuperCrawler extends Crawler {
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.SMART_PROXY_BR,
-               ProxyCollection.SMART_PROXY_PE,
-               ProxyCollection.SMART_PROXY_MX_HAPROXY,
                ProxyCollection.SMART_PROXY_MX,
                ProxyCollection.SMART_PROXY_AR,
+               ProxyCollection.SMART_PROXY_BR_HAPROXY,
+               ProxyCollection.SMART_PROXY_MX_HAPROXY,
                ProxyCollection.SMART_PROXY_AR_HAPROXY))
          .build();
 
@@ -206,10 +206,10 @@ public class WalmartSuperCrawler extends Crawler {
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.SMART_PROXY_BR,
-               ProxyCollection.SMART_PROXY_PE,
-               ProxyCollection.SMART_PROXY_MX_HAPROXY,
                ProxyCollection.SMART_PROXY_MX,
                ProxyCollection.SMART_PROXY_AR,
+               ProxyCollection.SMART_PROXY_BR_HAPROXY,
+               ProxyCollection.SMART_PROXY_MX_HAPROXY,
                ProxyCollection.SMART_PROXY_AR_HAPROXY))
          .build();
 

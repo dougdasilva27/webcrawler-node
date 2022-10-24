@@ -112,10 +112,10 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
             ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.SMART_PROXY_PE,
-            ProxyCollection.SMART_PROXY_MX_HAPROXY,
             ProxyCollection.SMART_PROXY_MX,
             ProxyCollection.SMART_PROXY_AR,
+            ProxyCollection.SMART_PROXY_BR_HAPROXY,
+            ProxyCollection.SMART_PROXY_MX_HAPROXY,
             ProxyCollection.SMART_PROXY_AR_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
