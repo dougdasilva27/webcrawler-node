@@ -111,12 +111,12 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
          .setCookies(cookies)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.SMART_PROXY_PE,
+            ProxyCollection.SMART_PROXY_MX_HAPROXY,
+            ProxyCollection.SMART_PROXY_MX,
+            ProxyCollection.SMART_PROXY_AR,
+            ProxyCollection.SMART_PROXY_AR_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
       String response = this.dataFetcher.get(session, request).getBody();
