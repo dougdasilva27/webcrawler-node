@@ -38,7 +38,7 @@ public class WalmartSuperCrawler extends Crawler {
 
    public WalmartSuperCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.FETCHER);
       super.config.setParser(Parser.JSON);
    }
 
@@ -73,11 +73,12 @@ public class WalmartSuperCrawler extends Crawler {
          .setCookies(cookies)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+               ProxyCollection.SMART_PROXY_BR,
+               ProxyCollection.SMART_PROXY_MX,
+               ProxyCollection.SMART_PROXY_AR,
+               ProxyCollection.SMART_PROXY_BR_HAPROXY,
+               ProxyCollection.SMART_PROXY_MX_HAPROXY,
+               ProxyCollection.SMART_PROXY_AR_HAPROXY))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector(".Mantn-presionado-el").build())
          .build();
 
@@ -86,11 +87,12 @@ public class WalmartSuperCrawler extends Crawler {
          .setUrl(apiUrl)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+               ProxyCollection.SMART_PROXY_BR,
+               ProxyCollection.SMART_PROXY_MX,
+               ProxyCollection.SMART_PROXY_AR,
+               ProxyCollection.SMART_PROXY_BR_HAPROXY,
+               ProxyCollection.SMART_PROXY_MX_HAPROXY,
+               ProxyCollection.SMART_PROXY_AR_HAPROXY))
          .build();
 
       Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestJsoup;
@@ -203,11 +205,12 @@ public class WalmartSuperCrawler extends Crawler {
          .setUrl("https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuPriceInventoryPromotions?skuId="+internalId+"&storeId=" + store_id)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+               ProxyCollection.SMART_PROXY_BR,
+               ProxyCollection.SMART_PROXY_MX,
+               ProxyCollection.SMART_PROXY_AR,
+               ProxyCollection.SMART_PROXY_BR_HAPROXY,
+               ProxyCollection.SMART_PROXY_MX_HAPROXY,
+               ProxyCollection.SMART_PROXY_AR_HAPROXY))
          .build();
 
       return  CrawlerUtils.stringToJson(dataFetcher.get(session, request).getBody());
