@@ -20,10 +20,10 @@ public class CaratingaSuperirmaoCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       //número de produtos por página do market
-      this.pageSize = 12;
+      this.pageSize = 24;
 
       this.log("Página " + this.currentPage);
-      String url = "https://superirmao.loji.com.br/produtos?q=" + this.keywordEncoded;
+      String url = "https://superirmao.loji.com.br/produtos?q=" + this.keywordEncoded + "&fornecedor=&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
@@ -81,5 +81,10 @@ public class CaratingaSuperirmaoCrawler extends CrawlerRankingKeywords {
       }
 
       return null;
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      return true;
    }
 }
