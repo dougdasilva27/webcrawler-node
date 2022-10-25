@@ -23,7 +23,7 @@ public class CaratingaSuperirmaoCrawler extends CrawlerRankingKeywords {
       this.pageSize = 12;
 
       this.log("Página " + this.currentPage);
-      String url = "https://superirmao.loji.com.br/produtos?q=" + this.keywordWithoutAccents;
+      String url = "https://superirmao.loji.com.br/produtos?q=" + this.keywordEncoded;
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
