@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -24,40 +25,37 @@ public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      String url =
-            "https://tenda-api.stoomlab.com.br/api/public/store/search?query="
-                  + keywordEncoded
-                  + "&page="
-                  + currentPage
-                  + "&order=relevance&save=true";
+      this.log("Página " + this.currentPage);
 
-      JSONObject search = fetchJSONObject(url, cookies);
+      String url = "https://api.tendaatacado.com.br/api/public/store/search?query=" + this.keywordEncoded + "&page=" + this.currentPage + "&order=relevance&save=true";
+      this.log("Link onde são feitos os crawlers: " + url);
+      JSONObject search = fetchJSONObject(url);
 
-      JSONArray products = search.optJSONArray("products");
+      JSONArray products = JSONUtils.getJSONArrayValue(search, "products");
 
-      if (products != null && products.length() > 0) {
-         pageSize = search.optInt("products_per_page");
+      if (search != null) {
+         this.pageSize = JSONUtils.getIntegerValueFromJSON(search, "products_per_page", 0);
          if (this.totalProducts == 0) {
-            totalProducts = search.optInt("total_products");
+            this.totalProducts = JSONUtils.getIntegerValueFromJSON(search, "total_products", 0);
          }
+      }
 
+      if (products.length() > 0) {
          for (int i = 0; i < products.length(); i++) {
             JSONObject productJson = products.optJSONObject(i);
 
             String productId = productJson.optString("sku");
-            String productUrl =
-                  "https://www.tendaatacado.com.br/produto/" + productJson.optString("token", null);
-
+            String productPid = productJson.optString("id");
+            String productUrl = scrapUrl(productJson);
             String name = productJson.optString("name");
             String imageUrl = productJson.optString("thumbnail");
             int price = CommonMethods.doublePriceToIntegerPrice(JSONUtils.getDoubleValueFromJSON(productJson,"price", true),0);
-            boolean isAvailable = getProductAvailable(productJson);
+            boolean isAvailable = getStockFromStoreSpecific(productJson) > 0;
 
-            //New way to send products to save data product
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalId(productId)
-               .setInternalPid(null)
+               .setInternalPid(productPid)
                .setName(name)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
@@ -66,13 +64,24 @@ public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productRanking);
 
-            this.log(
-                  "Position: " + this.position + " - InternalId: " + productId + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
          }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
+
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private Integer getStockFromStoreSpecific(JSONObject productJson){
+   private String scrapUrl(JSONObject productJson) {
+      String urlToken = productJson.optString("token");
+      return urlToken != null ? "https://www.tendaatacado.com.br/produto/" + urlToken : null;
+   }
+
+   private int getStockFromStoreSpecific(JSONObject productJson){
       int stock = 0;
       JSONArray inventory = productJson.optJSONArray("inventory");
       for (Object o : inventory){
@@ -88,11 +97,4 @@ public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
 
       return stock;
    }
-
-   private boolean getProductAvailable(JSONObject productJson){
-      int stock = getStockFromStoreSpecific(productJson);
-      return stock > 1;
-   }
-
-
 }
