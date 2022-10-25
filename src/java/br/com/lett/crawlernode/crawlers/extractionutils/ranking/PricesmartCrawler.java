@@ -68,7 +68,7 @@ public class PricesmartCrawler extends CrawlerRankingKeywords {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setPriceInCents(price)
+               .setPriceInCents(isAvailable ? price : null)
                .setAvailability(isAvailable)
                .build();
 
