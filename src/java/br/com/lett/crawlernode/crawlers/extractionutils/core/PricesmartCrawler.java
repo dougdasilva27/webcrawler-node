@@ -21,6 +21,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -60,15 +61,16 @@ public class PricesmartCrawler extends Crawler {
 
       if (doc.selectFirst(".row .product-price-small") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
+         JSONObject jsonVariantions = getVariations(doc);
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "#itemNumber", false);
          String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-name-item", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".pdp-main-image", Arrays.asList("src"), "http://", "pim-img-psmt1.aeropost.com");
          String secondaryImage = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-thumb img", Arrays.asList("src"), "http://", "pim-img-psmt1.aeropost.com", primaryImage);
-
+         List<String> categories = getCategories(doc);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#collapseOne .card-body", true);
          Integer stock = null;
+
 
          boolean available = doc.selectFirst(".btn-add-to-cart-disabled") == null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
@@ -79,6 +81,7 @@ public class PricesmartCrawler extends Crawler {
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
+            .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImage)
             .setDescription(description)
@@ -94,7 +97,17 @@ public class PricesmartCrawler extends Crawler {
       return products;
 
    }
-
+   private JSONObject getVariations(Document doc) {
+      Element variantions = doc.selectFirst("script:containsData(\n        var trackingData)");
+      String varString = variantions.toString();
+      String s1 = CrawlerUtils.extractSpecificStringFromScript(varString,"JSON.parse\\(",true,"\\);",true);
+      String replace1 = varString.replaceAll("<script>\n        var trackingData = JSON.parse\\(\\'","");
+      String replace2 = replace1.replaceAll("\\'\\)\\;\n        \\$\\(function\\(\\) \\{\n            \\$\\(\\'#lblValidateInventoryError\\'\\)\\.hide\\(\\)\\;\n            \\$\\(\\'#lblMaxMinWeight\\'\\)\\.hide\\(\\)\\;\n        \\}\\)\\;\n    </script>","");
+      String replace3 = replace2.replaceAll("\n","");
+      String replace4 = replace3.replaceAll("\\\\","");
+      JSONObject obj = JSONUtils.stringToJson(replace4);
+      return null;
+   }
    private String updateUrl(String url) {
       String regex = "/site/(..)/es";
       String updatedUrl = url;
@@ -102,9 +115,14 @@ public class PricesmartCrawler extends Crawler {
       Matcher matcher = pattern.matcher(url);
 
       if (matcher.find()) {
-         updatedUrl = url.replace(matcher.group(1),session.getOptions().optString("country"));
+         updatedUrl = url.replace(matcher.group(1), session.getOptions().optString("country"));
       }
       return updatedUrl;
+   }
+
+   private List<String> getCategories(Document doc) {
+      List<String> categories = CrawlerUtils.crawlCategories(doc, ".product-page-breadcrumb a", true);
+      return categories != null && categories.size() > 0 ? categories : null;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
