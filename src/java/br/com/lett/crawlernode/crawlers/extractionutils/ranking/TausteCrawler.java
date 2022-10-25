@@ -40,8 +40,8 @@ public class TausteCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item-photo", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-name .product-item-link", false);
             String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image-photo", Collections.singletonList("src"), "https", "tauste.com.br");
-            Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price-wrapper span", null, true, ',', session, 0);
-            boolean available = priceInCents != 0;
+            Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price-wrapper span", null, true, ',', session, null);
+            boolean available = priceInCents != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
