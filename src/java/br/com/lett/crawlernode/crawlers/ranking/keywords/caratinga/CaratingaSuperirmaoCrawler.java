@@ -32,17 +32,22 @@ public class CaratingaSuperirmaoCrawler extends CrawlerRankingKeywords {
 
          if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href");
 
-            String urlId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "input", "name");
-            String internalId = urlId.substring(urlId.indexOf("[")+1, urlId.indexOf("]"));
+            String addToCarUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "input", "name");
+            String internalId;
+
+            if (addToCarUrl != null) {
+               internalId = addToCarUrl.substring(addToCarUrl.indexOf("[")+1, addToCarUrl.indexOf("]"));
+            } else {
+               internalId = scrapIdFromUnavailableProduct(productUrl);
+            }
 
             String internalPid = internalId;
-
-            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".titulo b", true);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "img", Collections.singletonList("src"), "https", "superirmao.loji.com.br");
+            boolean isAvailable = addToCarUrl != null;
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".preco b", null, false, ',', session, null);
-            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -66,5 +71,15 @@ public class CaratingaSuperirmaoCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String scrapIdFromUnavailableProduct (String url) {
+      String[] strArray = url != null ? url.split("/") : null ;
+
+      if (strArray.length > 4) {
+         return strArray[4];
+      }
+
+      return null;
    }
 }
