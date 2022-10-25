@@ -49,7 +49,7 @@ public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
             String productUrl = scrapUrl(productJson);
             String name = productJson.optString("name");
             String imageUrl = productJson.optString("thumbnail");
-            int price = CommonMethods.doublePriceToIntegerPrice(JSONUtils.getDoubleValueFromJSON(productJson,"price", true),0);
+            Integer price = CommonMethods.doublePriceToIntegerPrice(JSONUtils.getDoubleValueFromJSON(productJson,"price", true),null);
             boolean isAvailable = getStockFromStoreSpecific(productJson) > 0;
             boolean isSponsored = productJson.optBoolean("anuncio", false);
 
