@@ -59,8 +59,8 @@ public class PricesmartCrawler extends CrawlerRankingKeywords {
             String productUrl = "https://www.pricesmart.com" + CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".search-product-box a", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "#product-name", false);
             int price = CrawlerUtils.scrapIntegerFromHtml(e, "#product-price", false, 0);
-            String avalilable = CrawlerUtils.scrapStringSimpleInfo(e, ".far.fa-times-circle", true);
-            boolean isAvailable = checkIsAvailibale(price, avalilable);
+            String available = CrawlerUtils.scrapStringSimpleInfo(e, ".far.fa-times-circle", true);
+            boolean isAvailable = checkAvailability(price, available);
 
             //New way to send products to save data product
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -85,7 +85,7 @@ public class PricesmartCrawler extends CrawlerRankingKeywords {
 
    }
 
-   private boolean checkIsAvailibale(int price, String available) {
+   private boolean checkAvailability(int price, String available) {
       if (available != null && !available.isEmpty()) {
          return price != 0 && available.contains("Disponible");
       }
