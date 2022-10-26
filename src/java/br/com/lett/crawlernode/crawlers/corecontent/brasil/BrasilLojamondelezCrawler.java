@@ -171,7 +171,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
          String name = null;
          String internalId = null;
          Offers offers = new Offers();
-         // if product don't have this element, it's a product without stock
+
          Elements variations = doc.select(".product-grid-container .sku-variation-content .picking");
          if (!variations.isEmpty()) {
             for (Element obj : variations) {
