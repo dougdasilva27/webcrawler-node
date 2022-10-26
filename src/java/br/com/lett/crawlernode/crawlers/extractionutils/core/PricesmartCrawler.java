@@ -144,7 +144,7 @@ public class PricesmartCrawler extends Crawler {
             JSONObject jsonDisplayName = (JSONObject) o;
             String language = jsonDisplayName.optString("language");
             if (language.equals("es")) {
-             return jsonDisplayName.optString("value");
+             return jsonDisplayName.optString("value", "");
             }
          }
       }
