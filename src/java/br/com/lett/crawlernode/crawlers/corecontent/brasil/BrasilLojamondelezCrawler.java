@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -167,35 +168,48 @@ public class BrasilLojamondelezCrawler extends Crawler {
          String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList("#nav-descricao"));
          List<String> secondaryImages = scrapImages(doc);
          String primaryImage = secondaryImages.remove(0);
-
+         String name = null;
+         String internalId = null;
+         Offers offers = new Offers();
+         // if product don't have this element, it's a product without stock
          Elements variations = doc.select(".product-grid-container .sku-variation-content .picking");
-         for (Element obj : variations) {
-            String internalId = crawlInternalId(obj);
-            List<String> eans = Arrays.asList(internalId);
-            String name = crawlName(productJson);
-            if (obj.selectFirst("div.picking-quantity span") != null) {
-               name = name + " - " + obj.selectFirst(".picking-quantity span").text();
+         if (!variations.isEmpty()) {
+            for (Element obj : variations) {
+               internalId = crawlInternalId(obj);
+               name = crawlName(productJson);
+               if (obj.selectFirst("div.picking-quantity span") != null) {
+                  name = name + " - " + obj.selectFirst(".picking-quantity span").text();
+               }
+
+               offers = isAvailable(obj) ? scrapOffers(obj) : new Offers();
             }
-
-            Offers offers = isAvailable(obj) ? scrapOffers(obj) : new Offers();
-
-            Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setOffers(offers)
-               .setCategories(categories)
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setEans(eans)
-               .build();
-
-            products.add(product);
+         } else {
+            internalId = productJson.optString("productSKU");
+            name = productJson.optString("productName");
+            boolean isAvailable = productJson.optInt("productStock", 0) > 0;
+            offers = isAvailable ? scrapOffersWithNoVariation(productJson) : offers;
          }
 
+         List<String> eans = Arrays.asList(internalId);
+
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setOffers(offers)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setEans(eans)
+            .build();
+
+         products.add(product);
+
       } else {
+
+
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
@@ -272,6 +286,23 @@ public class BrasilLojamondelezCrawler extends Crawler {
       Pricing pricing = scrapPricing(doc);
       List<String> sales = new ArrayList<>(); //no sales was found
 
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_NAME_LOWER)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+   }
+
+   private Offers scrapOffersWithNoVariation(JSONObject jsonObject) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricingJson(jsonObject);
+      List<String> sales = new ArrayList<>(); //no sales was found
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -296,6 +327,28 @@ public class BrasilLojamondelezCrawler extends Crawler {
 
       if (spotlightPrice == 0d) {
          spotlightPrice = null;
+      }
+
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      CreditCards creditCards = scrapCreditcards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   private Pricing scrapPricingJson(JSONObject json) throws MalformedPricingException {
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(json, "productOldPrice", true);
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(json, "productPrice", true);
+
+      if (spotlightPrice.equals(priceFrom)) {
+         priceFrom = null;
       }
 
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
