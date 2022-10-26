@@ -126,28 +126,39 @@ public class PricesmartCrawler extends Crawler {
    }
 
    private String crawlVariationName(JSONObject jsonVariantion, String name) {
-      JSONObject json = getJsonColor(jsonVariantion);
+      JSONObject jsonColor = getJsonVariation(jsonVariantion, "color");
+      JSONObject jsonSize = getJsonVariation(jsonVariantion, "size");
+      JSONObject jsonApresentation = getJsonVariation(jsonVariantion, "COF_PRES");
+      String color = jsonColor != null ? getVariation(jsonColor) : "";
+      String size = jsonSize != null ? getVariation(jsonSize) : "";
+      String apresentation = jsonSize != null ? getVariation(jsonApresentation) : "";
+
+      return name + " " + color + " " + size + " " + apresentation;
+
+   }
+
+   private String getVariation(JSONObject json) {
       JSONArray displayName = json.optJSONArray("displayName");
       if (displayName != null && displayName.length() > 0) {
          for (Object o : displayName) {
             JSONObject jsonDisplayName = (JSONObject) o;
             String language = jsonDisplayName.optString("language");
             if (language.equals("es")) {
-               return  name + " - " +jsonDisplayName.optString("value");
+             return jsonDisplayName.optString("value");
             }
          }
       }
 
-      return name;
-
+      return "";
    }
 
-   private JSONObject getJsonColor(JSONObject jsonVariantion) {
+
+   private JSONObject getJsonVariation(JSONObject jsonVariantion, String type) {
       JSONArray array =  jsonVariantion.optJSONArray("customAttributes");
       if (array != null && array.length() > 0) {
          for (Object object : array) {
             JSONObject jsonObject = (JSONObject) object;
-            if (jsonObject.optString("attributeId").equals("color")) {
+            if (jsonObject.optString("attributeId").equals(type)) {
                return jsonObject;
             }
          }
