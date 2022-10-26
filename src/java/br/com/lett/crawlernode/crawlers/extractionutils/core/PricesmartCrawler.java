@@ -73,7 +73,7 @@ public class PricesmartCrawler extends Crawler {
             for (Object variantion : jsonVariations) {
                JSONObject jsonVariantion = (JSONObject) variantion;
                String internalId = jsonVariantion.optString("productId");
-               String nameVariantion = name + " - " + JSONUtils.getValueRecursive(jsonVariantion, "customAttributes.13.content", String.class);
+               String nameVariantion = crawlVariationName(jsonVariantion, name);
                List<String> images = getImages(jsonVariantion);
                String primaryImage = images.size() > 0 ? images.remove(0) : null;
                List<String> secondaryImages = images.size() > 0 ? images : null;
@@ -123,6 +123,37 @@ public class PricesmartCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private String crawlVariationName(JSONObject jsonVariantion, String name) {
+      JSONObject json = getJsonColor(jsonVariantion);
+      JSONArray displayName = json.optJSONArray("displayName");
+      if (displayName != null && displayName.length() > 0) {
+         for (Object o : displayName) {
+            JSONObject jsonDisplayName = (JSONObject) o;
+            String language = jsonDisplayName.optString("language");
+            if (language.equals("es")) {
+               return  name + " - " +jsonDisplayName.optString("value");
+            }
+         }
+      }
+
+      return name;
+
+   }
+
+   private JSONObject getJsonColor(JSONObject jsonVariantion) {
+      JSONArray array =  jsonVariantion.optJSONArray("customAttributes");
+      if (array != null && array.length() > 0) {
+         for (Object object : array) {
+            JSONObject jsonObject = (JSONObject) object;
+            if (jsonObject.optString("attributeId").equals("color")) {
+               return jsonObject;
+            }
+         }
+      }
+
+      return new JSONObject();
    }
 
    private List<String> getImages(JSONObject jsonObject) {
