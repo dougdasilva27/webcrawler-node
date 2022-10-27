@@ -62,10 +62,12 @@ public class PricesmartCrawler extends Crawler {
 
       if (doc.selectFirst(".row .product-price-small") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         String url = updateUrl(this.session.getOriginalURL());
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "#itemNumber", false);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".product-page-breadcrumb a", true);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#collapseOne .card-body", true);
          Integer stock = null;
+
          boolean available = doc.selectFirst(".btn-add-to-cart-disabled") == null;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-name-item", false);
          JSONArray jsonVariations = getVariations(doc);
@@ -78,41 +80,37 @@ public class PricesmartCrawler extends Crawler {
                String primaryImage = images.size() > 0 ? images.remove(0) : null;
                List<String> secondaryImages = images.size() > 0 ? images : null;
                Offers offers = available ? scrapOffers(doc) : new Offers();
-
-               // Creating the product
                Product product = ProductBuilder.create()
-                  .setUrl(updateUrl(this.session.getOriginalURL()))
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(nameVariantion)
+                  .setUrl(url)
                   .setCategories(categories)
+                  .setInternalPid(internalPid)
+                  .setInternalId(internalId)
+                  .setName(nameVariantion)
                   .setPrimaryImage(primaryImage)
                   .setSecondaryImages(secondaryImages)
+                  .setOffers(offers)
                   .setDescription(description)
                   .setStock(stock)
-                  .setOffers(offers)
                   .build();
-
                products.add(product);
 
             }
          } else {
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".pdp-main-image", Arrays.asList("src"), "http://", "pim-img-psmt1.aeropost.com");
-            List<String> secondaryImage = CrawlerUtils.scrapSecondaryImages(doc, ".product-thumb-item-img", Arrays.asList("src"), "", "", primaryImage);
+            List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-thumb-item-img", Arrays.asList("src"), "", "", primaryImage);
             Offers offers = available ? scrapOffers(doc) : new Offers();
             Product product = ProductBuilder.create()
-               .setUrl(updateUrl(this.session.getOriginalURL()))
-               .setInternalId(internalPid)
-               .setInternalPid(internalPid)
-               .setName(name)
+               .setUrl(url)
                .setCategories(categories)
+               .setInternalPid(internalPid)
+               .setInternalId(internalPid)
+               .setName(name)
                .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setOffers(offers)
                .setDescription(description)
                .setStock(stock)
-               .setOffers(offers)
                .build();
-
             products.add(product);
          }
 
@@ -144,7 +142,7 @@ public class PricesmartCrawler extends Crawler {
             JSONObject jsonDisplayName = (JSONObject) o;
             String language = jsonDisplayName.optString("language");
             if (language.equals("es")) {
-             return jsonDisplayName.optString("value", "");
+               return jsonDisplayName.optString("value", "");
             }
          }
       }
@@ -154,7 +152,7 @@ public class PricesmartCrawler extends Crawler {
 
 
    private JSONObject getJsonVariation(JSONObject jsonVariantion, String type) {
-      JSONArray array =  jsonVariantion.optJSONArray("customAttributes");
+      JSONArray array = jsonVariantion.optJSONArray("customAttributes");
       if (array != null && array.length() > 0) {
          for (Object object : array) {
             JSONObject jsonObject = (JSONObject) object;
@@ -173,7 +171,11 @@ public class PricesmartCrawler extends Crawler {
       if (imagesJsonArray != null) {
          for (Object imgObject : imagesJsonArray) {
             JSONObject imgJson = (JSONObject) imgObject;
-            images.add(JSONUtils.getValueRecursive(imgJson, "path", String.class));
+            String image = JSONUtils.getValueRecursive(imgJson, "path", String.class);
+            if (image != null && !image.isEmpty()) {
+               images.add(image);
+            }
+
          }
       }
       return images;
@@ -231,7 +233,7 @@ public class PricesmartCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      Double  spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,"#product-price.currency",null,false,',',session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#product-price.currency", null, false, ',', session);
       Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.currency", null, false, ',', session);
       price = price != null ? price : spotlightPrice;
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
