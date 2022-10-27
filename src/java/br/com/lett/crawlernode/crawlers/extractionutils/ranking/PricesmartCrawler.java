@@ -13,6 +13,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,6 +62,7 @@ public class PricesmartCrawler extends CrawlerRankingKeywords {
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "#product-name", false);
             int price = CrawlerUtils.scrapIntegerFromHtml(e, "#product-price", false, 0);
             String available = CrawlerUtils.scrapStringSimpleInfo(e, ".far.fa-times-circle", true);
+            String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".search-product-image img", Arrays.asList("src"), "", "");
             boolean isAvailable = checkAvailability(price, available);
 
             //New way to send products to save data product
@@ -68,6 +71,7 @@ public class PricesmartCrawler extends CrawlerRankingKeywords {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
+               .setImageUrl(image)
                .setPriceInCents(isAvailable ? price : null)
                .setAvailability(isAvailable)
                .build();
