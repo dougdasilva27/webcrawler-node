@@ -29,11 +29,11 @@ public class PricesmartCrawler extends CrawlerRankingKeywords {
       String country = session.getOptions().optString("country");
 
 
-      Map<String,String> headers = new HashMap<>();
-      headers.put("Cookie", "userPreferences=country="+ country +"&selectedClub=" + club_id + "&lang=es");
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Cookie", "userPreferences=country=" + country + "&selectedClub=" + club_id + "&lang=es");
 
       Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build();
-      String response = this.dataFetcher.get(session,request).getBody();
+      String response = this.dataFetcher.get(session, request).getBody();
 
       return Jsoup.parse(response);
    }
@@ -43,7 +43,7 @@ public class PricesmartCrawler extends CrawlerRankingKeywords {
       this.pageSize = 30;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.pricesmart.com/site/"+ session.getOptions().optString("country") + "/es/busqueda?_sq="+this.keywordEncoded+ "&r75_r1_r1_r1:page="+this.currentPage+"&r75_r1_r1_r1:_sps=12";
+      String url = "https://www.pricesmart.com/site/" + session.getOptions().optString("country") + "/es/busqueda?_sq=" + this.keywordEncoded + "&" + session.getOptions().optString("location_pagination") + ":page=" + this.currentPage + "&" + session.getOptions().optString("location_pagination");
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".search-product-box");
@@ -53,13 +53,14 @@ public class PricesmartCrawler extends CrawlerRankingKeywords {
 
          for (Element e : products) {
 
-            String scrapInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".search-product-box a","id");
+            String scrapInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".search-product-box a", "id");
             String internalPid = CommonMethods.getLast(scrapInternalId.split("result-"));
             String internalId = internalPid;
-            String productUrl = "https://www.pricesmart.com" +  CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".search-product-box a","href");
-            String name = CrawlerUtils.scrapStringSimpleInfo(e,"#product-name", false);
-            int price = CrawlerUtils.scrapIntegerFromHtml(e,"#product-price",false,0);
-            boolean isAvailable = price != 0;
+            String productUrl = "https://www.pricesmart.com" + CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".search-product-box a", "href");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "#product-name", false);
+            int price = CrawlerUtils.scrapIntegerFromHtml(e, "#product-price", false, 0);
+            String available = CrawlerUtils.scrapStringSimpleInfo(e, ".far.fa-times-circle", true);
+            boolean isAvailable = checkAvailability(price, available);
 
             //New way to send products to save data product
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -67,7 +68,7 @@ public class PricesmartCrawler extends CrawlerRankingKeywords {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setPriceInCents(price)
+               .setPriceInCents(isAvailable ? price : null)
                .setAvailability(isAvailable)
                .build();
 
@@ -82,6 +83,13 @@ public class PricesmartCrawler extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
+   }
+
+   private boolean checkAvailability(int price, String available) {
+      if (available != null && !available.isEmpty()) {
+         return price != 0 && available.contains("Disponible");
+      }
+      return price != 0;
    }
 
    @Override
