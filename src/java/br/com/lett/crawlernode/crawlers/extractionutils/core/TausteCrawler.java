@@ -16,13 +16,12 @@ import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class TausteCrawler extends Crawler {
-
-   private static final String HOME_PAGE = "https://www.tauste.com.br/";
-   private static final List<String> MAIN_SELLERS = Collections.singletonList("Tauste Supermercados LTDA.");
-
    private static final String SELLER_FULL_NAME = "Tauste";
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
@@ -72,22 +71,13 @@ public class TausteCrawler extends Crawler {
       Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(doc);
 
-      String seller = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-item-brand a", true);
-      boolean isMainSeller = true;
-
-      if (seller != null) {
-         isMainSeller = seller.equalsIgnoreCase(SELLER_FULL_NAME);
-      } else {
-         seller = SELLER_FULL_NAME;
-      }
-
       offers.add(Offer.OfferBuilder.create()
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setPricing(pricing)
          .setSales(sales)
-         .setSellerFullName(seller)
-         .setIsMainRetailer(isMainSeller)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setIsMainRetailer(true)
          .setUseSlugNameAsInternalSellerId(true)
          .build());
 
@@ -139,5 +129,4 @@ public class TausteCrawler extends Crawler {
 
       return creditCards;
    }
-
 }
