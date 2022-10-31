@@ -318,7 +318,7 @@ public class BrasilSitemercadoCrawler extends Crawler {
 
       if (json.has("description")) {
          description.append(json.optString("description"));
-         description.append("\n");
+         description.append(" ");
       }
 
      if (json.has("additionalInformation")) {
