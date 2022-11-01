@@ -66,9 +66,9 @@ public class BrasilPeixotoMaisCrawler extends Crawler {
       List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs .items > li", true);
       if (categories != null && categories.size() > 0) {
          categories.remove(categories.size() - 1);
-         return categories.size() > 0 ? categories : null;
+         return categories.size() > 0 ? categories : new ArrayList<>();
       }
-      return null;
+      return new ArrayList<>();
    }
 
    private List<String> getImageListFromScript(Document doc) {
