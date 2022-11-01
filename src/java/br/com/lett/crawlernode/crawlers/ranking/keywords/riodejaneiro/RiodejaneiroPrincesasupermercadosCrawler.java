@@ -26,10 +26,10 @@ import java.util.Map;
  * @author Fellype Layunne
  */
 
-public class RiodejaneiroPrincesaniteroiCrawler extends CrawlerRankingKeywords {
+public class RiodejaneiroPrincesasupermercadosCrawler extends CrawlerRankingKeywords {
 
    private String getLocation(){return session.getOptions().getString("filial");}
-   public RiodejaneiroPrincesaniteroiCrawler(Session session) {
+   public RiodejaneiroPrincesasupermercadosCrawler(Session session) {
       super(session);
    }
 

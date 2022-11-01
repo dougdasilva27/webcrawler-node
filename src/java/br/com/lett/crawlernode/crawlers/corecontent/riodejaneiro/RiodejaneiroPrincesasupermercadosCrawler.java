@@ -23,7 +23,6 @@ import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -36,7 +35,7 @@ import java.util.regex.Pattern;
  * @author Fellype Layunne
  */
 
-public class RiodejaneiroPrincesaniteroiCrawler extends Crawler {
+public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
 
    private String getLocation(){return session.getOptions().getString("filial");}
 
@@ -47,7 +46,7 @@ public class RiodejaneiroPrincesaniteroiCrawler extends Crawler {
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AMEX.toString(), Card.HIPERCARD.toString(), Card.DINERS.toString());
 
-   public RiodejaneiroPrincesaniteroiCrawler(Session session) {
+   public RiodejaneiroPrincesasupermercadosCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
       super.config.setParser(Parser.JSONARRAY);
