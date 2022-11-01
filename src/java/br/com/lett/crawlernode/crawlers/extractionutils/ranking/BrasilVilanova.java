@@ -174,18 +174,18 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
 
          List<String> proxies = Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.SMART_PROXY_BR_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
-         int attemp = 0;
+         int attempt = 0;
          do {
-            if (attemp != 0 && webdriver != null) {
+            if (attempt != 0 && webdriver != null) {
                webdriver.terminate();
             }
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attemp), session, this.cookiesWD, HOME_PAGE, options);
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempt), session, this.cookiesWD, HOME_PAGE, options);
 
             if (webdriver != null){
                doc = Jsoup.parse(webdriver.getCurrentPageSource());
             }
 
-         } while (doc.select("body").isEmpty() && attemp++ < 3);
+         } while (doc.select("body").isEmpty() && attempt++ < 3);
 
          webdriver.waitLoad(30000);
 
@@ -237,7 +237,8 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
          Logging.printLogDebug(logger, session, "awaiting product page");
 
          boolean logged = false;
-         while (!logged) {
+         attempt = 0;
+         while (!logged && attempt++ < 2) {
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
             JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataLayer = window.dataLayer || []; window.dataLayer.push(", ");", false, true);
 

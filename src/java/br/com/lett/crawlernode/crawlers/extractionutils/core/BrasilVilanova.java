@@ -128,7 +128,7 @@ public class BrasilVilanova extends Crawler {
 
          boolean logged = false;
          attempt = 0;
-         while (!logged && attempt++ < 3) {
+         while (!logged && attempt++ < 2) {
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
             JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataLayer = window.dataLayer || []; window.dataLayer.push(", ");", false, true);
 
