@@ -176,11 +176,15 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
 
          int attemp = 0;
          do {
-            if (attemp != 0) {
+            if (attemp != 0 && webdriver != null) {
                webdriver.terminate();
             }
             webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attemp), session, this.cookiesWD, HOME_PAGE, options);
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+            if (webdriver != null){
+               doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            }
+
          } while (doc.select("body").isEmpty() && attemp++ < 3);
 
          webdriver.waitLoad(30000);
