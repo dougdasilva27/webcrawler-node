@@ -139,7 +139,19 @@ public class RiodejaneiroPrincesaniteroiCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
       Double spotlightPrice = scrapPrice(json);
-      Double priceFrom = null;
+      Double priceFrom;
+
+      Double isPromotion = json.optDouble("precoPromocao");
+      Double priceFraction = json.optDouble("fracionamento");
+
+      if (isPromotion != null && !isPromotion.isNaN()) {
+         priceFrom = scrapPrice(json);
+         if (priceFraction != null && !priceFraction.isNaN()) {
+            spotlightPrice = isPromotion * priceFraction;
+         }
+      } else {
+         priceFrom = null;
+      }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
@@ -204,6 +216,7 @@ public class RiodejaneiroPrincesaniteroiCrawler extends Crawler {
 
       return matcher.find();
    }
+
    private String extractGrammature(String txtFractionation) {
       Pattern pattern = Pattern.compile(grammatureRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
       final Matcher matcher = pattern.matcher(txtFractionation);
