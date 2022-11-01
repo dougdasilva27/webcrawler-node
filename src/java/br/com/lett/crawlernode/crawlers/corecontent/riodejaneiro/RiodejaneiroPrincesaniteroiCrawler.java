@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -62,11 +61,6 @@ public class RiodejaneiroPrincesaniteroiCrawler extends Crawler {
       Request request = Request.RequestBuilder.create().setUrl("https://ecom.solidcon.com.br/api/v2/shop/produto/empresa/103/filial/233/GetProdutos")
          .setPayload(payload)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
 
@@ -84,8 +78,7 @@ public class RiodejaneiroPrincesaniteroiCrawler extends Crawler {
       if (json.has("nmProduto")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         Integer internalPidNumber = json.getInt("cdProduto");
-         String internalPid = internalPidNumber.toString();
+         String internalPid = getInternalPid();
          String productName = scrapName(json);
          String description = json.optString("descricao");
          List<String> categories = new ArrayList<>();
