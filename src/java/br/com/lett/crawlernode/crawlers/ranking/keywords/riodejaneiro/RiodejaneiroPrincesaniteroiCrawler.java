@@ -28,15 +28,14 @@ import java.util.Map;
 
 public class RiodejaneiroPrincesaniteroiCrawler extends CrawlerRankingKeywords {
 
-
+   private String getLocation(){return session.getOptions().getString("filial");}
    public RiodejaneiroPrincesaniteroiCrawler(Session session) {
       super(session);
    }
 
-
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      String url = "https://ecom.solidcon.com.br/api/v2/shop/produto/empresa/103/filial/233/GetProdutos";
+      String url = "https://ecom.solidcon.com.br/api/v2/shop/produto/empresa/103/filial/"+getLocation()+"/GetProdutos";
 
       JSONArray products = fetchJsonFromApi(url);
       if (products != null && !products.isEmpty()) {

@@ -34,6 +34,8 @@ import java.util.regex.Pattern;
 
 public class RiodejaneiroPrincesaniteroiCrawler extends Crawler {
 
+   private String getLocation(){return session.getOptions().getString("filial");}
+
    private final String grammatureRegex = "(\\d+[.,]?\\d*\\s?)(ml|l|g|gr|mg|kg)";
 
    private final String SELLER_NAME = "Princesa";
@@ -58,7 +60,7 @@ public class RiodejaneiroPrincesaniteroiCrawler extends Crawler {
       String internalPid = getInternalPid();
       String payload = "{\"Produto\":\"" + internalPid + "\"}";
 
-      Request request = Request.RequestBuilder.create().setUrl("https://ecom.solidcon.com.br/api/v2/shop/produto/empresa/103/filial/233/GetProdutos")
+      Request request = Request.RequestBuilder.create().setUrl("https://ecom.solidcon.com.br/api/v2/shop/produto/empresa/103/filial/"+getLocation()+"/GetProdutos")
          .setPayload(payload)
          .setHeaders(headers)
          .mustSendContentEncoding(false)
