@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -22,6 +23,9 @@ import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -142,6 +146,7 @@ public class RiodejaneiroPrincesaniteroiCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
       Double spotlightPrice = scrapPrice(json);
       Double priceFrom;
+      DecimalFormat df = new DecimalFormat("######.##");
 
       Double isPromotion = json.optDouble("precoPromocao");
       Double priceFraction = json.optDouble("fracionamento");
@@ -150,6 +155,8 @@ public class RiodejaneiroPrincesaniteroiCrawler extends Crawler {
          priceFrom = scrapPrice(json);
          if (priceFraction != null && !priceFraction.isNaN()) {
             spotlightPrice = isPromotion * priceFraction;
+            df.setRoundingMode(RoundingMode.UP);
+            spotlightPrice =  MathUtils.parseDoubleWithComma((df.format(spotlightPrice)));
          }
       } else {
          priceFrom = null;
