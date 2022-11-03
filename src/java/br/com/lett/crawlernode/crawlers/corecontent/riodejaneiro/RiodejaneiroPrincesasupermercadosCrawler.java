@@ -200,8 +200,19 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
    }
 
    private String getInternalPid() {
-      String[] idFromUrl = this.session.getOriginalURL().split("/");
-      return idFromUrl[4];
+      String internalPid = "";
+      String regex = "\\d+";
+
+      String extractString = this.session.getOriginalURL();
+      if (extractString != null && !extractString.isEmpty()) {
+         internalPid = extractString;
+         Pattern pattern = Pattern.compile(regex);
+         Matcher matcher = pattern.matcher(internalPid);
+         if (matcher.find()) {
+            internalPid = matcher.group(0);
+         }
+      }
+      return internalPid;
    }
 
    private String scrapName(JSONObject json) {
