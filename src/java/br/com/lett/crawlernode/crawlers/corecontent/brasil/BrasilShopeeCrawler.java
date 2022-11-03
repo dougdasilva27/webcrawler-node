@@ -2,10 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -30,10 +27,11 @@ import java.util.regex.Pattern;
 public class BrasilShopeeCrawler extends Crawler {
    public BrasilShopeeCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.JSON);
    }
 
-   public List<Product> extractInformation(Document document) throws Exception{
-      JSONObject productObj = getProduct(this.session.getOriginalURL());
+   public List<Product> extractInformation(JSONObject productObj) throws Exception{
+
       List<Product> products = new ArrayList<>();
       if (productObj != null) {
          JSONObject data = productObj.optJSONObject("data");
@@ -143,16 +141,17 @@ public class BrasilShopeeCrawler extends Crawler {
       return list;
    }
 
-   private JSONObject getProduct(String url) {
+   @Override
+   protected Response fetchResponse() {
       JSONObject data = null;
       String regex = "-i(.*)\\?sp";
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-      final Matcher matcher = pattern.matcher(url);
+      final Matcher matcher = pattern.matcher(this.session.getOriginalURL());
       String ids = "";
       if(matcher.find()) {
          ids = matcher.group(1);
       }else {
-         ids = url;
+         ids = this.session.getOriginalURL();
       }
       String[] arr = ids.split("\\.");
       String itemId = arr[arr.length - 1];
@@ -163,10 +162,7 @@ public class BrasilShopeeCrawler extends Crawler {
          .build();
 
       Response response = this.dataFetcher.get(session, request);
-      if (!response.getBody().isEmpty()) {
-         return CrawlerUtils.stringToJson(response.getBody());
-      }
-      return data;
+      return response;
 
    }
 
