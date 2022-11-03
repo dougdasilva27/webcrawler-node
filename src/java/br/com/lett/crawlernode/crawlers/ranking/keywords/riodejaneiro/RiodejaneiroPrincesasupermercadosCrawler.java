@@ -28,14 +28,17 @@ import java.util.Map;
 
 public class RiodejaneiroPrincesasupermercadosCrawler extends CrawlerRankingKeywords {
 
-   private String getLocation(){return session.getOptions().getString("filial");}
+   private String getLocation() {
+      return session.getOptions().getString("filial");
+   }
+
    public RiodejaneiroPrincesasupermercadosCrawler(Session session) {
       super(session);
    }
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      String url = "https://ecom.solidcon.com.br/api/v2/shop/produto/empresa/103/filial/"+getLocation()+"/GetProdutos";
+      String url = "https://ecom.solidcon.com.br/api/v2/shop/produto/empresa/103/filial/" + getLocation() + "/GetProdutos";
 
       JSONArray products = fetchJsonFromApi(url);
       if (products != null && !products.isEmpty()) {
@@ -92,10 +95,30 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends CrawlerRankingKeyw
    }
 
    private Integer getPrice(JSONObject object) {
-      Double priceJson = object.optDouble("preco");
-      if (priceJson != null) {
-         return CommonMethods.doublePriceToIntegerPrice(priceJson, 0);
+      Double priceJson = scrapPricePromotion(object);
+      if (priceJson.isNaN()) {
+         priceJson = scrapPrice(object);
       }
-      return null;
+      return CommonMethods.doublePriceToIntegerPrice(priceJson, 0);
+   }
+
+   private Double scrapPrice(JSONObject product) {
+      Double price = product.optDouble("preco");
+      Double priceFraction = product.optDouble("fracionamento");
+
+      if (priceFraction != null && !priceFraction.isNaN()) {
+         price *= priceFraction;
+      }
+      return price;
+   }
+
+   private Double scrapPricePromotion(JSONObject product) {
+      Double price = product.optDouble("precoPromocao");
+      Double priceFraction = product.optDouble("fracionamento");
+
+      if (priceFraction != null && !priceFraction.isNaN()) {
+         price *= priceFraction;
+      }
+      return price;
    }
 }
