@@ -55,6 +55,12 @@ public class MercadolivreCrawler extends Crawler {
    protected boolean allow3PSellers = isAllow3PSellers();
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
    private List<String> sellerVariations;
+   protected boolean acceptCatalog = isAcceptCatalog();
+
+   private boolean isAcceptCatalog() {
+      return session.getOptions().optBoolean("accept_catalog", true);
+   }
+
 
    protected MercadolivreCrawler(Session session) {
       super(session);
@@ -84,16 +90,30 @@ public class MercadolivreCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
+      if (acceptCatalog || isOwnProduct()) {
+         Map<String, String> headers = new HashMap<>();
+         headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
 
-      Request request = RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .build();
+         Request request = RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setCookies(cookies)
+            .setHeaders(headers)
+            .build();
 
-      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+         return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+      }
+
+      return new Document("");
+   }
+
+   private boolean isOwnProduct() {
+      if (session.getOriginalURL().startsWith("https://produto.mercadolivre.com") || session.getOriginalURL().startsWith("https://articulo.mercadolibre.com")) {
+         Logging.printLogDebug(logger, session, "Is a own product " + this.session.getOriginalURL());
+         return true;
+      } else {
+         Logging.printLogDebug(logger, session, "Is not a own product " + this.session.getOriginalURL());
+         return false;
+      }
    }
 
 
