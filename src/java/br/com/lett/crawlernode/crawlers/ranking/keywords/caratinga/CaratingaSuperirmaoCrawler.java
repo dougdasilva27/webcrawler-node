@@ -47,7 +47,7 @@ public class CaratingaSuperirmaoCrawler extends CrawlerRankingKeywords {
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".titulo b", true);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "img", Collections.singletonList("src"), "https", "superirmao.loji.com.br");
             boolean isAvailable = addToCarUrl != null;
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".preco b", null, false, ',', session, null);
+            Integer price = isAvailable ? CrawlerUtils.scrapPriceInCentsFromHtml(e, ".preco b", null, false, ',', session, null) : null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
