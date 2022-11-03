@@ -37,7 +37,9 @@ import java.util.regex.Pattern;
 
 public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
 
-   private String getLocation(){return session.getOptions().getString("filial");}
+   private String getLocation() {
+      return session.getOptions().getString("filial");
+   }
 
    private final String grammatureRegex = "(\\d+[.,]?\\d*\\s?)(ml|l|g|gr|mg|kg)";
 
@@ -63,7 +65,7 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
       String internalPid = getInternalPid();
       String payload = "{\"Produto\":\"" + internalPid + "\"}";
 
-      Request request = Request.RequestBuilder.create().setUrl("https://ecom.solidcon.com.br/api/v2/shop/produto/empresa/103/filial/"+getLocation()+"/GetProdutos")
+      Request request = Request.RequestBuilder.create().setUrl("https://ecom.solidcon.com.br/api/v2/shop/produto/empresa/103/filial/" + getLocation() + "/GetProdutos")
          .setPayload(payload)
          .setHeaders(headers)
          .mustSendContentEncoding(false)
@@ -89,7 +91,7 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
          List<String> categories = new ArrayList<>();
          categories.add(JSONUtils.getStringValue(json, "Categoria"));
          String primaryImage = JSONUtils.getStringValue(json, "urlFoto");
-         Integer stock = json.getInt("qtDisponivel");
+         Integer stock = json.optInt("qtDisponivel");
          boolean isAvailable = stock > 0;
          Offers offers = isAvailable ? scrapOffers(json) : new Offers();
 
@@ -135,9 +137,11 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
    private Double scrapPrice(JSONObject product) {
       Double priceKg = product.optDouble("preco");
 
-      if (product.getBoolean("inFracionado") == true) {
+      if (product.optBoolean("inFracionado") == true) {
          Double priceFraction = product.optDouble("fracionamento");
-         priceKg = priceKg * priceFraction;
+         if (priceFraction != null && !priceFraction.isNaN()) {
+            priceKg = priceKg * priceFraction;
+         }
       }
       return priceKg;
    }
@@ -155,7 +159,7 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
          if (priceFraction != null && !priceFraction.isNaN()) {
             spotlightPrice = isPromotion * priceFraction;
             df.setRoundingMode(RoundingMode.UP);
-            spotlightPrice =  MathUtils.parseDoubleWithComma((df.format(spotlightPrice)));
+            spotlightPrice = MathUtils.parseDoubleWithComma((df.format(spotlightPrice)));
          }
       } else {
          priceFrom = null;
