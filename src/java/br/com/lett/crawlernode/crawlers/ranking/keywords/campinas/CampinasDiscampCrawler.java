@@ -43,7 +43,7 @@ public class CampinasDiscampCrawler extends CrawlerRankingKeywords {
          if (products != null && !products.isEmpty()) {
             for (Object obj : products) {
                JSONObject product = (JSONObject) obj;
-               String internalId = product.optString("id_produto");
+               String internalId = product.optString("codigo");
                String name = product.optString("nome");
                Boolean available = checkAvailability(product.optString("qtdmin", null));
                String productUrl = getUrl(product);

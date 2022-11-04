@@ -25,6 +25,7 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -43,7 +44,6 @@ public class CampinasDiscampCrawler extends Crawler {
    private final String SELLER_NAME = "discamp";
    private String homePage = "https://loja.vrsoft.com.br/discamp/produto/570/";
 
-   // WEBDRIVER  protected CrawlerWebdriver webdriver;
    @Override
    protected Response fetchResponse() {
       String url = "https://api.vrconnect.com.br/loja-virtual/browser/v1.05/detalheProduto";
@@ -59,8 +59,41 @@ public class CampinasDiscampCrawler extends Crawler {
          .setHeaders(headers)
          .setPayload(payload)
          .build();
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher
-         (request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post");
+      JSONObject json = CrawlerUtils.stringToJson(response.getBody());
+
+      if (json.optJSONObject("retorno") == null) {
+         url = "https://api.vrconnect.com.br/loja-virtual/browser/v1.08/carregamentoInicial";
+         payload = "{\"cabecalho\":{\"detalhes_dispositivo\":{\"os_name\":\"Linux\",\"os_version\":106,\"browser_name\":\"Firefox\",\"browser_version\":106,\"navigator_useragent\":\"Mozilla/5.0 (X11; Linux x86_64; rv:106.0) Gecko/20100101 Firefox/106.0\",\"navigator_appversion\":\"5.0 (X11)\",\"navigator_platform\":\"Linux x86_64\"},\"os\":4,\"versao\":\"1.5.2\",\"loja\":570,\"is_cadastro\":0,\"is_maioridade\":1,\"identificacao\":1},\"parametros\":{\"ultima_atualizacao\":\"\",\"organizar\":0,\"sessao\":-1}}";
+         request = Request.RequestBuilder.create()
+            .setUrl(url)
+            .setHeaders(headers)
+            .setPayload(payload)
+            .build();
+         response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post");
+         JSONObject carregamentoInicialJson = CrawlerUtils.stringToJson(response.getBody());
+         JSONObject containers = JSONUtils.getValueRecursive(carregamentoInicialJson, "retorno.containers.0", ".", JSONObject.class, new JSONObject());
+         JSONArray items = containers.optJSONArray("itens");
+         String vrFamilia = null;
+
+         for (int i = 0; i < items.length(); i++) {
+            String codigo = items.optJSONObject(i).optString("codigo");
+            if (getUrl().equals(codigo)) {
+               vrFamilia = items.optJSONObject(i).optJSONObject("oferta").optString("vr_familia");
+               break;
+            }
+         }
+
+         url = "https://api.vrconnect.com.br/loja-virtual/browser/v1.05/detalheProduto";
+         payload = "{\"cabecalho\":{\"detalhes_dispositivo\":{\"os_name\":\"Linux\",\"os_version\":106,\"browser_name\":\"Firefox\",\"browser_version\":106,\"navigator_useragent\":\"Mozilla/5.0 (X11; Linux x86_64; rv:106.0) Gecko/20100101 Firefox/106.0\",\"navigator_appversion\":\"5.0 (X11)\",\"navigator_platform\":\"Linux x86_64\"},\"os\":4,\"versao\":\"1.5.2\",\"loja\":570,\"is_cadastro\":0,\"is_maioridade\":1,\"identificacao\":1},\"parametros\":{\"vr_familia\":" + vrFamilia + "}}";
+         request = Request.RequestBuilder.create()
+            .setUrl(url)
+            .setHeaders(headers)
+            .setPayload(payload)
+            .build();
+         response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post");
+      }
+
       return response;
    }
 
@@ -68,15 +101,17 @@ public class CampinasDiscampCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
       //WEBDRIVER   Document docWebDriver = getDocWithWebDriver();
       if (jsonObject != null) {
-         Integer internalId = JSONUtils.getValueRecursive(jsonObject, "retorno.produto.id_produto", Integer.class);
-         String name = JSONUtils.getValueRecursive(jsonObject, "retorno.produto.nome", String.class);
-         String primaryImage = getImage(jsonObject);
-         String categories = JSONUtils.getValueRecursive(jsonObject, "retorno.produto.categoria", String.class);
-         Double stock = getQuantity(jsonObject);
-         Offers offers = checkAvailability(stock) ? scrapOffers(jsonObject) : new Offers();
+         JSONObject productJson = getProductJson(jsonObject);
+
+         String internalId = productJson.optString("codigo");
+         String name = productJson.optString("nome");
+         String primaryImage = getImage(productJson);
+         String categories = productJson.optString("categoria");
+         Double stock = getQuantity(productJson);
+         Offers offers = checkAvailability(stock) ? scrapOffers(productJson) : new Offers();
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
-            .setInternalId(String.valueOf(internalId))
+            .setInternalId(internalId)
             .setName(name)
             .setCategory1(categories)
             .setOffers(offers)
@@ -89,15 +124,36 @@ public class CampinasDiscampCrawler extends Crawler {
       return products;
    }
 
+   JSONObject getProductJson(JSONObject jsonObject) {
+      if (jsonObject.optJSONObject("retorno").has("produto")) { // available product
+         return JSONUtils.getValueRecursive(jsonObject, "retorno.produto", ".", JSONObject.class, new JSONObject());
+      } else { // unavailable product
+         JSONObject containers = JSONUtils.getValueRecursive(jsonObject, "retorno.containers.0", ".", JSONObject.class, new JSONObject());
+         JSONArray items = containers.optJSONArray("itens");
+         for (int i = 0; i < items.length(); i++) {
+            String codigo = items.optJSONObject(i).optString("codigo");
+            if (getUrl().equals(codigo)) {
+               return items.optJSONObject(i);
+            }
+         }
+      }
+
+      return null;
+   }
+
    private String getUrl() {
       return session.getOriginalURL().replaceAll("https://loja.vrsoft.com.br/discamp/produto/570/", "");
    }
 
-   private String getImage(JSONObject jsonObject) {
-      Integer image = JSONUtils.getValueRecursive(jsonObject, "retorno.produto.imgid", Integer.class);
-      if (image != null && image != 0) {
-         return "https://estaticos.nweb.com.br/imgs/nprodutos/t-" + image + ".jpg";
+   private String getImage(JSONObject productJson) {
+      String image = productJson.optString("imgid");
+      if (image != null && !image.equals("0")) {
+         return "https://estaticos.nweb.com.br/imgs/nprodutos/" + image + ".jpg";
+      } else if (image.equals("0")) {
+         String isi = JSONUtils.getValueRecursive(productJson, "oferta.isi", ".", String.class, "");
+         return !isi.equals("") ? "https://estaticos.nweb.com.br/imgs/produtos/" + isi + ".jpg" : null;
       }
+
       return null;
    }
 
@@ -127,36 +183,27 @@ public class CampinasDiscampCrawler extends Crawler {
    }
 
    private Double getPrice(JSONObject json) {
-      Integer priceInt = JSONUtils.getValueRecursive(json, "retorno.produto.preco", Integer.class);
-      if (priceInt != null) {
-         return (double) priceInt;
-      }
-      if (JSONUtils.getValueRecursive(json, "retorno.produto.oferta.preco_oferta", Double.class) != null) {
-        Double priceDouble = JSONUtils.getValueRecursive(json, "retorno.produto.oferta.preco_oferta", Double.class);
-         return priceDouble;
+      if (json.optJSONObject("oferta") != null) {
+         return JSONUtils.getValueRecursive(json, "oferta.preco_oferta", ".", Double.class, 0.0);
       } else {
-         Double priceDouble = JSONUtils.getValueRecursive(json, "retorno.produto.preco", Double.class);
-         return priceDouble;
+         return json.optDouble("preco");
       }
    }
 
    private Double getQuantity(JSONObject json) {
-      Double quantityDouble = JSONUtils.getValueRecursive(json, "retorno.produto.qtdmin", Double.class);
-      if (quantityDouble != null && quantityDouble != 0) {
+      Double quantityDouble = json.optDouble("qtdmin");
+      if (quantityDouble != 0) {
          return quantityDouble;
       } else {
-         Integer quantityInt = JSONUtils.getValueRecursive(json, "retorno.produto.qtdmin", Integer.class);
-         if (quantityInt != null) {
-            return (double) quantityInt;
-         }
+         Integer quantityInt = json.optInt("qtdmin");
+         return (double) quantityInt;
       }
-      return null;
    }
 
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
-      Double priceFrom = JSONUtils.getValueRecursive(json, "retorno.produto.preco", Double.class);
+      Double priceFrom = json.optDouble("preco");
       Double spotlightPrice = getPrice(json);
-      if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
+      if (priceFrom.equals(spotlightPrice)) {
          priceFrom = null;
       }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
