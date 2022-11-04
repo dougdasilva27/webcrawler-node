@@ -17,6 +17,7 @@ public class ArgentinaJumboLocalidadesCrawler extends VtexRankingKeywordsNew {
 
    public ArgentinaJumboLocalidadesCrawler(Session session) {
       super(session);
+      this.pageSize = 18;
    }
 
    @Override
@@ -38,7 +39,7 @@ public class ArgentinaJumboLocalidadesCrawler extends VtexRankingKeywordsNew {
    protected JSONArray fetchPage(String url) {
 
       url = setHomePage() + "/api/catalog_system/pub/products/search/" + "?&&ft=" + keywordEncoded.replace("+", "%20")
-         + "&O=OrderByScoreDESC&_from=" + ((currentPage - 1) * 18) + "&_to=" + ((currentPage) * 18);
+         + "&O=OrderByScoreDESC&_from=" + ((currentPage - 1) * pageSize) + "&_to=" + ((currentPage) * pageSize);
 
       Map<String, String> headers = new HashMap<>();
       if (cookies != null && !cookies.isEmpty()) {
