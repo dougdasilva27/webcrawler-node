@@ -127,17 +127,17 @@ public class CampinasDiscampCrawler extends Crawler {
    }
 
    private Double getPrice(JSONObject json) {
-      Double priceDouble = JSONUtils.getValueRecursive(json, "retorno.produto.preco", Double.class);
+      Integer priceInt = JSONUtils.getValueRecursive(json, "retorno.produto.preco", Integer.class);
+      if (priceInt != null) {
+         return (double) priceInt;
+      }
       if (JSONUtils.getValueRecursive(json, "retorno.produto.oferta.preco_oferta", Double.class) != null) {
-         priceDouble = JSONUtils.getValueRecursive(json, "retorno.produto.oferta.preco_oferta", Double.class);
+        Double priceDouble = JSONUtils.getValueRecursive(json, "retorno.produto.oferta.preco_oferta", Double.class);
          return priceDouble;
       } else {
-         Integer priceInt = JSONUtils.getValueRecursive(json, "retorno.produto.preco", Integer.class);
-         if (priceInt != null) {
-            return (double) priceInt;
-         }
+         Double priceDouble = JSONUtils.getValueRecursive(json, "retorno.produto.preco", Double.class);
+         return priceDouble;
       }
-      return null;
    }
 
    private Double getQuantity(JSONObject json) {
