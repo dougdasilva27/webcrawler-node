@@ -130,12 +130,15 @@ public class CornershopCrawler extends Crawler {
    private List<String> scrapSecondaryImages(JSONObject data) {
       List<String> list = new ArrayList<>();
       JSONArray arr = data.optJSONArray("extra_img_urls");
-      for (Integer i = 0; i < arr.length(); i++) {
-         String image = (String) arr.get(i);
-         if (image != null && !image.isEmpty()) {
-            list.add(image);
+      if(arr !=null && !arr.isEmpty()){
+         for (Integer i = 0; i < arr.length(); i++) {
+            String image = (String) arr.get(i);
+            if (image != null && !image.isEmpty()) {
+               list.add(image);
+            }
          }
       }
+
 
       return list;
    }
