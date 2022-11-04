@@ -29,8 +29,8 @@ public class BrasilMadridSupermercados extends CrawlerRankingKeywords {
       Elements elements = this.currentDoc.select(".prods>ul li");
       if (elements != null) {
          for (Element e : elements) {
-            String internalId = getInternalId(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".lazy", "data-src"));
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href");
+            String internalId = getInternalId(productUrl);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".info", true);
             int price = CrawlerUtils.scrapIntegerFromHtml(e, ".valor", true, 0);
             String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".lazy", Arrays.asList("data-src"), "", "");
@@ -52,12 +52,14 @@ public class BrasilMadridSupermercados extends CrawlerRankingKeywords {
 
    }
 
-   private String getInternalId(String id) {
-      if (id != null && !id.isEmpty()) {
-         String skuWithPoint = CommonMethods.getLast(id.split("/"));
-         if (skuWithPoint != null && !id.isEmpty()) {
-            List<String> idReturn = List.of(skuWithPoint.split("\\."));
-            return idReturn.get(0);
+   private String getInternalId(String url) {
+      if (url != null && !url.isEmpty()) {
+         String sku = CommonMethods.getLast(url.split("/"));
+         if (sku != null && !sku.isEmpty()) {
+            List<String> idReturn = List.of(sku.split("sku"));
+            if (idReturn.size() > 1) {
+               return idReturn.get(1);
+            }
          }
       }
       return "";
