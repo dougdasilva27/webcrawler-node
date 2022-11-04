@@ -144,7 +144,7 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
             priceKg = priceKg * priceFraction;
          }
       }
-      String priceFinal = df.format(priceKg);
+      String priceFinal = df.format(priceKg).replace(".",",");
       df.setRoundingMode(RoundingMode.UP);
       return MathUtils.parseDoubleWithComma(priceFinal);
    }
@@ -162,7 +162,7 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
          if (priceFraction != null && !priceFraction.isNaN()) {
             spotlightPrice = isPromotion * priceFraction;
             df.setRoundingMode(RoundingMode.UP);
-            spotlightPrice = MathUtils.parseDoubleWithComma(df.format(spotlightPrice));
+            spotlightPrice = MathUtils.parseDoubleWithComma(df.format(spotlightPrice).replace(".",","));
          }
       } else {
          priceFrom = null;
