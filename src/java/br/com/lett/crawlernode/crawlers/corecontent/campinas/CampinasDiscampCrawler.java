@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.campinas;
 
+import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
@@ -11,6 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -22,6 +26,9 @@ import models.Offers;
 import models.pricing.*;
 import org.apache.http.HttpHeaders;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.util.*;
 
@@ -36,7 +43,7 @@ public class CampinasDiscampCrawler extends Crawler {
    private final String SELLER_NAME = "discamp";
    private String homePage = "https://loja.vrsoft.com.br/discamp/produto/570/";
 
-
+   // WEBDRIVER  protected CrawlerWebdriver webdriver;
    @Override
    protected Response fetchResponse() {
       String url = "https://api.vrconnect.com.br/loja-virtual/browser/v1.05/detalheProduto";
@@ -59,6 +66,7 @@ public class CampinasDiscampCrawler extends Crawler {
 
    public List<Product> extractInformation(JSONObject jsonObject) throws Exception {
       List<Product> products = new ArrayList<>();
+      //WEBDRIVER   Document docWebDriver = getDocWithWebDriver();
       if (jsonObject != null) {
          Integer internalId = JSONUtils.getValueRecursive(jsonObject, "retorno.produto.id_produto", Integer.class);
          String name = JSONUtils.getValueRecursive(jsonObject, "retorno.produto.nome", String.class);
@@ -185,3 +193,37 @@ public class CampinasDiscampCrawler extends Crawler {
       return creditCards;
    }
 }
+/* WEBDRIVER
+
+   private Document getDocWithWebDriver() {
+      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY);
+      Integer attempt = 0;
+      ChromeOptions options = new ChromeOptions();
+      options.addArguments("--window-size=1920,1080");
+      options.addArguments("--headless");
+      options.addArguments("--no-sandbox");
+      options.addArguments("--disable-dev-shm-usage");
+      Document document = null;
+
+      do {
+         try {
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempt), session,null, homePage, options);
+            webdriver.waitLoad(60000);
+            if (webdriver != null) {
+               webdriver.waitLoad(60000);
+
+               document = Jsoup.parse(webdriver.getCurrentPageSource());
+
+               webdriver.terminate();
+
+            }
+            attempt++;
+         } catch (Exception e) {
+            Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
+         }
+      }
+      while (attempt < 3);
+
+      return document;
+   }
+} */
