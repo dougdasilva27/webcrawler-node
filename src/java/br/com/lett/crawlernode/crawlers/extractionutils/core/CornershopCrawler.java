@@ -100,6 +100,7 @@ public class CornershopCrawler extends Crawler {
          String description = crawlDescription(jsonSku);
          boolean available = crawlAvailability(jsonSku);
          String primaryImage = JSONUtils.getStringValue(jsonSku, "img_url");
+         List<String> secondaryImages = scrapSecondaryImages(jsonSku);
          String name = crawlName(jsonSku);
          Offers offers = available ? scrapOffers(jsonSku) : new Offers();
 
@@ -113,6 +114,7 @@ public class CornershopCrawler extends Crawler {
             .setDescription(description)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setOffers(offers)
             .build();
          products.add(product);
@@ -125,6 +127,18 @@ public class CornershopCrawler extends Crawler {
       return products;
    }
 
+   private List<String> scrapSecondaryImages(JSONObject data) {
+      List<String> list = new ArrayList<>();
+      JSONArray arr = data.optJSONArray("extra_img_urls");
+      for (Integer i = 0; i < arr.length(); i++) {
+         String image = (String) arr.get(i);
+         if (image != null && !image.isEmpty()) {
+            list.add(image);
+         }
+      }
+
+      return list;
+   }
 
    private Offers scrapOffers(JSONObject jsonSku) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
