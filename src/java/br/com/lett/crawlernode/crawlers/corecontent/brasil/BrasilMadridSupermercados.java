@@ -43,7 +43,6 @@ public class BrasilMadridSupermercados extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#ctl00_ContentPlaceHolder1_h_pfid", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(product, ".detalheProduto > h1", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(product, "#ImgProdDesk > a img", List.of("src"), "", "");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "#ulThumbs li a img", List.of("src"), "", "", primaryImage);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a", true);
          String description = CrawlerUtils.scrapSimpleDescription(doc, List.of(".desc p"));
          Offers offers = scrapOffers(product);
@@ -55,7 +54,6 @@ public class BrasilMadridSupermercados extends Crawler {
             .setName(name)
             .setOffers(new Offers())
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
             .setCategories(categories)
             .setDescription(description)
             .setOffers(offers)
