@@ -22,7 +22,8 @@ public class BrasilMadridSupermercados extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      String url = "https://www.madrid.com.br/busca/" + this.keywordEncoded + "/?pagina=" + this.currentPage;
+      String keyword = this.keywordEncoded.replace("+","%20");
+      String url = "https://www.madrid.com.br/busca/" +keyword+ "/?pagina=" + this.currentPage;
       this.pageSize = 28;
       this.currentDoc = fetchDocument(url);
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "#ctl00_ContentPlaceHolder1_dvResultados h1", true, 0);
