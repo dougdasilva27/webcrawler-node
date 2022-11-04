@@ -48,8 +48,8 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
             String name = product.optString("name");
             String url = getUrl(internalId, name);
             String imgUrl = product.optString("icon");
-            Integer price = product.optInt("rawPrice", 0) * 100;
             boolean isAvailable = product.optBoolean("productAvailable");
+            Integer price = isAvailable ? product.optInt("rawPrice", 0) * 100 : null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(url)
