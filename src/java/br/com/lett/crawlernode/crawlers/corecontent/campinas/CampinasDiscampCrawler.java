@@ -128,7 +128,7 @@ public class CampinasDiscampCrawler extends Crawler {
 
    private Double getPrice(JSONObject json) {
       Double priceDouble = JSONUtils.getValueRecursive(json, "retorno.produto.oferta.preco_oferta", Double.class);
-      if (priceDouble != null) {
+      if (priceDouble == null) {
          priceDouble = JSONUtils.getValueRecursive(json, "retorno.produto.preco", Double.class);
          return priceDouble;
       } else {
