@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.campinas;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
@@ -37,8 +38,8 @@ public class CampinasDiscampCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       JSONObject json = fetchJSONObject("https://api.vrconnect.com.br/loja-virtual/browser/v1.05/buscarFeedProdutos");
-      if (json != null) {
-         totalProducts = JSONUtils.getValueRecursive(json, "retorno.total_itens", Integer.class);
+      if (json != null && !json.isEmpty()) {
+         if (totalProducts == 0) totalProducts = JSONUtils.getValueRecursive(json, "retorno.total_itens", Integer.class);
          JSONArray products = JSONUtils.getValueRecursive(json, "retorno.itens", JSONArray.class);
          if (products != null && !products.isEmpty()) {
             for (Object obj : products) {
@@ -63,6 +64,9 @@ public class CampinasDiscampCrawler extends CrawlerRankingKeywords {
                }
             }
          }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
    }
 
@@ -114,9 +118,10 @@ public class CampinasDiscampCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
+         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR,ProxyCollection.SMART_PROXY_BR, ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .setPayload(payload)
          .build();
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher()), session, "post");
       return JSONUtils.stringToJson(response.getBody());
    }
 }

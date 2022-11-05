@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.campinas;
 
-import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
@@ -14,7 +11,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -27,9 +23,6 @@ import models.pricing.*;
 import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.util.*;
 
@@ -39,15 +32,13 @@ public class CampinasDiscampCrawler extends Crawler {
       super.config.setParser(Parser.JSON);
    }
 
-   //ESTE SITE NÃO POSSUI IMAGEM SECUNDÁRIA NO DIA DA CRIAÇÃO DO CRAWLER
-   //ESTE SITE NÃO POSSUI DESCRIÇÃO NO DIA DA CRIAÇÃO DO CRAWLER
    private final String SELLER_NAME = "discamp";
    private String homePage = "https://loja.vrsoft.com.br/discamp/produto/570/";
 
    @Override
    protected Response fetchResponse() {
       String url = "https://api.vrconnect.com.br/loja-virtual/browser/v1.05/detalheProduto";
-      String payload = "{\"cabecalho\":{\"loja\":\"570\"},\"parametros\":{\"codigo\":" + getUrl() + "}}";
+      String payload = "{\"cabecalho\":{\"loja\":\"570\"},\"parametros\":{\"codigo\":" + getId() + "}}";
       Map<String, String> headers = new HashMap<>();
       String token = "Bearer uoteK1SjWL0LNH5lsgWUJUobNqIjp6kivELR0rbBroGfa73WvLg1itsS2wuU2umjvyfAbbooMIf6Kt542ZPcw0upBM7dJ20UxV2o";
       headers.put("origin", "https://loja.vrsoft.com.br");
@@ -78,7 +69,7 @@ public class CampinasDiscampCrawler extends Crawler {
 
          for (int i = 0; i < items.length(); i++) {
             String codigo = items.optJSONObject(i).optString("codigo");
-            if (getUrl().equals(codigo)) {
+            if (getId().equals(codigo)) {
                vrFamilia = items.optJSONObject(i).optJSONObject("oferta").optString("vr_familia");
                break;
             }
@@ -99,13 +90,13 @@ public class CampinasDiscampCrawler extends Crawler {
 
    public List<Product> extractInformation(JSONObject jsonObject) throws Exception {
       List<Product> products = new ArrayList<>();
-      //WEBDRIVER   Document docWebDriver = getDocWithWebDriver();
       if (jsonObject != null) {
          JSONObject productJson = getProductJson(jsonObject);
 
          String internalId = productJson.optString("codigo");
          String name = productJson.optString("nome");
          String primaryImage = getImage(productJson);
+         // not have secondary images and description
          String categories = productJson.optString("categoria");
          Double stock = getQuantity(productJson);
          Offers offers = checkAvailability(stock) ? scrapOffers(productJson) : new Offers();
@@ -132,7 +123,7 @@ public class CampinasDiscampCrawler extends Crawler {
          JSONArray items = containers.optJSONArray("itens");
          for (int i = 0; i < items.length(); i++) {
             String codigo = items.optJSONObject(i).optString("codigo");
-            if (getUrl().equals(codigo)) {
+            if (getId().equals(codigo)) {
                return items.optJSONObject(i);
             }
          }
@@ -141,7 +132,7 @@ public class CampinasDiscampCrawler extends Crawler {
       return null;
    }
 
-   private String getUrl() {
+   private String getId() {
       return session.getOriginalURL().replaceAll("https://loja.vrsoft.com.br/discamp/produto/570/", "");
    }
 
@@ -240,37 +231,3 @@ public class CampinasDiscampCrawler extends Crawler {
       return creditCards;
    }
 }
-/* WEBDRIVER
-
-   private Document getDocWithWebDriver() {
-      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY);
-      Integer attempt = 0;
-      ChromeOptions options = new ChromeOptions();
-      options.addArguments("--window-size=1920,1080");
-      options.addArguments("--headless");
-      options.addArguments("--no-sandbox");
-      options.addArguments("--disable-dev-shm-usage");
-      Document document = null;
-
-      do {
-         try {
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempt), session,null, homePage, options);
-            webdriver.waitLoad(60000);
-            if (webdriver != null) {
-               webdriver.waitLoad(60000);
-
-               document = Jsoup.parse(webdriver.getCurrentPageSource());
-
-               webdriver.terminate();
-
-            }
-            attempt++;
-         } catch (Exception e) {
-            Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-         }
-      }
-      while (attempt < 3);
-
-      return document;
-   }
-} */
