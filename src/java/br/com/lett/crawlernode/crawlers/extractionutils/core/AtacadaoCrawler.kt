@@ -87,8 +87,7 @@ class AtacadaoCrawler(session: Session) : Crawler(session) {
             .setSendUserAgent(true)
             .build()
 
-         dataFetcher.post(session, request)
-
+         CrawlerUtils.retryRequest(request, session, dataFetcher);
       }
    }
 
@@ -119,7 +118,7 @@ class AtacadaoCrawler(session: Session) : Crawler(session) {
          .setSendUserAgent(true)
          .build()
 
-      val response = dataFetcher.get(session, request)
+      val response = CrawlerUtils.retryRequest(request, session, dataFetcher, true);
 
       return response.body.toDoc() ?: Document(url)
    }
