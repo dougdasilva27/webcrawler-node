@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.LocaleException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -45,7 +46,6 @@ public abstract class LifeappsCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-
       // url must be in this format:
       // https://jcdistribuicao.superon.app/commerce/6f0ae38d-50cd-4873-89a5-6861467b5f52/produto/AGUA-MIN-SAO-LOURENCO-300ML-PET-S-GAS-3xlPvs5V/
       // api exemple:
@@ -85,6 +85,10 @@ public abstract class LifeappsCrawler extends Crawler {
 
    @Override
    public List<Product> extractInformation(JSONObject jsonSku) throws Exception {
+      if (!session.getOriginalURL().contains(getHomePage())) {
+         throw new LocaleException();
+      }
+
       super.extractInformation(jsonSku);
       List<Product> products = new ArrayList<>();
       String productUrl = session.getOriginalURL();
@@ -128,7 +132,7 @@ public abstract class LifeappsCrawler extends Crawler {
    private List<String> scrapEan(String internalId) {
       List<String> eans = new ArrayList<>();
 
-      if (internalId.contains("-")) {
+      if (internalId != null && internalId.contains("-")) {
          String[] eanArray = internalId.split("-");
 
          if (eanArray.length > 0) {
