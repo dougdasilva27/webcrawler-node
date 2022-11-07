@@ -57,7 +57,7 @@ public class SaopauloVarandaCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-view-form .no-display input", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", false);
          boolean available = doc.selectFirst(".disponivel") != null;
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".cloud-zoom-gallery.active img", Arrays.asList("src"), "http://", HOME_PAGE);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".cloud-zoom-gallery.active", Arrays.asList("href"), "http://", HOME_PAGE);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".texto-desc", false);
          Offers offers = available ? scrapOffer(doc) : new Offers();
 
