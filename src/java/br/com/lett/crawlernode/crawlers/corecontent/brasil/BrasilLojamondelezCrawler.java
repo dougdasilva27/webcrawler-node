@@ -168,48 +168,57 @@ public class BrasilLojamondelezCrawler extends Crawler {
          String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList("#nav-descricao"));
          List<String> secondaryImages = scrapImages(doc);
          String primaryImage = secondaryImages.remove(0);
-         String name = null;
-         String internalId = null;
          Offers offers = new Offers();
 
          Elements variations = doc.select(".product-grid-container .sku-variation-content .picking");
          if (!variations.isEmpty()) {
             for (Element obj : variations) {
-               internalId = crawlInternalId(obj);
-               name = crawlName(productJson);
+               String internalId = crawlInternalId(obj);
+               String name = crawlName(productJson);
                if (obj.selectFirst("div.picking-quantity span") != null) {
                   name = name + " - " + obj.selectFirst(".picking-quantity span").text();
                }
 
                offers = isAvailable(obj) ? scrapOffers(obj) : new Offers();
+
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setOffers(offers)
+                  .setCategories(categories)
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setEans(Arrays.asList(internalId))
+                  .build();
+
+               products.add(product);
             }
          } else {
-            internalId = productJson.optString("productSKU");
-            name = productJson.optString("productName");
+            String internalId = productJson.optString("productSKU");
+            String name = productJson.optString("productName");
             boolean isAvailable = productJson.optInt("productStock", 0) > 0;
             offers = isAvailable ? scrapOffersWithNoVariation(productJson) : offers;
+
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setOffers(offers)
+               .setCategories(categories)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setEans(Arrays.asList(internalId))
+               .build();
+
+            products.add(product);
          }
 
-         List<String> eans = Arrays.asList(internalId);
-
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setOffers(offers)
-            .setCategories(categories)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setEans(eans)
-            .build();
-
-         products.add(product);
-
       } else {
-
-
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
