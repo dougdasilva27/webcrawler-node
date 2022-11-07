@@ -208,6 +208,10 @@ public abstract class HomecenterCrawler extends Crawler {
 
       String fullName = name != null && brand != null ? brand + " " + name : null;
 
+      if (fullName == null) {
+         return null;
+      }
+
       return model != null ? fullName + " " + model : fullName;
    }
 
