@@ -41,8 +41,9 @@ public class SmarthintKeyword extends CrawlerRankingKeywords {
             String internalPid = product.optString("ItemGroupId");
             String name = product.optString("Title");
             String imageUrl = scrapImage(product);
-            int price = scrapPrice(product);
-            boolean isAvailable = product.optString("Availability", "").equalsIgnoreCase("in stock");
+            Integer price = scrapPrice(product) > 0 ? scrapPrice(product) : null;
+            boolean isAvailable = product.optString("Availability", "").equalsIgnoreCase("in stock") && price != null;
+
 
             //New way to send products to save data product
             RankingProduct productRanking = RankingProductBuilder.create()
