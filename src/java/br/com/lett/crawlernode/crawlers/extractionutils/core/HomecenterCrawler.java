@@ -204,8 +204,15 @@ public abstract class HomecenterCrawler extends Crawler {
    private String crawlName(Document doc) {
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info .product-title", true);
       String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info .product-brand", true);
+      String model = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info .product-model", true);
 
-      return name != null && brand != null ? brand + " " + name : null;
+      String fullName = name != null && brand != null ? brand + " " + name : null;
+
+      if (fullName == null) {
+         return null;
+      }
+
+      return model != null ? fullName + " " + model : fullName;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
