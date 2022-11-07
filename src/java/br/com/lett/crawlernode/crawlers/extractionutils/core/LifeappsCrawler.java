@@ -224,8 +224,9 @@ public abstract class LifeappsCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(product, "preco_sem_politica_varejo", false);
+   protected Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(product, "preco_sem_politica_varejo", false);
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(product, "preco", false);
 
       BigDecimal bdSpotlightPrice = BigDecimal.valueOf(spotlightPrice);
       spotlightPrice = bdSpotlightPrice.setScale(2, RoundingMode.DOWN).doubleValue();
@@ -233,8 +234,17 @@ public abstract class LifeappsCrawler extends Crawler {
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditcards(spotlightPrice);
 
+      if (priceFrom != null) {
+         BigDecimal bdPriceFrom = BigDecimal.valueOf(priceFrom);
+         priceFrom = bdPriceFrom.setScale(2, RoundingMode.DOWN).doubleValue();
+      }
+
+      if (Objects.equals(priceFrom, spotlightPrice)) {
+         priceFrom = null;
+      }
+
       return Pricing.PricingBuilder.create()
-         .setPriceFrom(null)
+         .setPriceFrom(priceFrom)
          .setSpotlightPrice(spotlightPrice)
          .setBankSlip(bankSlip)
          .setCreditCards(creditCards)
@@ -242,7 +252,7 @@ public abstract class LifeappsCrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditcards(Double installmentPrice) throws MalformedPricingException {
+   protected CreditCards scrapCreditcards(Double installmentPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = scrapInstallments(installmentPrice);
