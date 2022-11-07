@@ -73,7 +73,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
          String description = scrapDescription(data);
 
-         Boolean available = crawlAvailability(internalId);
+         Boolean available = crawlAvailability(internalId, data);
 
          Offers offers = available != null && available ? scrapOffers(data, doc) : new Offers();
 
@@ -100,7 +100,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return products;
    }
 
-   private Boolean crawlAvailability(String internalId) {
+   private Boolean crawlAvailability(String internalId, JSONObject data) {
       String payload = "{\"operationName\":\"liveComposition\",\"variables\":{\"skuList\":[\"" + internalId + "\"],\"origin\":\"\"},\"query\":\"query liveComposition($skuList: [String!]!, $origin: String!) {\\n  liveComposition(input: {skuList: $skuList, origin: $origin}) {\\n    sku\\n    livePrice {\\n      bestPrice {\\n        valueFrom\\n        valueTo\\n        updateAt\\n        type\\n        discountPercentage\\n        lmpmValueTo\\n        lmpmQty\\n        __typename\\n      }\\n      calcule {\\n        valueFrom\\n        valueTo\\n        lmpmValueTo\\n        lmpmQty\\n        updateAt\\n        type\\n        __typename\\n      }\\n      discountPercentage\\n      sku\\n      type\\n      updateAt\\n      valueFrom\\n      valueTo\\n      lmpmValueTo\\n      lmpmQty\\n      __typename\\n    }\\n    liveStock {\\n      sku\\n      qty\\n      dt\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\"}";
 
       HashMap<String, String> headers = new HashMap<>();
@@ -123,10 +123,13 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
       JSONObject jsonStock = JSONUtils.stringToJson(response.getBody());
       Integer stock = JSONUtils.getValueRecursive(jsonStock, "data.liveComposition.0.liveStock.qty", Integer.class);
-      return stock != null && stock > 0;
+      if( stock == null){
+         return JSONUtils.getValueRecursive(data, "extension_attributes.stock_item.is_in_stock", Boolean.class);
+      }
+      return stock > 0;
    }
 
-   private List<String> scrapListImages(JSONObject data, Document doc) {
+  private List<String> scrapListImages(JSONObject data, Document doc) {
       List<String> images = new ArrayList<>();
       JSONArray imagesJson = JSONUtils.getValueRecursive(data, "media_gallery_entries", JSONArray.class);
       if (imagesJson != null) {
@@ -158,7 +161,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
       return null;
    }
-
 
    /* Brief explanation of the function
    The number of units and the size of the product must be captured in the crawler (ex: 15ml);
