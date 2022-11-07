@@ -211,6 +211,12 @@ ATTEMPTS_FOR_EACH_PROXY=2
 CHROME_PATH={{CHROME_DRIVE_PATH}}
 HTML_PATH={{HTML_SAVE_PATH}}
 DEBUG=true
+LETT_ELASTIC_HOST=vpc-elastic-market-sku-catalog-kfx4irdqtawrf5cxgjspmanmea.us-east-1.es.amazonaws.com
+LETT_ELASTIC_PORT=443
+LETT_ELASTIC_USERNAME={{USERNAME}}
+LETT_ELASTIC_PASSWORD={{PASSWORD}}
+LETT_ELASTIC_INDEX=market_sku_catalog
+DYNAMO_TABLE_NAME="capture_job_dev"
 ```
 
 
