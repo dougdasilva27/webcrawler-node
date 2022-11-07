@@ -86,7 +86,7 @@ public class BrasilVilanova extends Crawler {
                doc = Jsoup.parse(webdriver.getCurrentPageSource());
             }
 
-         } while (doc.select("body").isEmpty() && attempt++ < 3);
+         } while (doc.select("#fazer-login").isEmpty() && attempt++ < 3);
 
          webdriver.waitLoad(10000);
 
