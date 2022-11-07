@@ -30,7 +30,7 @@ public abstract class LifeappsCrawler extends Crawler {
 
    protected LifeappsCrawler(Session session) {
       super(session);
-      this.config.setFetcher(FetchMode.FETCHER);
+      this.config.setFetcher(FetchMode.JSOUP);
    }
 
    protected abstract String getHomePage();
