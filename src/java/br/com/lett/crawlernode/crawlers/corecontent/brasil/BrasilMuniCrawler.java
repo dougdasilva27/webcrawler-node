@@ -101,7 +101,7 @@ public class BrasilMuniCrawler extends Crawler {
 
    private String getPrimaryImage(JSONObject productList) {
       String primaryImg = "";
-      String objImg = productList.optString("image");
+      String objImg = JSONUtils.getValueRecursive(productList, "images.0.main", String.class);
       if (objImg != null) {
          primaryImg = objImg;
       }
