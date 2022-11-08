@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.aws.kinesis;
 
 import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.session.Session;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -43,6 +44,12 @@ public class RankingModel {
 
    public String serializeToKinesis() {
       return this.toJson().toString();
+   }
+
+   public String serializeToKinesis(Session session) {
+      JSONObject json = this.toJson();
+      json.put("session_id", session.getSessionId());
+      return json.toString();
    }
 
    //generate a json object from the object
