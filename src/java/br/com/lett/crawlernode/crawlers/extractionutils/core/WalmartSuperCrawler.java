@@ -6,7 +6,6 @@ import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,15 +16,10 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Marketplace;
 import models.Offer;
 import models.Offers;
-import models.prices.Prices;
 import models.pricing.CreditCards;
 import models.pricing.Pricing;
-import org.apache.http.HttpHeaders;
-import org.eclipse.jetty.util.ajax.JSON;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
@@ -38,11 +32,11 @@ public class WalmartSuperCrawler extends Crawler {
 
    public WalmartSuperCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
       super.config.setParser(Parser.JSON);
    }
 
-   String store_id  = session.getOptions().optString("store_id");
+   String store_id = session.getOptions().optString("store_id");
 
    @Override
    public boolean shouldVisit() {
@@ -65,7 +59,7 @@ public class WalmartSuperCrawler extends Crawler {
       }
 
       String apiUrl =
-         "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId="+store_id+"&upc="
+         "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId=" + store_id + "&upc="
             + finalParameter + "&skuId=" + finalParameter;
 
       Request requestJsoup = Request.RequestBuilder.create()
@@ -73,12 +67,11 @@ public class WalmartSuperCrawler extends Crawler {
          .setCookies(cookies)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.SMART_PROXY_BR,
-               ProxyCollection.SMART_PROXY_MX,
-               ProxyCollection.SMART_PROXY_AR,
-               ProxyCollection.SMART_PROXY_BR_HAPROXY,
-               ProxyCollection.SMART_PROXY_MX_HAPROXY,
-               ProxyCollection.SMART_PROXY_AR_HAPROXY))
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector(".Mantn-presionado-el").build())
          .build();
 
@@ -87,12 +80,11 @@ public class WalmartSuperCrawler extends Crawler {
          .setUrl(apiUrl)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.SMART_PROXY_BR,
-               ProxyCollection.SMART_PROXY_MX,
-               ProxyCollection.SMART_PROXY_AR,
-               ProxyCollection.SMART_PROXY_BR_HAPROXY,
-               ProxyCollection.SMART_PROXY_MX_HAPROXY,
-               ProxyCollection.SMART_PROXY_AR_HAPROXY))
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
          .build();
 
       Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestJsoup;
@@ -178,7 +170,7 @@ public class WalmartSuperCrawler extends Crawler {
       Double spotlightPrice = null;
       Double priceFrom = null;
 
-      if(spotlightPriceString.isEmpty()){
+      if (spotlightPriceString.isEmpty()) {
          JSONObject priceObject = crawlPriceApi(internalId);
          spotlightPrice = CommonMethods.objectToDouble(priceObject.optQuery("/skuinfo/" + internalId + "_" + store_id + "/activeSpecialPrice"));
          priceFrom = CommonMethods.objectToDouble(priceObject.optQuery("/skuinfo/" + internalId + "_" + store_id + "/activeOriginalPrice"));
@@ -187,7 +179,7 @@ public class WalmartSuperCrawler extends Crawler {
          priceFrom = Double.valueOf(priceFromString);
       }
 
-      if(Objects.equals(spotlightPrice, priceFrom)){
+      if (Objects.equals(spotlightPrice, priceFrom)) {
          priceFrom = null;
       }
 
@@ -202,18 +194,17 @@ public class WalmartSuperCrawler extends Crawler {
 
    private JSONObject crawlPriceApi(String internalId) {
       Request request = Request.RequestBuilder.create()
-         .setUrl("https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuPriceInventoryPromotions?skuId="+internalId+"&storeId=" + store_id)
+         .setUrl("https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuPriceInventoryPromotions?skuId=" + internalId + "&storeId=" + store_id)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.SMART_PROXY_BR,
-               ProxyCollection.SMART_PROXY_MX,
-               ProxyCollection.SMART_PROXY_AR,
-               ProxyCollection.SMART_PROXY_BR_HAPROXY,
-               ProxyCollection.SMART_PROXY_MX_HAPROXY,
-               ProxyCollection.SMART_PROXY_AR_HAPROXY))
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
          .build();
 
-      return  CrawlerUtils.stringToJson(dataFetcher.get(session, request).getBody());
+      return CrawlerUtils.stringToJson(dataFetcher.get(session, request).getBody());
    }
 
    private boolean crawlAvailability(JSONObject apiJson) {
