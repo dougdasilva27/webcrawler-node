@@ -116,20 +116,22 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.BUY,
-               ProxyCollection.SMART_PROXY_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR))
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.SMART_PROXY_BR
+            ))
          .setSendUserAgent(true)
          .build();
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
       JSONObject jsonStock = JSONUtils.stringToJson(response.getBody());
       Integer stock = JSONUtils.getValueRecursive(jsonStock, "data.liveComposition.0.liveStock.qty", Integer.class);
-      if( stock == null){
+      if (stock == null) {
          return JSONUtils.getValueRecursive(data, "extension_attributes.stock_item.is_in_stock", Boolean.class);
       }
       return stock > 0;
    }
 
-  private List<String> scrapListImages(JSONObject data, Document doc) {
+   private List<String> scrapListImages(JSONObject data, Document doc) {
       List<String> images = new ArrayList<>();
       JSONArray imagesJson = JSONUtils.getValueRecursive(data, "media_gallery_entries", JSONArray.class);
       if (imagesJson != null) {

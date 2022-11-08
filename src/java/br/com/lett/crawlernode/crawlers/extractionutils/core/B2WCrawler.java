@@ -145,12 +145,12 @@ public class B2WCrawler extends Crawler {
             Arrays.asList(
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_MX,
-               ProxyCollection.SMART_PROXY_BR,
-               ProxyCollection.SMART_PROXY_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.SMART_PROXY_BR,
+               ProxyCollection.SMART_PROXY_MX
             )
          )
          .build();
