@@ -15,7 +15,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,6 +24,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
       super(session);
       super.fetchMode = FetchMode.APACHE;
    }
+
    String store_id = session.getOptions().optString("store_id");
 
    @Override
@@ -111,19 +111,19 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
          .setCookies(cookies)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.SMART_PROXY_MX,
-            ProxyCollection.SMART_PROXY_AR,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY,
-            ProxyCollection.SMART_PROXY_MX_HAPROXY,
-            ProxyCollection.SMART_PROXY_AR_HAPROXY))
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
       String response = this.dataFetcher.get(session, request).getBody();
-      Integer count =0;
-      while (response.isEmpty() && count < 3){
+      Integer count = 0;
+      while (response.isEmpty() && count < 3) {
          response = this.dataFetcher.get(session, request).getBody();
-         count ++;
+         count++;
       }
 
       return CrawlerUtils.stringToJson(response);
