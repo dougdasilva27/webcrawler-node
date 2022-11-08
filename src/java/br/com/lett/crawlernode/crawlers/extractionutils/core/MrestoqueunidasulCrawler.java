@@ -57,9 +57,9 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.LUMINATI_SERVER_BR
-         ))
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.SMART_PROXY_BR
+            ))
          .build();
 
       Response responseLogin = this.dataFetcher.post(session, requestLogin);
@@ -73,9 +73,9 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.LUMINATI_SERVER_BR
-         ))
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.SMART_PROXY_BR
+            ))
          .build();
 
       Response responseLogin2 = this.dataFetcher.get(session, requestLogin2);
@@ -87,9 +87,9 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.LUMINATI_SERVER_BR
-         ))
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.SMART_PROXY_BR
+            ))
          .build();
 
       Response responseLogin3 = this.dataFetcher.get(session, requestLogin3);
@@ -100,8 +100,8 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.LUMINATI_SERVER_BR
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.SMART_PROXY_BR
          ))
          .build();
 

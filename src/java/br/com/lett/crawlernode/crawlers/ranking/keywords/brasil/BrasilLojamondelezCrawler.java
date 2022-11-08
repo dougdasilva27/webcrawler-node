@@ -58,8 +58,8 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.BUY
+            ProxyCollection.BUY,
+            ProxyCollection.SMART_PROXY_BR
          ))
          .build();
       Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
@@ -116,9 +116,9 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.BUY
-         ))
+            ProxyCollection.BUY,
+            ProxyCollection.SMART_PROXY_BR
+            ))
          .build();
 
       String response = CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);

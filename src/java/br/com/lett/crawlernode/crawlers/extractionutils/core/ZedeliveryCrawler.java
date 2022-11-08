@@ -55,12 +55,12 @@ public class ZedeliveryCrawler extends Crawler {
    private List<String> proxies = Arrays.asList(
       ProxyCollection.LUMINATI_SERVER_BR,
       ProxyCollection.NETNUT_RESIDENTIAL_BR,
-      ProxyCollection.SMART_PROXY_BR,
-      ProxyCollection.SMART_PROXY_CO,
       ProxyCollection.BUY,
       ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY);
+      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+      ProxyCollection.SMART_PROXY_BR,
+      ProxyCollection.SMART_PROXY_CO);
 
    @Override
    public void handleCookiesBeforeFetch() {

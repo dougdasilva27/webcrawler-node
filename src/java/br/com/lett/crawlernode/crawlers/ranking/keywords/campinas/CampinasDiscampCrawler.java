@@ -118,7 +118,7 @@ public class CampinasDiscampCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
-         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR,ProxyCollection.SMART_PROXY_BR, ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .setPayload(payload)
          .build();
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher()), session, "post");
