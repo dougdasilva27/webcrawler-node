@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TausteCrawler extends Crawler {
 
@@ -27,6 +29,12 @@ public class TausteCrawler extends Crawler {
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+
+   private final String location = getLocation();
+
+   protected String getLocation() {
+      return session.getOptions().optString("LOCATION");
+   }
 
    public TausteCrawler(Session session) {
       super(session);
@@ -36,7 +44,9 @@ public class TausteCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (isProductPage(doc)) {
+      boolean validUrl = isUrlCurrentLocation(session.getOriginalURL(), location);
+
+      if (isProductPage(doc) && validUrl) {
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".sku .value", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title .base", true);
 
@@ -61,6 +71,20 @@ public class TausteCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private boolean isUrlCurrentLocation(String originalURL, String location) {
+      String regex = "tauste.com.br\\/(.*)\\/";
+      String urlLocation = "";
+
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(originalURL);
+
+      if (matcher.find()) {
+         urlLocation = matcher.group(1);
+      }
+
+      return urlLocation.equals(location);
    }
 
    private boolean isProductPage(Document doc) {
