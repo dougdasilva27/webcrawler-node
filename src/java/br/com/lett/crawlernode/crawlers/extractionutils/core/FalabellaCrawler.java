@@ -42,26 +42,36 @@ public class FalabellaCrawler extends Crawler {
    public FalabellaCrawler(Session session) {
       super(session);
    }
+
    protected Set<Card> cards = Sets.newHashSet(Card.VISA, Card.MASTERCARD, Card.AMEX);
 
    private final boolean allow3pSeller = isAllow3pSeller();
+
    protected boolean isAllow3pSeller() {
       return session.getOptions().optBoolean("allow_3p_seller", true);
    }
 
    private final String HOME_PAGE = getHomePage();
+
    protected String getHomePage() {
       return session.getOptions().optString("home_page");
    }
 
    private final String API_CODE = getApiCode();
+
    protected String getApiCode() {
       return session.getOptions().optString("api_code");
    }
 
    private final String SELLER_FULL_NAME = getSellerName();
+
    protected String getSellerName() {
       return session.getOptions().optString("seller_name");
+   }
+
+   protected char getPriceFormat() {
+      String priceFormat = session.getOptions().optString("char_format", ",");
+      return priceFormat.charAt(0);
    }
 
    @Override
@@ -75,7 +85,7 @@ public class FalabellaCrawler extends Crawler {
 
          if (isMainSeller || allow3pSeller) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-id]", "data-id");
-            if(internalId == null){
+            if (internalId == null) {
                internalId = getReviewId(session.getOriginalURL());
             }
             String internalPid = internalId;
@@ -177,7 +187,7 @@ public class FalabellaCrawler extends Crawler {
       if (imageScript != null) {
          JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
          JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "props.pageProps.productData.variants.0.medias", JSONArray.class);
-         if(imageArray != null) {
+         if (imageArray != null) {
             if (imageArray.length() == 0) {
                imageArray = JSONUtils.getValueRecursive(imageToJson, "props.pageProps.productData.medias", JSONArray.class);
             }
@@ -196,7 +206,7 @@ public class FalabellaCrawler extends Crawler {
       return doc.selectFirst(".productContainer") != null;
    }
 
-   private Offers scrapOffers(Document doc, String sellerFullName, Boolean isMainSeller ) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc, String sellerFullName, Boolean isMainSeller) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
       Pricing pricing = scrapPricing(doc);
@@ -228,13 +238,13 @@ public class FalabellaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-internet-price]", "data-internet-price", true, ',', session);
-      if(spotlightPrice == null){
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-event-price]", "data-event-price", true, ',', session);
+      char charFormat = getPriceFormat();
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-internet-price]", "data-internet-price", true, charFormat, session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-event-price]", "data-event-price", true, charFormat, session);
       }
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-normal-price]", "data-normal-price", true, ',', session);
-      Double alternativePrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-cmr-price]", "data-cmr-price", true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-normal-price]", "data-normal-price", true, charFormat, session);
+      Double alternativePrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-cmr-price]", "data-cmr-price", true, charFormat, session);
 
       if (alternativePrice != null) {
          priceFrom = spotlightPrice;
