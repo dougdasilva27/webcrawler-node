@@ -171,7 +171,8 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       }
 
 
-      String apiUrl = apiSearchUrl(lojaId) + this.keywordEncoded.replace("+", "%20");
+      String apiUrl = apiSearchUrl(lojaId) + this.keywordEncoded.replace("+", "%20") + "&enable_new_search=false";
+      //String apiUrl = apiSearchUrl(lojaId) + this.keywordEncoded.replace("+", "%20");
       Request requestApi = RequestBuilder.create()
          .setUrl(apiUrl)
          .setCookies(cookies)
