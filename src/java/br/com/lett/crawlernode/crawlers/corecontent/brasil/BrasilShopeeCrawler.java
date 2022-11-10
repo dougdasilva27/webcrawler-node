@@ -6,11 +6,11 @@ import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
@@ -18,9 +18,10 @@ import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,36 +31,45 @@ public class BrasilShopeeCrawler extends Crawler {
       super.config.setParser(Parser.JSON);
    }
 
-   public List<Product> extractInformation(JSONObject productObj) throws Exception{
+   public List<Product> extractInformation(JSONObject productObj) throws Exception {
 
       List<Product> products = new ArrayList<>();
       if (productObj != null) {
          JSONObject data = productObj.optJSONObject("data");
-         if(data != null){
-            String internalId = data.optString("itemid");
-            String name = data.optString("name");
-            String primaryImage = "https://cf.shopee.com.br/file/" + data.optString("image");
+         JSONArray models = data.optJSONArray("models");
+         if (data != null && models != null) {
+            String internalPid = data.optString("itemid");
             String description = data.getString("description");
+            String name = data.optString("name");
             CategoryCollection categories = scrapCategories(data);
             RatingsReviews ratingsReviews = scrapRatingsAlternativeWay(data);
-            Integer stock = scrapStock(data);
-            List<String> secondaryImages = scrapSecondaryImages(data, primaryImage);
-            Offers offers = stock > 0 ? scrapOffers(data) : new Offers();
-            Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setName(name)
-               .setOffers(offers)
-               .setRatingReviews(ratingsReviews)
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setCategories(categories)
-               .setStock(stock)
-               .build();
+            for (Object obj : models) {
+               JSONObject variation = (JSONObject) obj;
+               String internalId = variation.optString("modelid");
+               name = mountName(variation, name);
+               String primaryImage = getPrimaryImg(data, variation, JSONUtils.getValueRecursive(data, "tier_variations.0.images", JSONArray.class));
+               Integer stock = scrapStock(variation);
+               List<String> secondaryImages = scrapSecondaryImages(data, primaryImage);
+               Offers offers = stock > 0 ? scrapOffers(variation) : new Offers();
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setOffers(offers)
+                  .setRatingReviews(ratingsReviews)
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setCategories(categories)
+                  .setStock(stock)
+                  .build();
 
-            products.add(product);
-         }else{
+               products.add(product);
+            }
+
+
+         } else {
             Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 
          }
@@ -71,9 +81,39 @@ public class BrasilShopeeCrawler extends Crawler {
       return products;
    }
 
+   private String mountName(JSONObject variation, String name) {
+      String namevariation = variation.getString("name");
+      if (namevariation != null && !namevariation.isEmpty()) {
+        return name + " " + namevariation;
+      }
+      return name;
+
+   }
+
+   private String getPrimaryImg(JSONObject data, JSONObject variation, JSONArray tier_variations) {
+      if (tier_variations != null && !tier_variations.isEmpty()) {
+         JSONArray index = JSONUtils.getValueRecursive(variation, "extinfo.tier_index", JSONArray.class);
+         if (index != null && !index.isEmpty()) {
+            String cod = tier_variations.getString((Integer) index.get(0));
+            return mountUrl(cod);
+         }
+      } else {
+         String cod = data.optString("image");
+         return mountUrl(cod);
+      }
+      return null;
+   }
+
+   private String mountUrl(String cod) {
+      if (cod != null && !cod.isEmpty()) {
+         return "https://cf.shopee.com.br/file/" + cod;
+      }
+      return null;
+   }
+
    private Integer scrapStock(JSONObject data) {
       int stock = data.optInt("stock");
-      if(stock == 0){
+      if (stock == 0) {
          stock = data.optInt("other_stock");
       }
       return stock;
@@ -148,9 +188,9 @@ public class BrasilShopeeCrawler extends Crawler {
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
       final Matcher matcher = pattern.matcher(this.session.getOriginalURL());
       String ids = "";
-      if(matcher.find()) {
+      if (matcher.find()) {
          ids = matcher.group(1);
-      }else {
+      } else {
          ids = this.session.getOriginalURL();
       }
       String[] arr = ids.split("\\.");
@@ -188,10 +228,10 @@ public class BrasilShopeeCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
       Integer spotlightPriceInt = data.optInt("price");
-      Integer priceFromInt = data.getInt("price_min_before_discount");
+      Integer priceFromInt = data.getInt("price_before_discount");
       Double spotlightPrice = spotlightPriceInt / 100000.0;
       Double priceFrom;
-      if (priceFromInt != -1) {
+      if (priceFromInt != null && priceFromInt != -1 && priceFromInt != 0) {
          priceFrom = priceFromInt / 100000.0;
       } else {
          priceFrom = null;

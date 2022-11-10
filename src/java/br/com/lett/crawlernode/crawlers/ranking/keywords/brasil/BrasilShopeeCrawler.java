@@ -21,7 +21,7 @@ public class BrasilShopeeCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       Integer currentPageUrl = (this.currentPage - 1) * 60;
-      String url = "https://shopee.com.br/api/v4/search/search_items?by=relevancy&keyword=" + this.keywordEncoded + "&limit=60&match_id="+session.getOptions().optString("storeId")+"&newest=" + currentPageUrl + "&official_mall=1&order=desc&page_type=shop&scenario=PAGE_SHOP_SEARCH&version=2";
+      String url = "https://shopee.com.br/api/v4/search/search_items?by=relevancy&keyword=" + this.keywordEncoded + "&limit=60&match_id=" + session.getOptions().optString("storeId") + "&newest=" + currentPageUrl + "&official_mall=1&order=desc&page_type=shop&scenario=PAGE_SHOP_SEARCH&version=2";
       JSONObject json = fetchJSONObject(url);
       JSONArray products = JSONUtils.getValueRecursive(json, "items", JSONArray.class);
       if (!products.isEmpty()) {
@@ -33,15 +33,15 @@ public class BrasilShopeeCrawler extends CrawlerRankingKeywords {
             JSONObject itemBasic = product.getJSONObject("item_basic");
             String productUrl = scrapUrl(itemBasic);
             Long internalIdLong = itemBasic.optLong("itemid");
-            String internalId = Long.toString(internalIdLong);
-           String name = itemBasic.optString("name");
-           String imgUrl = "https://cf.shopee.com.br/file/" + itemBasic.getString("image");
-           Integer price = (Integer) itemBasic.optInt("price") /1000;
-           boolean isAvailable = itemBasic.optInt("stock") != 0;
+            String internalPid = Long.toString(internalIdLong);
+            String name = itemBasic.optString("name");
+            String imgUrl = "https://cf.shopee.com.br/file/" + itemBasic.getString("image");
+            Integer price = (Integer) itemBasic.optInt("price") / 1000;
+            boolean isAvailable = itemBasic.optInt("stock") != 0;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalId)
+               .setInternalPid(internalPid)
                .setName(name)
                .setImageUrl(imgUrl)
                .setPriceInCents(price)
