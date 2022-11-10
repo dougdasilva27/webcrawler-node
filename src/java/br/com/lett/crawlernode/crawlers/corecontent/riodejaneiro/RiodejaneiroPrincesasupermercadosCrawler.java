@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -69,6 +70,10 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
          .setPayload(payload)
          .setHeaders(headers)
          .mustSendContentEncoding(false)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY,
+               ProxyCollection.LUMINATI_RESIDENTIAL_BR))
          .build();
 
       Response response = this.dataFetcher.post(session, request);
@@ -131,11 +136,10 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
          .build());
 
       return offers;
-
    }
 
    private Double scrapPrice(JSONObject product) {
-      Double priceKg = CrawlerUtils.getDoubleValueFromJSON(product,"preco",true,false);
+      Double priceKg = CrawlerUtils.getDoubleValueFromJSON(product, "preco", true, false);
       DecimalFormat df = new DecimalFormat("######.##");
 
       if (product.optBoolean("inFracionado") == true) {
@@ -144,8 +148,10 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
             priceKg = priceKg * priceFraction;
          }
       }
-      String priceFinal = df.format(priceKg).replace(".",",");
+
+      String priceFinal = df.format(priceKg).replace(".", ",");
       df.setRoundingMode(RoundingMode.UP);
+
       return MathUtils.parseDoubleWithComma(priceFinal);
    }
 
@@ -154,7 +160,7 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
       Double priceFrom;
       DecimalFormat df = new DecimalFormat("######.##");
 
-      Double isPromotion = CrawlerUtils.getDoubleValueFromJSON(json,"precoPromocao",true,false);
+      Double isPromotion = CrawlerUtils.getDoubleValueFromJSON(json, "precoPromocao", true, false);
       Double priceFraction = json.optDouble("fracionamento");
 
       if (isPromotion != null && !isPromotion.isNaN()) {
@@ -162,7 +168,7 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
          if (priceFraction != null && !priceFraction.isNaN()) {
             spotlightPrice = isPromotion * priceFraction;
             df.setRoundingMode(RoundingMode.UP);
-            spotlightPrice = MathUtils.parseDoubleWithComma(df.format(spotlightPrice).replace(".",","));
+            spotlightPrice = MathUtils.parseDoubleWithComma(df.format(spotlightPrice).replace(".", ","));
          }
       } else {
          priceFrom = null;
@@ -249,5 +255,4 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
 
       return matcher.find() ? matcher.group(0) : "";
    }
-
 }
