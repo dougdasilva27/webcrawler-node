@@ -18,15 +18,13 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -201,8 +199,16 @@ public class FalabellaCrawler extends Crawler {
       }
       return null;
    }
-
+   @Override
+   public void handleCookiesBeforeFetch() {
+      String zoneData = session.getOptions().optString("zoneData","");
+      BasicClientCookie cookie = new BasicClientCookie("zoneData", zoneData);
+      cookie.setDomain("www.disco.com.ar");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+   }
    private boolean isProductPage(Document doc) {
+      handleCookiesBeforeFetch();
       return doc.selectFirst(".productContainer") != null;
    }
 
