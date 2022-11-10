@@ -5,7 +5,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
 import br.com.lett.crawlernode.core.models.RankingProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
-import br.com.lett.crawlernode.util.CrawlerUtils
 import br.com.lett.crawlernode.util.JSONUtils
 import org.json.JSONArray
 import org.json.JSONObject
@@ -14,7 +13,7 @@ import java.util.*
 class RecifeArcomixCrawler(session: Session?) : CrawlerRankingKeywords(session) {
 
    init {
-      super.fetchMode = FetchMode.FETCHER
+      super.fetchMode = FetchMode.JSOUP
    }
 
    private val idArmazem = session!!.options.optString("id_armazem")
@@ -47,17 +46,21 @@ class RecifeArcomixCrawler(session: Session?) : CrawlerRankingKeywords(session) 
 
       val json = dataFetcher.post(session, request).body
 
-      val productsJson = JSONUtils.stringToJson(json)?.optJSONArray("Produtos")?: JSONArray()
+      val productsJson = JSONUtils.stringToJson(json)?.optJSONArray("Produtos") ?: JSONArray()
 
       for (productJson in productsJson) {
          if (productJson is JSONObject) {
-            val internalId = productJson.optString("id_produto",null)
+            val internalId = productJson.optString("id_produto", null)
             val productUrl = "https://arcomix.com.br/produto/${productJson.optString("str_link_produto")}"
-            val name = productJson.optString("str_nom_produto",null)
-            val imgUrl = productJson.optString("str_img_path",null)
-            val price: Int = scrapPrice(productJson)
+            val name = productJson.optString("str_nom_produto", null)
+            val imgUrl = productJson.optString("str_img_path", null)
+            val isAvailable = !productJson.optBoolean("bit_esgotado", false);
 
-            val isAvailable = price != 0
+            var price: Int? = null;
+
+            if (isAvailable) {
+               price = scrapPrice(productJson);
+            }
 
             val productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -80,10 +83,6 @@ class RecifeArcomixCrawler(session: Session?) : CrawlerRankingKeywords(session) 
    }
 
    fun scrapPrice(productJson: JSONObject): Int {
-      val priceDouble = productJson.optDouble("mny_vlr_produto_por")
-
-      val priceInCents = priceDouble * 100
-
-      return priceInCents.toInt()
+      return JSONUtils.getPriceInCents(productJson, "mny_vlr_produto_por");
    }
 }
