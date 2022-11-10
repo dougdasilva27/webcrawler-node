@@ -153,7 +153,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
    private fun scrapOverallRating(doc: Document): Double {
       val averageRating = CrawlerUtils.scrapStringSimpleInfo(doc, ".ratings-media .rating-star span", true)?.toDouble()
 
-       if (averageRating != null && averageRating <= 5) {
+      if (averageRating != null && averageRating <= 5) {
          return averageRating
       }
 
