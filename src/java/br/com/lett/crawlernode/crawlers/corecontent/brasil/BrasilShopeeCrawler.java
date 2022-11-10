@@ -11,18 +11,17 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
-import org.apache.kafka.common.security.JaasUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,9 +36,9 @@ public class BrasilShopeeCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
       if (productObj != null) {
          JSONObject data = productObj.optJSONObject("data");
-         if (data != null) {
+         JSONArray models = data.optJSONArray("models");
+         if (data != null && models != null) {
             String internalPid = data.optString("itemid");
-            JSONArray models = data.optJSONArray("models");
             String description = data.getString("description");
             String name = data.optString("name");
             CategoryCollection categories = scrapCategories(data);
@@ -47,10 +46,7 @@ public class BrasilShopeeCrawler extends Crawler {
             for (Object obj : models) {
                JSONObject variation = (JSONObject) obj;
                String internalId = variation.optString("modelid");
-               String namevariation = variation.getString("name");
-               if (namevariation != null && !namevariation.isEmpty()) {
-                  name = name + " " + namevariation;
-               }
+               name = mountName(variation, name);
                String primaryImage = getPrimaryImg(data, variation, JSONUtils.getValueRecursive(data, "tier_variations.0.images", JSONArray.class));
                Integer stock = scrapStock(variation);
                List<String> secondaryImages = scrapSecondaryImages(data, primaryImage);
@@ -83,6 +79,15 @@ public class BrasilShopeeCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String mountName(JSONObject variation, String name) {
+      String namevariation = variation.getString("name");
+      if (namevariation != null && !namevariation.isEmpty()) {
+        return name + " " + namevariation;
+      }
+      return name;
+
    }
 
    private String getPrimaryImg(JSONObject data, JSONObject variation, JSONArray tier_variations) {
