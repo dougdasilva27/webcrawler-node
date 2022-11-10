@@ -36,7 +36,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
    }
 
    override fun handleCookiesBeforeFetch() {
-      if(zipCode != ""){
+      if (zipCode != "") {
          val cookie = BasicClientCookie("zipcode", zipCode)
          cookie.domain = "www.superpaguemenos.com.br"
          cookie.path = "/"
@@ -131,12 +131,16 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
 
    private fun scrapRating(doc: Document): RatingsReviews {
       val ratingReviews = RatingsReviews()
+      var average = scrapOverallRating(doc)
 
-      ratingReviews.date = session.date
-      ratingReviews.setTotalRating(scrapTotalRating(doc))
-      ratingReviews.averageOverallRating = scrapOverallRating(doc)
-      ratingReviews.totalWrittenReviews = scrapTotalWrittenReviews(doc)
-      ratingReviews.advancedRatingReview = scrapAdvancedTotalReviews(doc)
+      if (average != null && average > 0) {
+
+         ratingReviews.date = session.date
+         ratingReviews.setTotalRating(scrapTotalRating(doc))
+         ratingReviews.averageOverallRating = average
+         ratingReviews.totalWrittenReviews = scrapTotalWrittenReviews(doc)
+         ratingReviews.advancedRatingReview = scrapAdvancedTotalReviews(doc)
+      }
 
       return ratingReviews
    }
@@ -147,24 +151,14 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
    }
 
    private fun scrapOverallRating(doc: Document): Double {
-      val totalRating = scrapTotalRating(doc).toDouble()
-      var starsCount = 0.0
+      val averageRating = CrawlerUtils.scrapStringSimpleInfo(doc, ".ratings-media .rating-star span", true);
 
-      for (ratingReviewElement: Element in doc.select("div#ratings .ratings-item")) {
-         var ratingText: Element? = ratingReviewElement.selectFirst("p.rating-star>span")
-
-         if (ratingText != null) {
-            val stars: Double = ratingText.ownText().trim().toDouble()
-            starsCount += stars
-         }
+      if (averageRating != null) {
+         return averageRating.toDouble()
       }
 
-      var response = 0.0
-      if (starsCount > 0 && totalRating > 0) {
-         response = starsCount / totalRating
-      }
+      return 0.0
 
-      return response
    }
 
    private fun scrapTotalWrittenReviews(doc: Document): Int {
