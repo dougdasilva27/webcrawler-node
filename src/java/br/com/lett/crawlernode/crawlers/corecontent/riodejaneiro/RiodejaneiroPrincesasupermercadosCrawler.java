@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -50,7 +53,6 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
 
    public RiodejaneiroPrincesasupermercadosCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
       super.config.setParser(Parser.JSONARRAY);
    }
 
@@ -60,7 +62,7 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
       headers.put("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoic29saWRjb24iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJzb2xpZGNvbkBzb2xpZGNvbi5jb20uYnIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjM3NTNiYWEzLTVhZGYtNDY0Ni1hNTY5LTIxMmQxMzlhNjdmYyIsImV4cCI6MTk1NTA0OTg3OSwiaXNzIjoiRG9yc2FsV2ViQVBJIiwiYXVkIjoic29saWRjb24uY29tLmJyIn0.LxDewxZ-V_kXYjcl8sM9Z3nD5vkymfAv4mAWJXGx5o4");
       headers.put("content-type", "application/json; charset=utf-8");
       headers.put("accept", "application/json");
-      headers.put("Referer", "https://www.princesasupermercados.com.br/");
+      headers.put("Connection", "keep-alive");
 
       String internalPid = getInternalPid();
       String payload = "{\"Produto\":\"" + internalPid + "\"}";
@@ -68,10 +70,14 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
       Request request = Request.RequestBuilder.create().setUrl("https://ecom.solidcon.com.br/api/v2/shop/produto/empresa/103/filial/" + getLocation() + "/GetProdutos")
          .setPayload(payload)
          .setHeaders(headers)
-         .mustSendContentEncoding(false)
+         .setSendUserAgent(true)
+         .mustSendContentEncoding(true)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .build();
 
-      Response response = this.dataFetcher.post(session, request);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
 
       return response;
    }
@@ -131,11 +137,10 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
          .build());
 
       return offers;
-
    }
 
    private Double scrapPrice(JSONObject product) {
-      Double priceKg = CrawlerUtils.getDoubleValueFromJSON(product,"preco",true,false);
+      Double priceKg = CrawlerUtils.getDoubleValueFromJSON(product, "preco", true, false);
       DecimalFormat df = new DecimalFormat("######.##");
 
       if (product.optBoolean("inFracionado") == true) {
@@ -144,8 +149,10 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
             priceKg = priceKg * priceFraction;
          }
       }
-      String priceFinal = df.format(priceKg).replace(".",",");
+
+      String priceFinal = df.format(priceKg).replace(".", ",");
       df.setRoundingMode(RoundingMode.UP);
+
       return MathUtils.parseDoubleWithComma(priceFinal);
    }
 
@@ -154,7 +161,7 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
       Double priceFrom;
       DecimalFormat df = new DecimalFormat("######.##");
 
-      Double isPromotion = CrawlerUtils.getDoubleValueFromJSON(json,"precoPromocao",true,false);
+      Double isPromotion = CrawlerUtils.getDoubleValueFromJSON(json, "precoPromocao", true, false);
       Double priceFraction = json.optDouble("fracionamento");
 
       if (isPromotion != null && !isPromotion.isNaN()) {
@@ -162,7 +169,7 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
          if (priceFraction != null && !priceFraction.isNaN()) {
             spotlightPrice = isPromotion * priceFraction;
             df.setRoundingMode(RoundingMode.UP);
-            spotlightPrice = MathUtils.parseDoubleWithComma(df.format(spotlightPrice).replace(".",","));
+            spotlightPrice = MathUtils.parseDoubleWithComma(df.format(spotlightPrice).replace(".", ","));
          }
       } else {
          priceFrom = null;
@@ -249,5 +256,4 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends Crawler {
 
       return matcher.find() ? matcher.group(0) : "";
    }
-
 }

@@ -87,6 +87,8 @@ public class RiodejaneiroPrincesasupermercadosCrawler extends CrawlerRankingKeyw
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
+         .setSendUserAgent(true)
+         .mustSendContentEncoding(true)
          .build();
 
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
