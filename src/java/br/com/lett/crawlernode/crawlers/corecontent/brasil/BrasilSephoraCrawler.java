@@ -163,11 +163,14 @@ public class BrasilSephoraCrawler extends Crawler {
       Elements imagesList = productPage.select(".show-for-medium .product-thumbnails .thumb > a");
 
       if (imagesList.isEmpty()) {
-         imagesList = productPage.select(" .product-thumbnails .thumb > a");
+         imagesList = productPage.select(".product-thumbnails .thumb > a");
       }
       if (!imagesList.isEmpty()) {
          for (Element imageElement : imagesList) {
-            secondaryImagesArray.add(CrawlerUtils.scrapStringSimpleInfoByAttribute(imageElement, "a", "href"));
+            String imgURL = CrawlerUtils.scrapStringSimpleInfoByAttribute(imageElement, "a", "href");
+            if (imgURL != null) {
+               secondaryImagesArray.add(imgURL);
+            }
          }
       }
 
