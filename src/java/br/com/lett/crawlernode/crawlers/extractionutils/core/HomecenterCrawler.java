@@ -71,7 +71,7 @@ public abstract class HomecenterCrawler extends Crawler {
          String internalId = crawlInternalId(doc);
          String name = crawlName(doc);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumbs.into-pdp .bread-crumb-wrapper:not(:last-child) a span", false);
-         String description = doc.select(".product-info .product-info-details").text();
+         String description = crawlDescription(doc);
          JSONObject jsonImages = getJson(internalId);
          List<String> images = crawlImages(jsonImages);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
@@ -104,6 +104,7 @@ public abstract class HomecenterCrawler extends Crawler {
    }
 
    private String crawlDescription(Document doc) {
+      String descriptionText = doc.select(".product-info .product-info-details").text();
       StringBuilder description = new StringBuilder();
       Elements elements = doc.select("tbody > tr");
       if (elements != null) {
@@ -113,9 +114,33 @@ public abstract class HomecenterCrawler extends Crawler {
          }
       }
 
+      if (descriptionText != null && !descriptionText.isEmpty()) {
+         description.append(descriptionText);
+      }
+
+      String iframe = getIframeDescription(doc);
+
+      if (iframe != null) {
+         description.append(iframe);
+      }
+
       return description.toString();
    }
 
+
+   private String getIframeDescription(Document doc) {
+      String iframeUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#description iframe", "src");
+      if (iframeUrl != null) {
+         Request request = Request.RequestBuilder.create()
+            .setUrl(iframeUrl)
+            .build();
+         return this.dataFetcher
+            .get(session, request)
+            .getBody();
+      }
+
+      return "";
+   }
 
    private JSONObject getJson(String internalId) {
       String apiUrl = "https://homecenterco.scene7.com/is/image/SodimacCO/" + internalId + "?req=set,json&handler=s7Res&id=imgSet";
@@ -172,7 +197,7 @@ public abstract class HomecenterCrawler extends Crawler {
       JSONObject reviewJson = CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
       JSONObject reviewStatistics = JSONUtils.getValueRecursive(reviewJson, "Results.0.ProductStatistics.ReviewStatistics", JSONObject.class);
 
-      if(reviewStatistics != null) {
+      if (reviewStatistics != null) {
          totalNumOfEvaluations = JSONUtils.getIntegerValueFromJSON(reviewStatistics, "TotalReviewCount", 0);
          avgRating = JSONUtils.getDoubleValueFromJSON(reviewStatistics, "AverageOverallRating", true);
       }
