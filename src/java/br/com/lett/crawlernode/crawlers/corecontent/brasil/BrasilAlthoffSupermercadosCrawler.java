@@ -1,62 +1,92 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
 import models.Offers;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import models.pricing.*;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Document;
 
-import java.util.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BrasilAlthoffSupermercadosCrawler extends Crawler {
-
-   protected BrasilAlthoffSupermercadosCrawler(Session session) {
+   public BrasilAlthoffSupermercadosCrawler(Session session) {
       super(session);
-      super.config.setParser(Parser.JSON);
    }
 
-   private final String storeId = getStoreId();
+   // We didn't find unavailable products, products with description or products with secondary image during the development of this crawler
+   private Set<String> cards = Sets.newHashSet(Card.AMEX.toString(), Card.CABAL.toString(), Card.MASTERCARD.toString(),
+      Card.ELO.toString(), Card.HIPERCARD.toString(), Card.HIPER.toString(), Card.VISA.toString(), Card.DINERS.toString());
+   private final String SELLER_NAME = "Althoff Supermercados";
 
    protected String getStoreId() {
       return session.getOptions().optString("storeId");
    }
 
+   @Override
+   public void handleCookiesBeforeFetch() {
+      String cookieName = URLEncoder.encode("{\"id\":\"" + getStoreId() + "\",\"userSelected\":true}", StandardCharsets.UTF_8);
+      BasicClientCookie cookie = new BasicClientCookie("st", cookieName);
+      cookie.setDomain("emcasa.althoff.com.br");
+      cookie.setPath("/");
+
+      this.cookies.add(cookie);
+   }
 
    @Override
-   protected Response fetchResponse() {
-      String url = "https://api.emcasa.althoff.com.br/graphql";
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put("origin", "https://emcasa.althoff.com.br");
-      headers.put("content-type", "application/json");
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = getUrlInternalId();
+         String internalId = getUrlInternalId();
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info-box h2", true);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img.mobile-img", Arrays.asList("src"), "https", "d21wiczbqxib04.cloudfront.net");
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".category-path a");
+         boolean available = doc.selectFirst(".common-action-btn.item-button .icomoon-plus") != null;
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
-      String payload = "{\"operationName\":\"ProductDetailQuery\",\"variables\":{\"productId\":\"" + internalId + "\",\"storeId\":\"" + storeId + "\"},\"query\":\"fragment SimilarDetails on PublicViewerProduct {\\n  id\\n  name\\n  description\\n  content\\n  saleUnit\\n  contentUnit\\n  type\\n  slug\\n  tags\\n  brand {\\n    id\\n    name\\n    __typename\\n  }\\n  image {\\n    url\\n    thumborized\\n    __typename\\n  }\\n  imagesGallery {\\n    name\\n    url\\n    __typename\\n  }\\n  productPromotion(storeId: $storeId) {\\n    promotionPrice\\n    discountType\\n    gift\\n    buy\\n    isGift\\n    promotion {\\n      id\\n      name\\n      endDate\\n      startDate\\n      displayExclusivePriceOnline\\n      progressiveDiscount {\\n        asFrom\\n        gift\\n        __typename\\n      }\\n      qtyToGift\\n      updatedAt\\n      type\\n      benefitType\\n      __typename\\n    }\\n    giftOfThisProduct {\\n      productId\\n      name\\n      image {\\n        url\\n        thumborized\\n        __typename\\n      }\\n      normalPrice\\n      promotionPrice\\n      gift\\n      __typename\\n    }\\n    __typename\\n  }\\n  quantity(storeId: $storeId) {\\n    min\\n    max\\n    maxPromotion\\n    fraction\\n    inStock\\n    sellByWeightAndUnit\\n    __typename\\n  }\\n  pricing(storeId: $storeId) {\\n    id\\n    promotion\\n    price\\n    promotionalPrice\\n    __typename\\n  }\\n  personas(storeId: $storeId) {\\n    personaPrice\\n    personaId\\n    __typename\\n  }\\n  level1Category(storeId: $storeId) {\\n    id\\n    name\\n    slug\\n    __typename\\n  }\\n  level2Category(storeId: $storeId) {\\n    id\\n    name\\n    slug\\n    parent {\\n      id\\n      name\\n      slug\\n      __typename\\n    }\\n    __typename\\n  }\\n  level3Category(storeId: $storeId) {\\n    id\\n    name\\n    slug\\n    level2Category: parent {\\n      level1Category: parent {\\n        id\\n        name\\n        slug\\n        __typename\\n      }\\n      id\\n      name\\n      slug\\n      __typename\\n    }\\n    __typename\\n  }\\n  __typename\\n}\\n\\nfragment ProductDetails on PublicViewerProduct {\\n  id\\n  name\\n  description\\n  content\\n  saleUnit\\n  contentUnit\\n  type\\n  slug\\n  tags\\n  brand {\\n    id\\n    name\\n    __typename\\n  }\\n  image {\\n    url\\n    thumborized(width: 321, height: 321, fitIn: true)\\n    thumbLarge: thumborized(width: 321, height: 321, fitIn: true)\\n    __typename\\n  }\\n  imagesGallery {\\n    name\\n    url\\n    thumborized(width: 321, height: 321, fitIn: true)\\n    thumbLarge: thumborized(width: 321, height: 321)\\n    __typename\\n  }\\n  productPromotion(storeId: $storeId) {\\n    promotionPrice\\n    discountType\\n    gift\\n    buy\\n    isGift\\n    promotion {\\n      id\\n      name\\n      endDate\\n      startDate\\n      displayExclusivePriceOnline\\n      progressiveDiscount {\\n        asFrom\\n        gift\\n        __typename\\n      }\\n      qtyToGift\\n      updatedAt\\n      type\\n      benefitType\\n      __typename\\n    }\\n    giftOfThisProduct {\\n      productId\\n      name\\n      image {\\n        url\\n        thumborized\\n        __typename\\n      }\\n      normalPrice\\n      promotionPrice\\n      gift\\n      __typename\\n    }\\n    __typename\\n  }\\n  quantity(storeId: $storeId) {\\n    min\\n    max\\n    maxPromotion\\n    fraction\\n    inStock\\n    sellByWeightAndUnit\\n    __typename\\n  }\\n  pricing(storeId: $storeId) {\\n    id\\n    promotion\\n    price\\n    promotionalPrice\\n    __typename\\n  }\\n  personas(storeId: $storeId) {\\n    personaPrice\\n    personaId\\n    __typename\\n  }\\n  level1Category(storeId: $storeId) {\\n    id\\n    name\\n    slug\\n    __typename\\n  }\\n  level2Category(storeId: $storeId) {\\n    id\\n    name\\n    slug\\n    description\\n    slug\\n    image {\\n      url\\n      name\\n      thumborized\\n      __typename\\n    }\\n    parent {\\n      id\\n      name\\n      slug\\n      __typename\\n    }\\n    __typename\\n  }\\n  level3Category(storeId: $storeId) {\\n    id\\n    name\\n    slug\\n    level2Category: parent {\\n      level1Category: parent {\\n        id\\n        name\\n        slug\\n        __typename\\n      }\\n      id\\n      name\\n      slug\\n      __typename\\n    }\\n    __typename\\n  }\\n  __typename\\n}\\n\\nfragment BoughtTogether on PublicViewerProduct {\\n  id\\n  name\\n  description\\n  content\\n  saleUnit\\n  contentUnit\\n  type\\n  slug\\n  tags\\n  brand {\\n    id\\n    name\\n    __typename\\n  }\\n  image {\\n    url\\n    thumborized(width: 321, height: 321, fitIn: true)\\n    __typename\\n  }\\n  imagesGallery {\\n    name\\n    url\\n    thumborized(width: 321, height: 321, fitIn: true)\\n    __typename\\n  }\\n  productPromotion(storeId: $storeId) {\\n    promotionPrice\\n    discountType\\n    gift\\n    buy\\n    isGift\\n    promotion {\\n      id\\n      name\\n      endDate\\n      startDate\\n      displayExclusivePriceOnline\\n      progressiveDiscount {\\n        asFrom\\n        gift\\n        __typename\\n      }\\n      qtyToGift\\n      updatedAt\\n      type\\n      benefitType\\n      __typename\\n    }\\n    giftOfThisProduct {\\n      productId\\n      name\\n      image {\\n        url\\n        thumborized\\n        __typename\\n      }\\n      normalPrice\\n      promotionPrice\\n      gift\\n      __typename\\n    }\\n    __typename\\n  }\\n  quantity(storeId: $storeId) {\\n    min\\n    max\\n    maxPromotion\\n    fraction\\n    inStock\\n    sellByWeightAndUnit\\n    __typename\\n  }\\n  pricing(storeId: $storeId) {\\n    id\\n    promotion\\n    price\\n    promotionalPrice\\n    __typename\\n  }\\n  personas(storeId: $storeId) {\\n    personaPrice\\n    personaId\\n    __typename\\n  }\\n  level1Category(storeId: $storeId) {\\n    id\\n    name\\n    slug\\n    __typename\\n  }\\n  level2Category(storeId: $storeId) {\\n    id\\n    name\\n    slug\\n    parent {\\n      id\\n      name\\n      slug\\n      __typename\\n    }\\n    __typename\\n  }\\n  level3Category(storeId: $storeId) {\\n    id\\n    name\\n    slug\\n    level2Category: parent {\\n      level1Category: parent {\\n        id\\n        name\\n        slug\\n        __typename\\n      }\\n      id\\n      name\\n      slug\\n      __typename\\n    }\\n    __typename\\n  }\\n  __typename\\n}\\n\\nquery ProductDetailQuery($storeId: ID!, $productId: ID!) {\\n  publicViewer(storeId: $storeId) {\\n    id\\n    product(id: $productId, storeId: $storeId) {\\n      ...ProductDetails\\n      similar(storeId: $storeId) {\\n        ...SimilarDetails\\n        __typename\\n      }\\n      boughtTogether(storeId: $storeId) {\\n        ...BoughtTogether\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n}\"}";
+         // Creating the product
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(null)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setCategories(categories)
+            .setOffers(offers)
+            .build();
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setPayload(payload)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR))
-         .build();
+         products.add(product);
 
-      return this.dataFetcher.get(session, request);
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+      }
+
+      return products;
+   }
+
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".product-show-page") != null;
    }
 
    private String getUrlInternalId() {
@@ -72,53 +102,55 @@ public class BrasilAlthoffSupermercadosCrawler extends Crawler {
       return null;
    }
 
-   @Override
-   public List<Product> extractInformation(JSONObject jsonSku) throws Exception {
-      super.extractInformation(jsonSku);
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
 
-      List<Product> products = new ArrayList<>();
-
-      JSONObject jsonProduct = JSONUtils.getValueRecursive(jsonSku, "data.publicViewer.product", JSONObject.class);
-
-      if (jsonProduct!= null && !jsonProduct.isEmpty()) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-         String internalId = getUrlInternalId();
-         String name = JSONUtils.getValueRecursive(jsonProduct, "name", String.class);
-//         String internalPid = crawlInternalPid(jsonSku);
-         CategoryCollection categories = crawlCategories(internalId);
-         String description = JSONUtils.getValueRecursive(jsonProduct,"description", String.class);
-
-         String primaryImage = crawlPrimaryImage(jsonSku);
-         String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
-
-         boolean available = crawlAvailability(jsonSku);
-         Offers offers = available ? scrapOffers(jsonSku) : new Offers();
-
-         // Creating the product
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setOffers(offers)
-            .build();
-
-         products.add(product);
-
-
-      } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+      if (pricing != null) {
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_NAME)
+            .setSellersPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .build());
       }
 
-      return products;
+      return offers;
    }
 
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-box .active-price-box", null, true, ',', session);
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-value", null, true, ',', session);
 
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(price)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   private CreditCards scrapCreditCards(Double price) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setFinalPrice(price)
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(price)
+         .build());
+
+      for (String flag : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(flag)
+            .setIsShopCard(false)
+            .setInstallments(installments)
+            .build());
+      }
+
+      return creditCards;
+   }
 }
