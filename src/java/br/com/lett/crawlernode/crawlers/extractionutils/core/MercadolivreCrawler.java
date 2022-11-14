@@ -52,7 +52,7 @@ import java.util.regex.Pattern;
 public class MercadolivreCrawler extends Crawler {
 
    private String getCep() {return session.getOptions().optString("cp");}
-   private String getDomainCookie() {return session.getOptions().optString("");}
+   private String getDomain() {return session.getOptions().optString("domain");}
    private String homePage;
    private String mainSellerNameLower;
    protected boolean allow3PSellers = isAllow3PSellers();
@@ -90,10 +90,10 @@ public class MercadolivreCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
 
-      BasicClientCookie cookie = new BasicClientCookie("cp", getCep());
-      cookie.setDomain(getDomainCookie());
-      cookie.setPath("/");
       if (getCep() != null && !getCep().isEmpty()) {
+         BasicClientCookie cookie = new BasicClientCookie("cp", getCep());
+         cookie.setDomain(getDomain());
+         cookie.setPath("/");
          this.cookies.add(cookie);
       }
 
