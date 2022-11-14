@@ -49,7 +49,7 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       headers.put("content-type", "application/json");
       headers.put("x-channel", "SOD");
 
-      String payload = "{\"page\":" + this.currentPage + ",\"facets\":[],\"sortBy\":\"\",\"hitsPerPage\":16,\"query\":\"" + this.keywordEncoded + "\"}";
+      String payload = "{\"page\":" + this.currentPage + ",\"facets\":[],\"sortBy\":\"\",\"hitsPerPage\":16,\"query\":\"" + this.keywordWithoutAccents + "\"}";
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
