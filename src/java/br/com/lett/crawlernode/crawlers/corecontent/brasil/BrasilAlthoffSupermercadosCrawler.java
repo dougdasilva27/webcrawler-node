@@ -35,7 +35,6 @@ public class BrasilAlthoffSupermercadosCrawler extends Crawler {
    private Set<String> cards = Sets.newHashSet(Card.AMEX.toString(), Card.CABAL.toString(), Card.MASTERCARD.toString(),
       Card.ELO.toString(), Card.HIPERCARD.toString(), Card.HIPER.toString(), Card.VISA.toString(), Card.DINERS.toString());
    private final String SELLER_NAME = "Althoff Supermercados";
-
    protected String getStoreId() {
       return session.getOptions().optString("storeId");
    }
