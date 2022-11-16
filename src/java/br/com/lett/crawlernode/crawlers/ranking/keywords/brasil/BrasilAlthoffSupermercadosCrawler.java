@@ -64,30 +64,30 @@ public class BrasilAlthoffSupermercadosCrawler extends CrawlerRankingKeywords {
          JSONArray productsArray = JSONUtils.getJSONArrayValue(json, "edges");
 
          for (Object product : productsArray) {
-            JSONObject productJson = JSONUtils.getValueRecursive(product, "node", JSONObject.class);
+            JSONObject productJson = JSONUtils.getValueRecursive(product, "nod0e", JSONObject.class);
 
-            String internalId = JSONUtils.getStringValue(productJson, "objectID");
-            String productUrl = assemblyURL(productJson, internalId);
-            String name = JSONUtils.getStringValue(productJson, "name");
-            String imageUrl = JSONUtils.getStringValue(productJson, "image");
-            boolean isAvailable = getAvailability(productJson);
-            Integer price = getPrice(productJson, isAvailable);
+            if(productJson != null) {
+               String internalId = JSONUtils.getStringValue(productJson, "objectID");
+               String productUrl = assemblyURL(productJson, internalId);
+               String name = JSONUtils.getStringValue(productJson, "name");
+               String imageUrl = JSONUtils.getStringValue(productJson, "image");
+               boolean isAvailable = getAvailability(productJson);
+               Integer price = getPrice(productJson, isAvailable);
 
-            RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(productUrl)
-               .setInternalId(internalId)
-               .setName(name)
-               .setPriceInCents(price)
-               .setAvailability(isAvailable)
-               .setImageUrl(imageUrl)
-               .build();
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setImageUrl(imageUrl)
+                  .build();
 
-            saveDataProduct(productRanking);
-
+               saveDataProduct(productRanking);
+            }
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
-
          }
       } else {
          this.result = false;
