@@ -30,7 +30,10 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
    private static final String HOME_PAGE = "https://www.lider.cl/supermercado/";
 
    private final List<String> proxies = Arrays.asList(
-      ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_MX,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR,
+      ProxyCollection.SMART_PROXY_CL,
+      ProxyCollection.SMART_PROXY_CL_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
@@ -73,9 +76,9 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
 
       this.log("Link onde são feitos os crawlers: " + url);
       JSONObject json = fetchApi(url);
-      JSONArray products = json.optJSONArray("products");
+      JSONArray products = json != null ? json.optJSONArray("products") : null;
 
-      if (!products.isEmpty()) {
+      if (products != null && !products.isEmpty()) {
          if (this.totalProducts == 0) {
             this.totalProducts = json.optInt("nbHits");
          }
