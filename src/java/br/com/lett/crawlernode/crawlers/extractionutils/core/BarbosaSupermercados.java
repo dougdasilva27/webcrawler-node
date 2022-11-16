@@ -1,10 +1,16 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.*;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -16,7 +22,6 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
-import models.pricing.BankSlip;
 import models.pricing.CreditCards;
 import models.pricing.Pricing;
 import org.json.JSONArray;
@@ -65,20 +70,14 @@ public class BarbosaSupermercados extends Crawler {
          .setUrl(api)
          .setHeaders(headers)
          .setPayload(payload)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .mustSendContentEncoding(false)
          .build();
 
-      int tries = 0;
-      Response response = null;
-
-      do {
-         try {
-            response = new FetcherDataFetcher().post(session, request);
-         } catch (Exception e) {
-            Logging.printLogError(logger, CommonMethods.getStackTrace(e));
-         }
-         tries++;
-      } while (tries < 3 || !Objects.requireNonNull(response).isSuccess());
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
 
       return response;
    }
