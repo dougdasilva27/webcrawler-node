@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -26,6 +27,8 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
    protected String nextUrl;
    private String productUrlHost;
    protected String url;
+   private String getCep() {return session.getOptions().optString("cp");}
+   private String getDomain() {return session.getOptions().optString("domain");}
 
    protected MercadolivreCrawler(Session session) {
       super(session);
@@ -119,6 +122,12 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
 
    private Document fetch(String url) {
       // This user agent is used because some of ours user agents doesn't work on this market
+      if (getCep() != null && !getCep().isEmpty()) {
+         BasicClientCookie cookie = new BasicClientCookie("cp", getCep());
+         cookie.setDomain(getDomain());
+         cookie.setPath("/");
+         this.cookies.add(cookie);
+      }
 
       Request request = RequestBuilder.create()
          .setCookies(cookies)
