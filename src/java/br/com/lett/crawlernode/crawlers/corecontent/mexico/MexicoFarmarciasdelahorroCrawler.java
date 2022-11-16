@@ -3,8 +3,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -54,7 +54,7 @@ public class MexicoFarmarciasdelahorroCrawler extends Crawler {
          .setHeaders(headers)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
 
       return response;
    }
@@ -68,7 +68,7 @@ public class MexicoFarmarciasdelahorroCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title-wrapper.product", false);
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[type=\"hidden\"]", "value");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-info-price > .price-box", "data-product-id");
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute.description .value", false);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs");
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");

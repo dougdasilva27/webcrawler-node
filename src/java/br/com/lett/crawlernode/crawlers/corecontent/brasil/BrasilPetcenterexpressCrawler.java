@@ -2,20 +2,24 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
@@ -26,6 +30,8 @@ import models.pricing.CreditCards;
 import models.pricing.Installment;
 import models.pricing.Installments;
 import models.pricing.Pricing;
+import org.apache.kafka.common.security.JaasUtils;
+import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -62,16 +68,17 @@ public class BrasilPetcenterexpressCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".codProduto span", true);
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=\"sku\"]", true);
          String internalPid = internalId;
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#produto-nome", true);
-         boolean available = !doc.select(".column.btnComprar .btn-comprar.action ").isEmpty(); // when this crawler was remade, there was no product that was unavailable
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-product__name", true);
+         boolean available = scrapAvailable(internalId);
          //hasn't category
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#galleypc .car-gallery.thumbnails.slick-dotted.mobile-hide a", Arrays.asList("data-standard"), "https", "static.petcenterexpress.com.br");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "#galleypc .car-gallery.thumbnails.slick-dotted.mobile-hide a", Arrays.asList("data-standard"), "https", "static.petcenterexpress.com.br", primaryImage);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui.grid.one.column"));
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".container_thumb.cloud-zoom", Arrays.asList("href"), "https", "static.petcenterexpress.com.br");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".jcarousel-skin-tango li span.produto-imagem-miniatura a", Arrays.asList("href"), "https", "static.petcenterexpress.com.br", primaryImage);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".additional-message"));
          RatingsReviews rating = scrapRatingReviews(doc);
          Offers offers = available ? scrapOffers(doc) : new Offers();
+
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -96,6 +103,23 @@ public class BrasilPetcenterexpressCrawler extends Crawler {
 
    }
 
+   private boolean scrapAvailable(String internalId) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.petcenterexpress.com.br/pricing/1059813/1/" + internalId + "/?snippet=snippets/pricing")
+         .build();
+
+      Response response = this.dataFetcher.get(session, request);
+      Document doc = Jsoup.parse(response.getBody());
+      if (doc != null) {
+         String available = CrawlerUtils.scrapStringSimpleInfo(doc, ".botao-nao_indisponivel", false);
+         if (available == null) {
+            return true;
+         }
+
+      }
+      return false;
+   }
+
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
@@ -115,7 +139,8 @@ public class BrasilPetcenterexpressCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#variacao-preco span", null, false, ',', session);
+
+      Double spotlightPrice = scrapPriceInJson(doc);
       //site hasn't old price
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
@@ -127,6 +152,25 @@ public class BrasilPetcenterexpressCrawler extends Crawler {
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
+   }
+
+   private Double scrapPriceInJson(Document doc) {
+
+      String script = String.valueOf(doc.selectFirst("script:containsData(dataLayer = )"));
+      if (script.contains("dataLayer ")) {
+         script = script.replaceAll("dataLayer =", "").replaceAll("<script>", "").replaceAll("</script>", "");
+         if (script != null && !script.isEmpty()) {
+            JSONArray jsonArray = CrawlerUtils.stringToJsonArray(script);
+            String priceStr = JSONUtils.getValueRecursive(jsonArray, "0.price", String.class);
+            if (priceStr != null && !priceStr.isEmpty()) {
+               return Double.parseDouble(priceStr);
+            }
+         }
+
+      }
+
+
+      return null;
    }
 
 
@@ -152,7 +196,7 @@ public class BrasilPetcenterexpressCrawler extends Crawler {
 
 
    private boolean isProductPage(Document doc) {
-      return !doc.select(".row.detalhes.produto").isEmpty();
+      return !doc.select(".page-product__essential").isEmpty();
    }
 
    private RatingsReviews scrapRatingReviews(Document doc) {

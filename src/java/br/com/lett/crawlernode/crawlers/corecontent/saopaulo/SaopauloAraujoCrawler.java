@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
@@ -14,10 +15,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class SaopauloAraujoCrawler extends VTEXOldScraper {
 
@@ -26,6 +24,47 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
 
    public SaopauloAraujoCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.MIRANHA);
+   }
+
+   @Override
+   protected String getHomePage() {
+      return HOME_PAGE;
+   }
+
+   @Override
+   protected List<String> getMainSellersNames() {
+      return SELLERS;
+   }
+
+   private String decodeHtml(String html) {
+      return StringEscapeUtils.unescapeHtml4(html);
+   }
+
+   @Override
+   protected JSONObject crawlProductApi(String internalPid, String parameters) {
+      JSONObject productApi = new JSONObject();
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "application/json");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+
+      String url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid + (parameters == null ? "" : parameters);
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setSendUserAgent(true)
+         .build();
+
+      JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
+
+      if (!array.isEmpty()) {
+         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
+      }
+
+      return productApi;
    }
 
    @Override
@@ -43,21 +82,6 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
       description = description.replaceAll("\\<.*?\\>", "");
       description = description.replaceAll("\"", "");
       return description;
-   }
-
-   private String decodeHtml(String html) {
-      return StringEscapeUtils.unescapeHtml4(html);
-   }
-
-
-   @Override
-   protected String getHomePage() {
-      return HOME_PAGE;
-   }
-
-   @Override
-   protected List<String> getMainSellersNames() {
-      return SELLERS;
    }
 
    @Override

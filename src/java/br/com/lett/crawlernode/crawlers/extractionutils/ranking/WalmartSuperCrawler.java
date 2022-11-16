@@ -15,7 +15,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,6 +24,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
       super(session);
       super.fetchMode = FetchMode.APACHE;
    }
+
    String store_id = session.getOptions().optString("store_id");
 
    @Override
@@ -120,10 +120,10 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
          .mustSendContentEncoding(false)
          .build();
       String response = this.dataFetcher.get(session, request).getBody();
-      Integer count =0;
-      while (response.isEmpty() && count < 3){
+      Integer count = 0;
+      while (response.isEmpty() && count < 3) {
          response = this.dataFetcher.get(session, request).getBody();
-         count ++;
+         count++;
       }
 
       return CrawlerUtils.stringToJson(response);

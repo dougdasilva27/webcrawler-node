@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
@@ -14,7 +13,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +36,8 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
          .build();
 
       return Jsoup.parse(dataFetcher.get(session, request).getBody());
@@ -108,7 +107,7 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
    private String crawlName(Element e) {
       String scrapName = CrawlerUtils.scrapStringSimpleInfo(e, ".carousel__inner > a > table > tbody > tr > td > div.name-produto", false);
-      if(scrapName == null){
+      if (scrapName == null) {
          scrapName = CrawlerUtils.scrapStringSimpleInfo(e, ".carousel__box__dados > a > table > tbody > tr > td", false);
       }
       return scrapName;

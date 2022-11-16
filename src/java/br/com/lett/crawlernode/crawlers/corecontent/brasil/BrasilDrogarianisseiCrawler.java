@@ -61,7 +61,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       this.cookies = response.getCookies();
 
       return response;
-
    }
 
    @Override
@@ -79,13 +78,14 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-produto_id]", "data-produto_id");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".mt-3 h4", false);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "[data-target=produto_view] [data-target=nome_produto]", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".small a", true);
          String primaryImage = fixUrlImage(doc, internalId);
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".dots-preview .swiper-slide img", Collections.singletonList("src"), "https", "www.farmaciasnissei.com.br", primaryImage);
          String description = CrawlerUtils.scrapElementsDescription(doc, List.of(".card #tabCollapse-descricao"));
          JSONObject json = accesAPIOffers(internalId);
-         Offers offers = scrapOffers(json);
+         boolean available = json.optBoolean("is_disponivel");
+         Offers offers = available ? scrapOffers(json) : new Offers();
          RatingsReviews ratingsReviews = getRatingsReviews(doc);
          List<String> eans = scrapEan(doc);
 
@@ -110,7 +110,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       }
 
       return products;
-
    }
 
    private JSONObject accesAPIOffers(String internalId) {
@@ -227,6 +226,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       Offers offers = new Offers();
       Pricing pricing;
       List<String> sales;
+
       if (jsonInfo != null && !jsonInfo.isEmpty()) {
          pricing = scrapPricing(jsonInfo);
          sales = scrapSales(jsonInfo);
@@ -258,7 +258,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       }
 
       return offers;
-
    }
 
    private List<String> scrapSales(JSONObject jsonInfo) {
@@ -322,7 +321,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       return creditCards;
    }
 
-
    /*
 In this store, grades are given with a double value, e.g: 4.5 instead of 5 or 4.
 Therefore, the crawler structure, by accepting only integer values, which is common on most sites, will not be captured the advanced rating.
@@ -337,8 +335,5 @@ Therefore, the crawler structure, by accepting only integer values, which is com
       ratingsReviews.setAverageOverallRating(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".avaliacao-produto .rating-produto", null, true, ',', session));
 
       return ratingsReviews;
-
    }
-
-
 }

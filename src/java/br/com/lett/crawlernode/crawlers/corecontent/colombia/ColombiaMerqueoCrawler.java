@@ -7,7 +7,6 @@ import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -26,10 +25,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ColombiaMerqueoCrawler extends Crawler {
 
@@ -64,7 +60,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
          Offers offers = available ? crawlOffers(data) : new Offers();
 
          String primaryImage = crawlPrimaryImage(data);
-         List<String> secondaryImages = crawlSecondaryImage(data);
+         List<String> secondaryImages = crawlSecondaryImage(apiJson);
          String description = JSONUtils.getValueRecursive(data, "attributes.description", String.class);
          String url = assembleProductUrl(session.getOriginalURL());
 
@@ -87,7 +83,6 @@ public class ColombiaMerqueoCrawler extends Crawler {
       }
 
       return products;
-
    }
 
    private String assembleProductUrl(String originalURL) {
@@ -123,19 +118,37 @@ public class ColombiaMerqueoCrawler extends Crawler {
       return primaryImage;
    }
 
-   private List<String> crawlSecondaryImage(JSONObject data) {
-      JSONArray jsonArrImg = JSONUtils.getValueRecursive(data, "attributes.images", JSONArray.class);
-
-      List<String> secondaryImages = new ArrayList<>();
-      if (jsonArrImg != null) {
-         for (int i = 1; i < jsonArrImg.length(); i++) {
-            JSONObject jsonObjImg = jsonArrImg.get(i) instanceof JSONObject ? jsonArrImg.getJSONObject(i) : new JSONObject();
-            secondaryImages.add(getLargestImage(jsonObjImg));
+   private List<String> crawlSecondaryImage(JSONObject apiJson) {
+      JSONArray included = JSONUtils.getValueRecursive(apiJson, "included", JSONArray.class);
+      Map<String, JSONObject> attributesId = new HashMap<>();
+      if (included != null) {
+         for (Object obj : included) {
+            JSONObject jsonObject = (JSONObject) obj;
+            String code = jsonObject.optString("id");
+            JSONObject attributes = jsonObject.optJSONObject("attributes");
+            attributesId.put(code, attributes);
          }
+
+
+         JSONArray jsonImgCode = JSONUtils.getValueRecursive(apiJson, "data.relationships.images.data", JSONArray.class);
+         List<String> imagesCode = new ArrayList<>();
+         if (jsonImgCode != null) {
+            for (int i = 1; i < jsonImgCode.length(); i++) {
+               String code = JSONUtils.getValueRecursive(jsonImgCode, i + ".id", String.class);
+               imagesCode.add(code);
+            }
+         }
+
+         List<String> secondaryImages = new ArrayList<>();
+         for (String code : imagesCode) {
+            JSONObject attributes = attributesId.get(code);
+            String imageUrl = attributes.optString("image_large_url");
+            secondaryImages.add(imageUrl);
+         }
+         return secondaryImages;
       }
 
-
-      return secondaryImages;
+      return null;
    }
 
    private String getLargestImage(JSONObject jsonObjImg) {
@@ -192,7 +205,6 @@ public class ColombiaMerqueoCrawler extends Crawler {
          .mustSendContentEncoding(false)
          .build();
 
-
       return CrawlerUtils.stringToJson(CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session));
    }
 
@@ -239,7 +251,6 @@ public class ColombiaMerqueoCrawler extends Crawler {
          priceFrom = (double) priceFromInt;
       }
 
-      ;
       priceFrom = priceFrom == 0d ? null : priceFrom;
 
       if (spotLightPriceInt == null && priceFrom != null) {
@@ -247,14 +258,12 @@ public class ColombiaMerqueoCrawler extends Crawler {
          priceFrom = null;
       }
 
-
       Installments installments = new Installments();
 
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(1)
          .setInstallmentPrice(spotLightprice)
          .build());
-
 
       CreditCards creditCards = new CreditCards();
       for (String s : cards) {
@@ -264,7 +273,6 @@ public class ColombiaMerqueoCrawler extends Crawler {
             .setIsShopCard(false)
             .build());
       }
-
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotLightprice)

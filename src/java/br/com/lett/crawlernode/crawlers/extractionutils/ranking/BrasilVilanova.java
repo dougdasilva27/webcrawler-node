@@ -1,61 +1,25 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Cookie;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import javax.print.Doc;
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilVilanova extends CrawlerRankingKeywords {
 
    public BrasilVilanova(Session session) {
       super(session);
-      super.fetchMode = FetchMode.WEBDRIVER;
-   }
-
-   private final String HOME_PAGE = "https://www.vilanova.com.br/";
-
-   @Override
-   protected void processBeforeFetch() {
-      Cookie cookie = new Cookie.Builder("modoGridList", "list")
-         .domain("www.vilanova.com.br")
-         .path("/")
-         .isHttpOnly(false)
-         .isSecure(false)
-         .build();
-      this.cookiesWD.add(cookie);
-
-      Cookie cookie2 = new Cookie.Builder("aceite_politicas_cookie", "2022-04-12%2011:05:47")
-         .domain("www.vilanova.com.br")
-         .path("/")
-         .isHttpOnly(false)
-         .isSecure(false)
-         .build();
-
-      this.cookiesWD.add(cookie);
-      this.cookiesWD.add(cookie2);
    }
 
    @Override
@@ -85,7 +49,7 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "p.product-name > a", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-name", false);
 
-            Elements variations = product.select(".sku-variation-content .owl-item");
+            Elements variations = product.select(".item.picking");
 
             if (!variations.isEmpty()) {
                for (Element variation : variations) {
@@ -160,102 +124,19 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
       return session.getOptions().optString("password");
    }
 
+   public String getCookieLogin() {
+      return session.getOptions().optString("cookie_login");
+   }
+
    @Override
    protected Document fetchDocument(String url) {
-      Document doc = new Document("");
-
-      try {
-         Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
-         ChromeOptions options = new ChromeOptions();
-         options.addArguments("--window-size=1920,1080");
-         options.addArguments("--headless");
-         options.addArguments("--no-sandbox");
-         options.addArguments("--disable-dev-shm-usage");
-
-         List<String> proxies = Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
-
-         int attemp = 0;
-         do {
-            if (attemp != 0) {
-               webdriver.terminate();
-            }
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attemp), session, this.cookiesWD, HOME_PAGE, options);
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-         } while (doc.select("body").isEmpty() && attemp++ < 3);
-
-         webdriver.waitLoad(30000);
-
-         if (doc.selectFirst(".btn-politicas-cookies") != null) {
-            Logging.printLogDebug(logger, session, "Achado botão de cookies");
-            WebElement clickCookies = webdriver.driver.findElement(By.cssSelector("button.btn-politicas-cookies"));
-            webdriver.clickOnElementViaJavascript(clickCookies);
-            Logging.printLogDebug(logger, session, "Clicado no botão 1");
-
-            if (doc.selectFirst("a.cc-ALLOW") != null) {
-               waitForElement(webdriver.driver, "a.cc-ALLOW");
-               WebElement allow = webdriver.driver.findElement(By.cssSelector("a.cc-btn.cc-ALLOW"));
-               webdriver.clickOnElementViaJavascript(allow);
-               Logging.printLogDebug(logger, session, "Clicado no botão 2");
-            }
-         } else {
-            Logging.printLogDebug(logger, session, "Não foi possível achar o botão de cookies");
-         }
-
-         webdriver.waitLoad(15000);
-         Logging.printLogDebug(logger, session, "Procurando botão de abrir login");
-
-         WebElement openlogin = webdriver.driver.findElement(By.cssSelector("a.open-login"));
-         webdriver.clickOnElementViaJavascript(openlogin);
-         Logging.printLogDebug(logger, session, "Clicadno botão de abrir login");
-
-         waitForElement(webdriver.driver, "#fazer-login");
-         webdriver.findAndClick("#fazer-login", 2000);
-
-         Logging.printLogDebug(logger, session, "Sending credentials...");
-
-         webdriver.waitLoad(2000);
-         waitForElement(webdriver.driver, "#usuarioCnpj");
-         WebElement username = webdriver.driver.findElement(By.cssSelector("#usuarioCnpj"));
-         username.sendKeys(getCnpj());
-
-         webdriver.waitLoad(2000);
-         waitForElement(webdriver.driver, "#usuarioSenha");
-         WebElement pass = webdriver.driver.findElement(By.cssSelector("#usuarioSenha"));
-         pass.sendKeys(getPassword());
-
-         Logging.printLogDebug(logger, session, "awaiting login button");
-         webdriver.waitLoad(5000);
-
-         waitForElement(webdriver.driver, "#realizar-login");
-         webdriver.findAndClick("#realizar-login", 20000);
-
-         webdriver.waitForElement(".product-price", 15);
-         Logging.printLogDebug(logger, session, "awaiting product page");
-
-         boolean logged = false;
-         while (!logged) {
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-            JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataLayer = window.dataLayer || []; window.dataLayer.push(", ");", false, true);
-
-            if (json.has("userId")) {
-               logged = true;
-            } else {
-               webdriver.waitLoad(5000);
-            }
-         }
-
-         return doc;
-
-      } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-         Logging.printLogWarn(logger, "login não realizado");
-      }
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Cookie", getCookieLogin());
+      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build();
+      Response response = this.dataFetcher.get(session, request);
+      Document doc = Jsoup.parse(response.getBody());
 
       return doc;
    }
 
-   public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 20);
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
-   }
 }

@@ -1,69 +1,157 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-
-
-import models.RatingsReviews;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.util.ArrayList;
-
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class TausteCrawler extends VTEXOldScraper {
+public class TausteCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "https://www.tauste.com.br/";
-   private static final List<String> MAIN_SELLERS = Collections.singletonList("Tauste Supermercados LTDA.");
-   private static final List<Cookie> COOKIES = new ArrayList<>();
+   private static final String SELLER_FULL_NAME = "Tauste";
 
-   public TausteCrawler(Session session) {
-      super(session);
-   }
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+
+   private final String location = getLocation();
 
    protected String getLocation() {
       return session.getOptions().optString("LOCATION");
    }
 
-   @Override
-   protected Object fetch(){
-
-      BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=" + getLocation());
-      cookie.setDomain("www.tauste.com.br");
-      cookie.setPath("/");
-      COOKIES.add(cookie);
-
-      Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(COOKIES).build();
-      String response = dataFetcher.get(session, request).getBody();
-
-      return Jsoup.parse(response);
+   public TausteCrawler(Session session) {
+      super(session);
    }
 
-   @Override
-   protected String getHomePage() {
-      return HOME_PAGE;
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
+
+      boolean validUrl = isUrlCurrentLocation(session.getOriginalURL(), location);
+
+      if (isProductPage(doc) && validUrl) {
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".sku .value", true);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title .base", true);
+
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img.gallery-placeholder__image", Arrays.asList("src"), "https", "tauste.com.br");
+
+         boolean availableToBuy = doc.select(".action.primary.tocart") != null;
+         Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
+
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalId)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setOffers(offers)
+            .build();
+
+         products.add(product);
+
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+      }
+
+      return products;
    }
 
-   @Override
-   protected List<String> getMainSellersNames() {
-      return MAIN_SELLERS;
+   private boolean isUrlCurrentLocation(String originalURL, String location) {
+      String regex = "tauste.com.br\\/(.*)\\/";
+      String urlLocation = "";
+
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(originalURL);
+
+      if (matcher.find()) {
+         urlLocation = matcher.group(1);
+      }
+
+      return urlLocation.equals(location);
    }
 
-   @Override
-   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
-      return null;
+   private boolean isProductPage(Document doc) {
+      return doc.select(".product-info-main") != null;
    }
 
-   @Override
-   protected JSONObject crawlProductApi(String internalPid, String parameters) {
-      return super.crawlProductApi(internalPid, "&sc=" + getLocation());
+   private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(doc);
+
+      offers.add(Offer.OfferBuilder.create()
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setPricing(pricing)
+         .setSales(sales)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setIsMainRetailer(true)
+         .setUseSlugNameAsInternalSellerId(true)
+         .build());
+
+      return offers;
+
    }
 
+   private List<String> scrapSales(Document doc) {
+      List<String> sales = new ArrayList<>();
+
+      Element salesOneElement = doc.selectFirst(".first_price_discount_container");
+      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
+
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
+      }
+
+      return sales;
+   }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price", null, true, ',', session);
+
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(null)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   private CreditCards scrapCreditCards(Double spotlighPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
+
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlighPrice)
+         .build());
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
 }

@@ -118,7 +118,13 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
       apiResponse = apiResponse?.replace(",\"imgSet\");", "")
       apiResponse = apiResponse?.replace("/*jsonp*/s7Res(", "")
 
-      val imagesJson = apiResponse?.toJson()?.optJSONObject("set")?.optJSONArray("item")
+      val apiResponseJson = apiResponse?.toJson()
+      var imagesJson = JSONArray()
+      if (apiResponseJson?.optJSONObject("set")?.opt("item") is JSONArray) {
+         imagesJson = apiResponseJson.optJSONObject("set")?.optJSONArray("item")!!
+      } else {
+         imagesJson.put(apiResponseJson?.optJSONObject("set")?.optJSONObject("item"))
+      }
 
       val imagesUrls = mutableListOf<String>()
 

@@ -1,5 +1,11 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -22,10 +28,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,12 +68,12 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          RatingsReviews ratingReviews = crawRating(internalId);
          List<String> categories = CrawlerUtils.crawlCategories(doc, "main ul > li > a");
 
-         List<String> images = scrapListImages(data);
+         List<String> images = scrapListImages(data, doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
 
          String description = scrapDescription(data);
 
-         Boolean available = JSONUtils.getValueRecursive(data, "extension_attributes.stock_item.is_in_stock", Boolean.class);
+         Boolean available = crawlAvailability(internalId, data);
 
          Offers offers = available != null && available ? scrapOffers(data, doc) : new Offers();
 
@@ -97,14 +100,51 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return products;
    }
 
-   private List<String> scrapListImages(JSONObject data) {
+   private Boolean crawlAvailability(String internalId, JSONObject data) {
+      String payload = "{\"operationName\":\"liveComposition\",\"variables\":{\"skuList\":[\"" + internalId + "\"],\"origin\":\"\"},\"query\":\"query liveComposition($skuList: [String!]!, $origin: String!) {\\n  liveComposition(input: {skuList: $skuList, origin: $origin}) {\\n    sku\\n    livePrice {\\n      bestPrice {\\n        valueFrom\\n        valueTo\\n        updateAt\\n        type\\n        discountPercentage\\n        lmpmValueTo\\n        lmpmQty\\n        __typename\\n      }\\n      calcule {\\n        valueFrom\\n        valueTo\\n        lmpmValueTo\\n        lmpmQty\\n        updateAt\\n        type\\n        __typename\\n      }\\n      discountPercentage\\n      sku\\n      type\\n      updateAt\\n      valueFrom\\n      valueTo\\n      lmpmValueTo\\n      lmpmQty\\n      __typename\\n    }\\n    liveStock {\\n      sku\\n      qty\\n      dt\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\"}";
+
+      HashMap<String, String> headers = new HashMap<>();
+      headers.put("Content-type", "application/json");
+      headers.put("x-session-token-cart", "icUprn4asLubxc3Gpl9jlLoxm2fxv9cT");
+      headers.put("authority", "bff.drogaraia.com.br");
+      headers.put("Connection", "keep-alive");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://bff.drogaraia.com.br/graphql")
+         .setHeaders(headers)
+         .setPayload(payload)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.SMART_PROXY_BR
+            ))
+         .setSendUserAgent(true)
+         .build();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
+      JSONObject jsonStock = JSONUtils.stringToJson(response.getBody());
+      Integer stock = JSONUtils.getValueRecursive(jsonStock, "data.liveComposition.0.liveStock.qty", Integer.class);
+      if (stock == null) {
+         return JSONUtils.getValueRecursive(data, "extension_attributes.stock_item.is_in_stock", Boolean.class);
+      }
+      return stock > 0;
+   }
+
+   private List<String> scrapListImages(JSONObject data, Document doc) {
       List<String> images = new ArrayList<>();
       JSONArray imagesJson = JSONUtils.getValueRecursive(data, "media_gallery_entries", JSONArray.class);
       if (imagesJson != null) {
          for (int i = 0; i < imagesJson.length(); i++) {
-            String imageFile = JSONUtils.getValueRecursive(imagesJson, i+".file", String.class);
-            String image = "https://img.drogaraia.com.br/catalog/product/" + imageFile;
-            images.add(image);
+            String imageFile = JSONUtils.getValueRecursive(imagesJson, i + ".file", String.class);
+            if (imageFile != null) {
+               String image = "https://img.drogaraia.com.br/catalog/product/" + imageFile;
+               images.add(image);
+            } else {
+               String img = CrawlerUtils.scrapSimplePrimaryImage(doc, ".swiper-lazy img", Arrays.asList("src"), "https", "");
+               images.add(img);
+            }
+
          }
       }
       return images;
@@ -123,7 +163,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
       return null;
    }
-
 
    /* Brief explanation of the function
    The number of units and the size of the product must be captured in the crawler (ex: 15ml);
@@ -207,6 +246,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
       return stringBuilder.toString();
    }
+
    private String isMainSeller(Document doc) {
       String isMarketPlace = CrawlerUtils.scrapStringSimpleInfo(doc, "div[class*='SoldAndDelivered'] a", true);
 
@@ -294,6 +334,4 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
       return trustVox.extractV2RatingAndReviews(internalId, this.dataFetcher);
    }
-
 }
-

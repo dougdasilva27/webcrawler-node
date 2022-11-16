@@ -494,9 +494,12 @@ public class MercadolivreNewCrawler {
 
    private Double scrapPricingFromSellersPage(Element doc) {
 
-      Integer priceFraction = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__fraction", false, 0);
-      Integer priceCents = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price .andes-money-amount__cents", false, 0);
+      Integer priceFraction = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price__original-value .andes-money-amount__fraction", false, 0);
+      Integer priceCents = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-pdp-price__original-value .andes-money-amount__cents", false, 0);
 
+      if (priceFraction == 0 && priceCents == 0) {
+         return null;
+      }
 
       return priceFraction + (double) priceCents / 100;
    }

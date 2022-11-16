@@ -2,8 +2,12 @@ package br.com.lett.crawlernode.crawlers.corecontent.costarica;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -19,6 +23,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
@@ -54,20 +59,24 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          .setUrl(API)
          .setPayload(payload)
          .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.SMART_PROXY_CL,
+            ProxyCollection.SMART_PROXY_CO_HAPROXY
+         ))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(true).build())
          .mustSendContentEncoding(false)
          .setSendUserAgent(true)
          .build();
 
-      String content = "{}";
-      int tries = 0;
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
 
-      while (content.equals("{}") && tries < 3) {
-         content = this.dataFetcher.post(session, request).getBody();
-         tries++;
-      }
-
-      return CrawlerUtils.stringToJson(content);
+      return CrawlerUtils.stringToJson(response.getBody());
    }
 
    private String getProductId() {
@@ -98,6 +107,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          boolean available = data.optBoolean("inStock");
          String name = getName(data, available);
          String primaryImage = JSONUtils.getValueRecursive(data, "gallery.0", String.class);
+         List<String> secondaryImages = getSecundaryImages(data, primaryImage);
          String description = data.optString("description");
          Offers offers = available ? scrapOffers(data) : new Offers();
 
@@ -107,6 +117,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
             .build();
@@ -117,6 +128,21 @@ public class CostaricaAutomercadoCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private List<String> getSecundaryImages(JSONObject data, String primaryImage) {
+      JSONArray arraySecondaryImagens = JSONUtils.getValueRecursive(data, "gallery", JSONArray.class);
+      List<String> list = new ArrayList<>();
+      if (arraySecondaryImagens != null && !arraySecondaryImagens.isEmpty()) {
+         for (Integer i = 0; i < arraySecondaryImagens.length(); i++) {
+            String image = (String) arraySecondaryImagens.get(i);
+            if (image!=null && !image.isEmpty() &&!image.equals(primaryImage)) {
+               list.add(image);
+            }
+         }
+      }
+
+      return list;
    }
 
    private String getName(JSONObject data, boolean available) {

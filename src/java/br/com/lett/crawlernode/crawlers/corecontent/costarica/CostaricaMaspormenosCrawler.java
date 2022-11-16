@@ -19,7 +19,7 @@ public class CostaricaMaspormenosCrawler extends VTEXNewImpl {
 
    public CostaricaMaspormenosCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override

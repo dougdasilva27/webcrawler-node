@@ -40,10 +40,10 @@ public class CaratingaSuperirmaoCrawler extends Crawler {
       if (doc.selectFirst(".card .card-body .col-12 h3") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".card-body form", "action").split("add/")[1];
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=\"sku\"]", false);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".col-12 h3", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".card-body .row .col-12 img", Arrays.asList("src"), "https:", "superirmao.loji.com.br");
-         boolean availableToBuy = doc.selectFirst(".input-group button .fa-add") != null;
+         boolean availableToBuy = doc.selectFirst(".input-group .fa-cart-plus") != null;
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
          CategoryCollection categories = scrapCategories(doc);
 
@@ -54,9 +54,7 @@ public class CaratingaSuperirmaoCrawler extends Crawler {
             .setInternalId(internalId)
             .setInternalPid(internalId)
             .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
+            .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setOffers(offers)
             .build();
@@ -125,21 +123,18 @@ public class CaratingaSuperirmaoCrawler extends Crawler {
 
    private CategoryCollection scrapCategories(Document doc) {
       CategoryCollection categories = new CategoryCollection();
+      String categoryText = CrawlerUtils.scrapStringSimpleInfo(doc, ".col-12.col-sm-8 p a", false);
 
-      String categoryText = CrawlerUtils.scrapStringSimpleInfo(doc, ".col-12.col-sm-8 p", false);
       if (categoryText != null) {
+         String strCat = categoryText.replace("Categoria:", "").trim();
+
          if (categoryText.contains(">")) {
-            String strCat = categoryText.replace("Categoria:", "").replaceAll(">", "").trim();
-            String[] strArray = strCat.split("  ");
-            Collections.addAll(categories, strArray);
-         } else {
-            String strCat = categoryText.replace("Categoria:", "").trim();
-            String[] strArray = strCat.split("  ");
-            Collections.addAll(categories, strArray);
+            strCat = strCat.replaceAll(">", "").trim();
          }
+
+         String[] strArray = strCat.split("  ");
+         Collections.addAll(categories, strArray);
       }
       return categories;
    }
-
-
 }

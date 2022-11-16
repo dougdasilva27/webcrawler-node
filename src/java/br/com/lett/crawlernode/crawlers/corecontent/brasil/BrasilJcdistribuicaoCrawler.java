@@ -1,34 +1,19 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.*;
-
-import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.LifeappsCrawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.JSONUtils;
-import com.google.common.collect.Sets;
-import com.sun.syndication.feed.rss.Guid;
-import exceptions.MalformedPricingException;
-import exceptions.OfferException;
-import models.Offer;
-import models.Offers;
-import models.pricing.*;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.LifeappsCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.prices.Prices;
+import br.com.lett.crawlernode.util.JSONUtils;
+import exceptions.MalformedPricingException;
+import models.pricing.BankSlip;
+import models.pricing.CreditCards;
+import models.pricing.Pricing;
+import org.json.JSONObject;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Objects;
 
 /**
  * Date: 31/07/2019
@@ -70,5 +55,24 @@ public class BrasilJcdistribuicaoCrawler extends LifeappsCrawler {
    @Override
    public String getSellerName() {
       return SELLER_NAME_LOWER;
+   }
+
+   @Override
+   protected Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(product, "preco_sem_politica_varejo", false);
+
+      BigDecimal bdSpotlightPrice = BigDecimal.valueOf(spotlightPrice);
+      spotlightPrice = bdSpotlightPrice.setScale(2, RoundingMode.DOWN).doubleValue();
+
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+      CreditCards creditCards = super.scrapCreditcards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(null)
+         .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
+
    }
 }

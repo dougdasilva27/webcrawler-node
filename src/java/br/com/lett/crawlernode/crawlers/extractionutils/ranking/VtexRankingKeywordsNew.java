@@ -7,10 +7,14 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class VtexRankingKeywordsNew extends CrawlerRankingKeywords {
 
@@ -103,7 +107,14 @@ public abstract class VtexRankingKeywordsNew extends CrawlerRankingKeywords {
    }
 
    protected JSONArray fetchPage(String url) {
+
+      Map<String, String> headers = new HashMap<>();
+      if (cookies != null && !cookies.isEmpty()) {
+         headers.put("cookie", CommonMethods.cookiesToString(cookies));
+      }
+
       Request request = Request.RequestBuilder.create()
+         .setHeaders(headers)
          .setUrl(url)
          .build();
 

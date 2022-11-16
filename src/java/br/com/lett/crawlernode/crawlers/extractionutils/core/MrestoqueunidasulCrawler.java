@@ -56,10 +56,10 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setCookies(cookies)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
-            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-         ))
+            ProxyCollection.SMART_PROXY_BR
+            ))
          .build();
 
       Response responseLogin = this.dataFetcher.post(session, requestLogin);
@@ -72,9 +72,10 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setCookies(cookies)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-         ))
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.SMART_PROXY_BR
+            ))
          .build();
 
       Response responseLogin2 = this.dataFetcher.get(session, requestLogin2);
@@ -85,9 +86,10 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setCookies(cookies)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-         ))
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.SMART_PROXY_BR
+            ))
          .build();
 
       Response responseLogin3 = this.dataFetcher.get(session, requestLogin3);
@@ -97,9 +99,9 @@ public class MrestoqueunidasulCrawler extends Crawler {
          .setCookies(cookies)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
-            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            ProxyCollection.SMART_PROXY_BR
          ))
          .build();
 

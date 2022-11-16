@@ -121,7 +121,7 @@ public class KPLProducer {
    public void put(Ranking ranking, Session session) {
       RankingModel rankingModel = new RankingModel(ranking);
 
-      ByteBuffer data = ByteBuffer.wrap((rankingModel.serializeToKinesis() + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
+      ByteBuffer data = ByteBuffer.wrap((rankingModel.serializeToKinesis(session) + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
 
       FutureCallback<UserRecordResult> myCallback = getCallback(session);
 

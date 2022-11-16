@@ -1,80 +1,71 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
+import java.io.UnsupportedEncodingException;
+
 public class BrasilAmarosbichosCrawler extends CrawlerRankingKeywords {
-  
-  private static final String HOME_PAGE = "www.petshopamarosbichos.com.br";
 
-  public BrasilAmarosbichosCrawler(Session session) {
-    super(session);
-  }
+   private static final String HOME_PAGE = "https://www.petshopamarosbichos.com.br";
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 15;
-    this.log("Página " + this.currentPage);
+   public BrasilAmarosbichosCrawler(Session session) {
+      super(session);
+   }
 
-    String url = "https://www.petshopamarosbichos.com.br/busca?page=" 
-        + this.currentPage + "&q=" 
-        + this.keywordEncoded;
-    
-    this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".result-list > div");
+   @Override
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
+      this.pageSize = 24;
+      this.log("Página " + this.currentPage);
 
-    if (!products.isEmpty()) {
-      for (Element e : products) {
-        String internalPid = scrapInternalPid(e, ".description-product .product-name > a");
-        String productUrl = CrawlerUtils.scrapUrl(e, ".description-product .product-name > a", "href", "http:", HOME_PAGE);
+      String url = HOME_PAGE + "/busca?busca=" + this.keywordEncoded + "&pagina=" + this.currentPage;
 
-        saveDataProduct(null, internalPid, productUrl);
+      this.log("Link onde são feitos os crawlers: " + url);
+      this.currentDoc = fetchDocument(url);
+      Elements products = this.currentDoc.select(".fbits-item-lista-spot");
 
-        this.log(
-            "Position: " + this.position + 
-            " - InternalId: " + null +
-            " - InternalPid: " + internalPid + 
-            " - Url: " + productUrl);
-        
-        if (this.arrayProducts.size() == productsLimit)
-          break;
+      if (!products.isEmpty()) {
+         for (Element product : products) {
+            String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".spotTitle", true);
+            String productUrl = HOME_PAGE + CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".spotContent > a", "href");
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".jsImgSpot.imagem-primaria", "src");
+            String internalPid = CommonMethods.getLast(productUrl.split("-"));
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "div.precoPor > span.fbits-valor", null, false, ',', session, null);
+            boolean isAvailable = price != null;
+
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalPid(internalPid)
+               .setName(productName)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
+
+            saveDataProduct(productRanking);
+            if (this.arrayProducts.size() == productsLimit)
+               break;
+         }
+
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-      
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+         + this.arrayProducts.size() + " produtos crawleados");
 
-  }
+   }
 
-
-  private String scrapInternalPid(Element e, String selector) {
-    String internalPid = null;
-    Element urlElement = e.selectFirst(selector);
-    
-    if(urlElement != null && urlElement.hasAttr("href")) {
-      String url = urlElement.attr("href");
-      
-      String[] div1 = url.split("/");
-      
-      if(div1.length > 0) {
-        String[] div2 = div1[div1.length-1].split("-");
-        internalPid = div2[0];
-      }
-    }
-
-    return internalPid;
-  }
-  
-  @Override
-  protected boolean hasNextPage() {
-    return this.currentDoc.selectFirst(".next_page.disabled") == null;
-  }
+   @Override
+   protected boolean hasNextPage() {
+      return this.currentDoc.selectFirst(".next_page.disabled") == null;
+   }
 }

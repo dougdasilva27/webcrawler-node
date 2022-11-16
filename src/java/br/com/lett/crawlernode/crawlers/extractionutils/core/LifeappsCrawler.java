@@ -3,27 +3,24 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.LocaleException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
-import com.google.protobuf.DoubleValue;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.DecimalFormat;
 import java.util.*;
 
 public abstract class LifeappsCrawler extends Crawler {
@@ -34,7 +31,7 @@ public abstract class LifeappsCrawler extends Crawler {
 
    protected LifeappsCrawler(Session session) {
       super(session);
-      this.config.setFetcher(FetchMode.FETCHER);
+      this.config.setFetcher(FetchMode.JSOUP);
    }
 
    protected abstract String getHomePage();
@@ -49,7 +46,6 @@ public abstract class LifeappsCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-
       // url must be in this format:
       // https://jcdistribuicao.superon.app/commerce/6f0ae38d-50cd-4873-89a5-6861467b5f52/produto/AGUA-MIN-SAO-LOURENCO-300ML-PET-S-GAS-3xlPvs5V/
       // api exemple:
@@ -89,6 +85,10 @@ public abstract class LifeappsCrawler extends Crawler {
 
    @Override
    public List<Product> extractInformation(JSONObject jsonSku) throws Exception {
+      if (!session.getOriginalURL().contains(getHomePage())) {
+         throw new LocaleException();
+      }
+
       super.extractInformation(jsonSku);
       List<Product> products = new ArrayList<>();
       String productUrl = session.getOriginalURL();
@@ -99,10 +99,11 @@ public abstract class LifeappsCrawler extends Crawler {
          String internalId = crawlInternalId(jsonSku);
          String internalPid = crawlInternalPid(jsonSku);
          String description = crawlDescription(jsonSku);
-         String primaryImage = crawlPrimaryImage(internalPid);
+         String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);
          List<String> eans = scrapEan(internalId);
-         Offers offers = jsonSku.has("preconf") ? scrapOffers(jsonSku) : new Offers();
+         boolean isAvailable = JSONUtils.getValueRecursive(jsonSku, "meta_info.sem_estoque", Boolean.class);
+         Offers offers = !isAvailable ? scrapOffers(jsonSku) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -131,10 +132,10 @@ public abstract class LifeappsCrawler extends Crawler {
    private List<String> scrapEan(String internalId) {
       List<String> eans = new ArrayList<>();
 
-      if (internalId.contains("-")) {
+      if (internalId != null && internalId.contains("-")) {
          String[] eanArray = internalId.split("-");
 
-         if(eanArray.length > 0){
+         if (eanArray.length > 0) {
             eans = Collections.singletonList(eanArray[1]);
          }
       }
@@ -190,34 +191,12 @@ public abstract class LifeappsCrawler extends Crawler {
       return internalPid;
    }
 
-   private String crawlPrimaryImage(String internalPid) {
-      String primaryImage = null;
-      List<String> primaryImageList = new ArrayList<>();
-
-      JSONObject json = fetchJsonImages(HOST_API_IMAGES_URL, internalPid);
-
-      if (json.has("imagens") && !json.isNull("imagens")) {
-         JSONArray images = json.getJSONArray("imagens");
-
-         for (Object object : images) {
-            JSONObject image = (JSONObject) object;
-
-            if (image.has("smallSize")) {
-               primaryImageList.add(image.get("smallSize").toString());
-
-            } else if (image.has("mediumSize")) {
-               primaryImageList.add(image.get("mediumSize").toString());
-
-            }
-         }
-
-         if (!primaryImageList.isEmpty()) {
-            primaryImage = primaryImageList.get(0);
-
-         }
+   private String crawlPrimaryImage(JSONObject product) {
+      String imageId = JSONUtils.getValueRecursive(product, "idcadastroextraproduto", String.class);
+      if (imageId != null) {
+         return "https://s3-sa-east-1.amazonaws.com/prod-superon-public-media/shared/product-image/" + imageId + ".jpg";
       }
-
-      return primaryImage;
+      return null;
    }
 
    private String crawlDescription(JSONObject json) {
@@ -249,23 +228,24 @@ public abstract class LifeappsCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
+   protected Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
       Double priceFrom = JSONUtils.getDoubleValueFromJSON(product, "preco_sem_politica_varejo", false);
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(product, "preconf", false);
-
-
-      if (priceFrom.equals(spotlightPrice) || priceFrom < spotlightPrice) {
-         priceFrom = null;
-      } else {
-         BigDecimal bdPriceFrom = BigDecimal.valueOf(priceFrom);
-         priceFrom = bdPriceFrom.setScale(2, RoundingMode.DOWN).doubleValue();
-      }
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(product, "preco", false);
 
       BigDecimal bdSpotlightPrice = BigDecimal.valueOf(spotlightPrice);
       spotlightPrice = bdSpotlightPrice.setScale(2, RoundingMode.DOWN).doubleValue();
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditcards(spotlightPrice);
+
+      if (priceFrom != null) {
+         BigDecimal bdPriceFrom = BigDecimal.valueOf(priceFrom);
+         priceFrom = bdPriceFrom.setScale(2, RoundingMode.DOWN).doubleValue();
+      }
+
+      if (Objects.equals(priceFrom, spotlightPrice)) {
+         priceFrom = null;
+      }
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -276,7 +256,7 @@ public abstract class LifeappsCrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditcards(Double installmentPrice) throws MalformedPricingException {
+   protected CreditCards scrapCreditcards(Double installmentPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = scrapInstallments(installmentPrice);

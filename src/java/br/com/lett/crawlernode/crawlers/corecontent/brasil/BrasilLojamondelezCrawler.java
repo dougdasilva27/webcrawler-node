@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -11,6 +12,7 @@ import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -81,9 +83,10 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setPayload(payloadString)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY
          ))
          .build();
@@ -116,9 +119,10 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setUrl(LOGIN_URL)
          .setPayload(payload.toString())
          .setProxyservice(Arrays.asList(
-            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY
          ))
          .setHeaders(headers)
@@ -135,15 +139,16 @@ public class BrasilLojamondelezCrawler extends Crawler {
       Request request = RequestBuilder.create()
          .setUrl(session.getOriginalURL())
          .setProxyservice(Arrays.asList(
-            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES,
+            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY
          ))
          .setHeaders(headers)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), this.dataFetcher, new ApacheDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
 
       return response;
    }
@@ -163,17 +168,39 @@ public class BrasilLojamondelezCrawler extends Crawler {
          String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList("#nav-descricao"));
          List<String> secondaryImages = scrapImages(doc);
          String primaryImage = secondaryImages.remove(0);
+         Offers offers = new Offers();
 
          Elements variations = doc.select(".product-grid-container .sku-variation-content .picking");
-         for (Element obj : variations) {
-            String internalId = crawlInternalId(obj);
-            List<String> eans = Arrays.asList(internalId);
-            String name = crawlName(productJson);
-            if (obj.selectFirst("div.picking-quantity span") != null) {
-               name = name + " - " + obj.selectFirst(".picking-quantity span").text();
-            }
+         if (!variations.isEmpty()) {
+            for (Element obj : variations) {
+               String internalId = crawlInternalId(obj);
+               String name = crawlName(productJson);
+               if (obj.selectFirst("div.picking-quantity span") != null) {
+                  name = name + " - " + obj.selectFirst(".picking-quantity span").text();
+               }
 
-            Offers offers = isAvailable(obj) ? scrapOffers(obj) : new Offers();
+               offers = isAvailable(obj) ? scrapOffers(obj) : new Offers();
+
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setOffers(offers)
+                  .setCategories(categories)
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setEans(Arrays.asList(internalId))
+                  .build();
+
+               products.add(product);
+            }
+         } else {
+            String internalId = productJson.optString("productSKU");
+            String name = productJson.optString("productName");
+            boolean isAvailable = productJson.optInt("productStock", 0) > 0;
+            offers = isAvailable ? scrapOffersWithNoVariation(productJson) : offers;
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -185,7 +212,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
-               .setEans(eans)
+               .setEans(Arrays.asList(internalId))
                .build();
 
             products.add(product);
@@ -268,6 +295,23 @@ public class BrasilLojamondelezCrawler extends Crawler {
       Pricing pricing = scrapPricing(doc);
       List<String> sales = new ArrayList<>(); //no sales was found
 
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_NAME_LOWER)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+   }
+
+   private Offers scrapOffersWithNoVariation(JSONObject jsonObject) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricingJson(jsonObject);
+      List<String> sales = new ArrayList<>(); //no sales was found
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -292,6 +336,28 @@ public class BrasilLojamondelezCrawler extends Crawler {
 
       if (spotlightPrice == 0d) {
          spotlightPrice = null;
+      }
+
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      CreditCards creditCards = scrapCreditcards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   private Pricing scrapPricingJson(JSONObject json) throws MalformedPricingException {
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(json, "productOldPrice", true);
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(json, "productPrice", true);
+
+      if (spotlightPrice.equals(priceFrom)) {
+         priceFrom = null;
       }
 
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()

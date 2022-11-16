@@ -1,15 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -19,21 +14,11 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.Collections.singletonList;
 
@@ -47,7 +32,7 @@ public class BrasilVilanova extends Crawler {
 
    public BrasilVilanova(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.WEBDRIVER);
+      super.config.setParser(Parser.HTML);
    }
 
    public String getCnpj() {
@@ -62,94 +47,18 @@ public class BrasilVilanova extends Crawler {
       return session.getOptions().optString("seller");
    }
 
-   @Override
-   protected Object fetch() {
-      Document doc = new Document("");
-
-      try {
-         Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
-         ChromeOptions options = new ChromeOptions();
-         options.addArguments("--window-size=1920,1080");
-         options.addArguments("--headless");
-         options.addArguments("--no-sandbox");
-         options.addArguments("--disable-dev-shm-usage");
-
-         List<String> proxies = Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
-
-         int attemp = 0;
-         do {
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attemp), session, this.cookiesWD, HOME_PAGE, options);
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
-         } while (doc.select("body").isEmpty() && attemp++ < 3);
-
-         webdriver.waitLoad(10000);
-
-         if (doc.selectFirst("button.btn-politicas-cookies") != null) {
-            waitForElement(webdriver.driver, "button.btn-politicas-cookies");
-            WebElement clickCookies = webdriver.driver.findElement(By.cssSelector("button.btn-politicas-cookies"));
-            webdriver.clickOnElementViaJavascript(clickCookies);
-            waitForElement(webdriver.driver, "a.cc-ALLOW");
-            WebElement allow = webdriver.driver.findElement(By.cssSelector("a.cc-btn.cc-ALLOW"));
-            webdriver.clickOnElementViaJavascript(allow);
-         }
-
-         webdriver.waitLoad(15000);
-         WebElement openlogin = webdriver.driver.findElement(By.cssSelector("a.open-login"));
-         webdriver.clickOnElementViaJavascript(openlogin);
-         waitForElement(webdriver.driver, "#fazer-login");
-         webdriver.findAndClick("#fazer-login", 2000);
-
-         Logging.printLogDebug(logger, session, "Sending credentials...");
-
-         webdriver.waitLoad(2000);
-         waitForElement(webdriver.driver, "#usuarioCnpj");
-         WebElement username = webdriver.driver.findElement(By.cssSelector("#usuarioCnpj"));
-         username.sendKeys(getCnpj());
-
-         webdriver.waitLoad(2000);
-         waitForElement(webdriver.driver, "#usuarioSenha");
-         WebElement pass = webdriver.driver.findElement(By.cssSelector("#usuarioSenha"));
-         pass.sendKeys(getPassword());
-
-         Logging.printLogDebug(logger, session, "awaiting login button");
-         webdriver.waitLoad(4000);
-
-         waitForElement(webdriver.driver, "#realizar-login");
-         webdriver.findAndClick("#realizar-login", 20000);
-
-         webdriver.waitForElement(".product-details-body", 10000);
-         Logging.printLogDebug(logger, session, "awaiting product page");
-
-         boolean logged = false;
-         while (!logged) {
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-            JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataLayer = window.dataLayer || []; window.dataLayer.push(", ");", false, true);
-
-            if (json.has("userId")) {
-               logged = true;
-            } else {
-               webdriver.waitLoad(5000);
-            }
-         }
-
-         return doc;
-
-      } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-         Logging.printLogWarn(logger, "login não realizado");
-      } finally {
-         if (webdriver != null) {
-            webdriver.terminate();
-         }
-      }
-
-      return doc;
+   public String getCookieLogin() {
+      return session.getOptions().optString("cookie_login");
    }
 
-   public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 20);
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+   @Override
+   protected Response fetchResponse() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Cookie", getCookieLogin());
+      Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setHeaders(headers).build();
+
+      return this.dataFetcher.get(session, request);
+
    }
 
    @Override
@@ -170,7 +79,7 @@ public class BrasilVilanova extends Crawler {
             CategoryCollection categories = scrapCategories(jsonProduct);
             String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".tab-content"));
 
-            Elements variations = doc.select(".product-details-body .owl-item.active");
+            Elements variations = doc.select(".product-details-body .item.picking");
 
             for (Element variation : variations) {
                String name = getName(doc, variation);

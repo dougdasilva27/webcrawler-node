@@ -1,8 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.*;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -31,7 +30,6 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.net.Proxy;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -116,7 +114,9 @@ public abstract class CNOVANewCrawler extends Crawler {
                ProxyCollection.BUY_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.SMART_PROXY_BR,
+               ProxyCollection.SMART_PROXY_AR
             )
          )
          .build();
@@ -215,7 +215,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       for (Object img : imgsJson) {
          JSONObject imgJson = (JSONObject) img;
 
-         if(resultList.length() == 0 ){
+         if (resultList.length() == 0) {
             resultList.put(imgJson);
          }
 
@@ -227,7 +227,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       }
 
       resultList.forEach(el -> {
-         if(el instanceof JSONObject){
+         if (el instanceof JSONObject) {
             imgsList.add(((JSONObject) el).optString("url"));
          }
       });

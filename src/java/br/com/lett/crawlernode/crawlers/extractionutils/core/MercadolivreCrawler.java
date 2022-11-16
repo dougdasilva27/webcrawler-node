@@ -26,7 +26,6 @@ import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 import org.apache.http.HttpHeaders;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.bson.internal.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -51,6 +50,7 @@ import java.util.regex.Pattern;
  */
 public class MercadolivreCrawler extends Crawler {
 
+
    private String getCep() {return session.getOptions().optString("cp");}
    private String getDomain() {return session.getOptions().optString("domain");}
    private String homePage;
@@ -58,6 +58,12 @@ public class MercadolivreCrawler extends Crawler {
    protected boolean allow3PSellers = isAllow3PSellers();
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
    private List<String> sellerVariations;
+   protected boolean acceptCatalog = isAcceptCatalog();
+
+   private boolean isAcceptCatalog() {
+      return session.getOptions().optBoolean("accept_catalog", true);
+   }
+
 
    protected MercadolivreCrawler(Session session) {
       super(session);
@@ -87,8 +93,9 @@ public class MercadolivreCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
+      if (acceptCatalog || isOwnProduct()) {
+         Map<String, String> headers = new HashMap<>();
+         headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
 
       if (getCep() != null && !getCep().isEmpty()) {
          BasicClientCookie cookie = new BasicClientCookie("cp", getCep());
@@ -96,14 +103,27 @@ public class MercadolivreCrawler extends Crawler {
          cookie.setPath("/");
          this.cookies.add(cookie);
       }
+         Request request = RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setCookies(cookies)
+            .setHeaders(headers)
+            .build();
 
-      Request request = RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .build();
 
-      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+         return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+      }
+
+      return new Document("");
+   }
+
+   private boolean isOwnProduct() {
+      if (session.getOriginalURL().startsWith("https://produto.mercadolivre.com") || session.getOriginalURL().startsWith("https://articulo.mercadolibre.com")) {
+         Logging.printLogDebug(logger, session, "Is a own product " + this.session.getOriginalURL());
+         return true;
+      } else {
+         Logging.printLogDebug(logger, session, "Is not a own product " + this.session.getOriginalURL());
+         return false;
+      }
    }
 
 
@@ -229,30 +249,11 @@ https://articulo.mercadolibre.cl/MLC-599229057-pack-6-shampoo-herbal-essences-co
          */
          if (product != null) {
             if (squareVariation.isEmpty() && dropdownVariation.isEmpty()) {
-
                products.add(product);
+
             } else {
-               String urlToCaptureVariations;
 
-               String slug = getCountry();
-
-               switch (slug) {
-                  case ("ar"):
-                     urlToCaptureVariations = "https://articulo.mercadolibre.com.ar";
-                     break;
-                  case ("mx"):
-                     urlToCaptureVariations = "https://articulo.mercadolibre.com.mx";
-                     break;
-                  case ("cl"):
-                     urlToCaptureVariations = "https://articulo.mercadolibre.cl";
-                     break;
-                  case ("co"):
-                     urlToCaptureVariations = "https://articulo.mercadolibre.com.co";
-                     break;
-                  default:
-                     urlToCaptureVariations = "https://www.mercadolivre.com.br";
-
-               }
+               String urlToCaptureVariations = getDomain();
 
                if (!squareVariation.isEmpty()) {
 
@@ -263,7 +264,7 @@ https://articulo.mercadolibre.cl/MLC-599229057-pack-6-shampoo-herbal-essences-co
                            .setCookies(cookies)
                            .build();
 
-                        if ("br".equals(slug)) {
+                        if (urlToCaptureVariations != null && urlToCaptureVariations.contains("br")) {
                            String body = dataFetcher.get(session, request).getBody();
                            Document currentDoc = Jsoup.parse(body);
                            if (currentDoc.selectFirst(".ui-empty-state.not-found-page") != null) {
@@ -341,20 +342,16 @@ https://articulo.mercadolibre.cl/MLC-599229057-pack-6-shampoo-herbal-essences-co
       return encodedParams;
    }
 
-   private String getCountry() {
-
-      String regex;
-      if (session.getOriginalURL().contains("mercadolibre.com") || session.getOriginalURL().contains("mercadolivre")) {
-         regex = "com.([a-z]*)\\/";
-      } else {
-         regex = "mercadolibre.([a-z]*)\\/";
-      }
+   private String getDomain() {
 
       String slug = null;
-      Pattern pattern = Pattern.compile(regex);
+      Pattern pattern = Pattern.compile("https:\\/\\/(.*?)\\/");
       Matcher matcher = pattern.matcher(session.getOriginalURL());
       if (matcher.find()) {
          slug = matcher.group(1);
+      }
+      if (slug != null) {
+         slug = "https://" + slug;
       }
       return slug;
    }

@@ -317,7 +317,12 @@ public class BrasilSitemercadoCrawler extends Crawler {
       StringBuilder description = new StringBuilder();
 
       if (json.has("description")) {
-         description.append(json.get("description"));
+         description.append(json.optString("description"));
+         description.append(" ");
+      }
+
+     if (json.has("additionalInformation")) {
+         description.append(json.optString("additionalInformation"));
       }
 
       return description.toString();

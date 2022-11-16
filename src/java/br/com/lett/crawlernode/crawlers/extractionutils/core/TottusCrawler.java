@@ -73,7 +73,7 @@ public class TottusCrawler extends Crawler {
 
          Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
 
-         String name = jsonObject.optString("name");
+         String name = crawlName(jsonObject);
          String internalId = jsonObject.optString("sku");
          List<String> images = crawlImages(jsonObject);
          String primaryImage = images != null ? images.remove(0) : null;
@@ -98,6 +98,14 @@ public class TottusCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private String crawlName(JSONObject jsonObject) {
+      String baseName = jsonObject.optString("name");
+      String brand = JSONUtils.getValueRecursive(jsonObject, "attributes.marca", ".", String.class, "");
+      String grammature = JSONUtils.getValueRecursive(jsonObject, "attributes.formato", ".", String.class, "");
+
+      return baseName != null ? baseName + " " + brand.toUpperCase(Locale.ROOT) + " " + grammature.toUpperCase(Locale.ROOT) : null;
    }
 
    private List<String> crawlImages(JSONObject jsonObject) {
