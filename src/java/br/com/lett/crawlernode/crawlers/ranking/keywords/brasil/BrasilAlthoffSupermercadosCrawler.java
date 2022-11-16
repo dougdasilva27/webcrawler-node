@@ -24,6 +24,7 @@ public class BrasilAlthoffSupermercadosCrawler extends CrawlerRankingKeywords {
    }
 
    private String endCursor = null;
+
    protected String getStoreId() {
       return session.getOptions().optString("storeId");
    }
@@ -63,12 +64,13 @@ public class BrasilAlthoffSupermercadosCrawler extends CrawlerRankingKeywords {
          JSONArray productsArray = JSONUtils.getJSONArrayValue(json, "edges");
 
          for (Object product : productsArray) {
-            JSONObject productJson = (JSONObject) product;
-            String internalId = JSONUtils.getValueRecursive(productJson, "node.objectID", String.class);
+            JSONObject productJson = JSONUtils.getValueRecursive(product, "node", JSONObject.class);
+
+            String internalId = JSONUtils.getStringValue(productJson, "objectID");
             String productUrl = assemblyURL(productJson, internalId);
-            String name = JSONUtils.getValueRecursive(productJson, "node.name", String.class);
-            String imageUrl = JSONUtils.getValueRecursive(productJson, "node.image", String.class);
-            boolean isAvailable = getAvaialability(productJson);
+            String name = JSONUtils.getStringValue(productJson, "name");
+            String imageUrl = JSONUtils.getStringValue(productJson, "image");
+            boolean isAvailable = getAvailability(productJson);
             Integer price = getPrice(productJson, isAvailable);
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -95,9 +97,9 @@ public class BrasilAlthoffSupermercadosCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private boolean getAvaialability(JSONObject productJson) {
-      Integer stockInt = JSONUtils.getValueRecursive(productJson, "node.quantity.0.inStock", Integer.class);
-      Double stockDouble = JSONUtils.getValueRecursive(productJson, "node.quantity.0.inStock", Double.class);
+   private boolean getAvailability(JSONObject productJson) {
+      Integer stockInt = JSONUtils.getValueRecursive(productJson, "quantity.0.inStock", Integer.class);
+      Double stockDouble = JSONUtils.getValueRecursive(productJson, "quantity.0.inStock", Double.class);
       if (stockInt != null) {
          return stockInt > 0;
       } else if (stockDouble != null) {
@@ -107,7 +109,7 @@ public class BrasilAlthoffSupermercadosCrawler extends CrawlerRankingKeywords {
    }
 
    private Integer getPrice(JSONObject productJson, boolean isAvailable) {
-      Double priceDouble = JSONUtils.getValueRecursive(productJson, "node.pricing.0.promotionalPrice", Double.class);
+      Double priceDouble = JSONUtils.getValueRecursive(productJson, "pricing.0.promotionalPrice", Double.class);
       if (isAvailable) {
          return (int) Math.round(priceDouble * 100);
       }
@@ -115,7 +117,7 @@ public class BrasilAlthoffSupermercadosCrawler extends CrawlerRankingKeywords {
    }
 
    private String assemblyURL(JSONObject productJson, String internalId) {
-      String slugName = JSONUtils.getValueRecursive(productJson, "node.slug", String.class);
+      String slugName = JSONUtils.getStringValue(productJson, "slug");
       if (slugName != null) {
          return "https://emcasa.althoff.com.br/produtos/" + internalId + "/" + slugName;
       }
