@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -18,9 +19,9 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
@@ -72,10 +73,26 @@ public class FalabellaCrawler extends Crawler {
       return priceFormat.charAt(0);
    }
 
+   protected Document fetchDocument(String url) {
+      Map<String, String> head = new HashMap<>();
+      String headerCookieString = "userSelectedZone=userselected;IS_ZONE_SELECTED=true;isPoliticalIdExists=true;";
+      String localeOptions = session.getOptions().optString("localeOptions");
+      if (localeOptions != null && !localeOptions.isEmpty()) {
+         head.put("cookie", headerCookieString + localeOptions);
+      }
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(head)
+         .setFollowRedirects(false)
+         .build();
+      Response response = dataFetcher.get(session, request);
+      return Jsoup.parse(response.getBody());
+   }
+
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
-
+      doc = fetchDocument(session.getOriginalURL());
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String sellerFullName = scrapSellerFullName(doc, session.getOriginalURL());
@@ -90,8 +107,7 @@ public class FalabellaCrawler extends Crawler {
             String name = crawlBrandName(doc);
             boolean available = doc.select(".availability span").size() > 1;
             Offers offers = available ? scrapOffers(doc, sellerFullName, isMainSeller) : null;
-            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb");
-
+            CategoryCollection categories = getCategories(doc, sellerFullName);
             List<String> images = scrapImages(doc);
             String primaryImage = images != null ? images.remove(0) : null;
 
@@ -120,6 +136,17 @@ public class FalabellaCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private CategoryCollection getCategories(Document doc, String seller) {
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".Breadcrumbs-module_breadcrumb__3lLwJ li", true);
+      if (categories != null && !categories.isEmpty()) {
+         String firstCategory = categories.getCategory(0);
+         if (firstCategory != null && !firstCategory.isEmpty() && firstCategory.equals(seller)) {
+            categories.remove(0);
+         }
+      }
+      return categories;
    }
 
    protected String crawlBrandName(Document doc) {
@@ -199,16 +226,8 @@ public class FalabellaCrawler extends Crawler {
       }
       return null;
    }
-   @Override
-   public void handleCookiesBeforeFetch() {
-      String zoneData = session.getOptions().optString("zoneData","");
-      BasicClientCookie cookie = new BasicClientCookie("zoneData", zoneData);
-      cookie.setDomain("www.disco.com.ar");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-   }
+
    private boolean isProductPage(Document doc) {
-      handleCookiesBeforeFetch();
       return doc.selectFirst(".productContainer") != null;
    }
 
