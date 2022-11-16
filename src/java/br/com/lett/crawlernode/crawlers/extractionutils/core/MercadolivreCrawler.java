@@ -26,6 +26,7 @@ import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 import org.apache.http.HttpHeaders;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.bson.internal.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -52,7 +53,7 @@ public class MercadolivreCrawler extends Crawler {
 
 
    private String getCep() {return session.getOptions().optString("cp");}
-   private String getDomain() {return session.getOptions().optString("domain");}
+   private String getDomainCookie() {return session.getOptions().optString("domain");}
    private String homePage;
    private String mainSellerNameLower;
    protected boolean allow3PSellers = isAllow3PSellers();
@@ -99,7 +100,7 @@ public class MercadolivreCrawler extends Crawler {
 
       if (getCep() != null && !getCep().isEmpty()) {
          BasicClientCookie cookie = new BasicClientCookie("cp", getCep());
-         cookie.setDomain(getDomain());
+         cookie.setDomain(getDomainCookie());
          cookie.setPath("/");
          this.cookies.add(cookie);
       }
