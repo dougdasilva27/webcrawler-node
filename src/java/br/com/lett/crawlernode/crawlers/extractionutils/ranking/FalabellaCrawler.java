@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -7,9 +9,14 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,20 +38,37 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
+   protected Document fetchDocument(String url) {
+      Map<String, String> head = new HashMap<>();
+      String headerCookieString = "userSelectedZone=userselected;IS_ZONE_SELECTED=true;isPoliticalIdExists=true;";
+      String localeOptions = session.getOptions().optString("localeOptions");
+      if (localeOptions != null && !localeOptions.isEmpty()) {
+         head.put("cookie", headerCookieString + localeOptions);
+      }
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(head)
+         .setFollowRedirects(false)
+         .build();
+      Response response = dataFetcher.get(session, request);
+      return Jsoup.parse(response.getBody());
+   }
+
+   @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 48;
       String url = " ";
       this.log("Página " + this.currentPage);
 
-      if(allow3pSeller){
-         url = HOME_PAGE + "/search/?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
-      }
-      else {
+      if (allow3pSeller) {
+         url = HOME_PAGE + "/search?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
+      } else {
          String storeName = getStoreName(HOME_PAGE);
-         url = HOME_PAGE + "/search?Ntt=" + this.keywordEncoded + "&subdomain=" + storeName + "&page=" + this.currentPage+ "&store=" + storeName;
+         url = HOME_PAGE + "/search?Ntt=" + this.keywordEncoded + "&subdomain=" + storeName + "&page=" + this.currentPage + "&store=" + storeName;
       }
 
       this.log("Link onde são feitos os crawlers: " + url);
+
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".search-results--products > div");
@@ -92,7 +116,7 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
 
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
       Matcher matcher = pattern.matcher(homePage);
-      if(matcher.find()){
+      if (matcher.find()) {
          return matcher.group(1);
       }
       return null;
