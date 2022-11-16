@@ -43,7 +43,7 @@ public class BrasilAlthoffSupermercadosCrawler extends Crawler {
    public void handleCookiesBeforeFetch() {
       String cookieName = URLEncoder.encode("{\"id\":\"" + getStoreId() + "\",\"userSelected\":true}", StandardCharsets.UTF_8);
       BasicClientCookie cookie = new BasicClientCookie("st", cookieName);
-      cookie.setDomain("emcasa.althoff.com.br");
+      cookie.setDomain(".emcasa.althoff.com.br");
       cookie.setPath("/");
 
       this.cookies.add(cookie);
@@ -121,7 +121,7 @@ public class BrasilAlthoffSupermercadosCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-box .active-price-box", null, true, ',', session);
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-value", null, true, ',', session);
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-box .price-value", null, true, ',', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
