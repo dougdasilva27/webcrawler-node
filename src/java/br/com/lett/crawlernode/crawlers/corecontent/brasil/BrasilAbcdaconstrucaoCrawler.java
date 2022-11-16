@@ -1,16 +1,15 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -20,15 +19,9 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,12 +40,28 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    public BrasilAbcdaconstrucaoCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setParser(Parser.HTML);
    }
 
    @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
+
+   @Override
+   protected Response fetchResponse() {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setProxyservice(List.of(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
+
+      return response;
    }
 
    @Override
@@ -136,21 +145,18 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = calculatePriceSquareMeter(doc);
-
-      if (spotlightPrice == 0d) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
-      }
-
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoDe", null, false, ',', session);
+
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
-
    }
 
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
@@ -205,48 +211,6 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       }
 
       return installments;
-   }
-
-   private double calculatePriceSquareMeter(Document doc) {
-      Double spotlightPrice = 0D;
-      Double squareMeter = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div #spanPrecoCalculadoComponente", null, false, ',', session);
-
-      if (squareMeter != null) {
-         Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
-         if (price != null) {
-            Double meter = squareMeter / price;
-            return price / meter;
-         }
-      } else {
-         // Is necessary because some products not have square meter in description on any place
-         Document docWebDriver = getDocWithWebDriver();
-         if (docWebDriver != null) {
-            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(docWebDriver, "#novoPrecoCalculado .textoPrecoCalculado:not(:first-child)", null, true, ',', session);
-            if (spotlightPrice == null) {
-               spotlightPrice = 0D;
-            }
-         }
-      }
-
-      return spotlightPrice;
-   }
-
-   private Document getDocWithWebDriver() {
-      Document document = null;
-      CrawlerWebdriver webdriver;
-      try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
-         if (webdriver != null) {
-            webdriver.waitLoad(60000);
-
-            document = Jsoup.parse(webdriver.getCurrentPageSource());
-
-            webdriver.terminate();
-         }
-      } catch (Exception e) {
-         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
-      }
-      return document;
    }
 
 }
