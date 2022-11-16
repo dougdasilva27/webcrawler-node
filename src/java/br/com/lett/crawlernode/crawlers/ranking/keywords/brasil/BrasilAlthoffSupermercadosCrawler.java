@@ -64,7 +64,7 @@ public class BrasilAlthoffSupermercadosCrawler extends CrawlerRankingKeywords {
          JSONArray productsArray = JSONUtils.getJSONArrayValue(json, "edges");
 
          for (Object product : productsArray) {
-            JSONObject productJson = JSONUtils.getValueRecursive(product, "nod0e", JSONObject.class);
+            JSONObject productJson = JSONUtils.getValueRecursive(product, "node", JSONObject.class);
 
             if(productJson != null) {
                String internalId = JSONUtils.getStringValue(productJson, "objectID");
