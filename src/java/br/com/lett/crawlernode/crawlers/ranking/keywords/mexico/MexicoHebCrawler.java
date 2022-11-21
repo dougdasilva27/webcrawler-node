@@ -1,16 +1,22 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
-import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.Collections;
+import java.util.List;
 
 public class MexicoHebCrawler extends CrawlerRankingKeywords {
 
@@ -30,6 +36,18 @@ public class MexicoHebCrawler extends CrawlerRankingKeywords {
       cookie.setDomain("www.heb.com.mx");
       cookie.setPath("/");
       this.cookies.add(cookie);
+   }
+
+   @Override
+   protected Document fetchDocument(String url) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(List.of(
+            ProxyCollection.NETNUT_RESIDENTIAL_MX))
+         .build();
+
+      Response response = this.dataFetcher.get(session, request);
+      return Jsoup.parse(response.getBody());
    }
 
    @Override
@@ -61,7 +79,7 @@ public class MexicoHebCrawler extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,  "> a", "data-product_id");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "> a", "data-product_id");
             String productUrl = CrawlerUtils.scrapUrl(e, "> a", Collections.singletonList("href"), "https", "heb.com.mx");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-name", false);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image-photo", Collections.singletonList("src"), "https", "heb.com.mx");
