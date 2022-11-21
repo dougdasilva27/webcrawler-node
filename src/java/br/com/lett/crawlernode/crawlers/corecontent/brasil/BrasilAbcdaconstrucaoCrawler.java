@@ -145,18 +145,23 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoDe", null, false, ',', session);
+      Double spotlightPrice = calculatePriceSquareMeter(doc);
 
+      if (spotlightPrice == 0d) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
+      }
+
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoDe", null, false, ',', session);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setPriceFrom(priceFrom)
-         .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
          .build();
+
    }
 
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
@@ -211,6 +216,26 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       }
 
       return installments;
+   }
+
+   private double calculatePriceSquareMeter(Document doc) {
+      Double spotlightPrice = 0D;
+      Double squareMeter = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div #spanPrecoCalculadoComponente", null, false, ',', session);
+
+      if (squareMeter != null) {
+         Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
+         if (price != null) {
+            Double meter = squareMeter / price;
+            return price / meter;
+         }
+      } else {
+         // Is necessary because some products not have square meter in description on any place
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#novoPrecoCalculado .textoPrecoCalculado:not(:first-child)", null, true, ',', session);
+         if (spotlightPrice == null) {
+            spotlightPrice = 0D;
+         }
+      }
+      return spotlightPrice;
    }
 
 }
