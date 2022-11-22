@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -69,8 +70,11 @@ public class MexicoRappiCrawler extends RappiCrawler {
          .setUrl(url)
          .setHeaders(headers)
          .setProxyservice(List.of(
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.SMART_PROXY_MX_HAPROXY))
          .setTimeout(10000)
          .build();
 
@@ -99,8 +103,11 @@ public class MexicoRappiCrawler extends RappiCrawler {
          .setHeaders(headers)
          .setPayload(payload)
          .setProxyservice(List.of(
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.SMART_PROXY_MX_HAPROXY))
          .setTimeout(10000)
          .build();
 
