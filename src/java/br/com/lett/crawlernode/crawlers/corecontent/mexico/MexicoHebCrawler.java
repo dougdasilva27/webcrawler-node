@@ -1,22 +1,19 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Marketplace;
 import models.Offer;
 import models.Offers;
-import models.prices.Prices;
 import models.pricing.*;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -39,6 +36,7 @@ public class MexicoHebCrawler extends Crawler {
 
    public MexicoHebCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.HTML);
    }
 
    private String getStore() {
@@ -54,9 +52,15 @@ public class MexicoHebCrawler extends Crawler {
    }
 
    @Override
-   public boolean shouldVisit() {
-      String href = this.session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   protected Response fetchResponse() {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setProxyservice(List.of(
+            ProxyCollection.NETNUT_RESIDENTIAL_MX))
+         .build();
+
+      Response response = this.dataFetcher.get(session, request);
+      return response;
    }
 
    @Override
@@ -114,7 +118,7 @@ public class MexicoHebCrawler extends Crawler {
       Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(pricing);
 
-      if(pricing != null){
+      if (pricing != null) {
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
             .setSellerFullName(SELLER_NAME_LOWER)
@@ -200,20 +204,21 @@ public class MexicoHebCrawler extends Crawler {
             if (obj instanceof JSONObject) {
                JSONObject jsonImages = (JSONObject) obj;
                String imageLink = jsonImages.optString("full");
-               Boolean mainImg= jsonImages.optBoolean("isMain");
-               if (imageLink != null && !imageLink.isEmpty() && !imageLink.contains("image") && !mainImg ) {
+               Boolean mainImg = jsonImages.optBoolean("isMain");
+               if (imageLink != null && !imageLink.isEmpty() && !imageLink.contains("image") && !mainImg) {
                   imageList.add(imageLink.replace("\\", ""));
                }
             }
          }
       }
+
       return imageList;
    }
 
    private String crawlDescription(Document doc) {
       StringBuilder description = new StringBuilder();
       String ingredients = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".additional-info .tab-content .tab-pane.fade.in.active"));
-      if(!ingredients.isEmpty()){
+      if (!ingredients.isEmpty()) {
          return ingredients;
       }
       Elements descriptions = doc.select(".product-collateral dd.tab-container");
