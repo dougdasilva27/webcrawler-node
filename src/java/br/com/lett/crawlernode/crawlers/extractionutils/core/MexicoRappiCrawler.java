@@ -2,8 +2,6 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
@@ -112,7 +110,7 @@ public class MexicoRappiCrawler extends RappiCrawler {
          .build();
 
 
-      JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), false).getBody());
+      JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false).getBody());
 
       String token = json.optString("access_token");
       String tokenType = json.optString("token_type");
@@ -146,7 +144,7 @@ public class MexicoRappiCrawler extends RappiCrawler {
          .setPayload(payload)
          .build();
 
-      String body = this.dataFetcher.post(session, request).getBody();
+      String body = new JsoupDataFetcher().post(session, request).getBody();
 
       JSONObject jsonObject = CrawlerUtils.stringToJSONObject(body);
 
