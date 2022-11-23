@@ -28,6 +28,7 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
    }
 
    // Buy, luminati, netnut/smart
+
    @Override
    protected Document fetchDocument(String url) {
       Request request = Request.RequestBuilder.create()
@@ -59,11 +60,12 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
             Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".lowest-price .price-main-md",
                null, false, '.', session, null);
             String productUrl = getUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".catalogue-product.row a", "href"));
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".catalogue-product.row", "data-card-sku");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".catalogue-product.row", "data-card-sku");
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".image", List.of("data-lazy"),
                "https", "");
             RankingProduct rankingProduct = RankingProductBuilder.create()
-               .setInternalPid(internalId)
+               .setInternalId(internalPid)
+               .setInternalPid(internalPid)
                .setName(name)
                .setImageUrl(imageUrl)
                .setAvailability(true)
