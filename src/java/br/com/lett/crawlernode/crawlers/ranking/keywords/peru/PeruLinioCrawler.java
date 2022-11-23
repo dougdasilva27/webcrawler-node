@@ -35,14 +35,12 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.SMART_PROXY_PE
+            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+            ProxyCollection.SMART_PROXY_PE_HAPROXY
          ))
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of( new FetcherDataFetcher(),new ApacheDataFetcher(), new JsoupDataFetcher()), session);
 
       return Jsoup.parse(response.getBody());
    }
