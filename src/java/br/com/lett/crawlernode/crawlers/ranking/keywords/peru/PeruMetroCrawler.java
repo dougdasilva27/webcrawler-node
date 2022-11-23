@@ -18,7 +18,7 @@ import org.jsoup.select.Elements;
 public class PeruMetroCrawler extends CrawlerRankingKeywords {
 
    private String getVtex() {return session.getOptions().optString("vtex_segment");}
-   private String getLocation(){return session.getOptions().optString("Backup_VTEXSC");}
+   private String getLocation(){return session.getOptions().optString("VTEXSC");}
 
    private String getHomePage(){return session.getOptions().optString("homePage");}
    public PeruMetroCrawler(Session session) {
@@ -28,8 +28,8 @@ public class PeruMetroCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url) {
-      BasicClientCookie cookie = new BasicClientCookie("Backup_VTEXSC",getLocation());
-      cookie.setDomain("www.metro.pe");
+      BasicClientCookie cookie = new BasicClientCookie("VTEXSC",getLocation());
+      cookie.setDomain(".www.metro.pe");
       cookie.setPath("/");
       this.cookies.add(cookie);
 
