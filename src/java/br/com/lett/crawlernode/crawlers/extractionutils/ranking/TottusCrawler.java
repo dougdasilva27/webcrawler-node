@@ -126,7 +126,10 @@ public class TottusCrawler extends CrawlerRankingKeywords {
          String keywordCategory = getKeywordCategory(jsonApi.optString("redirect", ""));
          String redirectUrl = "https://www.tottus.com.pe/api/product-search/by-category-slug?slug=" + keywordCategory + "&sort=recommended_web&channel=" + channel + "&page=" + this.currentPage + "&perPage=48";
          jsonApi = fetchJsonFromApi(redirectUrl);
-
+         if (jsonApi.optJSONArray("results") != null && jsonApi.optJSONArray("results").length() == 0) {
+            redirectUrl = "https://www.tottus.com.pe/api/product-search/by-category-slug?slug=" + keywordCategory + "&sort=recommended_web&channel=" + channel + "_RegularDelivery12&page=" + this.currentPage + "&perPage=48";
+            jsonApi = fetchJsonFromApi(redirectUrl);
+         }
       }
 
       return jsonApi;
