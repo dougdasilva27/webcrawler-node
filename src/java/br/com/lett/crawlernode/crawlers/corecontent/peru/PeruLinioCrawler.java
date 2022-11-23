@@ -59,7 +59,7 @@ public class PeruLinioCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(product, ".feature [itemprop=\"sku\"]", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-name", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(product, ".image-modal", List.of("data-lazy"), "https", "");
-         List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li", true);
+         List<String> categories = getCategories(doc, name);
          String description = CrawlerUtils.scrapSimpleDescription(doc, List.of(".panel-body"));
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image.thumb-image .image-wrapper .image", Arrays.asList("data-lazy"), "https", "", primaryImage);
          RatingsReviews ratingsReviews = scrapRatingReviews(product);
@@ -122,6 +122,18 @@ public class PeruLinioCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
       return products;
+   }
+
+   private List<String> getCategories(Document docProduct, String nameProduct) {
+      List<String> categories = CrawlerUtils.crawlCategories(docProduct, ".breadcrumb li", true);
+      if (categories.size() > 0) {
+         String lastCategory = categories.get(categories.size() - 1);
+         if (lastCategory.equals(nameProduct)) {
+            categories.remove(lastCategory);
+            return categories;
+         }
+      }
+      return categories;
    }
 
    private RatingsReviews scrapRatingReviews(Element product) {
