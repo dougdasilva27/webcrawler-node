@@ -32,12 +32,12 @@ import java.util.List;
 import java.util.Set;
 
 public class PeruLinioCrawler extends Crawler {
+   private static final String SELLER_NAME = "Linio";
+
    public PeruLinioCrawler(Session session) {
       super(session);
       super.config.setParser(Parser.HTML);
    }
-
-   private static final String SELLER_NAME = "Linio";
 
    @Override
    protected Response fetchResponse() {
@@ -99,8 +99,8 @@ public class PeruLinioCrawler extends Crawler {
                index++;
             }
          } else {
-            String asgotado = CrawlerUtils.scrapStringSimpleInfo(product, "#buy-now", true);
-            if (asgotado != null && !asgotado.isEmpty() && !asgotado.contains("Agotado")) {
+            String agotado = CrawlerUtils.scrapStringSimpleInfo(product, "#buy-now", true);
+            if (agotado != null && !agotado.isEmpty() && !agotado.contains("Agotado")) {
                offers = scrapOffers(product, index);
             }
             Product newProduct = ProductBuilder.create()

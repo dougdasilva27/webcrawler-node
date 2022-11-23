@@ -27,7 +27,8 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   // Buy, luminati, netnut/smart
+   String HOME_PAGE = "https://www.linio.com.pe";
+   String url = HOME_PAGE + "/search?scroll=&q=" + this.keywordEncoded + "&page=" + this.currentPage;
 
    @Override
    protected Document fetchDocument(String url) {
@@ -46,9 +47,6 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
       return Jsoup.parse(response.getBody());
    }
 
-   String HOME_PAGE = "https://www.linio.com.pe";
-   String url = HOME_PAGE + "/search?scroll=&q=" + this.keywordEncoded + "&page=" + this.currentPage;
-
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.currentDoc = fetchDocument(url);
@@ -59,7 +57,7 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
             String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".col-12.pl-0.pr-0", "title");
             Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".lowest-price .price-main-md",
                null, false, '.', session, null);
-            String productUrl = getUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".catalogue-product.row a", "href"));
+            String productUrl = getProductUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".catalogue-product.row a", "href"));
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".catalogue-product.row", "data-card-sku");
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".image", List.of("data-lazy"),
                "https", "");
@@ -82,7 +80,7 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
       }
    }
 
-   private String getUrl(String url) {
+   private String getProductUrl(String url) {
       return url != null && !url.isEmpty() ? HOME_PAGE + url : null;
    }
 
