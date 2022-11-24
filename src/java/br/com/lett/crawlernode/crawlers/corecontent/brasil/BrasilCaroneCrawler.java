@@ -45,7 +45,7 @@ public class BrasilCaroneCrawler extends Crawler {
    }
 
    private String getCep() {
-      return session.getOptions().optString("cep");
+      return session.getOptions().optString("cep", "");
    }
 
    @Override
@@ -57,15 +57,15 @@ public class BrasilCaroneCrawler extends Crawler {
       options.addArguments("--headless");
       options.addArguments("--no-sandbox");
       options.addArguments("--disable-dev-shm-usage");
-
-      Cookie cookie = new Cookie.Builder("postcode", cep)
-         .domain(".carone.com.br")
-         .path("/")
-         .isHttpOnly(true)
-         .isSecure(false)
-         .build();
-      this.cookiesWD.add(cookie);
-
+      if (!cep.isEmpty()) {
+         Cookie cookie = new Cookie.Builder("postcode", cep)
+            .domain(".carone.com.br")
+            .path("/")
+            .isHttpOnly(true)
+            .isSecure(false)
+            .build();
+         this.cookiesWD.add(cookie);
+      }
       Document doc = new Document("");
       int attempt = 0;
       boolean sucess = false;

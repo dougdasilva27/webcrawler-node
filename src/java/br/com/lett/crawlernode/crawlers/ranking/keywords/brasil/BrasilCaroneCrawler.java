@@ -2,8 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -19,7 +17,9 @@ import org.jsoup.select.Elements;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.chrome.ChromeOptions;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
 
@@ -31,8 +31,8 @@ public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private String getCep(){
-      return session.getOptions().optString("cep");
+   private String getCep() {
+      return session.getOptions().optString("cep", "");
    }
 
    @Override
@@ -43,14 +43,15 @@ public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
       options.addArguments("--headless");
       options.addArguments("--no-sandbox");
       options.addArguments("--disable-dev-shm-usage");
-
-      Cookie cookie = new Cookie.Builder("postcode", cep)
-         .domain(".carone.com.br")
-         .path("/")
-         .isHttpOnly(true)
-         .isSecure(false)
-         .build();
-      this.cookiesWD.add(cookie);
+      if (!cep.isEmpty()) {
+         Cookie cookie = new Cookie.Builder("postcode", cep)
+            .domain(".carone.com.br")
+            .path("/")
+            .isHttpOnly(true)
+            .isSecure(false)
+            .build();
+         this.cookiesWD.add(cookie);
+      }
 
       Document doc = new Document("");
       int attempt = 0;
