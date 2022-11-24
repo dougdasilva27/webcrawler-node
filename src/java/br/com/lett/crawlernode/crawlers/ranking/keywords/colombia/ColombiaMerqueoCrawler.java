@@ -146,12 +146,6 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
          .build();
 
-//      Response responseApi = this.dataFetcher.post(session, request);
-//      int tries = 0;
-//      while (!responseApi.isSuccess() && tries < 3) {
-//         tries++;
-//         responseApi = new JsoupDataFetcher().post(session, request);
-//      }
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new FetcherDataFetcher(), new ApacheDataFetcher()), session, "get");
       return CrawlerUtils.stringToJson(response.getBody());
    }
