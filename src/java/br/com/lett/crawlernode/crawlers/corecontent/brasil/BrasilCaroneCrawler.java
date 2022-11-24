@@ -69,25 +69,25 @@ public class BrasilCaroneCrawler extends Crawler {
       Document doc = new Document("");
       int attempt = 0;
       boolean sucess = false;
-      List<String> proxies = List.of( ProxyCollection.BUY_HAPROXY,ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY);
+      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.SMART_PROXY_BR_HAPROXY);
       do {
          try {
             Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
             webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempt), session, this.cookiesWD, HOME_PAGE, options);
-            webdriver.waitLoad(1000);
+            if (webdriver != null) {
+               webdriver.waitLoad(1000);
 
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-            sucess = doc.selectFirst(".product-essential") != null;
-            webdriver.terminate();
-            attempt++;
-
+               doc = Jsoup.parse(webdriver.getCurrentPageSource());
+               sucess = doc.selectFirst(".product-essential") != null;
+               webdriver.terminate();
+            }
          } catch (Exception e) {
             Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
             Logging.printLogWarn(logger, "Página não capturada");
          }
 
-      } while (attempt < 3 && !sucess);
+      } while (!sucess && attempt++ < proxies.size());
 
       return doc;
    }

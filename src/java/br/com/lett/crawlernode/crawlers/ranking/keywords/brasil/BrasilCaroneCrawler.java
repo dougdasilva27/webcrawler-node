@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -7,22 +9,23 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.Cookie;
+import org.openqa.selenium.chrome.ChromeOptions;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
 
    private static final String HOME_PAGE = "https://www.carone.com.br/";
-   private static final String API_LINK = "https://www.carone.com.br/carone/index/ajaxCheckPostcode/";
    private final String cep = getCep();
+
 
    public BrasilCaroneCrawler(Session session) {
       super(session);
@@ -33,36 +36,51 @@ public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   public void processBeforeFetch() {
+   protected Document fetchDocument(String url) {
+      Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
+      ChromeOptions options = new ChromeOptions();
+      options.addArguments("--window-size=1920,1080");
+      options.addArguments("--headless");
+      options.addArguments("--no-sandbox");
+      options.addArguments("--disable-dev-shm-usage");
 
-      //If the market is Carone (id 1214): We don't need to set any location.
-      if (cep != null && !cep.equals("")) {
-         Request request = Request.RequestBuilder.create()
-            .setUrl(HOME_PAGE)
-            .build();
-         Response response = dataFetcher.get(session, request);
-         Document document = Jsoup.parse(response.getBody());
-         String key = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "input[name=form_key]", "value");
+      Cookie cookie = new Cookie.Builder("postcode", cep)
+         .domain(".carone.com.br")
+         .path("/")
+         .isHttpOnly(true)
+         .isSecure(false)
+         .build();
+      this.cookiesWD.add(cookie);
 
-         String payload = "form_key=" + key + "&postcode=" + cep;
+      Document doc = new Document("");
+      int attempt = 0;
+      boolean sucess = false;
+      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.SMART_PROXY_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
+      do {
+         try {
+            Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-         Map<String, String> headers = new HashMap<>();
-         headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempt), session, this.cookiesWD, HOME_PAGE, options);
+            if (webdriver != null) {
+               webdriver.waitLoad(1000);
 
-         Request requestApi = Request.RequestBuilder.create()
-            .setUrl(API_LINK)
-            .setPayload(payload)
-            .setHeaders(headers)
-            .build();
+               doc = Jsoup.parse(webdriver.getCurrentPageSource());
+               sucess = doc.selectFirst("div.category-products > ul > li") != null;
+               webdriver.terminate();
+            }
+         } catch (Exception e) {
+            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, "Página não capturada");
+         }
 
-         Response responseApi = dataFetcher.post(session, requestApi);
-         this.cookies.addAll(responseApi.getCookies());
-      }
+      } while (!sucess && attempt++ < proxies.size());
+
+      return doc;
    }
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      this.pageSize = 48;
+      this.pageSize = 54;
       this.log("Página " + this.currentPage);
 
       String url = crawlUrl();
