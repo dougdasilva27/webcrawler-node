@@ -1,13 +1,14 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -22,14 +23,18 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.Cookie;
+import org.openqa.selenium.chrome.ChromeOptions;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilCaroneCrawler extends Crawler {
 
    private static final String SELLER_FULL_NAME = "Carone";
    private static final String HOME_PAGE = "https://www.carone.com.br/";
-   private static final String API_LINK = "https://www.carone.com.br/carone/index/ajaxCheckPostcode/";
    private final String cep = getCep();
 
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(),
@@ -44,31 +49,47 @@ public class BrasilCaroneCrawler extends Crawler {
    }
 
    @Override
-   public void handleCookiesBeforeFetch() {
+   protected Object fetch() {
 
-      //If the market is Carone (id 1214): We don't need to set any location.
-      if (cep != null && !cep.equals("")) {
-         Request request = Request.RequestBuilder.create()
-            .setUrl(HOME_PAGE)
-            .build();
-         Response response = dataFetcher.get(session, request);
-         Document document = Jsoup.parse(response.getBody());
-         String key = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "input[name=form_key]", "value");
+      Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
+      ChromeOptions options = new ChromeOptions();
+      options.addArguments("--window-size=1920,1080");
+      options.addArguments("--headless");
+      options.addArguments("--no-sandbox");
+      options.addArguments("--disable-dev-shm-usage");
 
-         String payload = "form_key=" + key + "&postcode=" + cep;
+      Cookie cookie = new Cookie.Builder("postcode", cep)
+         .domain(".carone.com.br")
+         .path("/")
+         .isHttpOnly(true)
+         .isSecure(false)
+         .build();
+      this.cookiesWD.add(cookie);
 
-         Map<String, String> headers = new HashMap<>();
-         headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
+      Document doc = new Document("");
+      int attempt = 0;
+      boolean sucess = false;
+      List<String> proxies = List.of( ProxyCollection.BUY_HAPROXY,ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY);
+      do {
+         try {
+            Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-         Request requestApi = Request.RequestBuilder.create()
-            .setUrl(API_LINK)
-            .setPayload(payload)
-            .setHeaders(headers)
-            .build();
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempt), session, this.cookiesWD, HOME_PAGE, options);
+            webdriver.waitLoad(1000);
 
-         Response responseApi = dataFetcher.post(session, requestApi);
-         this.cookies.addAll(responseApi.getCookies());
-      }
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            sucess = doc.selectFirst(".product-essential") != null;
+            webdriver.terminate();
+            attempt++;
+
+         } catch (Exception e) {
+            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, "Página não capturada");
+         }
+
+      } while (attempt < 3 && !sucess);
+
+      return doc;
    }
 
    @Override
@@ -136,7 +157,6 @@ public class BrasilCaroneCrawler extends Crawler {
 
    }
 
-
    private JSONObject getJson(Document doc) {
       JSONObject product = new JSONObject();
       Elements scripts = doc.select("script[type]");
@@ -197,7 +217,6 @@ public class BrasilCaroneCrawler extends Crawler {
          .setInstallmentNumber(1)
          .setInstallmentPrice(spotlightPrice)
          .build());
-
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
