@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldNewImpl;
@@ -21,7 +21,19 @@ public class BrasilDrogariapachecoCrawler extends VTEXOldNewImpl {
 
    public BrasilDrogariapachecoCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.MIRANHA);
+   }
+
+   @Override
+   protected Object fetch() {
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "application/json");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+
+      Request request = Request.RequestBuilder.create().setHeaders(headers).setCookies(cookies).setUrl(session.getOriginalURL()).build();
+      Response response = dataFetcher.get(session, request);
+
+      return response;
    }
 
    @Override
