@@ -18,9 +18,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class PeruLinioCrawler extends CrawlerRankingKeywords {
    public PeruLinioCrawler(Session session) {
@@ -32,11 +30,22 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url) {
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("Accept-Language", "en-US,en;q=0.9,pt;q=0.8,pt-PT;q=0.7");
+      headers.put("Cache-Control", "max-age=0");
+      headers.put("authority", "www.linio.com.pe");
+      headers.put("referer", "https://www.linio.com.pe/");
+
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
+         .setHeaders(headers)
          .setProxyservice(Arrays.asList(
+            ProxyCollection.SMART_PROXY_PE_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-            ProxyCollection.SMART_PROXY_PE_HAPROXY
+            ProxyCollection.SMART_PROXY_PE,
+            ProxyCollection.SMART_PROXY_MX_HAPROXY
          ))
          .build();
 
