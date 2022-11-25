@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.amazonaws.services.dynamodbv2.xspec.S;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -45,7 +46,7 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
       String productInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".price-box.price-final_price", "data-product-id");
       String productInternalPid = productInternalId;
       String productDescription = CrawlerUtils.scrapStringSimpleInfo(document, ".product.attribute.description .value", false);
-      String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".image-container img", Arrays.asList("src"), "", "");
+      String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, "img.gallery-placeholder__image", Arrays.asList("src"), "", "");
       List<String> productSecondaryImages = ImageCapture(document);
 
       ProductBuilder builder = ProductBuilder.create().setUrl(session.getOriginalURL());
@@ -80,8 +81,8 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document document, String id) throws MalformedPricingException {
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(document, "#product-price-" + id, "data-price-amount", true, '.', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, "#old-price-" + id, "data-price-amount", true, '.', session);
+      Double price = formatSpotlightPrice(document);
+      Double priceFrom = formatPriceFrom(document);
       CreditCards creditCards = CrawlerUtils.scrapCreditCards(price, cards);
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(price)
@@ -90,19 +91,50 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
          .build();
    }
 
+   private Double formatPriceFrom(Document document) {
+      String priceString = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".regular-amount", "data-bind");
+      if (priceString != null && !priceString.isEmpty()) {
+         String price = priceString.replace("html: getFormattedPrice(", "").replace(")", "");
+         return getPrice(price);
+      }
+      return null;
+   }
+
+   private Double getPrice(String price) {
+      if (price != null && !price.isEmpty()) {
+         Double priceDouble = Double.parseDouble(price);
+         if (priceDouble != null) {
+            return Double.valueOf(Math.round(priceDouble));
+         }
+      }
+      return null;
+   }
+
+   private Double formatSpotlightPrice(Document document) {
+      String priceString = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".promotion-default .price", "data-bind");
+      if (priceString != null && !priceString.isEmpty()) {
+         String price = priceString.replace("html: renderPrice(", "").replace(")", "");
+         return getPrice(price);
+      }
+      return null;
+   }
+
    private List<String> ImageCapture(Document document) throws Exception {
-      String script = CrawlerUtils.scrapScriptFromHtml(document, ".product.media [type]");
+      String script = CrawlerUtils.scrapScriptFromHtml(document, "[type=\"text/x-magento-init\"]:containsData(data-gallery-role=gallery-placeholder)");
       JSONArray arr = JSONUtils.stringToJsonArray(script);
       JSONArray images = JSONUtils.getValueRecursive(arr, "0.[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class);
       List<String> productSecondaryImagesList = new ArrayList<>();
-      for (Object i : images) {
-         JSONObject imageObj = (JSONObject) i;
-         String url = JSONUtils.getStringValue(imageObj, "full");
-         Boolean isMain = imageObj.optBoolean("isMain");
-         if (!isMain) {
-            productSecondaryImagesList.add(url);
+      if (images != null && !images.isEmpty()) {
+         for (Object i : images) {
+            JSONObject imageObj = (JSONObject) i;
+            String url = JSONUtils.getStringValue(imageObj, "full");
+            Boolean isMain = imageObj.optBoolean("isMain");
+            if (!isMain) {
+               productSecondaryImagesList.add(url);
+            }
          }
-
+      } else {
+         return null;
       }
       return productSecondaryImagesList;
    }
