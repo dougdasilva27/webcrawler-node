@@ -26,6 +26,8 @@ import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,42 +41,32 @@ public class CostaricaAutomercadoCrawler extends Crawler {
    }
 
    private static final String SELLER_NAME = "automercado";
-   private final String AUTH_TOKEN = session.getOptions().optString("authToken");
+   private final String STORE_ID = session.getOptions().optString("store_id");
 
    @Override
    protected JSONObject fetch() {
       String internalId = getProductId();
-      String API = "https://automercado.azure-api.net/prod-front/product/detail";
+      String API = "https://fu5xfx7knl-3.algolianet.com/1/indexes/*/queries?x-algolia-agent=Algolia for JavaScript (4.12.0); Browser (lite)&x-algolia-api-key=113941a18a90ae0f17d602acd16f91b2&x-algolia-application-id=FU5XFX7KNL";
 
-      String payload = "{\"productid\":\"" + internalId + "\", \"includeSpecialProducts\": true}";
+      String payload = "{\"requests\":[{\"indexName\":\"Product_CatalogueV2\",\"params\":\"facetFilters=%5B%22productID%3A" + internalId + "%22%2C%5B%22storeDetail." + STORE_ID + ".storeid%3A" + STORE_ID + "%22%5D%5D&facets=%5B%22marca%22%2C%22addedSugarFree%22%2C%22fiberSource%22%2C%22lactoseFree%22%2C%22lfGlutemFree%22%2C%22lfOrganic%22%2C%22lfVegan%22%2C%22lowFat%22%2C%22lowSodium%22%2C%22preservativeFree%22%2C%22sweetenersFree%22%2C%22parentProductid%22%2C%22parentProductid2%22%2C%22parentProductid_URL%22%2C%22catecom%22%5D\"}]}";
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/json;charset=UTF-8");
-      headers.put("Authorization", AUTH_TOKEN);
-      headers.put("Platform", "WEB");
-      headers.put("Referer", "https://www.automercado.cr/");
-      headers.put("Connection", "keep-alive");
+      headers.put("Content-Type", "application/x-www-form-urlencoded");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(API)
          .setPayload(payload)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.SMART_PROXY_CL,
-            ProxyCollection.SMART_PROXY_CO_HAPROXY
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          ))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(true).build())
          .mustSendContentEncoding(false)
          .setSendUserAgent(true)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
 
       return CrawlerUtils.stringToJson(response.getBody());
    }
@@ -97,19 +89,19 @@ public class CostaricaAutomercadoCrawler extends Crawler {
    public List<Product> extractInformation(JSONObject json) throws Exception {
       super.extractInformation(json);
       List<Product> products = new ArrayList<>();
-      JSONObject data = json.optJSONObject("data");
+      JSONObject productData = JSONUtils.getValueRecursive(json, "results.0.hits.0", ".", JSONObject.class, new JSONObject());
 
-      if (data != null && !data.isEmpty()) {
+      if (productData != null && !productData.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = getProductId();
-         String internalPid = data.optString("productNumber");
-         boolean available = data.optBoolean("inStock");
-         String name = getName(data, available);
-         String primaryImage = JSONUtils.getValueRecursive(data, "gallery.0", String.class);
-         List<String> secondaryImages = getSecundaryImages(data, primaryImage);
-         String description = data.optString("description");
-         Offers offers = available ? scrapOffers(data) : new Offers();
+         String internalPid = productData.optString("productNumber");
+         Boolean available = JSONUtils.getValueRecursive(productData, "storeDetail." + STORE_ID + ".productAvailable", ".", Boolean.class, false);
+         String name = productData.optString("ecomDescription");
+         String primaryImage = productData.optString("imageUrl") != null ? productData.optString("imageUrl").replace(".jpg", "_1.jpg") : null;
+         List<String> secondaryImages = scrapSecondaryImages(internalPid);
+         String description = productData.optString("productPresentation");
+         Offers offers = available ? scrapOffers(productData) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -130,43 +122,35 @@ public class CostaricaAutomercadoCrawler extends Crawler {
       return products;
    }
 
-   private List<String> getSecundaryImages(JSONObject data, String primaryImage) {
-      JSONArray arraySecondaryImagens = JSONUtils.getValueRecursive(data, "gallery", JSONArray.class);
-      List<String> list = new ArrayList<>();
-      if (arraySecondaryImagens != null && !arraySecondaryImagens.isEmpty()) {
-         for (Integer i = 0; i < arraySecondaryImagens.length(); i++) {
-            String image = (String) arraySecondaryImagens.get(i);
-            if (image!=null && !image.isEmpty() &&!image.equals(primaryImage)) {
-               list.add(image);
+   private List<String> scrapSecondaryImages(String internalPid) {
+      List<String> images = new ArrayList<>();
+
+      if (internalPid != null) {
+         for (int i = 2; i <= 32; i++) {
+            String imageUrl = "https://mda.automercado.cr/imgjpg/" + internalPid + "_" + i + ".jpg";
+            Request request = Request.RequestBuilder.create()
+               .setUrl(imageUrl)
+               .setProxyservice(List.of(
+                  ProxyCollection.BUY_HAPROXY
+               ))
+               .setSendUserAgent(true)
+               .build();
+
+            Response response = new JsoupDataFetcher().get(session, request);
+            if (response.isSuccess()) {
+               images.add(imageUrl);
+            } else {
+               break;
             }
          }
       }
 
-      return list;
+      return images;
    }
 
-   private String getName(JSONObject data, boolean available) {
-      StringBuilder buildName = new StringBuilder();
-      String name = data.optString("name");
-      if (name != null && available) {
-         buildName.append(name);
-         String brand = data.optString("brand");
-         if (brand != null) {
-            buildName.append(" - ").append(brand);
-         }
-      } else {
-         name = data.optString("presentation");
-         if (name != null) {
-            buildName.append(name);
-         }
-      }
-
-      return buildName.toString();
-   }
-
-   private Offers scrapOffers(JSONObject productInfo) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(JSONObject productData) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(productInfo);
+      Pricing pricing = scrapPricing(productData);
       List<String> sales = scrapSales(pricing);
 
 
@@ -183,18 +167,19 @@ public class CostaricaAutomercadoCrawler extends Crawler {
 
    }
 
-   private Pricing scrapPricing(JSONObject productInfo) throws MalformedPricingException {
+   private Pricing scrapPricing(JSONObject productData) throws MalformedPricingException {
 
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(productInfo, "price", true);
-      Double priceFrom = JSONUtils.getValueRecursive(productInfo, "discount.textValue", Double.class);
+      Double spotlightPrice = JSONUtils.getValueRecursive(productData, "storeDetail." + STORE_ID + ".amount", ".", Double.class, null);
+      Double priceFrom = JSONUtils.getValueRecursive(productData, "storeDetail." + STORE_ID + ".basePrice", ".", Double.class, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
 
+
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
-         .setPriceFrom(priceFrom)
+         .setPriceFrom(priceFrom != null && !priceFrom.equals(spotlightPrice) ? priceFrom : null)
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
@@ -204,9 +189,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
       List<String> sales = new ArrayList<>();
       String sale = CrawlerUtils.calculateSales(pricing);
 
-      if (sale != null) {
-         sales.add(sale);
-      }
+      sales.add(sale);
       return sales;
    }
 
