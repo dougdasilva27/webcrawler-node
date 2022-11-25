@@ -84,13 +84,14 @@ public class PeruLinioCrawler extends Crawler {
                   if (internalId == null || internalId.isEmpty()) {
                      internalId = internalPid;
                   }
-                  if (stock > 0) {
-                     offers = scrapOffers(product, index + 1);
-                  }
+
                   nameVariation = name + " - " + nameVariation;
                } else {
                   nameVariation = name;
                   internalId = internalPid;
+               }
+               if (stock > 0) {
+                  offers = scrapOffers(product, index + 1);
                }
                Product newProduct = ProductBuilder.create()
                   .setInternalId(internalId)
@@ -105,7 +106,6 @@ public class PeruLinioCrawler extends Crawler {
                   .setRatingReviews(ratingsReviews)
                   .build();
                products.add(newProduct);
-               index++;
             }
          } else {
             String agotado = CrawlerUtils.scrapStringSimpleInfo(product, "#buy-now", true);
