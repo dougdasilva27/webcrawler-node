@@ -29,7 +29,7 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url) {
-      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.SMART_PROXY_PE_HAPROXY);
+      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.SMART_PROXY_PE_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
       int attemp = 0;
       boolean succes = false;
       Document doc = new Document("");
@@ -53,8 +53,6 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.currentDoc = fetchDocument(url);
-      //this.currentDoc = fetchDocumentWithWebDriver(url, 10000, ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY);
-      //this.currentDoc = fetchDocumentWithWebDriver(url);
       Elements products = this.currentDoc.select(".catalogue-product.row");
 
       if (!products.isEmpty()) {
