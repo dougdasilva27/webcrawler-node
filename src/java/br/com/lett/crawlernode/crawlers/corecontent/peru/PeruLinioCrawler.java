@@ -39,7 +39,7 @@ public class PeruLinioCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.SMART_PROXY_PE, ProxyCollection.SMART_PROXY_PE_HAPROXY);
+      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.SMART_PROXY_PE_HAPROXY);
       int attemp = 0;
       boolean succes = false;
       Document doc = new Document("");
