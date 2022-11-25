@@ -64,7 +64,10 @@ public class ArgentinaPintureriasrexCrawler extends CrawlerRankingKeywords {
    protected void setTotalProducts(){
       String totalProduct = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc,".toolbar-amount", false);
       String [] arrProduct = totalProduct.split(" ");
-      this.totalProducts = Integer.parseInt(arrProduct[(arrProduct.length) - 4]);
-      this.log("Total: " + this.totalProducts);
+      if(arrProduct.length == 6){
+         this.totalProducts = Integer.parseInt(arrProduct[(arrProduct.length) - 4]);
+         this.log("Total: " + this.totalProducts);
+      }
+      this.totalProducts = 0;
    }
 }
