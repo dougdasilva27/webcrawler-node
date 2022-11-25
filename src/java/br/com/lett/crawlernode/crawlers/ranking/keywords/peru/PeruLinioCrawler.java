@@ -1,29 +1,26 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.peru;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class PeruLinioCrawler extends CrawlerRankingKeywords {
    public PeruLinioCrawler(Session session) {
+
       super(session);
    }
 
@@ -32,22 +29,32 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url) {
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-            ProxyCollection.SMART_PROXY_PE_HAPROXY
-         ))
-         .build();
-
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of( new FetcherDataFetcher(),new ApacheDataFetcher(), new JsoupDataFetcher()), session);
-
-      return Jsoup.parse(response.getBody());
+      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.SMART_PROXY_PE, ProxyCollection.SMART_PROXY_PE_HAPROXY);
+      int attemp = 0;
+      boolean succes = false;
+      Document doc = new Document("");
+      do {
+         try {
+            Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attemp), session);
+            if (webdriver != null) {
+               doc = Jsoup.parse(webdriver.getCurrentPageSource());
+               succes = !doc.select(".catalogue-product.row").isEmpty();
+               webdriver.terminate();
+            }
+         } catch (Exception e) {
+            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, "Page not captured");
+         }
+      } while (!succes && attemp++ < proxies.size());
+      return doc;
    }
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.currentDoc = fetchDocument(url);
+      //this.currentDoc = fetchDocumentWithWebDriver(url, 10000, ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY);
+      //this.currentDoc = fetchDocumentWithWebDriver(url);
       Elements products = this.currentDoc.select(".catalogue-product.row");
 
       if (!products.isEmpty()) {

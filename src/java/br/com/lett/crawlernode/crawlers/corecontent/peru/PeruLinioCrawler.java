@@ -1,17 +1,14 @@
 package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -22,6 +19,7 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -36,19 +34,29 @@ public class PeruLinioCrawler extends Crawler {
 
    public PeruLinioCrawler(Session session) {
       super(session);
-      super.config.setParser(Parser.HTML);
+      super.config.setFetcher(FetchMode.WEBDRIVER);
    }
 
    @Override
-   protected Response fetchResponse() {
-      Request request = Request.RequestBuilder.create()
-         .setUrl(this.session.getOriginalURL())
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-            ProxyCollection.SMART_PROXY_PE_HAPROXY
-         ))
-         .build();
-      return CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session);
+   protected Object fetch() {
+      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.SMART_PROXY_PE, ProxyCollection.SMART_PROXY_PE_HAPROXY);
+      int attemp = 0;
+      boolean succes = false;
+      Document doc = new Document("");
+      do {
+         try {
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attemp), session);
+            if (webdriver != null) {
+               doc = Jsoup.parse(webdriver.getCurrentPageSource());
+               succes = !doc.select(".catalogue-product.row").isEmpty();
+               webdriver.terminate();
+            }
+         } catch (Exception e) {
+            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, "Page not captured");
+         }
+      } while (!succes && attemp++ < proxies.size());
+      return doc;
    }
 
    @Override
@@ -65,23 +73,24 @@ public class PeruLinioCrawler extends Crawler {
          RatingsReviews ratingsReviews = scrapRatingReviews(product);
          Elements elementsVariations = doc.select(".select-dropdown__list-item");
          Offers offers = new Offers();
-         Integer index = 1;
-         if (elementsVariations.size() > 0) {
-            for (Element elementVariation : elementsVariations) {
 
+         if (elementsVariations.size() > 0) {
+            for (int index = 0; index < elementsVariations.size(); index++) {
+               Element elementVariation = elementsVariations.get(index);
                Integer stock = CrawlerUtils.scrapIntegerFromHtmlAttr(elementVariation, "option", "data-option-stock", 0);
                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(elementVariation, "option", "value");
-               if (internalId == null || internalId.isEmpty()) {
-                  internalId = internalPid;
-               }
                String nameVariation = CrawlerUtils.scrapStringSimpleInfo(elementVariation, "option", true);
-               if (nameVariation != null && !nameVariation.isEmpty()) {
+               if (nameVariation != null && !nameVariation.isEmpty() && !nameVariation.contains("-")) {
+                  if (internalId == null || internalId.isEmpty()) {
+                     internalId = internalPid;
+                  }
                   if (stock > 0) {
-                     offers = scrapOffers(product, index);
+                     offers = scrapOffers(product, index + 1);
                   }
                   nameVariation = name + " - " + nameVariation;
                } else {
                   nameVariation = name;
+                  internalId = internalPid;
                }
                Product newProduct = ProductBuilder.create()
                   .setInternalId(internalId)
@@ -96,12 +105,11 @@ public class PeruLinioCrawler extends Crawler {
                   .setRatingReviews(ratingsReviews)
                   .build();
                products.add(newProduct);
-               index++;
             }
          } else {
             String agotado = CrawlerUtils.scrapStringSimpleInfo(product, "#buy-now", true);
             if (agotado != null && !agotado.isEmpty() && !agotado.contains("Agotado")) {
-               offers = scrapOffers(product, index);
+               offers = scrapOffers(product, 1);
             }
             Product newProduct = ProductBuilder.create()
                .setInternalId(internalPid)
