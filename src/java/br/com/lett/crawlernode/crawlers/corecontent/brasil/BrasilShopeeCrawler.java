@@ -46,7 +46,7 @@ public class BrasilShopeeCrawler extends Crawler {
             for (Object obj : models) {
                JSONObject variation = (JSONObject) obj;
                String internalId = variation.optString("modelid");
-               name = mountName(variation, name);
+               String variantName = mountName(variation, name);
                String primaryImage = getPrimaryImg(data, variation, JSONUtils.getValueRecursive(data, "tier_variations.0.images", JSONArray.class));
                Integer stock = scrapStock(variation);
                List<String> secondaryImages = scrapSecondaryImages(data, primaryImage);
@@ -55,7 +55,7 @@ public class BrasilShopeeCrawler extends Crawler {
                   .setUrl(session.getOriginalURL())
                   .setInternalId(internalId)
                   .setInternalPid(internalPid)
-                  .setName(name)
+                  .setName(variantName)
                   .setOffers(offers)
                   .setRatingReviews(ratingsReviews)
                   .setPrimaryImage(primaryImage)

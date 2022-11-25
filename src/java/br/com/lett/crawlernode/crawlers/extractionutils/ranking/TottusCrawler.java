@@ -21,13 +21,15 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class TottusCrawler extends CrawlerRankingKeywords {
 
    protected String homePage = "https://www.tottus.com.pe";
 
-   private String channel = session.getOptions().optString("channel", "");
+   private String channel = session.getOptions().optString("channel", "912");
 
    public TottusCrawler(Session session) {
       super(session);
@@ -42,7 +44,7 @@ public class TottusCrawler extends CrawlerRankingKeywords {
 
       String url = homePage + "/api/product-search?q=" + this.keywordEncoded + "&sort=score&" + channel + "&page=" + this.currentPage + "&perPage=48";
 
-      JSONObject jsonInfo = fetchJsonFromApi(url);
+      JSONObject jsonInfo = resultFromApi(url);
 
       JSONArray results = jsonInfo.optJSONArray("results");
 
@@ -116,8 +118,33 @@ public class TottusCrawler extends CrawlerRankingKeywords {
 
       return CrawlerUtils.stringToJson(response.getBody());
 
-
    }
+
+   private JSONObject resultFromApi(String url) {
+      JSONObject jsonApi = fetchJsonFromApi(url);
+      if (jsonApi.has("redirect")) {
+         String keywordCategory = getKeywordCategory(jsonApi.optString("redirect", ""));
+         String redirectUrl = "https://www.tottus.com.pe/api/product-search/by-category-slug?slug=" + keywordCategory + "&sort=recommended_web&channel=" + channel + "&page=" + this.currentPage + "&perPage=48";
+         jsonApi = fetchJsonFromApi(redirectUrl);
+         if (jsonApi.optJSONArray("results") != null && jsonApi.optJSONArray("results").length() == 0) {
+            redirectUrl = "https://www.tottus.com.pe/api/product-search/by-category-slug?slug=" + keywordCategory + "&sort=recommended_web&channel=" + channel + "_RegularDelivery12&page=" + this.currentPage + "&perPage=48";
+            jsonApi = fetchJsonFromApi(redirectUrl);
+         }
+      }
+
+      return jsonApi;
+   }
+
+   private String getKeywordCategory(String redirectUrl) {
+      String keywordCategory = "";
+      Pattern pattern = Pattern.compile("www.tottus.com.*\\/(.*)\\/c");
+      Matcher matcher = pattern.matcher(redirectUrl);
+      if (matcher.find()) {
+         keywordCategory = matcher.group(1);
+      }
+      return keywordCategory;
+   }
+
 
    protected void setTotalProducts(JSONObject jsonInfo) {
       this.totalProducts = JSONUtils.getValueRecursive(jsonInfo, "pagination.totalProducts", Integer.class, 0);

@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -139,18 +140,13 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
          .setUrl(url)
          .mustSendContentEncoding(false)
          .setProxyservice(Arrays.asList(
+            ProxyCollection.LUMINATI_SERVER_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
-         ))
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
          .build();
-      Response responseApi = this.dataFetcher.post(session, request);
 
-      int tries = 0;
-      while (!responseApi.isSuccess() && tries < 3) {
-         tries++;
-         responseApi = new JsoupDataFetcher().post(session, request);
-      }
-      return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new FetcherDataFetcher(), new ApacheDataFetcher()), session, "get");
+      return CrawlerUtils.stringToJson(response.getBody());
    }
 }

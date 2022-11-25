@@ -105,6 +105,7 @@ public class PeruLinioCrawler extends Crawler {
                   .setRatingReviews(ratingsReviews)
                   .build();
                products.add(newProduct);
+               index++;
             }
          } else {
             String agotado = CrawlerUtils.scrapStringSimpleInfo(product, "#buy-now", true);

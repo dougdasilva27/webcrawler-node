@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
@@ -13,11 +12,20 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class MexicoRappiCrawler extends RappiCrawler {
 
    private static final String HOME_PAGE = "https://www.rappi.com.mx/";
    private static final String API_BASE_URL = "mxgrability.rappi.com";
+   private static final List<String> proxies = List.of(
+      ProxyCollection.NETNUT_RESIDENTIAL_MX,
+      ProxyCollection.SMART_PROXY_MX_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+      ProxyCollection.SMART_PROXY_MX_HAPROXY);
+   private String DEVICE_ID;
 
    @Override
    protected String getHomeDomain() {
@@ -56,26 +64,23 @@ public class MexicoRappiCrawler extends RappiCrawler {
    }
 
    private String fetchPassportToken() {
+      DEVICE_ID = UUID.randomUUID().toString();
       String url = "https://services." + API_BASE_URL + "/api/rocket/v2/guest/passport/";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
       headers.put("content-type", "application/json");
-      headers.put("deviceid", "4d848bd9-903e-411d-a3f2-86906184dd84");
+      headers.put("deviceid", DEVICE_ID);
       headers.put("needAppsFlyerId", "false");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
-         .setProxyservice(List.of(
-            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
-         .setTimeout(10000)
+         .setProxyservice(proxies)
          .build();
 
       JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true).getBody());
-
 
       return json.optString("token");
    }
@@ -89,7 +94,7 @@ public class MexicoRappiCrawler extends RappiCrawler {
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
       headers.put("content-type", "application/json");
       headers.put("x-guest-api-key", fetchPassportToken());
-      headers.put("deviceid", "4d848bd9-903e-411d-a3f2-86906184dd84");
+      headers.put("deviceid", DEVICE_ID);
       headers.put("needAppsFlyerId", "false");
 
       String payload = "{}";
@@ -98,14 +103,10 @@ public class MexicoRappiCrawler extends RappiCrawler {
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
-         .setProxyservice(List.of(
-            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
-         .setTimeout(10000)
+         .setProxyservice(proxies)
          .build();
 
-
-      JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), false).getBody());
+      JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false).getBody());
 
       String token = json.optString("access_token");
       String tokenType = json.optString("token_type");
@@ -132,17 +133,18 @@ public class MexicoRappiCrawler extends RappiCrawler {
 
       String payload = "{\"dynamic_list_request\":{\"context\":\"product_detail\",\"state\":{\"lat\":\"1\",\"lng\":\"1\"},\"limit\":100,\"offset\":0},\"dynamic_list_endpoint\":\"context/content\",\"proxy_input\":{\"product_friendly_url\":\"" + productFriendlyUrl + "\"}}";
 
-
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
+         .setProxyservice(proxies)
          .build();
 
-      String body = this.dataFetcher.post(session, request).getBody();
+      String body = new JsoupDataFetcher().post(session, request).getBody();
 
       JSONObject jsonObject = CrawlerUtils.stringToJSONObject(body);
 
       return JSONUtils.getValueRecursive(jsonObject, "dynamic_list_response.data.components.0.resource.product", ".", JSONObject.class, new JSONObject());
    }
+
 }
