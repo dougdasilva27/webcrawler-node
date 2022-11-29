@@ -94,7 +94,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
       Offers offers = new Offers();
 
       String url = "https://www.angeloni.com.br/super/ajax/productDetailPriceAjax.jsp?productId=" + internalPid
-         + "&skuId=" + internalId + "&ajax=&_=1571244043146";
+         + "&skuId=" + internalId;
       Request request = RequestBuilder.create().setUrl(url).setCookies(this.cookies).build();
       Document docPrice = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
