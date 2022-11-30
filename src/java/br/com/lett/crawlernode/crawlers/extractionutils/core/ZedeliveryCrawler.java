@@ -164,7 +164,7 @@ public class ZedeliveryCrawler extends Crawler {
 
       Response response = new JsoupDataFetcher().post(session, request);
       if (!response.isSuccess() || CrawlerUtils.stringToJson(response.getBody()).has("errors")) {
-         response = retryRequest(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher()));
+         response = retryRequest(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()));
       }
 
       return response;
