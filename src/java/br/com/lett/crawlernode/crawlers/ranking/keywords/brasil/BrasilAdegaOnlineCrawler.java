@@ -79,8 +79,8 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.Grid__Cell", "data-id");
                Double price = CrawlerUtils.scrapDoublePriceFromHtml(e, "span.ProductItem__Price", null, true, ',', session);
                Integer priceInCents = CommonMethods.doublePriceToIntegerPrice(price, 0);
-               String soldOff = CrawlerUtils.scrapStringSimpleInfo(e,".ProductItem__Label--sold-off",false);
-               Boolean available = soldOff != null && soldOff.contains("Esgotado") ? false : true;
+               String soldOff = CrawlerUtils.scrapStringSimpleInfo(e, ".ProductItem__Label--sold-off", false);
+               Boolean available = soldOff != null && !soldOff.isEmpty() && soldOff.contains("Esgotado") ? false : true;
                if (!available) {priceInCents = null;}
                String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "img.ProductItem__Image", Arrays.asList("srcset"), "https", "https://cdn.shopify.com/");
                String productUrl = scrapUrl(e);
