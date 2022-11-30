@@ -71,8 +71,8 @@ public class MexicoFarmarciasdelahorroCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-info-price > .price-box", "data-product-id");
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute.description .value", false);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs");
-         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
-         List<String> sec = getImageListFromScript(doc);
+         String primaryImage = getPrimaryImage(doc);
+         List<String> secondaryImages = getImageListFromScript(doc);
          boolean available = doc.selectFirst("#product-addtocart-button") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
@@ -82,7 +82,7 @@ public class MexicoFarmarciasdelahorroCrawler extends Crawler {
             .setInternalPid(internalId)
             .setName(productName)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(sec)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setCategories(categories)
             .setOffers(offers)
@@ -165,6 +165,23 @@ public class MexicoFarmarciasdelahorroCrawler extends Crawler {
             imagesList.add(imageList);
          }
          return imagesList;
+      }
+      return null;
+   }
+
+   private String getPrimaryImage(Document doc) {
+      String primaryImage = null;
+      Element imageScript = doc.selectFirst("script:containsData(mage/gallery/gallery)");
+      if (imageScript != null) {
+         JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
+         JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class, new JSONArray());
+         if (imageArray != null && !imageArray.isEmpty()) {
+            JSONObject object = JSONUtils.getValueRecursive(imageArray, "0", JSONObject.class);
+            if (object != null && !object.isEmpty()) {
+               primaryImage = object.optString("img");
+            }
+         }
+         return primaryImage;
       }
       return null;
    }
