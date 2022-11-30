@@ -124,7 +124,7 @@ public class ZedeliveryCrawler extends Crawler {
       }
 
       if (visitorId == null || visitorId.isEmpty()) {
-         Logging.printLogError(logger, "FAILED TO GET VISITOR ID");
+         Logging.printLogError(logger, session,"FAILED TO GET VISITOR ID");
 
       }
 
