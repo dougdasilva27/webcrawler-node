@@ -43,7 +43,7 @@ public class BrasilAdegaOnlineCrawler extends Crawler {
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-short-description", false);
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
          String available = CrawlerUtils.scrapStringSimpleInfo(doc, ".ProductForm__AddToCart.Button.Button--secondary", false);
-         Offers offers = !available.contains("Sold Out") ? scrapOffers(doc) : new Offers();
+         Offers offers = available != null && !available.contains("Sold Out") ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
