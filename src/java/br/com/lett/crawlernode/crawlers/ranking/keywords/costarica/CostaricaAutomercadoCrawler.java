@@ -42,7 +42,7 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
       JSONObject apiJson = fetchProducts();
 
       if (apiJson != null && !apiJson.isEmpty()) {
-         JSONArray products = JSONUtils.getValueRecursive(apiJson, "results.0.hits", JSONArray.class);
+         JSONArray products = JSONUtils.getValueRecursive(apiJson, "results.0.hits", JSONArray.class, new JSONArray());
          this.totalProducts = JSONUtils.getValueRecursive(apiJson, "results.0.nbHits", Integer.class, 0);
          for (Object o : products) {
             JSONObject product = (JSONObject) o;
