@@ -42,8 +42,8 @@ public class BrasilAdegaOnlineCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=\"store_product_id\"]", "value");
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-short-description", false);
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
-         boolean available = doc.selectFirst("button.shopify-payment-button__button") != null;
-         Offers offers = available ? scrapOffers(doc) : new Offers();
+         String available = CrawlerUtils.scrapStringSimpleInfo(doc, ".ProductForm__AddToCart.Button.Button--secondary", false);
+         Offers offers = available != null && !available.isEmpty() && !available.contains("Sold Out") ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
