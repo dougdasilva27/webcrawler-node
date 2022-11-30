@@ -43,7 +43,7 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
 
       if (apiJson != null && !apiJson.isEmpty()) {
          JSONArray products = JSONUtils.getValueRecursive(apiJson, "results.0.hits", JSONArray.class);
-         this.totalProducts = JSONUtils.getValueRecursive(apiJson,"results.0.nbHits",Integer.class,0);
+         this.totalProducts = JSONUtils.getValueRecursive(apiJson, "results.0.nbHits", Integer.class, 0);
          for (Object o : products) {
             JSONObject product = (JSONObject) o;
             String internalId = product.optString("productID");
@@ -51,7 +51,7 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
             String name = product.optString("ecomDescription");
             String url = getUrl(internalId, name);
             String imgUrl = product.optString("imageUrl");
-            Boolean isSponsored = product.optBoolean("sponsoredProduct",false);
+            Boolean isSponsored = product.optBoolean("sponsoredProduct", false);
             boolean isAvailable = JSONUtils.getValueRecursive(product, "storeDetail." + storeId + ".productAvailable", Boolean.class, false);
             Integer price = isAvailable ? getPrice(product) : null;
 
@@ -100,13 +100,12 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
    private JSONObject fetchProducts() {
       String apiUrl = "https://fu5xfx7knl-2.algolianet.com/1/indexes/*/queries?x-algolia-api-key=113941a18a90ae0f17d602acd16f91b2&x-algolia-application-id=FU5XFX7KNL";
       int page = this.currentPage - 1;
-      String payload = "{\"requests\":[{\"indexName\":\"Product_CatalogueV2\",\"params\":\"query="+this.keywordEncoded+"&optionalWords=%5B%22"+this.keywordEncoded+"%22%5D&filters=NOT%20marca%3AMASTERCHEF%20AND%20NOT%20marca%3APANINI&page="+page+"&getRankingInfo=true&facets=%5B%22marca%22%2C%22addedSugarFree%22%2C%22fiberSource%22%2C%22lactoseFree%22%2C%22lfGlutemFree%22%2C%22lfOrganic%22%2C%22lfVegan%22%2C%22lowFat%22%2C%22lowSodium%22%2C%22preservativeFree%22%2C%22sweetenersFree%22%2C%22parentProductid%22%2C%22parentProductid2%22%2C%22parentProductid_URL%22%2C%22catecom%22%5D&facetFilters=%5B%5B%22storeDetail."+storeId+".storeid%3A"+storeId+"%22%5D%5D\"}]}";
-      //String payload = "{\"requests\":[{\"indexName\":\"Product_CatalogueV2\",\"params\":\"query=nestum&optionalWords=%5B%22nestum%22%5D&filters=NOT%20marca%3AMASTERCHEF%20AND%20NOT%20marca%3APANINI&getRankingInfo=true&facets=%5B%22marca%22%2C%22addedSugarFree%22%2C%22fiberSource%22%2C%22lactoseFree%22%2C%22lfGlutemFree%22%2C%22lfOrganic%22%2C%22lfVegan%22%2C%22lowFat%22%2C%22lowSodium%22%2C%22preservativeFree%22%2C%22sweetenersFree%22%2C%22parentProductid%22%2C%22parentProductid2%22%2C%22parentProductid_URL%22%2C%22catecom%22%5D&facetFilters=%5B%5B%22storeDetail.03.storeid%3A03%22%5D%5D\"}]}";
+      String payload = "{\"requests\":[{\"indexName\":\"Product_CatalogueV2\",\"params\":\"query=" + this.keywordEncoded + "&optionalWords=%5B%22" + this.keywordEncoded + "%22%5D&filters=NOT%20marca%3AMASTERCHEF%20AND%20NOT%20marca%3APANINI&page=" + page + "&getRankingInfo=true&facets=%5B%22marca%22%2C%22addedSugarFree%22%2C%22fiberSource%22%2C%22lactoseFree%22%2C%22lfGlutemFree%22%2C%22lfOrganic%22%2C%22lfVegan%22%2C%22lowFat%22%2C%22lowSodium%22%2C%22preservativeFree%22%2C%22sweetenersFree%22%2C%22parentProductid%22%2C%22parentProductid2%22%2C%22parentProductid_URL%22%2C%22catecom%22%5D&facetFilters=%5B%5B%22storeDetail." + storeId + ".storeid%3A" + storeId + "%22%5D%5D\"}]}";
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE,"application/x-www-form-urlencoded");
-      headers.put("origin","https://automercado.cr");
-      headers.put("authorization","https://automercado.cr");
-      headers.put("connect","keep-alive");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
+      headers.put("origin", "https://automercado.cr");
+      headers.put("authorization", "https://automercado.cr");
+      headers.put("connect", "keep-alive");
       Request request = Request.RequestBuilder.create()
          .setUrl(apiUrl)
          .setHeaders(headers)
