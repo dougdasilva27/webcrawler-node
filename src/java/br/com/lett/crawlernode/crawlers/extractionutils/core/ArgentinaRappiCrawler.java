@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
@@ -132,7 +133,7 @@ public class ArgentinaRappiCrawler extends RappiCrawler {
          .setTimeout(20000)
          .build();
 
-      String body = CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), false).getBody();
+      String body = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post").getBody();
 
       JSONObject jsonObject = CrawlerUtils.stringToJSONObject(body);
 
