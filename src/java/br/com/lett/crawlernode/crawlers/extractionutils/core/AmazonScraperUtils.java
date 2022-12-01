@@ -543,6 +543,10 @@ public class AmazonScraperUtils {
          priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=listPrice]", null, false, ',', session);
       }
 
+      if (priceFrom == null) {
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.a-size-small.a-color-secondary.aok-align-center.basisPrice > span > span.a-offscreen", null, false, ',', session);
+      }
+
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
