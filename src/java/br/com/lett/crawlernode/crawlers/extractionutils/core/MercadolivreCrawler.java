@@ -2,8 +2,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
@@ -52,8 +54,14 @@ import java.util.regex.Pattern;
 public class MercadolivreCrawler extends Crawler {
 
 
-   private String getCep() {return session.getOptions().optString("cp");}
-   private String getDomainCookie() {return session.getOptions().optString("domain");}
+   private String getCep() {
+      return session.getOptions().optString("cp");
+   }
+
+   private String getDomainCookie() {
+      return session.getOptions().optString("domain");
+   }
+
    private String homePage;
    private String mainSellerNameLower;
    protected boolean allow3PSellers = isAllow3PSellers();
@@ -94,27 +102,38 @@ public class MercadolivreCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
+      Document doc = new Document("");
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
+
       if (acceptCatalog || isOwnProduct()) {
-         Map<String, String> headers = new HashMap<>();
-         headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
 
-      if (getCep() != null && !getCep().isEmpty()) {
-         BasicClientCookie cookie = new BasicClientCookie("cp", getCep());
-         cookie.setDomain(getDomainCookie());
-         cookie.setPath("/");
-         this.cookies.add(cookie);
+         if (getCep() != null && !getCep().isEmpty()) {
+            BasicClientCookie cookie = new BasicClientCookie("cp", getCep());
+            cookie.setDomain(getDomainCookie());
+            cookie.setPath("/");
+            this.cookies.add(cookie);
+         }
+         boolean success;
+         int tries = 0;
+         do {
+            Request request = RequestBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setCookies(cookies)
+               .setHeaders(headers)
+               .build();
+
+            Response response = new JsoupDataFetcher().get(session, request);
+
+            doc = Jsoup.parse(response.getBody());
+            String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
+            success = description != null && !description.isEmpty();
+
+         } while (!success && tries++ < 3);
+
       }
-         Request request = RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .build();
 
-
-         return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-      }
-
-      return new Document("");
+      return doc;
    }
 
    private boolean isOwnProduct() {
