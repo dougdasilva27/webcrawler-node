@@ -61,8 +61,6 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
          .setPayload(initPayload)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
             ProxyCollection.SMART_PROXY_BR_HAPROXY,
@@ -101,8 +99,6 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
          .setPayload(payload)
          .setCookies(cookies)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
             ProxyCollection.SMART_PROXY_BR_HAPROXY,
