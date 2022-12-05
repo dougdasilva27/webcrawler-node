@@ -436,6 +436,8 @@ public class B2WCrawler extends Crawler {
       }
 
       Pricing pricing = scrapPricing(offersJson, internalSellerId, mapOfSellerIdAndPrice, doc);
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
       Offer offer = Offer.OfferBuilder.create()
          .setInternalSellerId(internalSellerId)
@@ -445,6 +447,7 @@ public class B2WCrawler extends Crawler {
          .setPricing(pricing)
          .setIsBuybox(false)
          .setIsMainRetailer(!allow3PSellers)
+         .setSales(sales)
          .build();
 
       offers.add(offer);
@@ -497,6 +500,8 @@ public class B2WCrawler extends Crawler {
             }
 
             Pricing pricing = scrapPricingForOffersPage(sellerInfo);
+            List<String> sales = new ArrayList<>();
+            sales.add(CrawlerUtils.calculateSales(pricing));
 
             if (!checkIfHasSellerInOffer(offers, sellerId, pricing, sellerName)) {
 
@@ -508,6 +513,7 @@ public class B2WCrawler extends Crawler {
                   .setPricing(pricing)
                   .setIsBuybox(isBuyBox)
                   .setIsMainRetailer(false)
+                  .setSales(sales)
                   .build();
 
                offers.add(offer);
