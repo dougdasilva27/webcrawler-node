@@ -106,6 +106,7 @@ public class BrasilNutriiCrawler extends Crawler {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(jsonOffers);
       List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
