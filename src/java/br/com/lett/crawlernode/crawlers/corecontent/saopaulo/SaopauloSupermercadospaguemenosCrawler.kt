@@ -100,6 +100,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
       val price = scrapPrice(doc)
+      var sale: String? = ""
 
       var priceFrom = doc.selectFirst(".box-pricing .price_off .unit_price")?.toDoubleComma()
 
@@ -109,7 +110,13 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
          }
 
          val creditCards = setOf(Card.VISA, Card.MASTERCARD, Card.ELO, Card.AMEX).toCreditCards(it)
+         val sales: MutableList<String> = mutableListOf();
 
+         if (priceFrom != null && priceFrom!! > price) {
+            val value = Math.round((price / priceFrom!! - 1.0) * 100.0).toInt()
+            sale = Integer.toString(value)
+         }
+         sales.add(sale.toString());
          offers.add(
             OfferBuilder.create()
                .setPricing(
@@ -123,6 +130,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
                .setIsBuybox(false)
                .setUseSlugNameAsInternalSellerId(true)
                .setSellerFullName("Super Pague Menos")
+               .setSales(sales)
                .build()
          )
       }
@@ -189,5 +197,4 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
 
       return advancedRatingReview.allStars(starsCount).build()
    }
-
 }
