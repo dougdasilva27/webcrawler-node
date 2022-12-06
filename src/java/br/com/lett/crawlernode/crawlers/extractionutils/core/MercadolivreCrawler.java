@@ -2,6 +2,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -116,6 +117,7 @@ public class MercadolivreCrawler extends Crawler {
          }
          boolean success;
          int tries = 0;
+
          do {
             Request request = RequestBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -123,7 +125,7 @@ public class MercadolivreCrawler extends Crawler {
                .setHeaders(headers)
                .build();
 
-            Response response = new JsoupDataFetcher().get(session, request);
+            Response response = this.dataFetcher.get(session, request);
 
             doc = Jsoup.parse(response.getBody());
             String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
@@ -850,5 +852,46 @@ https://articulo.mercadolibre.cl/MLC-599229057-pack-6-shampoo-herbal-essences-co
          .totalStar4(star4)
          .totalStar5(star5)
          .build();
+   }
+
+   private String getCountry() {
+
+      String regex;
+      if (session.getOriginalURL().contains("mercadolibre.com") || session.getOriginalURL().contains("mercadolivre")) {
+         regex = "com.([a-z]*)\\/";
+      } else {
+         regex = "mercadolibre.([a-z]*)\\/";
+      }
+
+      String slug = null;
+      Pattern pattern = Pattern.compile(regex);
+      Matcher matcher = pattern.matcher(session.getOriginalURL());
+      if (matcher.find()) {
+         slug = matcher.group(1);
+      }
+      return slug;
+   }
+
+   private List<String> getProxiesByCountry() {
+      List<String> proxies;
+      String slug = getCountry();
+      switch (slug) {
+         case ("ar"):
+            proxies = List.of();
+            break;
+         case ("mx"):
+            proxies = List.of();
+            break;
+         case ("cl"):
+            proxies = List.of();
+            break;
+         case ("co"):
+            proxies = List.of();
+            break;
+         default:
+            proxies = List.of();
+      }
+
+      return proxies;
    }
 }
