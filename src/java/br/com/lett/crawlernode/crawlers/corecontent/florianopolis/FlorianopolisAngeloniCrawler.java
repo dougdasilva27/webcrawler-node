@@ -95,14 +95,15 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 
       String url = "https://www.angeloni.com.br/super/ajax/productDetailPriceAjax.jsp?productId=" + internalPid
          + "&skuId=" + internalId;
-      Integer count = 0;
+      int count = 0;
       Pricing pricing;
       Document docPrice;
-     do{
-        Request request = RequestBuilder.create().setUrl(url).setCookies(this.cookies).build();
-        docPrice = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-        pricing = scrapPricing(docPrice, count);
-     }while (pricing == null && count < 3);
+      do {
+         Request request = RequestBuilder.create().setUrl(url).setCookies(this.cookies).build();
+         docPrice = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+         pricing = scrapPricing(docPrice, count);
+         count++;
+      } while (pricing == null && count < 3);
 
       List<String> sales = Collections.singletonList(docPrice.select(".selo-expandido").text());
 
@@ -113,18 +114,18 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
          .setIsBuybox(false)
          .setIsMainRetailer(true)
          .setPricing(pricing)
-            .setSales(sales)
+         .setSales(sales)
          .build());
 
       return offers;
    }
 
-   private Pricing scrapPricing(Document docPrice, Integer count) throws MalformedPricingException {
+   private Pricing scrapPricing(Document docPrice, int count) throws MalformedPricingException {
 
 
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(docPrice, ".box-produto__texto-tachado", null, true, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(docPrice, ".content__desc-prod__box-valores", "content", false, '.', session);
-      if(spotlightPrice > 99999.99 && count < 3){
+      if (spotlightPrice > 99999.99 && count < 3) {
          return null;
       }
       CreditCards creditCards = CrawlerUtils.scrapCreditCards(spotlightPrice, cards);
