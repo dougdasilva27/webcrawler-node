@@ -854,22 +854,4 @@ https://articulo.mercadolibre.cl/MLC-599229057-pack-6-shampoo-herbal-essences-co
          .build();
    }
 
-   private String getCountry() {
-
-      String regex;
-      if (session.getOriginalURL().contains("mercadolibre.com") || session.getOriginalURL().contains("mercadolivre")) {
-         regex = "com.([a-z]*)\\/";
-      } else {
-         regex = "mercadolibre.([a-z]*)\\/";
-      }
-
-      String slug = null;
-      Pattern pattern = Pattern.compile(regex);
-      Matcher matcher = pattern.matcher(session.getOriginalURL());
-      if (matcher.find()) {
-         slug = matcher.group(1);
-      }
-      return slug;
-   }
-
 }
