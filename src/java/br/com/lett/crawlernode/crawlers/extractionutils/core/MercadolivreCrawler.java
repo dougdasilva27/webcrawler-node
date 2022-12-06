@@ -872,26 +872,4 @@ https://articulo.mercadolibre.cl/MLC-599229057-pack-6-shampoo-herbal-essences-co
       return slug;
    }
 
-   private List<String> getProxiesByCountry() {
-      List<String> proxies;
-      String slug = getCountry();
-      switch (slug) {
-         case ("ar"):
-            proxies = List.of();
-            break;
-         case ("mx"):
-            proxies = List.of();
-            break;
-         case ("cl"):
-            proxies = List.of();
-            break;
-         case ("co"):
-            proxies = List.of();
-            break;
-         default:
-            proxies = List.of();
-      }
-
-      return proxies;
-   }
 }
