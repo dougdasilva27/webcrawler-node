@@ -2,6 +2,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -116,6 +117,7 @@ public class MercadolivreCrawler extends Crawler {
          }
          boolean success;
          int tries = 0;
+
          do {
             Request request = RequestBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -123,7 +125,7 @@ public class MercadolivreCrawler extends Crawler {
                .setHeaders(headers)
                .build();
 
-            Response response = new JsoupDataFetcher().get(session, request);
+            Response response = this.dataFetcher.get(session, request);
 
             doc = Jsoup.parse(response.getBody());
             String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
@@ -851,4 +853,5 @@ https://articulo.mercadolibre.cl/MLC-599229057-pack-6-shampoo-herbal-essences-co
          .totalStar5(star5)
          .build();
    }
+
 }
