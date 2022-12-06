@@ -68,8 +68,6 @@ public class SaopauloPontofrioCrawler extends CNOVANewCrawler {
             Arrays.asList(
                ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_US_HAPROXY,
-               ProxyCollection.SMART_PROXY_BR,
-               ProxyCollection.SMART_PROXY_CO,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
             )
          )

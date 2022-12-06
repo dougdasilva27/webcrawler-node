@@ -28,6 +28,15 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
 
    private String visitorId;
 
+   private List<String> proxies = Arrays.asList(
+      ProxyCollection.SMART_PROXY_BR,
+      ProxyCollection.SMART_PROXY_BR_HAPROXY,
+      ProxyCollection.SMART_PROXY_CO,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY);
+
    public ZedeliveryCrawlerRanking(Session session) {
       super(session);
    }
@@ -60,11 +69,7 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
          .setPayload(initPayload)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY,
-            ProxyCollection.SMART_PROXY_AR_HAPROXY))
+         .setProxyservice(proxies)
          .mustSendContentEncoding(false)
          .build();
 
@@ -98,11 +103,7 @@ public class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
          .setPayload(payload)
          .setCookies(cookies)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY,
-            ProxyCollection.SMART_PROXY_AR_HAPROXY))
+         .setProxyservice(proxies)
          .setHeaders(headers)
          .setSendUserAgent(false)
          .build();

@@ -43,10 +43,10 @@ public class BrasilExtrabomCrawler extends Crawler {
       Request request = Request.RequestBuilder.create().setUrl(url)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.LUMINATI_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          ))
          .build();
 
