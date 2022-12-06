@@ -53,9 +53,8 @@ public class ZedeliveryCrawler extends Crawler {
    }
 
    private List<String> proxies = Arrays.asList(
-      ProxyCollection.SMART_PROXY_BR,
       ProxyCollection.SMART_PROXY_BR_HAPROXY,
-      ProxyCollection.SMART_PROXY_CO,
+      ProxyCollection.SMART_PROXY_CO_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_BR,
       ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
