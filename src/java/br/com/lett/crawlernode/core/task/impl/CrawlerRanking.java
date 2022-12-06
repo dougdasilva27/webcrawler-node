@@ -453,7 +453,7 @@ public abstract class CrawlerRanking extends Task {
          Dynamo.updateScheduledObjectDynamo(product, result.optString("created_at"));
       } else {
          sendToQueue = false;
-         Logging.printLogDebug(logger, session, "Product already send to queue less than twelve hours ago url: " + product.getUrl());
+         Logging.printLogInfo(logger, session, "Product already send to queue less than twelve hours ago url: " + product.getUrl());
       }
 
       return sendToQueue;

@@ -102,7 +102,7 @@ public class RequestConverter {
       String fileS3Miranha = body.optString(FILE_S3_MIRANHA);
       if (fileS3Miranha != null) {
          request.setFileS3Miranha(fileS3Miranha);
-     }
+      }
       String processedIdString = body.optString(BODY_PROCESSED_ID);
       if (processedIdString != null && !processedIdString.isEmpty()) {
          request.setProcessedId(Long.parseLong(processedIdString));
@@ -114,12 +114,12 @@ public class RequestConverter {
       request.setScraperType(scraperType);
 
       Boolean isVoid = body.optBoolean("isVoid");
-      if(isVoid != null) {
+      if (isVoid != null) {
          request.setVoid(isVoid);
       }
 
       Boolean sendDiscover = body.optBoolean("send_discover");
-      if(sendDiscover != null) {
+      if (sendDiscover != null) {
          request.setSendDiscover(sendDiscover);
       }
 
