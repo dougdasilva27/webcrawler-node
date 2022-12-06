@@ -272,6 +272,7 @@ public abstract class CNOVANewCrawler extends Crawler {
                List<String> salesList = principalSeller ? scrapSales(offersJson) : new ArrayList<>();
 
                Pricing pricing = scrapPricing(offersJson, info, principalSeller);
+               salesList.add(CrawlerUtils.calculateSales(pricing));
 
                if (pricing != null) {
                   Offer offer = OfferBuilder.create()

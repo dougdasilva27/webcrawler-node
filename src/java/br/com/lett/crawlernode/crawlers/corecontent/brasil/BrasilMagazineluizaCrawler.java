@@ -143,6 +143,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       String sellerFullName = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".seller__indentifier meta", "content");
       boolean isMainRetailer = sellerFullName.equalsIgnoreCase(SELLER_NAME) || sellerFullName.equalsIgnoreCase(SELLER_NAME_1);
       Pricing pricing = scrapPricing(doc);
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
       offers.add(OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -151,6 +153,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          .setIsBuybox(false)
          .setIsMainRetailer(isMainRetailer)
          .setPricing(pricing)
+            .setSales(sales)
          .build());
 
       return offers;
@@ -566,6 +569,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
       boolean isMainRetailer = sellerFullName.equalsIgnoreCase(SELLER_NAME) || sellerFullName.equalsIgnoreCase(SELLER_NAME_1.replace(" ", ""));
       Pricing pricing = scrapPricingNewLayout(json);
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
       offers.add(OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -574,6 +579,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          .setIsBuybox(false)
          .setIsMainRetailer(isMainRetailer)
          .setPricing(pricing)
+            .setSales(sales)
          .build());
 
       return offers;

@@ -78,6 +78,7 @@ abstract class MarcheCrawler(session: Session) : Crawler(session) {
    }
 
    private fun scrapOffers(doc: Document): Offers {
+      var sale: String? = ""
 
       val offers = Offers()
 
@@ -88,6 +89,14 @@ abstract class MarcheCrawler(session: Session) : Crawler(session) {
       val bankSlip = price.toBankSlip()
 
       val creditCards = listOf(Card.VISA, Card.MASTERCARD, Card.ELO, Card.AMEX).toCreditCards(price)
+
+      val sales: MutableList<String> = mutableListOf();
+
+      if (priceFrom != null && priceFrom!! > price) {
+         val value = Math.round((price / priceFrom!! - 1.0) * 100.0).toInt()
+         sale = Integer.toString(value)
+      }
+      sales.add(sale.toString());
 
       offers.add(
          Offer.OfferBuilder.create()
@@ -103,6 +112,7 @@ abstract class MarcheCrawler(session: Session) : Crawler(session) {
             .setIsBuybox(false)
             .setUseSlugNameAsInternalSellerId(true)
             .setSellerFullName(getSellerName())
+            .setSales(sales)
             .build()
       )
 

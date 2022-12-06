@@ -481,6 +481,8 @@ public class AmazonScraperUtils {
       if (seller != null && !seller.isEmpty()) {
          boolean isMainRetailer = seller.equalsIgnoreCase(SELLER_NAME) || seller.equalsIgnoreCase(SELLER_NAME_2) || seller.equalsIgnoreCase(SELLER_NAME_3);
          Pricing pricing = scrapMainPagePricing(doc);
+         List<String> sales = new ArrayList<>();
+         sales.add(CrawlerUtils.calculateSales(pricing));
          if (sellerId == null) {
             sellerId = CommonMethods.toSlug(seller);
          }
@@ -492,6 +494,7 @@ public class AmazonScraperUtils {
             .setIsBuybox(false)
             .setIsMainRetailer(isMainRetailer)
             .setPricing(pricing)
+            .setSales(sales)
             .build();
       }
 

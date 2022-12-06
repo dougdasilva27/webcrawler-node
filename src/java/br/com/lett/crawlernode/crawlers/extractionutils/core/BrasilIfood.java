@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -134,6 +135,7 @@ public class BrasilIfood extends Crawler {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(jsonOffers);
       List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)

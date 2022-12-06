@@ -75,6 +75,8 @@ public class BrasilMercadinhosaoluizCrawler extends Crawler {
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
+      List<String> sales =new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
       if (pricing != null) {
          offers.add(Offer.OfferBuilder.create()
@@ -84,6 +86,7 @@ public class BrasilMercadinhosaoluizCrawler extends Crawler {
             .setIsBuybox(false)
             .setIsMainRetailer(true)
             .setPricing(pricing)
+            .setSales(sales)
             .build());
       }
 
