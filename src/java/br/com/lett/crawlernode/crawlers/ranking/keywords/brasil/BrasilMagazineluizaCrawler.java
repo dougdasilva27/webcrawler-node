@@ -53,9 +53,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.SMART_PROXY_BR,
-               ProxyCollection.SMART_PROXY_CO,
-               ProxyCollection.SMART_PROXY_MX
+               ProxyCollection.SMART_PROXY_BR_HAPROXY
             ))
             .setHeaders(headers)
             .setSendUserAgent(false)
