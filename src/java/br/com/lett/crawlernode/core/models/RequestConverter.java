@@ -118,6 +118,10 @@ public class RequestConverter {
          request.setVoid(isVoid);
       }
 
+      Boolean sendDiscover = body.optBoolean("send_discover");
+      if(sendDiscover != null) {
+         request.setSendDiscover(sendDiscover);
+      }
 
       if (request instanceof CrawlerSeedRequest) {
          ((CrawlerSeedRequest) request).setTaskId(body.optString(BODY_SEED_TASK_ID));

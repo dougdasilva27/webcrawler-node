@@ -368,36 +368,20 @@ public abstract class CrawlerRanking extends Task {
 
       Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
-
-      if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
+      if ((session instanceof RankingKeywordsSession && ((RankingKeywordsSession) session).isSendDiscover()) || session instanceof RankingDiscoverKeywordsSession) {
          JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
 
          if (resultJson.has("finished_at")) {
+            //todo add check in internal_id with method isContainsSku
 
-
-            if (isVoid(resultJson) && hasReadBeforeOneMonth(resultJson.optString("finished_at"))) {
-               //now, if product is void, will not insert in dynamo
-               Logging.printLogDebug(logger, session, "Product already discovered but it was void in the last month - " + product.getUrl());
-               saveProductUrlToQueue(product, resultJson);
-
-            }
-// está é uma medida palhativa e a lógica precisa ser revisada por isso está comentado
-//            else if (!isContainsSku(product, resultJson)) {
-//               Logging.printLogDebug(logger, session, "Product already discovered but internalId changed -" + product.getUrl());
-//               saveProductUrlToQueue(product, resultJson);
-//
-//            }
-            else {
-               Logging.printLogDebug(logger, session, "Product already discoverer " + product.getUrl());
-            }
+            Logging.printLogDebug(logger, session, "Product already discoverer " + product.getUrl());
 
          } else if (product.getUrl() != null) {
 
             saveProductUrlToQueue(product, resultJson);
          }
 
-      }
-      if (product.getUrl() != null && session instanceof EqiRankingDiscoverKeywordsSession) {
+      } else if (product.getUrl() != null && session instanceof EqiRankingDiscoverKeywordsSession) {
          JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
          if (resultJson.isEmpty()) { //on this session, even "finished_at" is not empty, will schedule
             saveProductUrlToQueue(product, resultJson);
@@ -463,13 +447,13 @@ public abstract class CrawlerRanking extends Task {
       boolean sendToQueue = true;
       if (result == null || result.isEmpty()) {
          Dynamo.insertObjectDynamo(product);
-         Logging.printLogDebug(logger, session, "Product new:  " + product.getUrl() + " insert in dynamo and saved to queue");
-      } else if (Dynamo.scheduledMoreThanOneHour(result.optString("scheduled_at"), session)) {
-         Logging.printLogDebug(logger, session, "Update product " + product.getUrl() + " in dynamo and saved to queue");
+         Logging.printLogInfo(logger, session, "Product new:  " + product.getUrl() + " insert in dynamo and saved to queue");
+      } else if (Dynamo.scheduledMoreThanTwelveHours(result.optString("scheduled_at"), session)) {
+         Logging.printLogInfo(logger, session, "Product " + product.getUrl() + " scheduled more than twelve hours. Uodate in dynamo and saved to queue");
          Dynamo.updateScheduledObjectDynamo(product, result.optString("created_at"));
       } else {
          sendToQueue = false;
-         Logging.printLogDebug(logger, session, "Product already send to queue less than one hour ago url: " + product.getUrl());
+         Logging.printLogDebug(logger, session, "Product already send to queue less than twelve hours ago url: " + product.getUrl());
       }
 
       return sendToQueue;

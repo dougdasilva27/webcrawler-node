@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.aws.dynamodb;
 
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RankingProduct;
-import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -73,7 +72,7 @@ public class Dynamo {
          Item item;
          while (iterator.hasNext()) {
             item = iterator.next();
-            Logging.printLogDebug(logger, "Fetching object in dynamo " + md5); //todo: remove
+            Logging.printLogInfo(logger, "Fetching object in dynamo " + md5);
 
             return stringToJson(item.toJSONPretty());
          }
@@ -93,17 +92,17 @@ public class Dynamo {
 
    }
 
-   public static boolean scheduledMoreThanOneHour(String scheduled, Session session) {
+   public static boolean scheduledMoreThanTwelveHours(String scheduled, Session session) {
       if (scheduled != null && !scheduled.isEmpty()) {
          try {
             Date dateNow = new Date();
             Date scheduledDate = new SimpleDateFormat(
                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(scheduled);
-            Date scheduledDateMoreOneHour = DateUtils.addHours(scheduledDate, +1);
+            Date scheduledDateMoreTwelveHours = DateUtils.addHours(scheduledDate, +12); //because is the time to finish the execution of descovery
 
-            Logging.printLogDebug(logger, session, scheduled + " - " + dateNow + " has more than 1 hours: " + (dateNow.after(scheduledDateMoreOneHour)));
+            Logging.printLogDebug(logger, session, scheduled + " - " + dateNow + " has more than 12 hours: " + (dateNow.after(scheduledDateMoreTwelveHours)));
 
-            return dateNow.after(scheduledDateMoreOneHour);
+            return dateNow.after(scheduledDateMoreTwelveHours);
 
          } catch (Exception e) {
             Logging.printLogError(logger, session, "Error parsing lrt date: " + scheduled);
@@ -128,7 +127,6 @@ public class Dynamo {
       }
 
       return s.toString();
-
 
    }
 
