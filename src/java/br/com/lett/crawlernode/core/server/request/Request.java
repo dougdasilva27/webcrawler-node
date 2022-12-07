@@ -25,6 +25,8 @@ public class Request {
 
    private boolean isVoid;
 
+   private boolean sendDiscover;
+
    private String fileS3Miranha;
    public Request() {
       super();
@@ -156,5 +158,11 @@ public class Request {
 
    public void setVoid(boolean aVoid) {
       isVoid = aVoid;
+   }
+   public void setSendDiscover(Boolean sendDiscover) {
+      this.sendDiscover = sendDiscover;
+   }
+   public boolean isSendDiscover() {
+      return sendDiscover;
    }
 }
