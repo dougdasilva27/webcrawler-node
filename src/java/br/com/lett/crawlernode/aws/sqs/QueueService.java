@@ -75,6 +75,7 @@ public class QueueService {
       queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_DEV.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_PRODUCT_DEV.toString());
       queueURLMap.put(QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_PROD.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_PROD.toString());
       queueURLMap.put(QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString());
+      queueURLMap.put("web-scraper-http-test", QUEUE_URL + "web-scraper-http-test");
 
    }
 
