@@ -143,10 +143,10 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
 
       int attemp = 0;
 
-      while (this.cookies.isEmpty() && attemp < 3) {
+      do {
          getCookiesFromWD(proxies.get(attemp));
-         attemp++;
-      }
+
+      } while (this.cookies.isEmpty() && attemp++ < proxies.size());
 
       Map<String, String> headers = new HashMap<>();
       headers.put("authority", "www.peixoto.com.br");
