@@ -103,10 +103,10 @@ public class BrasilPeixotoCrawler extends Crawler {
          ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
       );
 
-      while (this.cookies.isEmpty() && attemp < 3) {
+      do {
          getCookiesFromWD(proxies.get(attemp));
-         attemp++;
-      }
+
+      } while (this.cookies.isEmpty() && attemp++ < proxies.size());
 
       Map<String, String> headers = new HashMap<>();
       headers.put("authority", "www.peixoto.com.br");
