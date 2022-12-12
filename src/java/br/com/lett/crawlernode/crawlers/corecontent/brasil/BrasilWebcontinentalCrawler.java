@@ -59,7 +59,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
             String internalPid = jsonObject.optString("productId");
             String name = jsonObject.optString("name");
             String description = getDescription(doc);
-            String image = jsonObject.optString("image");
+            String image = jsonObject.optString("image").replace("&height=300&width=300","");
             List<String> secondaryImages = getSecondaryImages(doc);
             JSONObject offerJson = jsonObject.optJSONObject("offers");
             boolean available = doc.selectFirst(".ProductNoStock__Title") != null;
