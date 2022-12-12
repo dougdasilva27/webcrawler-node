@@ -5,9 +5,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -59,11 +57,11 @@ public class BrasilWebcontinentalCrawler extends Crawler {
             String internalPid = jsonObject.optString("productId");
             String name = jsonObject.optString("name");
             String description = getDescription(doc);
-            String image = jsonObject.optString("image").replace("&height=300&width=300","");
+            String image = jsonObject.optString("image").replace("&height=300&width=300", "");
             List<String> secondaryImages = getSecondaryImages(doc);
             JSONObject offerJson = jsonObject.optJSONObject("offers");
             boolean available = doc.selectFirst(".ProductNoStock__Title") != null;
-            Offers offers = !available ? scrapeOffers(offerJson) : new Offers();
+            Offers offers = !available ? scrapeOffers(offerJson, doc) : new Offers();
             products.add(new ProductBuilder()
                .setUrl(this.session.getOriginalURL())
                .setInternalId(internalId)
@@ -83,14 +81,18 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       return products;
    }
 
-   private Offers scrapeOffers(JSONObject offerJson) throws MalformedPricingException, OfferException {
+   private Offers scrapeOffers(JSONObject offerJson, Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Double price = offerJson.optDouble("price");
+      Double spotlightPrice = offerJson.optDouble("price");
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ProductDetails__ListPrice > span", null, false, ',', session);
+      if (spotlightPrice.equals(priceFrom)) {
+         priceFrom = null;
+      }
 
-      Installments installments = new Installments();
+      Installments installments = scrapInstallments(doc);
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(1)
-         .setInstallmentPrice(price)
+         .setInstallmentPrice(spotlightPrice)
          .build());
 
       CreditCards creditCards = new CreditCards();
@@ -104,10 +106,11 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 
 
       Pricing pricing = Pricing.PricingBuilder.create()
-         .setSpotlightPrice(price)
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .setBankSlip(BankSlip.BankSlipBuilder.create()
-            .setFinalPrice(price)
+            .setFinalPrice(spotlightPrice)
             .build())
          .build();
 
@@ -121,6 +124,29 @@ public class BrasilWebcontinentalCrawler extends Crawler {
          .build());
 
       return offers;
+   }
+
+   public Installments scrapInstallments(Document doc, String selector) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(selector, doc, false);
+      if (!pair.isAnyValueNull()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(pair.getFirst())
+            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
+            .build());
+      }
+
+      return installments;
+   }
+
+   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+
+      Installments installments = scrapInstallments(doc, ".ProductDetails__Installments");
+      if (installments != null || installments.getInstallments().isEmpty()) {
+         return installments;
+      }
+      return null;
    }
 
    private String getDescription(Document doc) {
