@@ -128,7 +128,7 @@ public class MercadolivreCrawler extends Crawler {
             Response response = this.dataFetcher.get(session, request);
 
             doc = Jsoup.parse(response.getBody());
-            String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
+            String description = CrawlerUtils.scrapStringSimpleInfo(doc,".ui-pdp-description", false);
             success = description != null && !description.isEmpty();
 
          } while (!success && tries++ < 3);
