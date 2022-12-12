@@ -59,8 +59,8 @@ public class BrasilWebcontinentalCrawler extends Crawler {
             String description = getDescription(doc);
             String image = jsonObject.optString("image");
             JSONObject offerJson = jsonObject.optJSONObject("offers");
-            boolean available = offerJson.optString("availability", "").equals("https://schema.org/InStock");
-            Offers offers = available ? scrapeOffers(offerJson) : new Offers();
+            boolean available = doc.selectFirst(".ProductNoStock__Title") != null;
+            Offers offers = !available ? scrapeOffers(offerJson) : new Offers();
             products.add(new ProductBuilder()
                .setUrl(this.session.getOriginalURL())
                .setInternalId(internalId)
