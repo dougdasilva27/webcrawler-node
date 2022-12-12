@@ -282,12 +282,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
    }
 
    private boolean isAvailable(Element doc) {
-      String isAvailable = CrawlerUtils.scrapStringSimpleInfo(doc, "div.sem-estoque", false);
-
-      if (isAvailable == null) {
-         return true;
-      }
-      return false;
+      return CrawlerUtils.scrapStringSimpleInfo(doc, ".produto-indisponivel-title", true) == null;
    }
 
    private Offers scrapOffers(Element doc) throws MalformedPricingException, OfferException {
