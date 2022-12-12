@@ -17,6 +17,8 @@ import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,6 +60,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
             String name = jsonObject.optString("name");
             String description = getDescription(doc);
             String image = jsonObject.optString("image");
+            List<String> secondaryImages = getSecondaryImages(doc);
             JSONObject offerJson = jsonObject.optJSONObject("offers");
             boolean available = doc.selectFirst(".ProductNoStock__Title") != null;
             Offers offers = !available ? scrapeOffers(offerJson) : new Offers();
@@ -68,6 +71,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
                .setName(name)
                .setDescription(description)
                .setPrimaryImage(image)
+               .setSecondaryImages(secondaryImages)
                .setOffers(offers)
                .build());
 
@@ -125,6 +129,18 @@ public class BrasilWebcontinentalCrawler extends Crawler {
          simpleDescription = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ProductLongDescription"));
       }
       return simpleDescription;
+   }
+
+   private List<String> getSecondaryImages(Document doc) {
+      List<String> secondaryImages = new ArrayList<>();
+      Elements images = doc.select(".ProductDetails__Image.ProductDetails_ActiveImage");
+      for (Element imageList : images) {
+         secondaryImages.add(HOME_PAGE + imageList.attr("src"));
+      }
+      if (secondaryImages.size() > 0) {
+         secondaryImages.remove(0);
+      }
+      return secondaryImages;
    }
 
 }
