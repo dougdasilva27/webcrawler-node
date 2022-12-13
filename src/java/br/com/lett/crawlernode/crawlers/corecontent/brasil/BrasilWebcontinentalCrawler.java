@@ -1,10 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -13,17 +9,19 @@ import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.*;
-import models.prices.Prices;
+import models.Offer;
+import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilWebcontinentalCrawler extends Crawler {
 
@@ -58,11 +56,12 @@ public class BrasilWebcontinentalCrawler extends Crawler {
             String internalId = jsonObject.optString("sku");
             String internalPid = jsonObject.optString("productId");
             String name = jsonObject.optString("name");
-            String description = jsonObject.optString("description");
-            String image = jsonObject.optString("image");
+            String description = getDescription(doc);
+            String image = jsonObject.optString("image").replace("&height=300&width=300", "");
+            List<String> secondaryImages = getSecondaryImages(doc);
             JSONObject offerJson = jsonObject.optJSONObject("offers");
-            boolean available = offerJson.optString("availability", "").equals("https://schema.org/InStock");
-            Offers offers = available ? scrapeOffers(offerJson) : new Offers();
+            boolean available = doc.selectFirst(".ProductNoStock__Title") != null;
+            Offers offers = !available ? scrapeOffers(offerJson, doc) : new Offers();
             products.add(new ProductBuilder()
                .setUrl(this.session.getOriginalURL())
                .setInternalId(internalId)
@@ -70,6 +69,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
                .setName(name)
                .setDescription(description)
                .setPrimaryImage(image)
+               .setSecondaryImages(secondaryImages)
                .setOffers(offers)
                .build());
 
@@ -81,14 +81,18 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       return products;
    }
 
-   private Offers scrapeOffers(JSONObject offerJson) throws MalformedPricingException, OfferException {
+   private Offers scrapeOffers(JSONObject offerJson, Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Double price = offerJson.optDouble("price");
+      Double spotlightPrice = offerJson.optDouble("price");
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ProductDetails__OldPrice", null, false, ',', session);
+      if (spotlightPrice.equals(priceFrom)) {
+         priceFrom = null;
+      }
 
-      Installments installments = new Installments();
+      Installments installments = scrapInstallments(doc);
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(1)
-         .setInstallmentPrice(price)
+         .setInstallmentPrice(spotlightPrice)
          .build());
 
       CreditCards creditCards = new CreditCards();
@@ -102,10 +106,11 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 
 
       Pricing pricing = Pricing.PricingBuilder.create()
-         .setSpotlightPrice(price)
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .setBankSlip(BankSlip.BankSlipBuilder.create()
-            .setFinalPrice(price)
+            .setFinalPrice(spotlightPrice)
             .build())
          .build();
 
@@ -121,5 +126,47 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       return offers;
    }
 
+   public Installments scrapInstallments(Document doc, String selector) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(selector, doc, false);
+      if (!pair.isAnyValueNull()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(pair.getFirst())
+            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
+            .build());
+      }
+
+      return installments;
+   }
+
+   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+
+      Installments installments = scrapInstallments(doc, ".ProductDetails__Installments");
+      if (installments != null || installments.getInstallments().isEmpty()) {
+         return installments;
+      }
+      return null;
+   }
+
+   private String getDescription(Document doc) {
+      String simpleDescription = CrawlerUtils.scrapStringSimpleInfo(doc, "article > div > .txt-cabecalho", false);
+      if (simpleDescription == null) {
+         simpleDescription = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ProductLongDescription"));
+      }
+      return simpleDescription;
+   }
+
+   private List<String> getSecondaryImages(Document doc) {
+      List<String> secondaryImages = new ArrayList<>();
+      Elements images = doc.select(".ProductDetails__Image.ProductDetails_ActiveImage");
+      for (Element imageList : images) {
+         secondaryImages.add(HOME_PAGE + imageList.attr("src"));
+      }
+      if (secondaryImages.size() > 0) {
+         secondaryImages.remove(0);
+      }
+      return secondaryImages;
+   }
 
 }
