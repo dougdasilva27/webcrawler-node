@@ -87,16 +87,16 @@ public class MexicoOfficedepotCrawler extends Crawler {
 
       return products;
    }
+
    private List<String> scrapCategories(Document doc) {
-      List<String> images = new LinkedList<>();
-      for (Element elem : doc.select(".breadcrumb-detail")) {
-         images.add(elem.ownText());
+      List<String> categories = new LinkedList<>();
+      for (Element elem : doc.select(".breadcrumb-detail > a > span")) {
+         categories.add(elem.ownText());
       }
-      if (images.size() > 0) {
-         images.remove(0);
-         images.remove(1);
+      if (categories.size() > 0) {
+         categories.remove(0);
       }
-      return images;
+      return categories;
    }
 
    private List<String> getSecondaryImages(Document doc) {
