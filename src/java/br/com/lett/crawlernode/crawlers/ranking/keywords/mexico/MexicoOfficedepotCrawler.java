@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -20,7 +21,7 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      String url = HOME_PAGE + "search/?q=" + keywordWithoutAccents;
+      String url = HOME_PAGE + "search/?text=" + keywordWithoutAccents;
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".product-item");
@@ -33,7 +34,7 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".name.description-style > h2", true);
             String productUrl = CrawlerUtils.scrapUrl(product, ".product-description", "href", "https", "www.officedepot.com.mx");
             String imageUrl = CrawlerUtils.scrapUrl(product, ".thumb.center-content-items > img", "data-src", "https", "www.officedepot.com.mx");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".btn-primary-rs", null, false, '.', session, null);
+            Integer price = getPrice(product);
             String internalPid = CrawlerUtils.scrapStringSimpleInfo(product, ".product-sku > span.name-add.font-medium", false);
             boolean isAvailable = price != null;
 
@@ -55,5 +56,14 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
          this.log("Keyword sem resultado!");
       }
       this.log("Finalizando Crawler de produtos da página: " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private Integer getPrice(Element element) {
+      Integer price = null;
+      String priceString = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".btn-primary-rs", "data-productdiscounted");
+      if (priceString != null && !priceString.isEmpty()) {
+         price = CommonMethods.stringPriceToIntegerPrice(priceString, '.', null);
+      }
+      return price;
    }
 }
