@@ -275,8 +275,8 @@ public abstract class HomecenterCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".jsx-2016778456.primary .jsx-2016778456:nth-child(2)", null, true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".jsx-2016778456.secondary .jsx-2016778456:nth-child(2)", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".primary span:nth-child(2)", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".secondary span:nth-child(2)", null, true, ',', session);
       if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
          priceFrom = null;
       }

@@ -9,10 +9,10 @@ public class RiodejaneiroZonasulCrawler extends VTEXGraphQLRanking {
    public RiodejaneiroZonasulCrawler(Session session) {
       super(session);
    }
+
    @Override
    protected String crawInternalPid(JSONObject product) {
       return null;
    }
 
 }
-

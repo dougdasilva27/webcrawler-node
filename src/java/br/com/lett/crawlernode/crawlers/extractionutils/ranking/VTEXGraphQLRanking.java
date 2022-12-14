@@ -205,7 +205,6 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
 
       return Base64.getEncoder().encodeToString(variables.toString().getBytes());
    }
-
    private String getRedirectQuery(String redirect) {
       String[] split = redirect.split("\\?");
       if (split.length > 0) {
