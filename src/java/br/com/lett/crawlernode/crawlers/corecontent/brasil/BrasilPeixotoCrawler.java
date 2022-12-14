@@ -43,57 +43,64 @@ public class BrasilPeixotoCrawler extends Crawler {
       config.setParser(Parser.HTML);
    }
 
-   public void getCookiesFromWD(String proxy) {
-      try {
-         Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
+   public void getCookiesFromWD() {
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/customer/account/login/", proxy, session);
+      List<String> proxies = Arrays.asList(
+         ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+         ProxyCollection.BUY_HAPROXY,
+         ProxyCollection.SMART_PROXY_BR_HAPROXY
+      );
 
-         webdriver.waitLoad(1000);
+      int attempt = 0;
 
-         waitForElement(webdriver.driver, ".page-main #email");
-         WebElement username = webdriver.driver.findElement(By.cssSelector(".page-main #email"));
-         username.sendKeys(session.getOptions().optString("user"));
+      do {
+         try {
+            Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-         webdriver.waitLoad(2000);
-         waitForElement(webdriver.driver, ".page-main #pass");
-         WebElement pass = webdriver.driver.findElement(By.cssSelector(".page-main #pass"));
-         pass.sendKeys(session.getOptions().optString("pass"));
+            webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/customer/account/login/", proxies.get(attempt), session);
 
-         waitForElement(webdriver.driver, ".page-main button.login");
-         webdriver.findAndClick(".page-main button.login", 10000);
+            webdriver.waitLoad(1000);
 
-         //chose catalão - GO
-         waitForElement(webdriver.driver, "#branch-select option[value='5']");
-         webdriver.findAndClick("#branch-select option[value='5']", 10000);
+            waitForElement(webdriver.driver, ".page-main #email");
+            WebElement username = webdriver.driver.findElement(By.cssSelector(".page-main #email"));
+            username.sendKeys(session.getOptions().optString("user"));
 
-         waitForElement(webdriver.driver, "button.b2b-choices");
-         webdriver.findAndClick("button.b2b-choices", 10000);
+            webdriver.waitLoad(2000);
+            waitForElement(webdriver.driver, ".page-main #pass");
+            WebElement pass = webdriver.driver.findElement(By.cssSelector(".page-main #pass"));
+            pass.sendKeys(session.getOptions().optString("pass"));
 
-         Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
+            waitForElement(webdriver.driver, ".page-main button.login");
+            webdriver.findAndClick(".page-main button.login", 10000);
 
-         for (Cookie cookie : cookiesResponse) {
-            BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
-            basicClientCookie.setDomain(cookie.getDomain());
-            basicClientCookie.setPath(cookie.getPath());
-            basicClientCookie.setExpiryDate(cookie.getExpiry());
-            this.cookies.add(basicClientCookie);
+            //chose catalão - GO
+            waitForElement(webdriver.driver, "#branch-select option[value='5']");
+            webdriver.findAndClick("#branch-select option[value='5']", 10000);
+
+            waitForElement(webdriver.driver, "button.b2b-choices");
+            webdriver.findAndClick("button.b2b-choices", 10000);
+
+            Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
+
+            for (Cookie cookie : cookiesResponse) {
+               BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
+               basicClientCookie.setDomain(cookie.getDomain());
+               basicClientCookie.setPath(cookie.getPath());
+               basicClientCookie.setExpiryDate(cookie.getExpiry());
+               this.cookies.add(basicClientCookie);
+            }
+
+         } catch (Exception e) {
+            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, "login não realizado");
          }
-
-      } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-         Logging.printLogWarn(logger, "login não realizado");
-      } finally {
-         if (webdriver != null) {
-            webdriver.terminate();
-         }
-      }
+      } while (this.cookies.isEmpty() && attempt++ < proxies.size());
    }
 
    @Override
    protected Response fetchResponse() {
 
-      int attemp = 0;
+      getCookiesFromWD();
 
       List<String> proxies = Arrays.asList(
          ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
@@ -102,11 +109,6 @@ public class BrasilPeixotoCrawler extends Crawler {
          ProxyCollection.SMART_PROXY_BR_HAPROXY,
          ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
       );
-
-      do {
-         getCookiesFromWD(proxies.get(attemp));
-
-      } while (this.cookies.isEmpty() && attemp++ < proxies.size());
 
       Map<String, String> headers = new HashMap<>();
       headers.put("authority", "www.peixoto.com.br");
