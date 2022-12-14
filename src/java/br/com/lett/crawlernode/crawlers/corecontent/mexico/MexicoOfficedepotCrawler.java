@@ -13,7 +13,6 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -21,15 +20,15 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 
 public class MexicoOfficedepotCrawler extends Crawler {
 
+   private final String HOME_PAGE = "https://www.officedepot.com.mx";
    private static String SELLER_NAME = "Office Depot";
 
    public Set<String> cards = Sets.newHashSet(Card.AMEX.toString());
@@ -100,18 +99,16 @@ public class MexicoOfficedepotCrawler extends Crawler {
    }
 
    private List<String> getSecondaryImages(Document doc) {
-      Element imageScript = doc.selectFirst("script:containsData(mage/gallery/gallery)");
-      if (imageScript != null) {
-         JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
-         JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class, new JSONArray());
-         List<String> imagesList = new ArrayList<>();
-         for (int i = 1; i < imageArray.length(); i++) {
-            String imageList = JSONUtils.getValueRecursive(imageArray, i + ".img", String.class);
-            imagesList.add(imageList);
-         }
-         return imagesList;
+      List<String> secondaryImages = new ArrayList<>();
+
+      Elements imageList = doc.select(".img-detail-prin");
+      for (Element image : imageList) {
+         secondaryImages.add(HOME_PAGE + image.attr("src"));
       }
-      return null;
+      if (secondaryImages.size() > 0) {
+         secondaryImages.remove(0);
+      }
+      return secondaryImages;
    }
 
    private boolean isProductPage(Document document) {
