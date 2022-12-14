@@ -73,7 +73,8 @@ public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "*/*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_0_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36");
-
+      headers.put("Accept-Encoding","gzip, deflate, br");
+      headers.put("Connection","keep-alive");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -87,8 +88,9 @@ public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
                .mustRetrieveStatistics(true)
                .build())
          .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR)
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR)
          )
          .build();
 
