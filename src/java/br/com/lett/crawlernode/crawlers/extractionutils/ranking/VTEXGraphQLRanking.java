@@ -111,7 +111,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
       return fetchSearchApi(doc, null);
    }
 
-   protected JSONObject fetchSearchApi(Document doc, String redirect) {
+   private JSONObject fetchSearchApi(Document doc, String redirect) {
       JSONObject searchApi = new JSONObject();
       StringBuilder url = new StringBuilder();
       String sha256Hash = getSha256Hash(doc);
@@ -152,7 +152,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
       return searchApi;
    }
 
-   protected String createVariablesBase64(String redirect) {
+   private String createVariablesBase64(String redirect) {
       JSONObject variables = session.getOptions().optJSONObject("variables");
 
 
@@ -205,24 +205,6 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
 
       return Base64.getEncoder().encodeToString(variables.toString().getBytes());
    }
-//if (redirect != null && !redirect.isEmpty()) {
-//         String query = getRedirectQuery(redirect);
-//         List<String> categories = Arrays.asList(query.split("/"));
-//         String map = categories.stream().map(category -> "c").collect(Collectors.joining(","));
-//
-//         List<JSONObject> facetsList = categories.stream().map(category -> {
-//            JSONObject objFacet = new JSONObject();
-//            objFacet.put("key", "c");
-//            objFacet.put("value", category);
-//            return objFacet;
-//         }).collect(Collectors.toList());
-//         JSONArray facets = new JSONArray(facetsList);
-//
-//         variables.put("map", map);
-//         variables.put("query", query);
-//         variables.put("selectedFacets", facets);
-//         variables.remove("fullText");
-//      }
    private String getRedirectQuery(String redirect) {
       String[] split = redirect.split("\\?");
       if (split.length > 0) {
@@ -247,7 +229,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
    }
 
 
-   protected String getSha256Hash(Document doc) {
+   private String getSha256Hash(Document doc) {
       Element el = doc.selectFirst("template[data-varname='__STATE__']");
       String sha256Hash = null;
 
