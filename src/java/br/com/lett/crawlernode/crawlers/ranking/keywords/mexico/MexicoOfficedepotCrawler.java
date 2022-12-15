@@ -15,10 +15,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
@@ -32,10 +29,10 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
    }
 
    private Document fetchNextPage() {
+      WebElement button = webdriver.driver.findElement(By.cssSelector(".pagination-next > a"));
       Logging.printLogDebug(logger, session, "fetching next page...");
       webdriver.waitLoad(3000);
       webdriver.waitForElement(".pagination-next > a", 10);
-      WebElement button = webdriver.driver.findElement(By.cssSelector(".pagination-next > a"));
       webdriver.clickOnElementViaJavascript(button);
       webdriver.waitLoad(5000);
       webdriver.waitForElement(".product-item", 10);
@@ -50,7 +47,7 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
       Document doc;
       do {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempts), session);
-         webdriver.waitLoad(10000);
+         webdriver.waitLoad(12000);
          WebElement search = webdriver.driver.findElement(By.cssSelector("#js-site-search-input"));
          search.sendKeys(this.keywordEncoded);
          webdriver.waitLoad(2000);
@@ -58,8 +55,8 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
          webdriver.clickOnElementViaJavascript(buttonSearch);
          webdriver.waitLoad(5000);
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
       } while (doc == null && attempts++ < 3);
+      webdriver.waitForElement(".product-item", 10);
 
       return doc;
    }
@@ -69,7 +66,7 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
 
       if (LAST_PRODUCT_INDEX == 0) {
          this.currentDoc = fetchDocumentWithWebDriver(HOME_PAGE);
-      } else {
+      }else{
          this.currentDoc = fetchNextPage();
       }
       Elements products = this.currentDoc.select(".product-item");
