@@ -23,9 +23,8 @@ public class ChileSantaisabelapoquindoCrawler extends CrawlerRankingKeywords {
 
    public ChileSantaisabelapoquindoCrawler(Session session) {
       super(session);
-      // super.fetchMode = FetchMode.JSOUP;
    }
-
+   private String account = session.getOptions().optString("account","");
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
@@ -84,14 +83,16 @@ public class ChileSantaisabelapoquindoCrawler extends CrawlerRankingKeywords {
 
    private JSONObject getJSONFromAPI() {
       String urlAPI = "https://apis.santaisabel.cl/catalog/api/v1/apoquindo/search/" + this.keywordEncoded + "?page=" + this.currentPage;
-
+      if (urlAPI.contains("+")) {
+         urlAPI = urlAPI.replace("+", "%20");
+      }
       this.log("Link onde são feitos os crawlers: " + urlAPI);
 
       Map<String, String> headers = new HashMap<>();
       headers.put("x-api-key", "IuimuMneIKJd3tapno2Ag1c1WcAES97j");
       headers.put("x-consumer", "santaisabel");
       headers.put("authority", "apis.santaisabel.cl");
-      headers.put("x-account", "apoquindo");
+      headers.put("x-account", account);
       String payload = "{\"selectedFacets\":[{\"key\":\"trade-policy\",\"value\":\"1\"}],\"orderBy\":\"OrderByScoreDESC\"}";
 
       Request request = Request.RequestBuilder.create()

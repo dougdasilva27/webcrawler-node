@@ -45,11 +45,17 @@ public class ChileSantaisabelapoquindoCrawler extends Crawler {
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
+   private String seller = session.getOptions().optString("seller","");
+   private  String storeName = session.getOptions().optString("store-name","");
 
    protected Document fetchDoc() {
-      BasicClientCookie cookie = new BasicClientCookie("seller", "apoquindo");
+      BasicClientCookie cookie = new BasicClientCookie("seller", seller);
+      cookie.setDomain("www.santaisabel.cl");
+      cookie.setPath("/");
       this.cookies.add(cookie);
-      BasicClientCookie cookie2 = new BasicClientCookie("store-name", "Santa%20Isabel%20Apoquindo");
+      BasicClientCookie cookie2 = new BasicClientCookie("store-name", storeName);
+      cookie2.setDomain("www.santaisabel.cl");
+      cookie2.setPath("/");
       this.cookies.add(cookie2);
 
       Request request = new Request.RequestBuilder()
