@@ -111,7 +111,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
       return fetchSearchApi(doc, null);
    }
 
-   private JSONObject fetchSearchApi(Document doc, String redirect) {
+   protected JSONObject fetchSearchApi(Document doc, String redirect) {
       JSONObject searchApi = new JSONObject();
       StringBuilder url = new StringBuilder();
       String sha256Hash = getSha256Hash(doc);
@@ -152,7 +152,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
       return searchApi;
    }
 
-   private String createVariablesBase64(String redirect) {
+   protected String createVariablesBase64(String redirect) {
       JSONObject variables = session.getOptions().optJSONObject("variables");
 
 
@@ -229,7 +229,7 @@ public class VTEXGraphQLRanking extends CrawlerRankingKeywords {
    }
 
 
-   private String getSha256Hash(Document doc) {
+   protected String getSha256Hash(Document doc) {
       Element el = doc.selectFirst("template[data-varname='__STATE__']");
       String sha256Hash = null;
 
