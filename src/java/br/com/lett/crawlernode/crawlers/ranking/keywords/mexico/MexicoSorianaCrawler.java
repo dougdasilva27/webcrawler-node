@@ -67,9 +67,8 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
 
       if (products.size() >= 1) {
          int startSearch = (this.currentPage - 1) * 15;
-         int endSearch = startSearch + 15;
 
-         for (int i = startSearch; i < endSearch && startSearch < products.size(); i++) {
+         for (int i = startSearch; i < products.size(); i++) {
             Element e = products.get(i);
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product", "data-pid");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".tile-body.product-tile--body.w-100.p-0 > div.pdp-link.product-tile--name > a", true);
@@ -104,7 +103,7 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
       if (priceWithDiscount != 0) {
          return priceWithDiscount;
       }
-      return CrawlerUtils.scrapIntegerFromHtmlAttr(e, ".value.d-none", "content", 0);
+      return CrawlerUtils.scrapIntegerFromHtmlAttr(e, ".value.d-none", "content", null);
    }
 
    @Override
