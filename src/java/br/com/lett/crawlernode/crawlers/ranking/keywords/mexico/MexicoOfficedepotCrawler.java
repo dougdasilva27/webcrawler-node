@@ -33,10 +33,12 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
 
    private Document fetchNextPage() {
       Logging.printLogDebug(logger, session, "fetching next page...");
-      webdriver.waitLoad(8000);
-      WebElement button = webdriver.driver.findElement(By.cssSelector(".pag-icon-next"));
+      webdriver.waitLoad(3000);
+      webdriver.waitForElement(".pagination-next > a", 10);
+      WebElement button = webdriver.driver.findElement(By.cssSelector(".pagination-next > a"));
       webdriver.clickOnElementViaJavascript(button);
-      webdriver.waitLoad(8000);
+      webdriver.waitLoad(5000);
+      webdriver.waitForElement(".product-item", 10);
 
       return Jsoup.parse(webdriver.getCurrentPageSource());
    }
@@ -60,11 +62,6 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
       } while (doc == null && attempts++ < 3);
 
       return doc;
-   }
-
-   public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 20);
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
    @Override
