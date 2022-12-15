@@ -79,60 +79,58 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
 
    }
 
-   public void getCookiesFromWD() {
-      List<String> proxies = Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.SMART_PROXY_BR_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
+   public void getCookiesFromWD(String proxy) {
+      try {
+         Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-      int attempt = 0;
-      do {
-         try {
-            Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
+         ChromeOptions options = new ChromeOptions();
+         options.addArguments("--window-size=1920,1080");
+         options.addArguments("--headless");
+         options.addArguments("--no-sandbox");
+         options.addArguments("--disable-dev-shm-usage");
 
-            ChromeOptions options = new ChromeOptions();
-            options.addArguments("--window-size=1920,1080");
-            options.addArguments("--headless");
-            options.addArguments("--no-sandbox");
-            options.addArguments("--disable-dev-shm-usage");
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/customer/account/login/", proxy, session);
 
-            webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.peixoto.com.br/customer/account/login/", proxies.get(attempt), session);
+         webdriver.waitLoad(1000);
 
-            webdriver.waitLoad(1000);
+         waitForElement(webdriver.driver, ".page-main #email");
+         WebElement username = webdriver.driver.findElement(By.cssSelector(".page-main #email"));
+         username.sendKeys(session.getOptions().optString("user"));
 
-            waitForElement(webdriver.driver, ".page-main #email");
-            WebElement username = webdriver.driver.findElement(By.cssSelector(".page-main #email"));
-            username.sendKeys(session.getOptions().optString("user"));
+         webdriver.waitLoad(2000);
+         waitForElement(webdriver.driver, ".page-main #pass");
+         WebElement pass = webdriver.driver.findElement(By.cssSelector(".page-main #pass"));
+         pass.sendKeys(session.getOptions().optString("pass"));
 
-            webdriver.waitLoad(2000);
-            waitForElement(webdriver.driver, ".page-main #pass");
-            WebElement pass = webdriver.driver.findElement(By.cssSelector(".page-main #pass"));
-            pass.sendKeys(session.getOptions().optString("pass"));
+         waitForElement(webdriver.driver, ".page-main button.login");
+         webdriver.findAndClick(".page-main button.login", 10000);
 
-            waitForElement(webdriver.driver, ".page-main button.login");
-            webdriver.findAndClick(".page-main button.login", 10000);
+         //chose catalão - GO = 5
+         waitForElement(webdriver.driver, "#branch-select option[value='5']");
+         webdriver.findAndClick("#branch-select option[value='5']", 10000);
 
-            //chose catalão - GO = 5
-            waitForElement(webdriver.driver, "#branch-select option[value='5']");
-            webdriver.findAndClick("#branch-select option[value='5']", 10000);
+         waitForElement(webdriver.driver, "button.b2b-choices");
+         webdriver.findAndClick("button.b2b-choices", 10000);
 
-            waitForElement(webdriver.driver, "button.b2b-choices");
-            webdriver.findAndClick("button.b2b-choices", 10000);
+         Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
 
-            Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
-
-            for (Cookie cookie : cookiesResponse) {
-               BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
-               basicClientCookie.setDomain(cookie.getDomain());
-               basicClientCookie.setPath(cookie.getPath());
-               basicClientCookie.setExpiryDate(cookie.getExpiry());
-               this.cookies.add(basicClientCookie);
-            }
-
-         } catch (Exception e) {
-            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-
-            Logging.printLogWarn(logger, "login não realizado");
+         for (Cookie cookie : cookiesResponse) {
+            BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
+            basicClientCookie.setDomain(cookie.getDomain());
+            basicClientCookie.setPath(cookie.getPath());
+            basicClientCookie.setExpiryDate(cookie.getExpiry());
+            this.cookies.add(basicClientCookie);
          }
-      } while (this.cookies.isEmpty() && attempt++ < proxies.size());
 
+      } catch (Exception e) {
+         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+
+         Logging.printLogWarn(logger, "login não realizado");
+      } finally {
+         if (webdriver != null) {
+            webdriver.terminate();
+         }
+      }
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
@@ -142,7 +140,13 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
 
    protected Document fetch(String url) {
       List<String> proxies = Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.SMART_PROXY_BR_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
-      getCookiesFromWD();
+
+      int attemp = 0;
+
+      do {
+         getCookiesFromWD(proxies.get(attemp));
+      } while (this.cookies.isEmpty() && attemp++ < proxies.size());
+
       Map<String, String> headers = new HashMap<>();
       headers.put("authority", "www.peixoto.com.br");
       headers.put("accept-language", "en-US,en;q=0.9,pt;q=0.8,pt-PT;q=0.7");
@@ -152,7 +156,6 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
          .setUrl(url)
          .setCookies(this.cookies)
          .setHeaders(headers)
-         .setProxyservice(proxies)
          .setSendUserAgent(false)
          .build();
 
