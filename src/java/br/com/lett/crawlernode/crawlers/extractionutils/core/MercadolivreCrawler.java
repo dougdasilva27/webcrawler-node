@@ -2,8 +2,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -116,22 +114,28 @@ public class MercadolivreCrawler extends Crawler {
             this.cookies.add(cookie);
          }
          boolean success;
-         int tries = 0;
+         int tries = 1;
 
          do {
             Request request = RequestBuilder.create()
                .setUrl(session.getOriginalURL())
                .setCookies(cookies)
+               .setSendUserAgent(true)
                .setHeaders(headers)
                .build();
 
             Response response = this.dataFetcher.get(session, request);
 
             doc = Jsoup.parse(response.getBody());
-            String description = CrawlerUtils.scrapStringSimpleInfo(doc,".ui-pdp-description", false);
+            String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-description", false);
             success = description != null && !description.isEmpty();
+            if (success) {
+               Logging.printLogInfo(logger, session, "HTML has description!");
+            } else {
+               Logging.printLogError(logger, session, "HTML not have description. Attempt: " + tries);
+            }
 
-         } while (!success && tries++ < 3);
+         } while (!success && tries++ <= 4);
 
       }
 
