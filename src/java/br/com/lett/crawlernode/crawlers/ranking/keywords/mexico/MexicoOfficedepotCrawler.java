@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -9,83 +9,65 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
 
 import java.io.UnsupportedEncodingException;
-import java.util.List;
+import java.util.Arrays;
 
 public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
-   private int LAST_PRODUCT_INDEX = 0;
+
+   private final int COUNT_PAGE = 0;
    private final String HOME_PAGE = "https://www.officedepot.com.mx/officedepot/en/";
 
    public MexicoOfficedepotCrawler(Session session) {
       super(session);
    }
 
-   private Document fetchNextPage() {
-      WebElement button = webdriver.driver.findElement(By.cssSelector(".pagination-next > a"));
-      Logging.printLogDebug(logger, session, "fetching next page...");
-      webdriver.waitLoad(3000);
-      webdriver.waitForElement(".pagination-next > a", 10);
-      webdriver.clickOnElementViaJavascript(button);
-      webdriver.waitLoad(5000);
-      webdriver.waitForElement(".product-item", 10);
-
-      return Jsoup.parse(webdriver.getCurrentPageSource());
-   }
-
    @Override
-   protected Document fetchDocumentWithWebDriver(String url) {
-      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY);
-      int attempts = 0;
-      Document doc;
-      do {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempts), session);
-         webdriver.waitLoad(12000);
-         WebElement search = webdriver.driver.findElement(By.cssSelector("#js-site-search-input"));
-         search.sendKeys(this.keywordEncoded);
-         webdriver.waitLoad(2000);
-         WebElement buttonSearch = webdriver.driver.findElement(By.cssSelector(".btn.btn-link.js_search_button"));
-         webdriver.clickOnElementViaJavascript(buttonSearch);
-         webdriver.waitLoad(5000);
-         doc = Jsoup.parse(webdriver.getCurrentPageSource());
-      } while (doc == null && attempts++ < 3);
-      webdriver.waitForElement(".product-item", 10);
+   protected Document fetchDocument(String url) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.SMART_PROXY_MX
+         ))
+         .build();
 
-      return doc;
+      String response = dataFetcher.get(session, request).getBody();
+
+      return Jsoup.parse(response);
    }
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-
-      if (LAST_PRODUCT_INDEX == 0) {
-         this.currentDoc = fetchDocumentWithWebDriver(HOME_PAGE);
-      }else{
-         this.currentDoc = fetchNextPage();
+      String keyword = this.keywordWithoutAccents.toLowerCase();
+      String url = HOME_PAGE + "Categoría/Todas/c/0-0-0-0?q=" + keyword + "%3Arelevance&page=" + COUNT_PAGE;
+      if (keyword.equals("bic")) {
+         String bicUrl = HOME_PAGE + "Categoría/Todas/c/0-0-0-0?q=" + keyword + "%3Aprice-desc%3Abrand%3ABIC&page=" + COUNT_PAGE;
+         this.currentDoc = fetchDocument(bicUrl);
+      } else {
+         this.currentDoc = fetchDocument(url);
       }
+
       Elements products = this.currentDoc.select(".product-item");
 
       if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts();
-         }
-         for (int i = LAST_PRODUCT_INDEX; i < products.size(); i++) {
-            Element product = products.get(i);
+         for (Element product : products) {
+            String internalPid = CrawlerUtils.scrapStringSimpleInfo(product, ".product-sku > span.name-add.font-medium", false);
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".name.description-style > h2", true);
             String productUrl = CrawlerUtils.scrapUrl(product, ".product-description", "href", "https", "www.officedepot.com.mx");
             String imageUrl = CrawlerUtils.scrapUrl(product, ".thumb.center-content-items > img", "data-src", "https", "www.officedepot.com.mx");
             Integer price = getPrice(product);
-            String internalPid = CrawlerUtils.scrapStringSimpleInfo(product, ".product-sku > span.name-add.font-medium", false);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
+               .setInternalId(internalPid)
                .setInternalPid(internalPid)
                .setName(productName)
                .setPriceInCents(price)
@@ -94,7 +76,6 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
-            LAST_PRODUCT_INDEX++;
             if (this.arrayProducts.size() == productsLimit)
                break;
          }
@@ -103,6 +84,11 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
          this.log("Keyword sem resultado!");
       }
       this.log("Finalizando Crawler de produtos da página: " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      return !this.currentDoc.select(".js-next-pick").isEmpty();
    }
 
    private Integer getPrice(Element element) {
