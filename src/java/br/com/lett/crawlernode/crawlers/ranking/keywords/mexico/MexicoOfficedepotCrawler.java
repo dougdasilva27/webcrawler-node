@@ -46,7 +46,7 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       String keyword = this.keywordWithoutAccents.toLowerCase();
-      String url = HOME_PAGE + "Categoría/Todas/c/0-0-0-0?q=" + keyword + "%3Arelevance&page=" + COUNT_PAGE;
+      String url = HOME_PAGE + "Categoría/Todas/c/0-0-0-0?q=" + keyword.replaceAll(" ","%20") + "%3Arelevance&page=" + COUNT_PAGE;
       if (keyword.equals("bic")) {
          String bicUrl = HOME_PAGE + "Categoría/Todas/c/0-0-0-0?q=" + keyword + "%3Aprice-desc%3Abrand%3ABIC&page=" + COUNT_PAGE;
          this.currentDoc = fetchDocument(bicUrl);
