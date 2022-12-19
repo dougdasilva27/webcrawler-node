@@ -64,8 +64,8 @@ public class MexicoOfficedepotCrawler extends Crawler {
          List<String> secondaryImages = getSecondaryImages(document);
          String description = CrawlerUtils.scrapStringSimpleInfo(document, ".col-md-12.name > h1 ", true);
          List<String> categories = scrapCategories(document);
-         boolean available = document.select(".add_to_cart_form.bb") != null;
-         Offers offers = available ? scrapOffers(document) : new Offers();
+         String available = CrawlerUtils.scrapStringSimpleInfo(document,".btn-agotado",false);
+         Offers offers = available != null && !available.isEmpty() && !available.contains("No disponible") ? scrapOffers(document) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
