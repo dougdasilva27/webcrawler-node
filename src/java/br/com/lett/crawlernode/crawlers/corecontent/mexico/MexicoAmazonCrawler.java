@@ -531,7 +531,7 @@ public class MexicoAmazonCrawler extends Crawler {
          description.append(e.html().replace("noscript", "div"));
       }
 
-      Elements longDescription = doc.select(".feature[id^=btfContent]");
+      Elements longDescription = doc.select(".feature[id^=btfContent], #productDescription p > span");
 
       for (Element e : longDescription) {
          Element compare = e.select("#compare").first();
