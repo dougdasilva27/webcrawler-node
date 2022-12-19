@@ -45,6 +45,8 @@ public class MexicoOfficedepotCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
+      //Para keyword "bic" a url de busca é diferente das demais e foi necessário implementar um if para verificar essa condição.
+      // Algo a ser melhorado a curto prazo pois o hardCode não é a melhor solução.
       String keyword = this.keywordWithoutAccents.toLowerCase();
       String url = HOME_PAGE + "Categoría/Todas/c/0-0-0-0?q=" + keyword.replaceAll(" ","%20") + "%3Arelevance&page=" + COUNT_PAGE;
       if (keyword.equals("bic")) {
