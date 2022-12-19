@@ -35,9 +35,9 @@ public class EspanaDiaCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapUrl(e, "a", "href", "https://", HOST);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".details", true);
             Integer priceInCents = e.selectFirst(".price_container > .price > span") != null ?
-               CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price_container > .price > span", null, true, ',', session, 0) :
-               CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price_container > .price", null, true, ',', session, 0);
-            boolean isAvailable = priceInCents != 0;
+               CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price_container > .price > span", null, true, ',', session, null) :
+               CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price_container > .price", null, true, ',', session, null);
+            boolean isAvailable = priceInCents != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
