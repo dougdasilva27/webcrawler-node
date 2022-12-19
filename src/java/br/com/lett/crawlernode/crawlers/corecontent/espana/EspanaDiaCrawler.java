@@ -52,8 +52,8 @@ public class EspanaDiaCrawler extends Crawler {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".prod_add_to_cart .product-initialAddToCart-button",
             "data-productcode");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".block1 h1", false);
-         boolean available = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".span-11 .big-price", null, false, ',', session) != null;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=name]", false);
+         boolean available = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price > .big-price", null, false, ',', session) != null;
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#breadcrumb li h3 [itemprop=\"name\"]", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".span-10 #primary_image .productZoom",
             Collections.singletonList("href"), "https", "www.dia.es");
@@ -111,11 +111,13 @@ public class EspanaDiaCrawler extends Crawler {
 
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".span-11 .big-price", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price > .big-price", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price > s", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .build();
 
