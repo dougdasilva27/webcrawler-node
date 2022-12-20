@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.espana;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -15,34 +18,36 @@ public class EspanaDiaCrawler extends CrawlerRankingKeywords {
    private static final String HOST = "www.dia.es";
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
-      this.pageSize = 40;
-      this.currentPage = 0;
+      this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
-      String url = "https://" + HOST + "/compra-online/search?q=" + this.keywordWithoutAccents + "%3Arelevance&page=" + this.currentPage + "&disp=";
-
-      System.err.println(url);
+      String url = "https://" + HOST + "/compra-online/search?q=" + this.keywordWithoutAccents + "%3Arelevance&page=" + (this.currentPage - 1) + "&disp=";
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".span-16.last .span-3");
+      Elements products = this.currentDoc.select("#productgridcontainer .product-list__item .prod_grid");
 
       if (!products.isEmpty()) {
          for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".prod_grid", "data-productcode");
-            String internalPid = internalId;
-            String productUrl = CrawlerUtils.scrapUrl(e, ".prod_grid a", "href", "https://", HOST);
+            String internalId = e.attr("data-productcode");
+            String productUrl = CrawlerUtils.scrapUrl(e, "a", "href", "https://", HOST);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".details", true);
+            Integer priceInCents = e.selectFirst(".price_container > .price > span") != null ?
+               CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price_container > .price > span", null, true, ',', session, null) :
+               CrawlerUtils.scrapPriceInCentsFromHtml(e, ".price_container > .price", null, true, ',', session, null);
+            boolean isAvailable = priceInCents != null;
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setPriceInCents(priceInCents)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log(
-                  "Position: " + this.position +
-                        " - InternalId: " + internalId +
-                        " - InternalPid: " + internalPid +
-                        " - Url: " + productUrl
-            );
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit)
                break;
@@ -59,7 +64,9 @@ public class EspanaDiaCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return !this.currentDoc.select(".paginatorBottom .prod_refine .pager li a[href]:not(:first-child)").isEmpty();
+      Element nextButton = this.currentDoc.selectFirst(".btn-pager--next");
+
+      return nextButton != null && !nextButton.hasClass("disabled");
    }
 
 }
