@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.espana
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection
+import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card.*
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
@@ -13,6 +15,7 @@ import models.pricing.Pricing.PricingBuilder
 import org.json.JSONArray
 import org.json.JSONObject
 import org.jsoup.nodes.Document
+import java.util.*
 
 class EspanaCarrefourCrawler(session: Session) : Crawler(session) {
 
@@ -21,7 +24,24 @@ class EspanaCarrefourCrawler(session: Session) : Crawler(session) {
     return !FILTERS.matcher(href).matches() && href.startsWith("https://www.comperdelivery.com.br/")
   }
 
-  override fun extractInformation(document: Document): List<Product> {
+   override fun fetch(): Document {
+      val request = Request.RequestBuilder.create()
+         .setUrl(session.originalURL)
+         .setCookies(this.cookies)
+         .setProxyservice(
+            Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES
+         ))
+         .build()
+
+      val response = dataFetcher.get(session, request)
+
+      return response.body.toDoc() ?: Document(session.originalURL)
+   }
+
+
+   override fun extractInformation(document: Document): List<Product> {
     val products = mutableListOf<Product>()
 
     if ("/p" in session.originalURL) {
