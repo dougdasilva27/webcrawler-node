@@ -48,7 +48,7 @@ public class ChileFerretekCrawler extends Crawler {
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imgPrincipal > a > img", Collections.singletonList("src"), "https", "herramientas.cl");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".thumbsGaleriaFicha > a", Collections.singletonList("href"), "https", "herramientas.cl", primaryImage);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb > li:not(:last-child)", true);
-         String description = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"meta[property*=description]", "content");
+         String description = scrapDescription(doc);
          boolean availableToBuy = checkIfIsAvailable(doc);
 
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
@@ -71,6 +71,12 @@ public class ChileFerretekCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapDescription(Document doc) {
+      String smallDescription = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"meta[property*=description]", "content");
+      String fullDescription = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".tab-text ul > li"));
+      return smallDescription + fullDescription;
    }
 
    private boolean checkIfIsAvailable(Document doc) {
