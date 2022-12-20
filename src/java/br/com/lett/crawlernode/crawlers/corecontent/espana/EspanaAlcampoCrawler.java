@@ -1,24 +1,23 @@
 package br.com.lett.crawlernode.crawlers.corecontent.espana;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +25,6 @@ import java.util.Set;
 
 public class EspanaAlcampoCrawler extends Crawler {
 
-   private final String HOME_PAGE = "https://www.cotodigital3.com.ar/";
    private static final String SELLER_FULL_NAME = "Alcampo";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
@@ -36,9 +34,34 @@ public class EspanaAlcampoCrawler extends Crawler {
    }
 
    @Override
-   public boolean shouldVisit() {
-      String href = session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   protected Object fetch() {
+      Document doc = null;
+
+      int attempts = 0;
+      boolean success = false;
+
+      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY);
+      do {
+
+         try {
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempts), session);
+
+            webdriver.waitLoad(30000);
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            success = !doc.select(".productDesc h1").isEmpty();
+
+         } catch (Exception e) {
+            Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
+
+         } finally {
+            if (webdriver != null) {
+               webdriver.terminate();
+            }
+         }
+      } while (!success && attempts++ < proxies.size());
+
+      return doc;
+
    }
 
    @Override
@@ -49,16 +72,13 @@ public class EspanaAlcampoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = crawlInternalId(doc);
-         String internalPid = crawlInternalPid(session.getOriginalURL());
-         String name = crawlName(doc);
-         CategoryCollection categories = crawlCategories(doc);
-         String primaryImage = crawlPrimaryImage(doc);
-         String secondaryImages = crawlSecondaryImages(doc);
-         String description = crawlDescription(doc);
-         Integer stock = null;
-         boolean availableToBuy = crawlAvailability(doc);
-         Offers offers = availableToBuy ? scrapOffer(doc, internalId) : new Offers();
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".productCode", "value");
+         String internalPid = null;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".productDesc h1", true);
+         String primaryImage = null;
+         String description = null;
+         boolean availableToBuy = doc.select(".outOfStock").isEmpty();
+         Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -66,13 +86,8 @@ public class EspanaAlcampoCrawler extends Crawler {
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            .setStock(stock)
             .setOffers(offers)
             .build();
 
@@ -87,119 +102,12 @@ public class EspanaAlcampoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".product_page") != null;
+      return doc.selectFirst(".productDesc h1") != null;
    }
 
-   private String crawlInternalId(Document document) {
-      String internalId = null;
-
-      Element internalIdElement = document.select(".span_codigoplu").first();
-      if (internalIdElement != null) {
-         internalId = internalIdElement.text().replaceAll("[^0-9]", "");
-      }
-
-      return internalId;
-   }
-
-   private String crawlInternalPid(String url) {
-      String internalPid = null;
-
-      String[] tokens = url.split("-");
-      String id = tokens[tokens.length - 2].replaceAll("[^0-9]", "").trim();
-
-      if (!id.isEmpty()) {
-         internalPid = id;
-      }
-
-      return internalPid;
-   }
-
-   private String crawlName(Document document) {
-      String name = null;
-      Element nameElement = document.select("h1.product_page").first();
-
-      if (nameElement != null) {
-         name = nameElement.ownText().trim();
-      }
-
-      return name;
-   }
-
-
-   private String crawlPrimaryImage(Document document) {
-      String primaryImage = null;
-      Element primaryImageElement = document.select("a.gall-item").first();
-
-      if (primaryImageElement != null) {
-         primaryImage = primaryImageElement.attr("href").trim();
-
-         if (primaryImage.contains("?")) {
-            primaryImage = primaryImage.split("\\?")[0];
-         }
-      }
-
-      return primaryImage;
-   }
-
-   private String crawlSecondaryImages(Document document) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
-
-      Elements imagesElement = document.select(".zoomThumbLink > img");
-
-      for (int i = 1; i < imagesElement.size(); i++) { // first index is the primary image
-         String image = imagesElement.get(i).attr("data-large").trim();
-         secondaryImagesArray.put(image);
-      }
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
-   }
-
-   private CategoryCollection crawlCategories(Document document) {
-      CategoryCollection categories = new CategoryCollection();
-
-      Elements elementCategories = document.select("#atg_store_breadcrumbs a:not(.atg_store_navLogo) p");
-      for (int i = 0; i < elementCategories.size(); i++) {
-         categories.add(elementCategories.get(i).ownText().trim());
-      }
-
-      return categories;
-   }
-
-   private String crawlDescription(Document document) {
-      StringBuilder description = new StringBuilder();
-
-      String haveDescription = CrawlerUtils.scrapStringSimpleInfo(document, ".product_detail_comentario #txtComentario", true);
-
-      if (haveDescription != null && !haveDescription.equals("----")) {
-         description.append(haveDescription);
-      }
-
-      String haveCarac = CrawlerUtils.scrapStringSimpleInfo(document, ".mute .tbldatatextie span", true);
-      if (haveCarac != null && !haveCarac.contains("No se encontraron")) {
-         Elements caracElements = document.select(".tblData .mute td");
-         if (caracElements != null) {
-
-            for (Element e : caracElements) {
-               String caracElement = CrawlerUtils.scrapStringSimpleInfo(e, "span", true);
-
-               if (caracElement != null) {
-                  description.append(caracElement).append(" ");
-               }
-            }
-         }
-      }
-      return description.toString();
-   }
-
-   private Offers scrapOffer(Document doc, String internalId) throws OfferException, MalformedPricingException {
+   private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(internalId, doc);
-      List<String> sales = scrapSales(doc);
+      Pricing pricing = scrapPricing(doc);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -208,51 +116,28 @@ public class EspanaAlcampoCrawler extends Crawler {
          .setIsBuybox(false)
          .setIsMainRetailer(true)
          .setPricing(pricing)
-         .setSales(sales)
          .build());
 
       return offers;
 
    }
 
-   private List<String> scrapSales(Document doc) {
-      List<String> sales = new ArrayList<>();
-
-      Element salesOneElement = doc.selectFirst(".first_price_discount_container");
-      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
-
-      if (firstSales != null && !firstSales.isEmpty()) {
-         sales.add(firstSales);
-      }
-
-      return sales;
-   }
 
    private Double scrapSpotlightPrice(Document doc) {
-      Double price = null;
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio,.atg_store_newPrice,.atg_store_oldPrice.price_regular", null, false, ',', session);
-      Double priceDiscount = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".first_price_discount_container .price_discount", null, false, '.', session);
-      if (priceDiscount != null) {
-         price = priceDiscount;
-      } else {
-         price = spotlightPrice;
-      }
-      return price;
+      Double decimals = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".big-price.price.right.precio", null, true, ',', session);
+      Double cents = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".big-price.price.right. strong", null, true, ',', session);
+
+      Double spotlightPrice = (decimals * 100) + cents;
+
+      return spotlightPrice;
+
    }
 
-   private Double scrapPriceFrom(Document doc, Double spotlightPrice) {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio", null, false, '.', session);
-      if (spotlightPrice.equals(priceFrom)) {
-         priceFrom = null;
-      }
-      return priceFrom;
-   }
-
-   private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = scrapSpotlightPrice(doc);
-      Double priceFrom = scrapPriceFrom(doc, spotlightPrice);
+      Double priceFrom = null;
 
-      CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -261,17 +146,14 @@ public class EspanaAlcampoCrawler extends Crawler {
          .build();
    }
 
-
-   private CreditCards scrapCreditCards(Document doc, String internalId, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments installments = scrapInstallments(doc);
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
-      }
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
@@ -282,33 +164,6 @@ public class EspanaAlcampoCrawler extends Crawler {
       }
 
       return creditCards;
-   }
-
-   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
-      Installments installments = new Installments();
-
-      Element installmentsCard = doc.selectFirst(".info_productPrice .product_discount_pay span");
-
-      if (installmentsCard != null) {
-         String installmentString = installmentsCard.text().replaceAll("[^0-9]", "").trim();
-         Integer installment = !installmentString.isEmpty() ? Integer.parseInt(installmentString) : null;
-         Element valueElement = doc.selectFirst(".info_productPrice .product_discount_pay strong");
-
-         if (valueElement != null && installment != null) {
-            Double value = MathUtils.parseDoubleWithComma(valueElement.text());
-
-            installments.add(Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(installment)
-               .setInstallmentPrice(value)
-               .build());
-         }
-      }
-
-      return installments;
-   }
-
-   private boolean crawlAvailability(Document document) {
-      return !document.select(".add_products :not(.product_not_available)").isEmpty();
    }
 
 }

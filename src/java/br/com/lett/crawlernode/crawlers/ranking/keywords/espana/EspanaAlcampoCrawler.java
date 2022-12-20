@@ -1,15 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.espana;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -27,7 +27,7 @@ public class EspanaAlcampoCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 18;
       this.log("Página " + this.currentPage);
-      String url = "https://www.alcampo.es/compra-online/search?q=Langostino%3Arelevance&text=" + this.keywordEncoded + "&page=" + this.currentPage;
+      String url = "https://www.alcampo.es/compra-online/search?q=" + this.keywordEncoded + "%3Arelevance&text=" + this.keywordEncoded + "&page=" + this.currentPage;
       this.log("URL : " + url);
       this.currentDoc = fetchDocument(url);
 
@@ -37,7 +37,7 @@ public class EspanaAlcampoCrawler extends CrawlerRankingKeywords {
          if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
             String internalPid = null;
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".productCode", "valeu");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "h2 a", "data-id");
             String productUrl = CrawlerUtils.scrapUrl(e, ".productGridItem div a", "href", "https", "www.alcampo.es");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".productName span", true);
             String image = null;
@@ -70,16 +70,29 @@ public class EspanaAlcampoCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url) {
-      Request request = Request.RequestBuilder.create()
-         .setProxyservice(List.of(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-            ProxyCollection.SMART_PROXY_MX_HAPROXY))
-         .setUrl(url).build();
-      Response response = new FetcherDataFetcher().get(session, request);
+      Document doc = null;
 
-      return Jsoup.parse(response.getBody());
+      int attempts = 0;
+
+      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
+      do {
+
+         try {
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempts), session);
+
+            webdriver.waitLoad(30000);
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+         } catch (Exception e) {
+            Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
+
+         } finally {
+            if (webdriver != null) {
+               webdriver.terminate();
+            }
+         }
+      } while (doc == null && attempts++ < 3);
+
+      return doc;
    }
-
 }
