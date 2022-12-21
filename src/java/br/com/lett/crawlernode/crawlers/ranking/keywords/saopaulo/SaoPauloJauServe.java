@@ -10,10 +10,9 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -34,6 +33,11 @@ public class SaoPauloJauServe extends CrawlerRankingKeywords {
    protected Document fetchDocument(String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.ACCEPT, "*/*");
+      String postalCode = session.getOptions().optString("postal_code");
+      BasicClientCookie cookie = new BasicClientCookie("dw_shippostalcode", postalCode);
+      cookie.setDomain("www.jauserve.com.br");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -42,6 +46,7 @@ public class SaoPauloJauServe extends CrawlerRankingKeywords {
             ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.SMART_PROXY_BR_HAPROXY
          ))
+         .setCookies(this.cookies)
          .build();
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get");
       return Jsoup.parse(response.getBody());
@@ -58,14 +63,13 @@ public class SaoPauloJauServe extends CrawlerRankingKeywords {
       if (products != null) {
          for (Element product : products) {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-tile", "data-itemid");
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-tile", "id");
             String name = CrawlerUtils.scrapStringSimpleInfo(product, ".link", true);
             String productUrl = baseUrl + CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".link", "href");
             Boolean isAvailable = getAvailabity(product);
             Integer price = isAvailable ? getPrice(product) : null;
             String image = getImage(product);
             RankingProduct productRanking = new RankingProductBuilder()
-               .setInternalId(internalId)
+               .setInternalId(internalPid)
                .setInternalPid(internalPid)
                .setName(name)
                .setUrl(productUrl)

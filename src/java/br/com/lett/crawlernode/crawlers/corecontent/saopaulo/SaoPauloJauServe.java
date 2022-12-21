@@ -20,7 +20,6 @@ import models.Offers;
 import models.pricing.*;
 import org.apache.http.HttpHeaders;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.util.*;
@@ -37,7 +36,8 @@ public class SaoPauloJauServe extends Crawler {
    protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.ACCEPT, "*/*");
-      BasicClientCookie cookie = new BasicClientCookie("dw_shippostalcode","17206-220");
+      String postalCode = session.getOptions().optString("postal_code");
+      BasicClientCookie cookie = new BasicClientCookie("dw_shippostalcode", postalCode);
       cookie.setDomain("www.jauserve.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
