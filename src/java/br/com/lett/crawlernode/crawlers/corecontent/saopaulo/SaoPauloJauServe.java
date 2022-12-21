@@ -58,7 +58,6 @@ public class SaoPauloJauServe extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
-      // Document d2 = Jsoup.parse(this.fetchResponse().getBody());
       String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".container.product-detail", "data-pid");
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", true);
       String primaryImage = getImage(doc);
