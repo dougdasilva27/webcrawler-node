@@ -83,11 +83,12 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setPayload(payloadString)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.BUY,
+            ProxyCollection.SMART_PROXY_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.BUY
+            ProxyCollection.NETNUT_RESIDENTIAL_ES
          ))
          .build();
 
@@ -119,11 +120,12 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setUrl(LOGIN_URL)
          .setPayload(payload.toString())
          .setProxyservice(Arrays.asList(
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.BUY,
+            ProxyCollection.SMART_PROXY_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.BUY
+            ProxyCollection.NETNUT_RESIDENTIAL_ES
          ))
          .setHeaders(headers)
          .build();
@@ -139,11 +141,12 @@ public class BrasilLojamondelezCrawler extends Crawler {
       Request request = RequestBuilder.create()
          .setUrl(session.getOriginalURL())
          .setProxyservice(Arrays.asList(
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.BUY,
+            ProxyCollection.SMART_PROXY_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.BUY
+            ProxyCollection.NETNUT_RESIDENTIAL_ES
          ))
          .setHeaders(headers)
          .build();
