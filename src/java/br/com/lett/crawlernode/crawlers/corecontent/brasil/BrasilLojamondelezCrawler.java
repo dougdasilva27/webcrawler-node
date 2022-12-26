@@ -83,6 +83,8 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setPayload(payloadString)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY,
             ProxyCollection.SMART_PROXY_BR_HAPROXY,
@@ -92,7 +94,8 @@ public class BrasilLojamondelezCrawler extends Crawler {
          ))
          .build();
 
-      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
+
 
       List<Cookie> cookiesResponse = response.getCookies();
 
@@ -120,6 +123,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setUrl(LOGIN_URL)
          .setPayload(payload.toString())
          .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
             ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY,
             ProxyCollection.SMART_PROXY_BR_HAPROXY,
@@ -130,7 +134,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setHeaders(headers)
          .build();
 
-      CrawlerUtils.retryRequest(request, session, dataFetcher);
+      CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new FetcherDataFetcher(),new ApacheDataFetcher()), session, "post");
    }
 
    @Override
@@ -141,9 +145,10 @@ public class BrasilLojamondelezCrawler extends Crawler {
       Request request = RequestBuilder.create()
          .setUrl(session.getOriginalURL())
          .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
             ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.BUY,
             ProxyCollection.SMART_PROXY_BR_HAPROXY,
+            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.NETNUT_RESIDENTIAL_ES
@@ -151,8 +156,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
          .setHeaders(headers)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
-
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
       return response;
    }
 
