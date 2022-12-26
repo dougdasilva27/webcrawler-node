@@ -95,7 +95,8 @@ public class BarbosaSupermercados extends Crawler {
          List<String> images = scrapImages(productJson);
          String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
          String description = productJson.optString("obs");
-         boolean available = true;
+         Integer stock = productJson.optInt("estoque");
+         boolean available = stock > 0;
          Offers offers = available ? scrapOffers(productJson) : new Offers();
 
          Product product = ProductBuilder.create()
