@@ -150,7 +150,9 @@ public class B2WCrawler extends Crawler {
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.SMART_PROXY_BR,
-               ProxyCollection.SMART_PROXY_MX
+               ProxyCollection.SMART_PROXY_MX,
+               ProxyCollection.SMART_PROXY_CL,
+               ProxyCollection.SMART_PROXY_PE_HAPROXY
             )
          )
          .build();
