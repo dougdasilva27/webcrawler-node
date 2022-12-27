@@ -197,7 +197,7 @@ public class Vipcommerce extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject OffersInfo, JSONObject productInfo) throws MalformedPricingException {
-      Double spotlightPrice = null;
+      Double spotlightPrice;
       Double priceFrom = null;
 
       if (!OffersInfo.isEmpty()) {
@@ -206,6 +206,11 @@ public class Vipcommerce extends Crawler {
       } else {
          spotlightPrice = JSONUtils.getDoubleValueFromJSON(productInfo, "preco", true);
 
+      }
+
+      if (spotlightPrice == 0.01) {
+         spotlightPrice = JSONUtils.getDoubleValueFromJSON(OffersInfo, "preco_antigo", true);
+         priceFrom = null;
       }
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
