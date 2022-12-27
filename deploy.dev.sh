@@ -3,7 +3,7 @@ set -e
 
 $(aws ecr get-login --no-include-email)
 
-export ECR_IMAGE_URL=868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/webcrawler:dev
+ECR_IMAGE_URL=868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/webcrawler:dev
 
 echo "Run Maven"
 
