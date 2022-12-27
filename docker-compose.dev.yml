@@ -1,14 +1,14 @@
 
 version: "3"
 services:
-  webcrawler:
-    image: ${ECR_IMAGE_URL}
-    container_name: web-scraper
-    restart: unless-stopped
-    ports:
-      - 80:5000
-    env_file:
-      - .env
+#  webcrawler:
+#    image: ${ECR_IMAGE_URL}
+#    container_name: web-scraper
+#    restart: unless-stopped
+#    ports:
+#      - 80:5000
+#    env_file:
+#      - .env
 
   node_exporter:
     image: 868884350453.dkr.ecr.us-east-1.amazonaws.com/team-devops/node-exporter:latest
