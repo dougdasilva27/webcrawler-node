@@ -7,7 +7,7 @@ ECR_IMAGE_URL=868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/web
 
 echo "Run Maven"
 
-mv pom.xml app/pom.xml
+mv ../pom.xml app/pom.xml
 
 docker-compose -f build.yml run --rm maven
 
