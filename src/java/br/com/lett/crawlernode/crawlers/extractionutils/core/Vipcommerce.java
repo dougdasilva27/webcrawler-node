@@ -159,6 +159,7 @@ public class Vipcommerce extends Crawler {
       Pricing pricing = scrapPricing(OffersInfo, productInfo);
       List<String> sales = new ArrayList<>();
       sales.add(CrawlerUtils.calculateSales(pricing));
+      sales.add(scrapSale(OffersInfo));
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -171,6 +172,29 @@ public class Vipcommerce extends Crawler {
          .build());
 
       return offers;
+   }
+
+   private String scrapSale(JSONObject priceObject) throws MalformedPricingException {
+      Double spotlightPrice = null;
+      Double priceFrom = null;
+      if (!priceObject.isEmpty()) {
+         spotlightPrice = JSONUtils.getDoubleValueFromJSON(priceObject, "preco_oferta", true);
+         priceFrom = JSONUtils.getDoubleValueFromJSON(priceObject, "preco_antigo", true);
+      }
+      if (spotlightPrice == null || spotlightPrice != 0.01) {
+         return null;
+      }
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      Pricing pricing = Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
+
+      return CrawlerUtils.calculateSales(pricing);
    }
 
    private List<String> scrapSecondaryImage(JSONObject jsonData, String primaryImage) {
