@@ -13,7 +13,7 @@ echo "building docker image"
 
 docker build -f Dockerfile --no-cache --force-rm -t $ECR_IMAGE_URL .
 
-docker-compose -f build.yml build webcrawler
+#docker-compose -f build.yml build webcrawler
 
 echo "pushing docker image to $ECR_IMAGE_URL"
 docker push $ECR_IMAGE_URL
