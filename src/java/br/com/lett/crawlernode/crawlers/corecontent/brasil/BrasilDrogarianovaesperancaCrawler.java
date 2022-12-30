@@ -1,8 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -12,23 +10,18 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Marketplace;
 import models.Offer;
 import models.Offers;
-import models.prices.Prices;
 import models.pricing.*;
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -63,7 +56,7 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
          String internalId = crawlInternalId(doc);
          String internalPid = null;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div[class*=produto-info-titulo]", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure[class*=img-principal] img", List.of("data-src"), "https", "www.drogarianovaesperanca.com.br");
+         String primaryImage = scrapPrimaryImage(doc);
          List<String> secondaryImages = scrapSecondaryImages(doc, primaryImage);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "[property=itemListElement]:not(:last-child)", true);
          String description = CrawlerUtils.scrapSimpleDescription(doc, List.of("div[align=justify]", ".tabs-produto #tabs", ".aviso-medicamento"));
@@ -91,6 +84,14 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapPrimaryImage(Document doc) {
+      String finalUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".dg-produto-img-principal img", "img-zoom");
+      if (finalUrl != null && !finalUrl.isEmpty()) {
+         return "https://www.drogarianovaesperanca.com.br/imagens-complete/1000x1000/" + finalUrl;
+      }
+      return null;
    }
 
    private List<String> scrapSecondaryImages(Document doc, String primaryImage) {
@@ -153,7 +154,7 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
       sales.add(CrawlerUtils.calculateSales(pricing));
 
       String buyPromotion = CrawlerUtils.scrapStringSimpleInfo(doc, ".BtComprarProdutoPromocao", false);
-      if(buyPromotion != null && !buyPromotion.isEmpty()) {
+      if (buyPromotion != null && !buyPromotion.isEmpty()) {
          sales.add(buyPromotion);
       }
       return sales;
@@ -163,9 +164,9 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[class*=preco-por]", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[class*=preco-de]", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
-      BankSlip bankSlip =  BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build();
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build();
 
-      if(priceFrom == spotlightPrice) priceFrom = null;
+      if (priceFrom == spotlightPrice) priceFrom = null;
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
