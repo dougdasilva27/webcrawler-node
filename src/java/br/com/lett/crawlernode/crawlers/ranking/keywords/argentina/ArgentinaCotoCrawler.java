@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -11,20 +11,44 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import com.google.common.collect.Maps;
-import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
 
-import static br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import static br.com.lett.crawlernode.util.CrawlerUtils.getRedirectedUrl;
 
 public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
    public ArgentinaCotoCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
+   }
+
+   @Override
+   protected Document fetchDocument(String url) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .build();
+      Response response = dataFetcher.get(session, request);
+      Document doc = Jsoup.parse(response.getBody());
+      String redirectedUrl = getRedirectedUrl(url, session);
+
+      if (doc.select("#products > li").size() == 0 && redirectedUrl != null) {
+         int productsShow = this.currentPage == 1 ? 0 : this.pageSize * (this.currentPage - 1);
+         request = Request.RequestBuilder.create()
+            .setUrl(redirectedUrl + "?Nf=product.startDate%7CLTEQ+1.6723584E12%7C%7Cproduct.endDate%7CGTEQ+1.6723584E12&No=" + productsShow + "&Nr=AND%28product.sDisp_200%3A1004%2Cproduct.language%3Aespa%C3%B1ol%2COR%28product.siteId%3ACotoDigital%29%29&Nrpp=72")
+            .build();
+         response = dataFetcher.get(session, request);
+         doc = Jsoup.parse(response.getBody());
+      }
+
+      return doc;
    }
 
    @Override
@@ -67,12 +91,12 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
 
    private String getPageUrl() {
       int productsShow = this.currentPage == 1 ? 0 : this.pageSize * (this.currentPage - 1);
-      return "https://www.cotodigital3.com.ar/sitios/cdigi/browse?Dy=1&Nf=product.startDate%7CLTEQ+1.640304E12%7C%7Cproduct.endDate%7CGTEQ+1.640304E12&No=" + productsShow + "&Nr=AND%28product.language%3Aespa%C3%B1ol%2Cproduct.sDisp_200%3A1004%2Cproduct.siteId%3ACotoDigital%2COR%28product.siteId%3ACotoDigital%29%29&Nrpp=72&Ntt="+ this.keywordEncoded +"&Nty=1&_D%3AidSucursal=+&_D%3AsiteScope=+&atg_store_searchInput=" + this.keywordEncoded + "&idSucursal=200&siteScope=ok";
+      return "https://www.cotodigital3.com.ar/sitios/cdigi/browse?Dy=1&Nf=product.startDate%7CLTEQ+1.640304E12%7C%7Cproduct.endDate%7CGTEQ+1.640304E12&No=" + productsShow + "&Nr=AND%28product.language%3Aespa%C3%B1ol%2Cproduct.sDisp_200%3A1004%2Cproduct.siteId%3ACotoDigital%2COR%28product.siteId%3ACotoDigital%29%29&Nrpp=72&Ntt=" + this.keywordEncoded + "&Nty=1&_D%3AidSucursal=+&_D%3AsiteScope=+&atg_store_searchInput=" + this.keywordEncoded + "&idSucursal=200&siteScope=ok";
    }
 
    @Override
    protected boolean hasNextPage() {
-      if(this.totalProducts == 0 && this.currentPage == 1 ) return true;
+      if (this.totalProducts == 0 && this.currentPage == 1) return true;
 
       return this.totalProducts > 0 && this.currentPage * this.pageSize < this.totalProducts;
    }
