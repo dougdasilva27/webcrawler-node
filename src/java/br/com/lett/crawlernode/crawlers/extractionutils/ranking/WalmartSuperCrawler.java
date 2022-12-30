@@ -2,6 +2,9 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
@@ -16,13 +19,14 @@ import org.json.JSONObject;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class WalmartSuperCrawler extends CrawlerRankingKeywords {
 
    public WalmartSuperCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.APACHE;
+      super.fetchMode = FetchMode.FETCHER;
    }
 
    String store_id = session.getOptions().optString("store_id");
@@ -112,14 +116,14 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
-      String response = this.dataFetcher.get(session, request).getBody();
+      String response = CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
       Integer count = 0;
       while (response.isEmpty() && count < 3) {
          response = this.dataFetcher.get(session, request).getBody();
