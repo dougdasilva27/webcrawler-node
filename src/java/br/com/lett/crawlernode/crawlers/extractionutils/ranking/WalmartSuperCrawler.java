@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -101,11 +102,11 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Host", "super.walmart.com.mx");
-      headers.put("Connection", "keep-alive");
+      headers.put(HttpHeaders.CONNECTION, "keep-alive");
       headers.put("x-dtreferer", referer);
-      headers.put("Accept", "application/json");
+      headers.put(HttpHeaders.ACCEPT, "application/json");
       headers.put("Content-Type", "application/json");
-      headers.put("Referer", referer);
+      headers.put(HttpHeaders.REFERER, referer);
       headers.put("Accept-Encoding", "");
       headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("Cache-Control", "no-cache");
@@ -123,13 +124,8 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
-      String response = CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
-      Integer count = 0;
-      while (response.isEmpty() && count < 3) {
-         response = this.dataFetcher.get(session, request).getBody();
-         count++;
-      }
 
+      String response = CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
       return CrawlerUtils.stringToJson(response);
 
    }
