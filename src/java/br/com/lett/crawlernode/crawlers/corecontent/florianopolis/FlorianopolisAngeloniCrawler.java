@@ -1,23 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.florianopolis;
 
-import java.util.*;
-
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.AngeloniSuperUtils;
-import exceptions.MalformedPricingException;
-import exceptions.OfferException;
-import models.Offer;
-import models.Offers;
-import models.pricing.CreditCards;
-import models.pricing.Pricing;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -26,13 +8,22 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.AngeloniSuperUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
-import models.Marketplace;
-import models.prices.Prices;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.CreditCards;
+import models.pricing.Pricing;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 public class FlorianopolisAngeloniCrawler extends Crawler {
 
@@ -59,10 +50,10 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
          String internalId = crawlInternalId(doc);
          String internalPid = internalId;
          String newUrl = internalId != null ? CrawlerUtils.getRedirectedUrl(session.getOriginalURL(), session) : session.getOriginalURL();
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcumb > a:not(:first-child)");
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcumb__link span", true);
          String name = crawlName(doc);
          String defaultImage = CrawlerUtils.scrapUrl(doc, "meta[property=\"og:image\"]", "content", "https", "img.angeloni.com.br");
-         String host = defaultImage != null ? new java.net.URI(defaultImage).getHost() : "img.angeloni.com.br";
+         String host = defaultImage != null ? new java.net.URI(defaultImage.replace(" ", "")).getHost() : "img.angeloni.com.br";
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".container__body-detalhe-produto .p-relative .zoom", Arrays.asList("data-zoom-image", "src"), "https", host);
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".swiper-slide.count-slide img", Collections.singletonList("src"), "https", host, primaryImage);
          String description = crawlDescription(doc, internalId);

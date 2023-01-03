@@ -56,7 +56,7 @@ public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
       Document doc = new Document("");
       int attempt = 0;
       boolean sucess = false;
-      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.SMART_PROXY_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
+      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
       do {
          try {
             Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
