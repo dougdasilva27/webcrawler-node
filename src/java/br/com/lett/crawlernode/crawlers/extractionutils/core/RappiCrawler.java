@@ -358,9 +358,12 @@ public abstract class RappiCrawler extends Crawler {
    private String scrapName(JSONObject productJson) {
       String name = productJson.optString("name");
       String description = productJson.optString("description");
+      String presentation = productJson.optString("presentation");
 
       if (!stringHasGrammature(name) && stringHasGrammature(description)) {
          name += " " + extractGrammature(description);
+      } else if (!stringHasGrammature(name) && stringHasGrammature(presentation)) {
+         name += " " + extractGrammature(presentation);
       }
 
       return name;
