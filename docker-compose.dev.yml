@@ -1,0 +1,42 @@
+version: "3"
+services:
+  webcrawler:
+    image: 868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/webcrawler:dev
+    container_name: web-scraper
+    restart: unless-stopped
+    ports:
+      - 80:5000
+    env_file:
+      - .env
+
+  node_exporter:
+    image: 868884350453.dkr.ecr.us-east-1.amazonaws.com/team-devops/node-exporter:latest
+    container_name: node_exporter
+    restart: always
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - /run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--collector.systemd'
+      - '--collector.processes'
+    network_mode: host
+    pid: host
+
+  cadvisor:
+    image: 868884350453.dkr.ecr.us-east-1.amazonaws.com/team-devops/cadvisor:latest
+    container_name: cadvisor
+    restart: always
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /cgroup:/cgroup:ro
+    ports:
+      - "8080:8080"

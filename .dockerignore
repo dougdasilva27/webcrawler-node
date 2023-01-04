@@ -1,6 +1,6 @@
 .env
-.idea
+../.idea
 .dockerignore
-Dockerfile
+build/Dockerfile
 .git
 .gitignore
