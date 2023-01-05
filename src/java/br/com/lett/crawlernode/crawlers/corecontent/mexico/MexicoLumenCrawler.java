@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MexicoLumenCrawler extends Crawler {
 
@@ -51,42 +49,17 @@ public class MexicoLumenCrawler extends Crawler {
          List<String> secondaryImages = imagesList.subList(1, imagesList.size());
          String description = crawlDescription(doc);
          boolean availableToBuy = doc.select(".no-disp").isEmpty();
-         Offers offers = availableToBuy ? scrapOffer(doc, internalId) : new Offers();
+         Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
 
-         Elements variants = doc.select(".informar .selector-colores a");
-         if (variants.size() > 0) {
-            for (Element variant : variants) {
-               String variantId = getVariantInternalId(variant);
-               String variantUrl = null;
-               if (variantId != null) {
-                  variantUrl = session.getOriginalURL().replace(internalId, variantId);
-               }
-               String variantName = name + " - " + CrawlerUtils.scrapStringSimpleInfo(variant, "span", true);
-               List<String> variantListImages = gatVariantImages(imagesList, variantId, internalId);
-               String variantPrimaryImage = variantListImages.get(0);
-               List<String> variantSecondaryImages = variantListImages.subList(1, variantListImages.size());
+         if (!doc.select(".informar .selector-colores a").isEmpty()) {
 
-               Product product = ProductBuilder.create()
-                  .setUrl(variantUrl)
-                  .setInternalId(variantId)
-                  .setInternalPid(internalPid)
-                  .setName(variantName)
-                  .setCategories(categories)
-                  .setPrimaryImage(variantPrimaryImage)
-                  .setSecondaryImages(variantSecondaryImages)
-                  .setDescription(description)
-                  .setOffers(offers)
+            String variantName = getProductName(doc, name);
 
-                  .build();
-
-               products.add(product);
-            }
-         } else {
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
-               .setName(name)
+               .setName(variantName)
                .setCategories(categories)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
@@ -105,44 +78,31 @@ public class MexicoLumenCrawler extends Crawler {
       return products;
    }
 
-   private List<String> gatVariantImages(List<String> secondaryImage, String variantId, String internalId) {
-      List<String> variantListImages = new ArrayList<>();
-      for (String image : secondaryImage) {
-         if (image.contains(internalId)) {
-            image = image.replace(internalId, variantId);
-            variantListImages.add(image);
+   private String getProductName(Document doc, String name) {
+      Elements selectors = doc.select(".selectores .selector");
+      for (Element selector : selectors) {
+         if (selector.select("label").text().contains("Color")) {
+            String attribute = CrawlerUtils.scrapStringSimpleInfo(selector, "span", true);
+            if (attribute != null) {
+               return name + " - " + attribute;
+            }
          }
       }
-
-      return variantListImages;
+      return name;
    }
 
-   private String getVariantInternalId(Element variant) {
-      String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "img", "src");
-      String regex = "\\/([0-9]*).jpg";
-
-      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-      Matcher matcher = pattern.matcher(imageUrl);
-
-      if (matcher.find()) {
-         return matcher.group(1);
-      }
-
-      return null;
-   }
 
    private List<String> crawlImagesList(Document doc) {
       Elements imagesGaleria = doc.select(".galeria img.img-responsive");
       List<String> imagesArray = new ArrayList<>();
-      if(imagesGaleria.size() > 0) {
+      if (imagesGaleria.size() > 0) {
          for (Element image : imagesGaleria) {
             if (image.attr("src") != null && !image.attr("src").isEmpty()) {
                String imgUrl = HOME_PAGE + image.attr("src").replace("productPics_180x180", "productPics");
                imagesArray.add(imgUrl);
             }
          }
-      }
-      else{
+      } else {
          String imgUrl = HOME_PAGE + doc.select(".galeria #main-img").attr("src");
          imagesArray.add(imgUrl);
       }
@@ -156,6 +116,10 @@ public class MexicoLumenCrawler extends Crawler {
 
       if (listDescription != null && !listDescription.isEmpty() && description != null && !description.isEmpty()) {
          return listDescription + description;
+      } else if (listDescription != null && !listDescription.isEmpty()) {
+         return listDescription;
+      } else if (description != null && !description.isEmpty()) {
+         return description;
       }
 
       return null;
@@ -165,9 +129,9 @@ public class MexicoLumenCrawler extends Crawler {
       return doc.selectFirst("#product-details-form") != null;
    }
 
-   private Offers scrapOffer(Document doc, String internalId) throws OfferException, MalformedPricingException {
+   private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(internalId, doc);
+      Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(doc);
 
       offers.add(Offer.OfferBuilder.create()
@@ -183,7 +147,7 @@ public class MexicoLumenCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precio.descuento", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precio.viejo", null, false, ',', session);
 
