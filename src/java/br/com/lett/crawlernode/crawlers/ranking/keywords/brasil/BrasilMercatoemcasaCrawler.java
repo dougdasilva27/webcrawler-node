@@ -119,14 +119,12 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected boolean hasNextPage() {
-      return true;
-   }
+   protected boolean hasNextPage() {return !this.currentDoc.select(".INCREASE_BUTTON > button").isEmpty();}
 
    private Document fetchNextPage() {
       Logging.printLogDebug(logger, session, "fetching next page...");
       webdriver.waitLoad(3000);
-      webdriver.waitForElement( ".INCREASE_BUTTON > button\"",10);
+      webdriver.waitForElement( ".INCREASE_BUTTON > button",5);
       WebElement button = webdriver.driver.findElement(By.cssSelector(".INCREASE_BUTTON > button"));
       webdriver.clickOnElementViaJavascript(button);
       webdriver.waitLoad(8000);
