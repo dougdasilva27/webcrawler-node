@@ -40,11 +40,9 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
 
    private final String PASSWORD = getPassword();
    private final String LOGIN = getLogin();
-
    protected String getLogin() {
       return session.getOptions().optString("login");
    }
-
    protected String getPassword() {
       return session.getOptions().optString("password");
    }
@@ -127,7 +125,7 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
          JSONArray variants = productsJson.optJSONArray("variants");
          for (int i = 0; i < variants.length(); i++) {
             JSONObject variantProduct = JSONUtils.getValueRecursive(variants, i + ".product", JSONObject.class);
-            String internalId = variantProduct.optString("sku");
+            String internalId = getInternalId(variantProduct);
             String variantName = name + " - " + JSONUtils.getValueRecursive(variants, i + ".attributes.0.label", String.class);
 
             boolean available = variantProduct.optString("stock_status").equals("IN_STOCK");
@@ -153,6 +151,11 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String getInternalId(JSONObject variantProduct) {
+      Double id = variantProduct.optDouble("id");
+      return id != null ? id.toString() : null;
    }
 
    private List<String> crawlImages(JSONObject productsJson) {
