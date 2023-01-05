@@ -106,7 +106,8 @@ public class BrasilNiveaCrawler extends Crawler {
    }
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlight = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price", null, true, ',', session);
-      // site não possui promoção
+      Double oldPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price-container.price-final_price.tax.weee span span.price", null, true, ',', session);
+
 
       CreditCards creditCards = scrapCreditCards(spotlight);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
@@ -115,7 +116,7 @@ public class BrasilNiveaCrawler extends Crawler {
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlight)
-         .setPriceFrom(null)
+         .setPriceFrom(oldPrice)
          .setBankSlip(bankSlip)
          .setCreditCards(creditCards)
          .build();
