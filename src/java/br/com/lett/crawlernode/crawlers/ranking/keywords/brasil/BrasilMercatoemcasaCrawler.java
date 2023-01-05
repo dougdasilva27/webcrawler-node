@@ -126,7 +126,7 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
    private Document fetchNextPage() {
       Logging.printLogDebug(logger, session, "fetching next page...");
       webdriver.waitLoad(3000);
-      webdriver.waitForElement( "button.loja-btn-cor-secundaria",10);
+      webdriver.waitForElement( ".INCREASE_BUTTON > button\"",10);
       WebElement button = webdriver.driver.findElement(By.cssSelector(".INCREASE_BUTTON > button"));
       webdriver.clickOnElementViaJavascript(button);
       webdriver.waitLoad(8000);
