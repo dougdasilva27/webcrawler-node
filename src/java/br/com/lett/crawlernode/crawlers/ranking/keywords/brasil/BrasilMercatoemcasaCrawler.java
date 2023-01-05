@@ -25,6 +25,8 @@ import java.util.List;
 
 public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
 
+   private int LAST_PRODUCT_INDEX = 0;
+
    private final String HOME_PAGE = "https://www.mercatoemcasa.com.br/";
 
    private String getCep() {
@@ -67,7 +69,7 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
       }
       while (doc == null && attempts++ < 3);
-      waitForElement(webdriver.driver,".PRODUCT_ITEM");
+      waitForElement(webdriver.driver, ".PRODUCT_ITEM");
       return doc;
    }
 
@@ -78,11 +80,16 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      this.currentDoc = fetchDocumentWithWebDriver(HOME_PAGE);
+      if (LAST_PRODUCT_INDEX == 0) {
+         this.currentDoc = fetchDocumentWithWebDriver(HOME_PAGE);
+      } else {
+         this.currentDoc = fetchNextPage();
+      }
       Elements products = this.currentDoc.select(".PRODUCT_ITEM");
 
-      if (!products.isEmpty()) {
-         for (Element product : products) {
+      if (products != null && !products.isEmpty()) {
+         for (int i = LAST_PRODUCT_INDEX; i < products.size(); i++) {
+            Element product = products.get(i);
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, "div > a > h4", true);
             String productUrl = CrawlerUtils.scrapUrl(product, ".PRODUCT_ITEM > a", "href", "https", "www.mercatoemcasa.com.br");
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".PRODUCT_IMAGE_CONTAINER > img", "src");
@@ -100,6 +107,7 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
+            LAST_PRODUCT_INDEX++;
             if (this.arrayProducts.size() == productsLimit)
                break;
          }
@@ -110,7 +118,7 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página: " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private Document fetchNextPage(){
+   private Document fetchNextPage() {
       Logging.printLogDebug(logger, session, "fetching next page...");
       WebElement button = webdriver.driver.findElement(By.cssSelector(".INCREASE_BUTTON > button"));
       webdriver.clickOnElementViaJavascript(button);
