@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -12,11 +11,8 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
-import models.Offers;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -100,7 +96,7 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
          JSONArray products = JSONUtils.getValueRecursive(bodyJson, "data.products.items", JSONArray.class);
          int alternativePosition = 1;
 
-         if (!products.isEmpty()){
+         if (!products.isEmpty()) {
             for (Object o : products) {
                JSONObject product = (JSONObject) o;
                String internalPid = product.optString("sku");
@@ -160,11 +156,6 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
       return "https://www.nestleatevoce.com.br/" + urlKey + urlSuffix;
    }
 
-   private String getInternalId(JSONObject product) {
-      Double id = product.optDouble("id");
-      return id != null ? id.toString() : null;
-   }
-
    private String scrapName(JSONObject product) {
       String name = product.optString("productName");
       String brand = product.optString("brand");
@@ -172,24 +163,5 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
          return name + " - " + brand;
       }
       return name;
-   }
-
-   private String scrapImage(JSONObject item) {
-      Object imageUrl = item.optQuery("/images/0/imageUrl");
-
-      if (imageUrl instanceof String) {
-         return (String) imageUrl;
-      }
-      return null;
-   }
-
-   private Integer scrapPrice(JSONObject item) {
-      Object price = item.optQuery("/sellers/0/commertialOffer/Price");
-
-      if (price instanceof Integer) {
-         return (Integer) price;
-      }
-
-      return null;
    }
 }

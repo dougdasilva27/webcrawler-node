@@ -4,10 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.Parser;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -40,9 +37,11 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
 
    private final String PASSWORD = getPassword();
    private final String LOGIN = getLogin();
+
    protected String getLogin() {
       return session.getOptions().optString("login");
    }
+
    protected String getPassword() {
       return session.getOptions().optString("password");
    }
@@ -121,11 +120,12 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
          String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
          String description = productsJson.optString("description");
          List<String> eans = productsJson.optString("ean") != null ? Arrays.asList(productsJson.optString("ean")) : null;
+         CategoryCollection categories = crawlCategories(productsJson);
 
          JSONArray variants = productsJson.optJSONArray("variants");
          for (int i = 0; i < variants.length(); i++) {
             JSONObject variantProduct = JSONUtils.getValueRecursive(variants, i + ".product", JSONObject.class);
-            String internalId = getInternalId(variantProduct);
+            String internalId = variantProduct.optString("id");
             String variantName = name + " - " + JSONUtils.getValueRecursive(variants, i + ".attributes.0.label", String.class);
 
             boolean available = variantProduct.optString("stock_status").equals("IN_STOCK");
@@ -140,6 +140,7 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(images)
                .setDescription(description)
+               .setCategories(categories)
                .setOffers(offers)
                .setEans(eans)
                .build();
@@ -153,9 +154,17 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
       return products;
    }
 
-   private String getInternalId(JSONObject variantProduct) {
-      Double id = variantProduct.optDouble("id");
-      return id != null ? id.toString() : null;
+   private CategoryCollection crawlCategories(JSONObject productsJson) {
+      CategoryCollection categories = new CategoryCollection();
+
+      JSONArray categoriesJson = productsJson.optJSONArray("categories");
+      for (int i = 0; i < categoriesJson.length(); i++) {
+         JSONObject categoryJson = categoriesJson.optJSONObject(i);
+         String category = categoryJson.optString("name");
+         categories.add(category);
+      }
+
+      return categories;
    }
 
    private List<String> crawlImages(JSONObject productsJson) {
