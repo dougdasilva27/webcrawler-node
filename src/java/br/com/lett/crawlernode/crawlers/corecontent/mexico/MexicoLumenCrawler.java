@@ -68,7 +68,7 @@ public class MexicoLumenCrawler extends Crawler {
 
                Product product = ProductBuilder.create()
                   .setUrl(variantUrl)
-                  .setInternalId(internalId)
+                  .setInternalId(variantId)
                   .setInternalPid(internalPid)
                   .setName(variantName)
                   .setCategories(categories)

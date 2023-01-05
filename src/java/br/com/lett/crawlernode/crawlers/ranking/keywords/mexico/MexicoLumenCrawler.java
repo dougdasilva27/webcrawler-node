@@ -14,8 +14,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -65,10 +63,10 @@ public class MexicoLumenCrawler extends CrawlerRankingKeywords {
          if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".dfd-card-link", "href");
-            String internalId = getInternalId(productUrl);
             String internalPid = null;
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".dfd-card-title", true);
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".dfd-card-thumbnail img", Arrays.asList("src"), "https", "lumen.com.mx");
+            String internalId = getInternalId(imageUrl);
             Integer price = crawlPrice(e);
             boolean isAvailable = price != null;
 
