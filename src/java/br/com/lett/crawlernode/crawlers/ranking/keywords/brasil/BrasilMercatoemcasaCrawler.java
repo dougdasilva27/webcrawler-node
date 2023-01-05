@@ -118,8 +118,15 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página: " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   @Override
+   protected boolean hasNextPage() {
+      return true;
+   }
+
    private Document fetchNextPage() {
       Logging.printLogDebug(logger, session, "fetching next page...");
+      webdriver.waitLoad(3000);
+      webdriver.waitForElement( "button.loja-btn-cor-secundaria",10);
       WebElement button = webdriver.driver.findElement(By.cssSelector(".INCREASE_BUTTON > button"));
       webdriver.clickOnElementViaJavascript(button);
       webdriver.waitLoad(8000);
