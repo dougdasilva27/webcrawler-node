@@ -94,11 +94,11 @@ public class MexicoLumenCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private String getInternalId(String productUrl) {
+   private String getInternalId(String imageUrl) {
       String regex = "\\/([0-9]*).jpg";
 
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-      Matcher matcher = pattern.matcher(productUrl);
+      Matcher matcher = pattern.matcher(imageUrl);
       if (matcher.find()) {
          return matcher.group(1);
       }
