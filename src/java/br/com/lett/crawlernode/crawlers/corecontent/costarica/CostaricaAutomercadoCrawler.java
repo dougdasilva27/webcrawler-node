@@ -2,8 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.costarica;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -23,11 +21,8 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -100,7 +95,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          String name = productData.optString("ecomDescription");
          String primaryImage = productData.optString("imageUrl") != null ? productData.optString("imageUrl").replace(".jpg", "_1.jpg") : null;
          List<String> secondaryImages = scrapSecondaryImages(internalPid);
-         String description = productData.optString("productPresentation");
+         String description = productData.optString("descriptiveParagraph");
          Offers offers = available ? scrapOffers(productData) : new Offers();
 
          Product product = ProductBuilder.create()
