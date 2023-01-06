@@ -59,7 +59,7 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
          Logging.printLogDebug(logger, "Digitando CEP");
          waitForElement(webdriver.driver, "#cep");
          WebElement cep = webdriver.driver.findElement(By.cssSelector("#cep"));
-         cep.sendKeys("51160-035");
+         cep.sendKeys(getCep());
          waitForElement(webdriver.driver, "button[onclick=\"setCepClickHandler();\"]");
          WebElement send = webdriver.driver.findElement(By.cssSelector("button[onclick=\"setCepClickHandler();\"]"));
          webdriver.clickOnElementViaJavascript(send);
@@ -95,14 +95,16 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".PRODUCT_IMAGE_CONTAINER > img", "src");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".PRODUCT_PRICE > #PRODUCT_PRICE_CONTROL", null, false, ',', session, null);
             String internalPid = CommonMethods.getLast(imageUrl.split("="));
-            boolean isAvailable = price != null;
+            String notAvailable = CrawlerUtils.scrapStringSimpleInfo(product, ".PRODUCT_CONTROLS > p", true);
+            boolean available = notAvailable != null && !notAvailable.isEmpty() ? false : true;
+            if (!available) {price = null;}
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalPid(internalPid)
                .setName(productName)
                .setPriceInCents(price)
-               .setAvailability(isAvailable)
+               .setAvailability(available)
                .setImageUrl(imageUrl)
                .build();
 
@@ -119,12 +121,14 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected boolean hasNextPage() {return !this.currentDoc.select(".INCREASE_BUTTON > button").isEmpty();}
+   protected boolean hasNextPage() {
+      return !this.currentDoc.select(".INCREASE_BUTTON > button").isEmpty();
+   }
 
    private Document fetchNextPage() {
       Logging.printLogDebug(logger, session, "fetching next page...");
       webdriver.waitLoad(3000);
-      webdriver.waitForElement( ".INCREASE_BUTTON > button",5);
+      webdriver.waitForElement(".INCREASE_BUTTON > button", 5);
       WebElement button = webdriver.driver.findElement(By.cssSelector(".INCREASE_BUTTON > button"));
       webdriver.clickOnElementViaJavascript(button);
       webdriver.waitLoad(8000);
