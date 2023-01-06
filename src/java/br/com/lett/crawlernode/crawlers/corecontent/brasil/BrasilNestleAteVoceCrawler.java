@@ -125,8 +125,9 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
          JSONArray variants = productsJson.optJSONArray("variants");
          for (int i = 0; i < variants.length(); i++) {
             JSONObject variantProduct = JSONUtils.getValueRecursive(variants, i + ".product", JSONObject.class);
+            JSONArray variantAttributes = JSONUtils.getValueRecursive(variants, i + ".attributes", JSONArray.class);
             String internalId = variantProduct.optString("id");
-            String variantName = name + " - " + JSONUtils.getValueRecursive(variants, i + ".attributes.0.label", String.class);
+            String variantName = crawlVariantName(variantAttributes, name);
 
             boolean available = variantProduct.optString("stock_status").equals("IN_STOCK");
             Offers offers = available ? scrapOffers(variantProduct) : new Offers();
@@ -152,6 +153,24 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String crawlVariantName(JSONArray variantAttributes, String name) {
+      String label = JSONUtils.getValueRecursive(variantAttributes, "0.label", String.class);
+      if (label != null) {
+         if (label.equals("CS")) {
+            return name + " - CAIXA";
+         }
+         if (label.equals("DS")) {
+            return name + " - DISPLAY";
+         }
+         if (label.equals("EA")) {
+            return name + " - UNIDADE";
+         }
+         return name + " - " + label;
+      }
+
+      return name;
    }
 
    private CategoryCollection crawlCategories(JSONObject productsJson) {
