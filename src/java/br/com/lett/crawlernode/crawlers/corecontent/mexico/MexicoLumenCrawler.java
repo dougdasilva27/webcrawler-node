@@ -52,24 +52,24 @@ public class MexicoLumenCrawler extends Crawler {
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
 
          if (!doc.select(".informar .selector-colores a").isEmpty()) {
-
-            String variantName = getProductName(doc, name);
-
-            Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(variantName)
-               .setCategories(categories)
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setOffers(offers)
-
-               .build();
-
-            products.add(product);
+            name = getProductName(doc, name);
          }
+
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setOffers(offers)
+
+            .build();
+
+         products.add(product);
+
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -90,7 +90,6 @@ public class MexicoLumenCrawler extends Crawler {
       }
       return name;
    }
-
 
    private List<String> crawlImagesList(Document doc) {
       Elements imagesGaleria = doc.select(".galeria img.img-responsive");
@@ -116,9 +115,11 @@ public class MexicoLumenCrawler extends Crawler {
 
       if (listDescription != null && !listDescription.isEmpty() && description != null && !description.isEmpty()) {
          return listDescription + description;
-      } else if (listDescription != null && !listDescription.isEmpty()) {
+      }
+      if (listDescription != null && !listDescription.isEmpty()) {
          return listDescription;
-      } else if (description != null && !description.isEmpty()) {
+      }
+      if (description != null && !description.isEmpty()) {
          return description;
       }
 
