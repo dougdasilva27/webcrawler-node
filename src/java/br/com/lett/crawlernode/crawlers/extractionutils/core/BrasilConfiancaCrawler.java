@@ -64,7 +64,7 @@ public class BrasilConfiancaCrawler extends Crawler {
          String imagePath = JSONUtils.getValueRecursive(productJson, "parentProducts/0/primaryFullImageURL", "/", String.class, null);
          String primaryImage = imagePath != null ? "https://www.confianca.com.br" + imagePath : null;
          List<String> secondaryImages = CrawlerUtils.scrapImagesListFromJSONArray(JSONUtils.getValueRecursive(productJson, "parentProducts/0/smallImageURLs", "/", JSONArray.class, new JSONArray()), null, null, "https", "www.confianca.com.br", session);
-         String description = JSONUtils.getValueRecursive(productJson, "parentProducts/0/description", "/", String.class, null);
+         String description = crawlDescription(productJson);
          CategoryCollection categories = crawlCategories(productJson);
          List<String> eans = List.of(productJson.optString("barcode"));
 
@@ -90,6 +90,14 @@ public class BrasilConfiancaCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private String crawlDescription(JSONObject productJson) {
+      String longDescription = JSONUtils.getValueRecursive(productJson, "parentProducts/0/longDescription", "/", String.class, null);
+      if (longDescription == null || longDescription.isEmpty()) {
+         return JSONUtils.getValueRecursive(productJson, "parentProducts/0/description", "/", String.class, null);
+      }
+      return longDescription;
    }
 
    private boolean isProductPage(Document doc) {
@@ -176,7 +184,7 @@ public class BrasilConfiancaCrawler extends Crawler {
       Pricing pricing = scrapPricing(productJson);
       List<String> sales = scrapSales(pricing);
 
-      if(pricing != null){
+      if (pricing != null) {
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
             .setSellerFullName(SELLER_FULL_NAME)
@@ -200,7 +208,7 @@ public class BrasilConfiancaCrawler extends Crawler {
          spotlightPrice = prices[1];
       }
 
-      if(spotlightPrice != null){
+      if (spotlightPrice != null) {
          CreditCards creditCards = scrapCreditCards(spotlightPrice);
          BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
@@ -217,7 +225,7 @@ public class BrasilConfiancaCrawler extends Crawler {
       }
    }
 
-   private Double[] scrapPrices(JSONObject productJson){
+   private Double[] scrapPrices(JSONObject productJson) {
       double spotlightPrice = productJson.optDouble("salePrice", 0.0);
       double priceFrom = productJson.optDouble("listPrice", 0.0);
 
