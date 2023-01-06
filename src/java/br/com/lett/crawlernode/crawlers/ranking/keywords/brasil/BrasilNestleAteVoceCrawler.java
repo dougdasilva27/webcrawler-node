@@ -9,12 +9,15 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -107,8 +110,9 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
                JSONArray variants = product.optJSONArray("variants");
                for (int i = 0; i < variants.length(); i++) {
                   JSONObject variantProduct = JSONUtils.getValueRecursive(variants, i + ".product", JSONObject.class);
+                  JSONArray variantAttributes = JSONUtils.getValueRecursive(variants, i + ".attributes", JSONArray.class);
                   String internalId = variantProduct.optString("id");
-                  String variantName = name + " - " + JSONUtils.getValueRecursive(variants, i + ".attributes.0.label", String.class);
+                  String variantName = crawlVariantName(variantAttributes, name);
 
                   boolean availability = JSONUtils.getValueRecursive(variantProduct, "stock_status", String.class).equals("IN_STOCK");
                   Integer price = getPrice(availability, variantProduct);
@@ -141,10 +145,28 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   private String crawlVariantName(JSONArray variantAttributes, String name) {
+      String label = JSONUtils.getValueRecursive(variantAttributes, "0.label", String.class);
+      if (label != null) {
+         if (label.equals("CS")) {
+            return name + " - CAIXA";
+         }
+         if (label.equals("DS")) {
+            return name + " - DISPLAY";
+         }
+         if (label.equals("EA")) {
+            return name + " - UNIDADE";
+         }
+         return name + " - " + label;
+      }
+
+      return name;
+   }
+
    private Integer getPrice(boolean availability, JSONObject variantProduct) {
       Double priceDouble = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.final_price.value", Double.class, null);
       if (availability && priceDouble != null) {
-         return (int) (priceDouble * 100);
+         return CommonMethods.doublePriceToIntegerPrice(new BigDecimal(priceDouble).setScale(2, RoundingMode.HALF_EVEN).doubleValue(), null);
       } else {
          return null;
       }
