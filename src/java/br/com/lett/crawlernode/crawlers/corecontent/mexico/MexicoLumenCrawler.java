@@ -149,11 +149,11 @@ public class MexicoLumenCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precio.descuento", null, false, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precio.viejo", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precio.descuento", null, false, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precio.viejo", null, false, '.', session);
 
       if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".comprar .precio", null, false, ',', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".comprar .precio", null, false, '.', session);
       }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
