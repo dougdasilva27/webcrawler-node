@@ -177,13 +177,4 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
       String urlSuffix = product.optString("url_suffix");
       return "https://www.nestleatevoce.com.br/" + urlKey + urlSuffix;
    }
-
-   private String scrapName(JSONObject product) {
-      String name = product.optString("productName");
-      String brand = product.optString("brand");
-      if (brand != null && !brand.isEmpty()) {
-         return name + " - " + brand;
-      }
-      return name;
-   }
 }
