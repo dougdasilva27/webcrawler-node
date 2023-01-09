@@ -29,29 +29,7 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       super.urlPageOffers = URL_PAGE_OFFERS;
    }
 
-   @Override
-   public void handleCookiesBeforeFetch() {
-      Request request;
-      if (dataFetcher instanceof FetcherDataFetcher) {
-         request = RequestBuilder.create().setUrl(HOME_PAGE)
-            .setCookies(cookies)
-            .setProxyservice(
-               Arrays.asList(
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR,
-                  ProxyCollection.BUY
-               )
-            ).mustSendContentEncoding(false)
-            .setFetcheroptions(FetcherOptionsBuilder.create()
-               .setForbiddenCssSelector("#px-captcha")
-               .mustUseMovingAverage(false)
-               .mustRetrieveStatistics(true).build())
-            .build();
-      } else {
-         request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).build();
-      }
 
-      this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, "www.submarino.com.br", "/", null, session, dataFetcher);
-   }
 
 
 }
