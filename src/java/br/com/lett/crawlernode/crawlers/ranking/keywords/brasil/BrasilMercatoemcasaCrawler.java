@@ -44,19 +44,16 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
       int attempts = 0;
       do {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempts), session);
-         Logging.printLogDebug(logger, "Clicando no modal");
          waitForElement(webdriver.driver, ".ACTION > .SECONDARY");
          WebElement modal = webdriver.driver.findElement(By.cssSelector(".ACTION > .SECONDARY"));
          webdriver.clickOnElementViaJavascript(modal);
          webdriver.waitLoad(10000);
 
-         Logging.printLogDebug(logger, "Alterando CEP");
          waitForElement(webdriver.driver, "#cep-eccomerce-header > a");
          WebElement changeCep = webdriver.driver.findElement(By.cssSelector("#cep-eccomerce-header > a"));
          webdriver.clickOnElementViaJavascript(changeCep);
          webdriver.waitLoad(10000);
 
-         Logging.printLogDebug(logger, "Digitando CEP");
          waitForElement(webdriver.driver, "#cep");
          WebElement cep = webdriver.driver.findElement(By.cssSelector("#cep"));
          cep.sendKeys(getCep());
@@ -80,8 +77,9 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
+      String url = HOME_PAGE + "produtos?search=" + keywordEncoded;
       if (LAST_PRODUCT_INDEX == 0) {
-         this.currentDoc = fetchDocumentWithWebDriver(HOME_PAGE);
+         this.currentDoc = fetchDocumentWithWebDriver(url);
       } else {
          this.currentDoc = fetchNextPage();
       }
