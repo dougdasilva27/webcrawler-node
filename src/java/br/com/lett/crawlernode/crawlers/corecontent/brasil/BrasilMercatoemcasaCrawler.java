@@ -53,7 +53,7 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
       do {
          try {
             webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempts), session);
-            webdriver.waitLoad(20000);
+            webdriver.waitLoad(5000);
             Logging.printLogDebug(logger, "Clicando no modal");
             waitForElement(webdriver.driver, ".ACTION > .SECONDARY");
             WebElement modal = webdriver.driver.findElement(By.cssSelector(".ACTION > .SECONDARY"));
@@ -223,9 +223,9 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
 
    private RatingsReviews ratingsReviews(Document doc) {
       RatingsReviews ratingReviews = new RatingsReviews();
-
-      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, "#PRODUCT_RATING_CONTAINER > div.PRODUCT_RATING_RESUME_CONTAINER > div > div:nth-child(3) > span", true, null);
-      Integer avgRating = CrawlerUtils.scrapIntegerFromHtml(doc, "scrapIntegerFromHtml", false, null);
+      String ratting = CrawlerUtils.scrapStringSimpleInfo(doc,"#PRODUCT_RATING_CONTAINER > div.PRODUCT_RATING_RESUME_CONTAINER > div > div:nth-child(3) > span",true);
+      Integer totalNumOfEvaluations = CommonMethods.stringPriceToIntegerPrice(ratting,',', null);
+      Integer avgRating = CrawlerUtils.scrapIntegerFromHtml(doc, "#PRODUCT_RATING_CONTAINER > div.PRODUCT_RATING_RESUME_CONTAINER > div > div:nth-child(3) > span", false, null);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating.doubleValue());
