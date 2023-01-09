@@ -53,27 +53,24 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
       do {
          try {
             webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempts), session);
-            webdriver.waitLoad(5000);
-            Logging.printLogDebug(logger, "Clicando no modal");
+            webdriver.waitLoad(10000);
             waitForElement(webdriver.driver, ".ACTION > .SECONDARY");
             WebElement modal = webdriver.driver.findElement(By.cssSelector(".ACTION > .SECONDARY"));
             webdriver.clickOnElementViaJavascript(modal);
             webdriver.waitLoad(10000);
 
-            Logging.printLogDebug(logger, "Alterando CEP");
             waitForElement(webdriver.driver, "#cep-eccomerce-header > a");
             WebElement changeCep = webdriver.driver.findElement(By.cssSelector("#cep-eccomerce-header > a"));
             webdriver.clickOnElementViaJavascript(changeCep);
             webdriver.waitLoad(10000);
 
-            Logging.printLogDebug(logger, "Digitando CEP");
             waitForElement(webdriver.driver, "#cep");
             WebElement cep = webdriver.driver.findElement(By.cssSelector("#cep"));
             cep.sendKeys(getCep());
             waitForElement(webdriver.driver, "button[onclick=\"setCepClickHandler();\"]");
             WebElement send = webdriver.driver.findElement(By.cssSelector("button[onclick=\"setCepClickHandler();\"]"));
             webdriver.clickOnElementViaJavascript(send);
-            webdriver.waitLoad(10000);
+            webdriver.waitLoad(15000);
 
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
          } catch (Exception e) {
@@ -105,7 +102,6 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
          String description = CrawlerUtils.scrapElementsDescription(document, List.of(".PRODUCT_DETAIL_INFO_CONTENT > span"));
          String available = CrawlerUtils.scrapStringSimpleInfo(document, ".button.button--rounded", true);
          Offers offers = available != null && !available.isEmpty() ? scrapOffers(document) : new Offers();
-         RatingsReviews ratingsReviews = ratingsReviews(document);
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -116,7 +112,6 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
-            .setRatingReviews(ratingsReviews)
             .build();
          products.add(product);
 
@@ -221,16 +216,4 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
       return secondaryImages;
    }
 
-   private RatingsReviews ratingsReviews(Document doc) {
-      RatingsReviews ratingReviews = new RatingsReviews();
-      String ratting = CrawlerUtils.scrapStringSimpleInfo(doc,"#PRODUCT_RATING_CONTAINER > div.PRODUCT_RATING_RESUME_CONTAINER > div > div:nth-child(3) > span",true);
-      Integer totalNumOfEvaluations = CommonMethods.stringPriceToIntegerPrice(ratting,',', null);
-      Integer avgRating = CrawlerUtils.scrapIntegerFromHtml(doc, "#PRODUCT_RATING_CONTAINER > div.PRODUCT_RATING_RESUME_CONTAINER > div > div:nth-child(3) > span", false, null);
-
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating.doubleValue());
-      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-
-      return ratingReviews;
-   }
 }
