@@ -25,6 +25,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -102,6 +104,7 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
          String description = CrawlerUtils.scrapElementsDescription(document, List.of(".PRODUCT_DETAIL_INFO_CONTENT > span"));
          String available = CrawlerUtils.scrapStringSimpleInfo(document, ".button.button--rounded", true);
          Offers offers = available != null && !available.isEmpty() ? scrapOffers(document) : new Offers();
+         RatingsReviews ratingsReviews = ratingsReviews(document);
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -112,6 +115,7 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
+            .setRatingReviews(ratingsReviews)
             .build();
          products.add(product);
 
@@ -214,6 +218,22 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
          secondaryImages.remove(0);
       }
       return secondaryImages;
+   }
+
+   private RatingsReviews ratingsReviews(Document doc) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      String ratting = CrawlerUtils.scrapStringSimpleInfo(doc,"#PRODUCT_RATING_CONTAINER > div.PRODUCT_RATING_RESUME_CONTAINER > div > div:nth-child(3) > span",true);
+      Integer totalNumOfEvaluations = CommonMethods.stringPriceToIntegerPrice(ratting,',', null) / 100;
+      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#PRODUCT_RATING_CONTAINER > div.PRODUCT_RATING_RESUME_CONTAINER > div > div:nth-child(2) > span", null, false, '.', session);
+
+      if(avgRating > 5){
+         avgRating = 5.0;
+      }
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+
+      return ratingReviews;
    }
 
 }
