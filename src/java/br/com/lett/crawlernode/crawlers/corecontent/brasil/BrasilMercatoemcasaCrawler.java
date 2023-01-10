@@ -139,6 +139,14 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
             internalPid = arrayString[1];
             return internalPid.replace("addCartDataLayer('","").replace("' , false)","");
          }
+      }else{
+         extractString = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "div.col-4.clear-h.cep-button > button", "onclick");
+         arrayString = extractString.split("'");
+         if(arrayString.length > 1 && arrayString[1] != null && !arrayString[1].isEmpty()) {
+            arrayString[1].split("'\\);");
+            internalPid = arrayString[1];
+            return internalPid;
+         }
       }
       return null;
    }
