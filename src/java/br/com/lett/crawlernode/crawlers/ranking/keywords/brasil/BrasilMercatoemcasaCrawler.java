@@ -92,7 +92,7 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapUrl(product, ".PRODUCT_ITEM > a", "href", "https", "www.mercatoemcasa.com.br");
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".PRODUCT_IMAGE_CONTAINER > img", "src");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".PRODUCT_PRICE > #PRODUCT_PRICE_CONTROL", null, false, ',', session, null);
-            String internalPid = getInternalPid(product);
+            String internalPid = null;
             String notAvailable = CrawlerUtils.scrapStringSimpleInfo(product, ".PRODUCT_CONTROLS > p", true);
             boolean available = notAvailable != null && !notAvailable.isEmpty() ? false : true;
             if (!available) {price = null;}
