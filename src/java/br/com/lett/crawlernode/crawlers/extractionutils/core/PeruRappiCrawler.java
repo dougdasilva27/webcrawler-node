@@ -17,6 +17,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -190,6 +191,19 @@ public class PeruRappiCrawler extends RappiCrawler {
       Document docRanking = Jsoup.parse(response.getBody());
       JSONObject rankingPageJson = CrawlerUtils.selectJsonFromHtml(docRanking, "#__NEXT_DATA__", null, null, false, false);
       JSONArray searchProducts = JSONUtils.getValueRecursive(rankingPageJson, "props.pageProps.products", JSONArray.class, new JSONArray());
+
+      if (searchProducts.isEmpty()) {
+         JSONObject fallback = JSONUtils.getValueRecursive(rankingPageJson, "props.pageProps.fallback", JSONObject.class, new JSONObject());
+         if (!fallback.isEmpty()) {
+            Iterator<String> keys = fallback.keys();
+            while(keys.hasNext()) {
+               String key = keys.next();
+               if (fallback.get(key) instanceof JSONObject) {
+                  searchProducts = JSONUtils.getValueRecursive(fallback.get(key), "products", JSONArray.class, new JSONArray());
+               }
+            }
+         }
+      }
 
       String productFoundInternalId = null;
       if (searchProducts.length() > 0) {
