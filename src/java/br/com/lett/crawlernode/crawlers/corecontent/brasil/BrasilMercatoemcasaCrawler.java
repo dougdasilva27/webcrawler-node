@@ -97,7 +97,7 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
          String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".PRODUCT_TITLE", true);
          String internalId = CrawlerUtils.scrapStringSimpleInfo(document, ".PRODUCT_DETAIL_DESC__sku", true).replaceAll("SKU: ", "");
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".iv-image.iv-large-image", "src");
-         String internalPid = CommonMethods.getLast(primaryImage.split("="));
+         String internalPid = getInternalPid(document);
          List<String> secondaryImages = getSecondaryImages(document);
          String description = CrawlerUtils.scrapElementsDescription(document, List.of(".PRODUCT_DETAIL_INFO_CONTENT > span"));
          String available = CrawlerUtils.scrapStringSimpleInfo(document, ".button.button--rounded", true);
@@ -126,6 +126,21 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
 
    private boolean isProductPage(Document document) {
       return document.selectFirst(".row.PRODUCT_DETAIL") != null;
+   }
+
+   private String getInternalPid(Element element) {
+      String[] arrayString;
+      String internalPid;
+      String extractString = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".row.qtdBox > div.col-4", "onclick");
+      if (extractString != null && !extractString.isEmpty()) {
+         arrayString = extractString.split(";");
+         if(arrayString.length > 1 && arrayString[1] != null && !arrayString[1].isEmpty()){
+            arrayString[1].split("'\\);");
+            internalPid = arrayString[1];
+            return internalPid.replace("addCartDataLayer('","").replace("' , false)","");
+         }
+      }
+      return null;
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {

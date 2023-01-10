@@ -92,7 +92,7 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
             String productUrl = CrawlerUtils.scrapUrl(product, ".PRODUCT_ITEM > a", "href", "https", "www.mercatoemcasa.com.br");
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".PRODUCT_IMAGE_CONTAINER > img", "src");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".PRODUCT_PRICE > #PRODUCT_PRICE_CONTROL", null, false, ',', session, null);
-            String internalPid = CommonMethods.getLast(imageUrl.split("="));
+            String internalPid = getInternalPid(product);
             String notAvailable = CrawlerUtils.scrapStringSimpleInfo(product, ".PRODUCT_CONTROLS > p", true);
             boolean available = notAvailable != null && !notAvailable.isEmpty() ? false : true;
             if (!available) {price = null;}
@@ -132,6 +132,21 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
       webdriver.waitLoad(8000);
 
       return Jsoup.parse(webdriver.getCurrentPageSource());
+   }
+
+   private String getInternalPid(Element element) {
+      String[] arrayString;
+      String internalPid;
+      String extractString = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".row.qtdBox > div.col-4", "onclick");
+      if (extractString != null && !extractString.isEmpty()) {
+         arrayString = extractString.split(";");
+         if(arrayString.length > 1 && arrayString[1] != null && !arrayString[1].isEmpty()){
+           arrayString[1].split("'\\);");
+           internalPid = arrayString[1];
+           return internalPid.replace("addCartDataLayer('","").replace("' , false)","");
+         }
+      }
+      return null;
    }
 
 }
