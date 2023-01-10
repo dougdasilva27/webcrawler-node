@@ -134,15 +134,15 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
       String extractString = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".row.qtdBox > div.col-4", "onclick");
       if (extractString != null && !extractString.isEmpty()) {
          arrayString = extractString.split(";");
-         if(arrayString.length > 1 && arrayString[1] != null && !arrayString[1].isEmpty()){
+         if (arrayString.length > 1 && arrayString[1] != null && !arrayString[1].isEmpty()) {
             arrayString[1].split("'\\);");
             internalPid = arrayString[1];
-            return internalPid.replace("addCartDataLayer('","").replace("' , false)","");
+            return internalPid.replace("addCartDataLayer('", "").replace("' , false)", "");
          }
-      }else{
+      } else {
          extractString = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "div.col-4.clear-h.cep-button > button", "onclick");
          arrayString = extractString.split("'");
-         if(arrayString.length > 1 && arrayString[1] != null && !arrayString[1].isEmpty()) {
+         if (arrayString.length > 1 && arrayString[1] != null && !arrayString[1].isEmpty()) {
             arrayString[1].split("'\\);");
             internalPid = arrayString[1];
             return internalPid;
@@ -243,11 +243,11 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
 
    private RatingsReviews ratingsReviews(Document doc) {
       RatingsReviews ratingReviews = new RatingsReviews();
-      String ratting = CrawlerUtils.scrapStringSimpleInfo(doc,"#PRODUCT_RATING_CONTAINER > div.PRODUCT_RATING_RESUME_CONTAINER > div > div:nth-child(3) > span",true);
-      Integer totalNumOfEvaluations = CommonMethods.stringPriceToIntegerPrice(ratting,',', null) / 100;
+      String ratting = CrawlerUtils.scrapStringSimpleInfo(doc, "#PRODUCT_RATING_CONTAINER > div.PRODUCT_RATING_RESUME_CONTAINER > div > div:nth-child(3) > span", true);
+      Integer totalNumOfEvaluations = CommonMethods.stringPriceToIntegerPrice(ratting, ',', null) / 100;
       Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#PRODUCT_RATING_CONTAINER > div.PRODUCT_RATING_RESUME_CONTAINER > div > div:nth-child(2) > span", null, false, '.', session);
 
-      if(avgRating > 5){
+      if (avgRating > 5) {
          avgRating = 5.0;
       }
       ratingReviews.setTotalRating(totalNumOfEvaluations);
