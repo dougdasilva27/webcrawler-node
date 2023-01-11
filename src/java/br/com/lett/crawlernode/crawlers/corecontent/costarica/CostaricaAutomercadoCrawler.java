@@ -22,6 +22,10 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -118,29 +122,38 @@ public class CostaricaAutomercadoCrawler extends Crawler {
    }
 
    private List<String> scrapSecondaryImages(String internalPid) {
-      List<String> images = new ArrayList<>();
-
+      List<String> secondaryImages = new ArrayList<>();
       if (internalPid != null) {
-         for (int i = 2; i <= 32; i++) {
-            String imageUrl = "https://mda.automercado.cr/imgjpg/" + internalPid + "_" + i + ".jpg";
-            Request request = Request.RequestBuilder.create()
-               .setUrl(imageUrl)
-               .setProxyservice(List.of(
-                  ProxyCollection.BUY_HAPROXY
-               ))
-               .setSendUserAgent(true)
-               .build();
+         Request request = Request.RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setProxyservice(List.of(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.SMART_PROXY_CL_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY
+            ))
+            .setSendUserAgent(true)
+            .build();
 
-            Response response = new JsoupDataFetcher().get(session, request);
-            if (response.isSuccess()) {
-               images.add(imageUrl);
-            } else {
-               break;
+         Response response = this.dataFetcher.get(session, request);
+         if (response.isSuccess()) {
+            Document doc = Jsoup.parse(response.getBody());
+            if (doc != null) {
+               Elements divImages = doc.select("li > .img-fluid");
+               for (Element e : divImages) {
+                  String image = e.attr("src");
+                  if (image != null && !image.isEmpty()) {
+                     secondaryImages.add(image);
+                  }
+
+               }
+               if (secondaryImages.size() > 0) {
+                  secondaryImages.remove(0);
+               }
             }
          }
       }
 
-      return images;
+      return secondaryImages;
    }
 
    private Offers scrapOffers(JSONObject productData) throws OfferException, MalformedPricingException {
