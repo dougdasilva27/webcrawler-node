@@ -124,7 +124,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
 
       if (internalPid != null) {
          for (int i = 2; i <= 32; i++) {
-            String imageUrl = "https://mda.automercado.cr/imgjpg/" + internalPid + "_" + i + ".jpg";
+            String imageUrl = "https://amproducts.blob.core.windows.net/imgjpg/" + internalPid + "_" + i + ".jpg";
             Request request = Request.RequestBuilder.create()
                .setUrl(imageUrl)
                .setProxyservice(List.of(
