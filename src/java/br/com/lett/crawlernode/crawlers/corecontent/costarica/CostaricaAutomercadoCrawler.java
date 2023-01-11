@@ -122,6 +122,31 @@ public class CostaricaAutomercadoCrawler extends Crawler {
    private List<String> scrapSecondaryImages(String internalPid) {
       List<String> images = new ArrayList<>();
 
+
+      /*
+      * Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setProxyservice(List.of(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.SMART_PROXY_CL_HAPROXY
+         ))
+         .setSendUserAgent(true)
+         .build();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher(), this.dataFetcher), session, "get");
+      if (response.isSuccess()) {
+         Document doc = Jsoup.parse(response.getBody());
+         if (doc != null) {
+            Elements divImages = doc.select(".splide__slide.ng-star-inserted");
+            for (Element e : divImages) {
+               String imagepath = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".img-fluid", "src");
+               if (imagepath != null && !imagepath.isEmpty()) {
+                  images.add(imagepath);
+               }
+            }
+         }
+      }
+      * */
+
       if (internalPid != null) {
          for (int i = 2; i <= 32; i++) {
             String imageUrl = "https://amproducts.blob.core.windows.net/imgjpg/" + internalPid + "_" + i + ".jpg";
