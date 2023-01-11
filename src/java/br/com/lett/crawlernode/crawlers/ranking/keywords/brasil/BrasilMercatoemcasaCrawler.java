@@ -26,6 +26,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import javax.print.Doc;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
@@ -149,7 +150,6 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
    private String getInternalPid(Element element) {
       String[] arrayString;
       String internalPid = null;
-      Document doc;
       String extractString = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".row.qtdBox > div.col-4", "onclick");
       if (extractString != null && !extractString.isEmpty()) {
          arrayString = extractString.split(";");
@@ -161,46 +161,45 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
       }
       if (internalPid == null) {
          String productUrl = CrawlerUtils.scrapUrl(element, ".PRODUCT_ITEM > a", "href", "https", "www.mercatoemcasa.com.br");
-         Document extractCore = extractInternalPidByCore(productUrl);
-//         do {
-//            String productUrl = CrawlerUtils.scrapUrl(element, ".PRODUCT_ITEM > a", "href", "https", "www.mercatoemcasa.com.br");
-//            webdriver = DynamicDataFetcher.fetchPageWebdriver(productUrl, ProxyCollection.BUY_HAPROXY, session);
-//            waitForElement(webdriver.driver, ".ACTION > .SECONDARY");
-//            WebElement modal = webdriver.driver.findElement(By.cssSelector(".ACTION > .SECONDARY"));
-//            webdriver.clickOnElementViaJavascript(modal);
-//            webdriver.waitLoad(10000);
-//            Element extractCore = element.selectFirst(productUrl).html(this.session.getOriginalURL());
-//            extractString = CrawlerUtils.scrapStringSimpleInfoByAttribute(extractCore, "div.col-4.clear-h.cep-button > button", "onclick");
-//            if (extractString != null && !extractString.isEmpty()) {
-//               arrayString = extractString.split("'");
-//               if (arrayString.length > 1 && arrayString[1] != null && !arrayString[1].isEmpty()) {
-//                  arrayString[1].split("'\\);");
-//                  internalPid = arrayString[1];
-//                  return internalPid;
-//               }
-//            }
-//            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-//         } while (doc == null);
+         Document document = getProductPage(productUrl);
+         extractString = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "div.col-4.clear-h.cep-button > button", "onclick");
+         if (extractString != null && !extractString.isEmpty()) {
+            arrayString = extractString.split("'");
+            if (arrayString.length > 1 && arrayString[1] != null && !arrayString[1].isEmpty()) {
+               arrayString[1].split("'\\);");
+               internalPid = arrayString[1];
+               return internalPid;
+            }
+         }
       }
       return null;
    }
 
-   private Document extractInternalPidByCore(String url){
-      String payload = "[{\"action\":\"SeuMercatoController\",\"method\":\"loadCatalogData\",\"data\":[\"Mercato Em Casa\",\"51160-035\",\"\",\"\",null],\"type\":\"rpc\",\"tid\":2,\"ctx\":{\"csrf\":\"VmpFPSxNakF5TXkwd01TMHhORlF4TkRveU1qbzFNaTQwTnpaYSxLRG92cVVNN3JDUnEwRXJGRENLVXFBLE5XRXhNR00z\",\"vid\":\"0664A000003FXkl\",\"ns\":\"\",\"ver\":48,\"authorization\":\"eyJub25jZSI6ImlFbUhKaUczRmNtQWFFd2E4WFB3UGo1SmtmXzBobUkzcVIxQWZHNW5WQlFcdTAwM2QiLCJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImtpZCI6IntcInRcIjpcIjAwRDQxMDAwMDAxMlRKYVwiLFwidlwiOlwiMDJHNEEwMDAwMDA0bDAzXCIsXCJhXCI6XCJ2ZnJlbW90aW5nc2lnbmluZ2tleVwiLFwidVwiOlwiMDA1NEEwMDAwMDlPQkh1XCJ9IiwiY3JpdCI6WyJpYXQiXSwiaWF0IjoxNjczNDQ2OTcyNDc3LCJleHAiOjB9.Q2lSVFpYVk5aWEpqWVhSdlEyOXVkSEp2Ykd4bGNpNXNiMkZrUTJGMFlXeHZaMFJoZEdFPQ==.wjZiuX89RStZM7nR5IIU7iNW5UFqh31E_AMgJa_OqIQ=\"}},{\"action\":\"SeuMercatoController\",\"method\":\"loadCatalogDataMin\",\"data\":[\"51160-035\",null],\"type\":\"rpc\",\"tid\":3,\"ctx\":{\"csrf\":\"VmpFPSxNakF5TXkwd01TMHhORlF4TkRveU1qbzFNaTQwTnpkYSxac3JLM3FsU1Y0Z0RIbGFsSzhmRm82LE1EYzVNemxq\",\"vid\":\"0664A000003FXkl\",\"ns\":\"\",\"ver\":48,\"authorization\":\"eyJub25jZSI6IklOcWY4cGdDeXYwYmltaXBDVC00dXZ6SXhRc0h3SFE2dV9uWG9TeHJFX1FcdTAwM2QiLCJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImtpZCI6IntcInRcIjpcIjAwRDQxMDAwMDAxMlRKYVwiLFwidlwiOlwiMDJHNEEwMDAwMDA0bDAzXCIsXCJhXCI6XCJ2ZnJlbW90aW5nc2lnbmluZ2tleVwiLFwidVwiOlwiMDA1NEEwMDAwMDlPQkh1XCJ9IiwiY3JpdCI6WyJpYXQiXSwiaWF0IjoxNjczNDQ2OTcyNDc4LCJleHAiOjB9.Q2lkVFpYVk5aWEpqWVhSdlEyOXVkSEp2Ykd4bGNpNXNiMkZrUTJGMFlXeHZaMFJoZEdGTmFXND0=.y1iQnB0qr30eDg34mmSELHTwO5Ng3LA-mSsklGs8KE8=\"}}]";
-      Map<String,String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE,"application/json");
-      headers.put("referer",this.session.getOriginalURL());
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setPayload(payload)
-         .setHeaders(headers)
-         .setProxyservice(List.of(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY))
-         .build();
+   private Document getProductPage(String url){
+      Document doc;
+      webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.BUY_HAPROXY, session);
+      webdriver.waitLoad(10000);
+      waitForElement(webdriver.driver, ".ACTION > .SECONDARY");
+      WebElement modal = webdriver.driver.findElement(By.cssSelector(".ACTION > .SECONDARY"));
+      webdriver.clickOnElementViaJavascript(modal);
+      webdriver.waitLoad(10000);
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
-      return Jsoup.parse(response.getBody());
+      waitForElement(webdriver.driver, "#cep-eccomerce-header > a");
+      WebElement changeCep = webdriver.driver.findElement(By.cssSelector("#cep-eccomerce-header > a"));
+      webdriver.clickOnElementViaJavascript(changeCep);
+      webdriver.waitLoad(10000);
+
+      waitForElement(webdriver.driver, "#cep");
+      WebElement cep = webdriver.driver.findElement(By.cssSelector("#cep"));
+      cep.sendKeys(getCep());
+      waitForElement(webdriver.driver, "button[onclick=\"setCepClickHandler();\"]");
+      WebElement send = webdriver.driver.findElement(By.cssSelector("button[onclick=\"setCepClickHandler();\"]"));
+      webdriver.clickOnElementViaJavascript(send);
+      webdriver.waitLoad(15000);
+
+      doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+      return doc;
    }
+
 }
