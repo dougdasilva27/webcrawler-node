@@ -127,7 +127,9 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          Request request = Request.RequestBuilder.create()
             .setUrl(session.getOriginalURL())
             .setProxyservice(List.of(
-               ProxyCollection.BUY_HAPROXY
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.SMART_PROXY_CL_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY
             ))
             .setSendUserAgent(true)
             .build();
@@ -138,7 +140,11 @@ public class CostaricaAutomercadoCrawler extends Crawler {
             if (doc != null) {
                Elements divImages = doc.select("li > .img-fluid");
                for (Element e : divImages) {
-                  secondaryImages.add(e.attr("src"));
+                  String image = e.attr("src");
+                  if (image != null && !image.isEmpty()) {
+                     secondaryImages.add(image);
+                  }
+
                }
                if (secondaryImages.size() > 0) {
                   secondaryImages.remove(0);
