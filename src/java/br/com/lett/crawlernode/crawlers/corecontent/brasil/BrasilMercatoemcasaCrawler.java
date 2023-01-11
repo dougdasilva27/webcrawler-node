@@ -250,6 +250,10 @@ public class BrasilMercatoemcasaCrawler extends Crawler {
       if (avgRating > 5) {
          avgRating = 5.0;
       }
+
+      if(totalNumOfEvaluations == 0){
+         avgRating = 0.0;
+      }
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
