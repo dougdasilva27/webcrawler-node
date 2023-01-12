@@ -299,19 +299,20 @@ public abstract class Crawler extends Task {
 
       // Before process and save to PostgreSQL
       // we must send the raw crawled data to Kinesis
-      sendToKinesis(activeVoidResultProduct);
+      if (activeVoidResultProduct != null) {
+         sendToKinesis(activeVoidResultProduct);
 
-      if (executionParameters.isSendToKinesisCatalog()) {
-         try {
-            KPLProducer.sendMessageCatalogToKinesis(crawledProduct, session);
-            Logging.printLogDebug(logger, "Sucess to send to kinesis sessionId: " + session.getSessionId());
+         if (executionParameters.isSendToKinesisCatalog()) {
+            try {
+               KPLProducer.sendMessageCatalogToKinesis(crawledProduct, session);
+               Logging.printLogDebug(logger, "Sucess to send to kinesis sessionId: " + session.getSessionId());
 
-         } catch (Exception e) {
-            Logging.printLogError(logger, "Failed to send to kinesis sessionId: " + session.getSessionId());
+            } catch (Exception e) {
+               Logging.printLogError(logger, "Failed to send to kinesis sessionId: " + session.getSessionId());
+            }
+
          }
-
       }
-
    }
 
    private void sendProgress(Integer progress) {
@@ -387,9 +388,9 @@ public abstract class Crawler extends Task {
 
          Parser parser = this.config.getParser();
 
-         if (parser != Parser.NONE && config.getFetcher() != FetchMode.MIRANHA) {
+         if (parser != Parser.NONE && config.getFetcher() != FetchMode.MIRANHA && !session.isAttemptMiranha()) {
             response = fetchResponse();
-         } else if (config.getFetcher() == FetchMode.MIRANHA) {
+         } else if (session.isAttemptMiranha() || config.getFetcher() == FetchMode.MIRANHA) {
             obj = fetchMiranha();
          } else {
             obj = fetch();
@@ -599,20 +600,23 @@ public abstract class Crawler extends Task {
       JSONObject attemptVoidJson = session.getAttemptsVoid();
       JSONObject message = Scheduler.mountMessageToSendToQueue(session);
 
-      if (session.getOptions().optBoolean("miranha_attempt") && attemptVoid > 2) {
-         attemptVoidJson.put("attempt", attemptVoid+1);
+      if (session.getOptions().optBoolean("miranha_attempt") && attemptVoid == 2) {
+         attemptVoidJson.put("attempt", attemptVoid + 1);
          attemptVoidJson.put("is_miranha", true);
          message.put("attempt_void", attemptVoidJson);
          message.put("proxies", DatabaseDataFetcher.fetchProxiesFromMongoFetcher(session.getOptions().optJSONArray("proxies")));
 
+         Scheduler.sendMessagesToQueue(attemptVoidJson, true, session);
+
          return null;
 
-      } else if (attemptVoid <= 3) {
+      } else if (attemptVoid <= 3 && !session.isAttemptMiranha()) {
 
-         attemptVoidJson.put("attempt", attemptVoid+1);
+         attemptVoidJson.put("attempt", attemptVoid + 1);
          attemptVoidJson.put("is_miranha", false);
 
          message.put("attempt_void", attemptVoidJson);
+         Scheduler.sendMessagesToQueue(attemptVoidJson, false, session);
 
          return null;
 
@@ -621,52 +625,11 @@ public abstract class Crawler extends Task {
       // if we ended with a void product after all the attempts
       // we must set void status of the existent processed product to true
       if (currentProduct.isVoid()) {
-         Logging.printLogDebug(logger, session, "Product still void. Finishing active void.");
+         Logging.printLogDebug(logger, session, "Product still void. Finishing active void after " + (attemptVoid - 1) + " attempts.");
 
       }
 
       return currentProduct;
-
-   }
-
-   private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive, boolean isMiranha) {
-      String queueName;
-
-      if (isMiranha) {
-         if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
-            queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString();
-         } else {
-            queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_PROD.toString();
-         }
-      } else {
-         if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
-            queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
-         } else if (session instanceof EqiRankingDiscoverKeywordsSession) {
-            queueName = isWebDrive ? QueueName.WEB_SCRAPER_PRODUCT_EQI_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_PRODUCT_EQI.toString();
-         } else {
-            queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();
-         }
-      }
-
-      SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
-
-      // get send request results
-      List<SendMessageBatchResultEntry> successResultEntryList = messagesResult.getSuccessful();
-
-      if (!successResultEntryList.isEmpty()) {
-         int count = 0;
-         for (SendMessageBatchResultEntry resultEntry : successResultEntryList) { // the successfully
-            // sent messages
-
-            // the _id field in the document will be the message id, which is the session id in the
-            // crawler
-            String messageId = resultEntry.getMessageId();
-            this.mapUrlMessageId.put(entries.get(count).getMessageBody(), messageId);
-            count++;
-         }
-
-         //this.log(successResultEntryList.size() + " messages sended to " + queueName);
-      }
 
    }
 

@@ -131,7 +131,7 @@ public class Session {
       scraperType = request.getScraperType();
       fileS3Miranha = request.getFileS3Miranha();
       attemptsVoid = request.getAttemptsVoid();
-      isAttemptMiranha = attemptsVoid.optBoolean("attempt_miranha");
+      isAttemptMiranha = attemptsVoid.optBoolean("is_miranha");
       className = request.getClassName();
 
       this.options = request.getOptions();
