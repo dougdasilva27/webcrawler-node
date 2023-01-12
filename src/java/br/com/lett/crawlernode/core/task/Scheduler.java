@@ -82,8 +82,6 @@ public class Scheduler {
 
       int counter = 0;
 
-      //  LOGGER.info(messages.size() + " possible new products to send to SQS.");
-
       long sendMessagesStartTime = System.currentTimeMillis();
 
 
@@ -93,15 +91,13 @@ public class Scheduler {
       entry.setMessageBody(jsonToSentToQueue.toString());
 
       entries.add(entry);
-      counter++;
 
       if (entries.size() > 9) {
          populateMessagesInToQueue(entries, isMiranha);
          entries.clear();
 
          JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
-            .put("aws_type", "sqs")
-            .put("sqs_queue", "web-scraper-discoverer");
+            .put("aws_type", "sqs");
 
          Logging.logInfo(LOGGER, session, apacheMetadata, "AWS TIMING INFO");
 

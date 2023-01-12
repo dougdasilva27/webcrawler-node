@@ -595,6 +595,7 @@ public abstract class Crawler extends Task {
          message.put("proxies", DatabaseDataFetcher.fetchProxiesFromMongoFetcher(session.getOptions().optJSONArray("proxies")));
 
          Logging.printLogInfo(logger, session, "Send attempt:  " + (attemptVoid - 1) + " to queue miranha.");
+         Logging.printLogInfo(logger, session, message.toString());
 
          Scheduler.sendMessagesToQueue(attemptVoidJson, true, session);
 
@@ -607,6 +608,8 @@ public abstract class Crawler extends Task {
 
          message.put("attempt_void", attemptVoidJson);
          Logging.printLogInfo(logger, session, "Send attempt: " + (attemptVoid - 1) + " to queue.");
+         Logging.printLogInfo(logger, session, message.toString());
+
 
          Scheduler.sendMessagesToQueue(attemptVoidJson, false, session);
 
