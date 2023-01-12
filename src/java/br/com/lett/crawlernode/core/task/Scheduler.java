@@ -3,18 +3,14 @@ package br.com.lett.crawlernode.core.task;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
-import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.ScraperInformation;
-import cdjd.com.dremio.common.JSONOptions;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 import enums.QueueName;
-import enums.ScrapersTypes;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,28 +76,21 @@ public class Scheduler {
 
       List<SendMessageBatchRequestEntry> entries = new ArrayList<>();
 
-      int counter = 0;
-
       long sendMessagesStartTime = System.currentTimeMillis();
 
-
       SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
-      entry.setId(String.valueOf(counter)); // the id must be unique in the batch
+      entry.setId(String.valueOf(1)); // the id must be unique in the batch
 
       entry.setMessageBody(jsonToSentToQueue.toString());
 
       entries.add(entry);
 
-      if (entries.size() > 9) {
-         populateMessagesInToQueue(entries, isMiranha);
-         entries.clear();
+      populateMessagesInToQueue(entries, isMiranha);
 
-         JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
-            .put("aws_type", "sqs");
+      JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
+         .put("aws_type", "sqs");
 
-         Logging.logInfo(LOGGER, session, apacheMetadata, "AWS TIMING INFO");
-
-      }
+      Logging.logInfo(LOGGER, session, apacheMetadata, "AWS TIMING INFO");
 
    }
 
@@ -113,14 +102,13 @@ public class Scheduler {
          if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
             queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString();
          } else {
-            queueName = "??";
+            queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString();
          }
       } else {
          if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
             queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
          } else {
-            queueName = "??";
-         }
+            queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();         }
       }
 
       SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
@@ -144,7 +132,6 @@ public class Scheduler {
       }
 
    }
-
 
 
 }
