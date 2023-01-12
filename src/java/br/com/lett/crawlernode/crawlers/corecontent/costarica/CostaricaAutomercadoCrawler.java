@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.costarica;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
@@ -100,7 +101,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          Boolean available = JSONUtils.getValueRecursive(productData, "storeDetail." + STORE_ID + ".productAvailable", ".", Boolean.class, false);
          String name = productData.optString("ecomDescription");
          String primaryImage = productData.optString("imageUrl") != null ? productData.optString("imageUrl").replace(".jpg", "_1.jpg") : null;
-         List<String> secondaryImages = scrapSecondaryImages(internalPid);
+         List<String> secondaryImages = scrapSecondaryImages();
          String description = productData.optString("descriptiveParagraph");
          Offers offers = available ? scrapOffers(productData) : new Offers();
 
@@ -123,38 +124,44 @@ public class CostaricaAutomercadoCrawler extends Crawler {
       return products;
    }
 
-   private List<String> scrapSecondaryImages(String internalPid) {
+   private List<String> scrapSecondaryImages() {
       List<String> secondaryImages = new ArrayList<>();
-      if (internalPid != null) {
-         Request request = Request.RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setProxyservice(List.of(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.SMART_PROXY_CL_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY
-            ))
-            .setSendUserAgent(true)
-            .build();
-
-         Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher,new JsoupDataFetcher(), new FetcherDataFetcher(), new ApacheDataFetcher()), session, "get");
-         if (response.isSuccess()) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setProxyservice(List.of(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.SMART_PROXY_CL_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY
+         ))
+         .setSendUserAgent(true)
+         .build();
+      int attempt = 0;
+      boolean productPage = false;
+      List<DataFetcher> dataFetcherList = List.of(this.dataFetcher, new JsoupDataFetcher(), new FetcherDataFetcher(), new ApacheDataFetcher());
+      do {
+         Response response = CrawlerUtils.retryRequest(request, session, dataFetcherList.get(attempt), true);
+         if (response.isSuccess() && !response.getBody().isEmpty()) {
             Document doc = Jsoup.parse(response.getBody());
-            if (doc != null) {
+            productPage = doc.selectFirst(".ng-star-inserted > .container.mb-5.mt-4") != null;
+            if (productPage) {
                Elements divImages = doc.select("li > .img-fluid");
                for (Element e : divImages) {
                   String image = e.attr("src");
                   if (image != null && !image.isEmpty()) {
                      secondaryImages.add(image);
                   }
-
                }
                if (secondaryImages.size() > 0) {
                   secondaryImages.remove(0);
                }
             }
          }
+         attempt++;
+      } while (attempt < dataFetcherList.size() && !productPage);
+      if (!productPage) {
+         Logging.printLogDebug(logger, session, "Request for HTML failed" + this.session.getOriginalURL());
       }
-
       return secondaryImages;
    }
 
