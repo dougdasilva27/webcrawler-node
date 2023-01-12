@@ -570,11 +570,11 @@ public abstract class Crawler extends Task {
 
       if (session.scheduledProductIsVoid()) {
 
-         Logging.printLogDebug(logger, session, "The previous processed is also void. Finishing active void.");
+         Logging.printLogInfo(logger, session, "The previous processed is also void. Finishing active void.");
          return product;
       }
 
-      Logging.printLogDebug(logger, session, "The previous processed is not void, starting active void attempts...");
+      Logging.printLogInfo(logger, session, "The previous processed is not void, starting active void attempts...");
 
       // starting the active void iterations
       // until a maximum number of attempts, we will rerun the extract
@@ -583,18 +583,6 @@ public abstract class Crawler extends Task {
       // when attempts reach it's maximum, we interrupt the loop and return the last extracted
       // product, even if it's void
       Product currentProduct = product;
-//      while (session.getVoidAttempts() < MAX_VOID_ATTEMPTS) {
-//         session.incrementVoidAttemptsCounter();
-//
-//         Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPT]" + session.getVoidAttempts());
-//         List<Product> products = extract();
-//         currentProduct = filter(products, session.getInternalId());
-//
-//         if (!currentProduct.isVoid()) {
-//            Logging.printLogDebug(logger, session, "Product is not void anymore, active void works after " + session.getVoidAttempts() + "! Finishing.");
-//            break;
-//         }
-//      }
 
       int attemptVoid = session.getAttemptsVoid().optInt("attempt", 1);
       JSONObject attemptVoidJson = session.getAttemptsVoid();
@@ -606,6 +594,8 @@ public abstract class Crawler extends Task {
          message.put("attempt_void", attemptVoidJson);
          message.put("proxies", DatabaseDataFetcher.fetchProxiesFromMongoFetcher(session.getOptions().optJSONArray("proxies")));
 
+         Logging.printLogInfo(logger, session, "Send attempt:  " + (attemptVoid - 1) + " to queue miranha.");
+
          Scheduler.sendMessagesToQueue(attemptVoidJson, true, session);
 
          return null;
@@ -616,18 +606,16 @@ public abstract class Crawler extends Task {
          attemptVoidJson.put("is_miranha", false);
 
          message.put("attempt_void", attemptVoidJson);
+         Logging.printLogInfo(logger, session, "Send attempt: " + (attemptVoid - 1) + " to queue.");
+
          Scheduler.sendMessagesToQueue(attemptVoidJson, false, session);
 
          return null;
 
       }
 
-      // if we ended with a void product after all the attempts
-      // we must set void status of the existent processed product to true
-      if (currentProduct.isVoid()) {
-         Logging.printLogDebug(logger, session, "Product still void. Finishing active void after " + (attemptVoid - 1) + " attempts.");
 
-      }
+      Logging.printLogDebug(logger, session, "Product still void. Finishing active void after " + (attemptVoid - 1) + " attempts.");
 
       return currentProduct;
 
