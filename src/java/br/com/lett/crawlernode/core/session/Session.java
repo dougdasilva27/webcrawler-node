@@ -90,6 +90,12 @@ public class Session {
 
    protected String fileS3Miranha;
 
+   protected JSONObject attemptsVoid;
+
+   protected boolean isAttemptMiranha;
+
+   protected String className;
+
    /**
     * Default empty constructor
     */
@@ -124,6 +130,9 @@ public class Session {
       webDriver = request.isUseBrowser();
       scraperType = request.getScraperType();
       fileS3Miranha = request.getFileS3Miranha();
+      attemptsVoid = request.getAttemptsVoid();
+      isAttemptMiranha = attemptsVoid.optBoolean("attempt_miranha");
+      className = request.getClassName();
 
       this.options = request.getOptions();
 
@@ -359,4 +368,25 @@ public class Session {
    public void setFileS3Miranha(String fileS3Miranha) {
       this.fileS3Miranha = fileS3Miranha;
    }
+
+   public JSONObject getAttemptsVoid() {
+      return attemptsVoid;
+   }
+
+   public void setAttemptsVoid(JSONObject attemptsVoid) {
+      this.attemptsVoid = attemptsVoid;
+   }
+
+   public String getClassName() {
+      return className;
+   }
+
+   public void setClassName(String className) {
+      this.className = className;
+   }
+
+   public boolean isAttemptMiranha() {
+      return isAttemptMiranha;
+   }
+
 }

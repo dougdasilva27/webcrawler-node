@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
+import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.ScraperInformation;
@@ -57,6 +58,28 @@ public class Scheduler {
       return jsonToSendToCrawler;
 
    }
+
+   public static JSONObject mountMessageToSendToQueue(Session session) {
+
+      JSONObject jsonToSendToCrawler = new JSONObject();
+      JSONObject marketInfo = new JSONObject();
+      marketInfo.put("code", session.getMarket().getCode());
+      marketInfo.put("regex", session.getMarket().getFirstPartyRegex());
+      marketInfo.put("fullName", session.getMarket().getFullName());
+      marketInfo.put("marketId", session.getMarket().getId());
+      marketInfo.put("use_browser", session.isWebDriver());
+      marketInfo.put("name", session.getMarket().getName());
+      jsonToSendToCrawler.put("sessionId", session.getSessionId());
+      jsonToSendToCrawler.put("type", session.getScraperType());
+      jsonToSendToCrawler.put("options", session.getOptions());
+      jsonToSendToCrawler.put("market", marketInfo);
+      jsonToSendToCrawler.put("className", session.getClassName());
+      jsonToSendToCrawler.put("parameters", session.getOriginalURL());
+
+      return jsonToSendToCrawler;
+
+   }
+
 
 
 }
