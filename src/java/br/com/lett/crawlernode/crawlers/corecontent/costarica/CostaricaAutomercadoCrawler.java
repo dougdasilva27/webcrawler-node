@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.costarica;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -134,7 +136,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
             .setSendUserAgent(true)
             .build();
 
-         Response response = this.dataFetcher.get(session, request);
+         Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher,new JsoupDataFetcher(), new FetcherDataFetcher(), new ApacheDataFetcher()), session, "get");
          if (response.isSuccess()) {
             Document doc = Jsoup.parse(response.getBody());
             if (doc != null) {
