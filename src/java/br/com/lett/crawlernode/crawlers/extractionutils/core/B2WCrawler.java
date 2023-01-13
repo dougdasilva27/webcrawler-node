@@ -770,44 +770,26 @@ public class B2WCrawler extends Crawler {
    }
 
    protected String crawlDescription(JSONObject apolloJson, Document doc, String internalPid) {
-      Elements el = doc.select(".src__Container-sc-162vcai-0.kHvlHH");
       StringBuilder description = new StringBuilder();
 
-      for (Element e : el) {
-         String subtitle = CrawlerUtils.scrapStringSimpleInfo(e, ".title__TitleUI-sc-1eypgxa-1.cZeqMA", true);
-         if (checkIsDescription(subtitle)) {
-            description.append(e);
-         }
+      String descriptionAux = JSONUtils.getValueRecursive(apolloJson, "ROOT_QUERY.description", String.class);
+      if (descriptionAux != null) {
+         description.append(descriptionAux);
+         description.append(" ");
       }
-      if (description.length() == 0) {
-         String descriptionAux = JSONUtils.getValueRecursive(apolloJson, "ROOT_QUERY.description", String.class);
-         if (descriptionAux != null) {
-            description.append(descriptionAux);
+      JSONArray attributes = JSONUtils.getValueRecursive(apolloJson, "ROOT_QUERY.product:{\"productId\":\"" + internalPid + "\"}.attributes", JSONArray.class);
+      for (Object obj : attributes) {
+         JSONObject attribute = (JSONObject) obj;
+         String attributeName = attribute.optString("name");
+         String attributeValue = attribute.optString("value");
+         if (attributeName != null && attributeValue != null) {
+            description.append(attributeName);
             description.append(" ");
-         }
-         JSONArray attributes = JSONUtils.getValueRecursive(apolloJson, "ROOT_QUERY.product:{\"productId\":\"" + internalPid + "\"}.attributes", JSONArray.class);
-         for (Object obj : attributes) {
-            JSONObject attribute = (JSONObject) obj;
-            String attributeName = attribute.optString("name");
-            String attributeValue = attribute.optString("value");
-            if (attributeName != null && attributeValue != null) {
-               description.append(attributeName);
-               description.append(" ");
-               description.append(attributeValue);
-               description.append(" ");
-            }
+            description.append(attributeValue);
+            description.append(" ");
          }
       }
 
       return description.toString();
-   }
-
-   private boolean checkIsDescription(String subtitle) {
-      String subtitleLowerWithoutAccents = "";
-      if (subtitle != null) {
-         subtitleLowerWithoutAccents = StringUtils.stripAccents(subtitle);
-      }
-
-      return subtitleLowerWithoutAccents.toLowerCase(Locale.ROOT).contains("ficha") || subtitleLowerWithoutAccents.toLowerCase(Locale.ROOT).contains("informacoes");
    }
 }
