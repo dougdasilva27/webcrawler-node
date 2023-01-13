@@ -35,31 +35,7 @@ public class BrasilExtrabomCrawler extends Crawler {
    public BrasilExtrabomCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.MIRANHA);
-      config.setParser(Parser.HTML);
    }
-
-   @Override
-   protected Response fetchResponse() {
-
-      String url = session.getOriginalURL() + "?Id_seller=" + sellerId;
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "LettDigital/1.0");
-      Request request = Request.RequestBuilder.create().setUrl(url)
-         .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.LUMINATI_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY,
-            ProxyCollection.SMART_PROXY_BR
-         ))
-         .build();
-
-      return CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
-   }
-
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
