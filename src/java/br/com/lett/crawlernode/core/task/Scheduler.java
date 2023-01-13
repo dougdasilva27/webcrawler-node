@@ -62,6 +62,7 @@ public class Scheduler {
       marketInfo.put("use_browser", session.isWebDriver());
       marketInfo.put("name", session.getMarket().getName());
       jsonToSendToCrawler.put("sessionId", session.getSessionId());
+      jsonToSendToCrawler.put("internalId", session.getInternalId());
       jsonToSendToCrawler.put("type", session.getScraperType());
       jsonToSendToCrawler.put("options", session.getOptions());
       jsonToSendToCrawler.put("market", marketInfo);

@@ -123,7 +123,7 @@ public class RequestConverter {
          request.setSendDiscover(sendDiscover);
       }
 
-      JSONObject attemptsVoid = body.optJSONObject("attempt_void");
+      JSONObject attemptsVoid = body.optJSONObject("attemptVoid");
       if (attemptsVoid != null){
          request.setAttemptsVoid(attemptsVoid);
       }
