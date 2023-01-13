@@ -2,20 +2,13 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import org.apache.http.HttpHeaders;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -26,13 +19,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import javax.print.Doc;
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import static br.com.lett.crawlernode.util.CrawlerUtils.getRedirectedUrl;
 
 public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
 
@@ -71,9 +59,7 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
          waitForElement(webdriver.driver, "button[onclick=\"setCepClickHandler();\"]");
          WebElement send = webdriver.driver.findElement(By.cssSelector("button[onclick=\"setCepClickHandler();\"]"));
          webdriver.clickOnElementViaJavascript(send);
-         webdriver.waitLoad(10000);
-         webdriver.loadUrl(HOME_PAGE + "produtos?search=" + this.keywordEncoded);
-         webdriver.waitLoad(10000);
+
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
       }
       while (doc == null && attempts++ < 3);
@@ -182,12 +168,12 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
       waitForElement(webdriver.driver, ".ACTION > .SECONDARY");
       WebElement modal = webdriver.driver.findElement(By.cssSelector(".ACTION > .SECONDARY"));
       webdriver.clickOnElementViaJavascript(modal);
-      webdriver.waitLoad(10000);
+      webdriver.waitLoad(6000);
 
       waitForElement(webdriver.driver, "#cep-eccomerce-header > a");
       WebElement changeCep = webdriver.driver.findElement(By.cssSelector("#cep-eccomerce-header > a"));
       webdriver.clickOnElementViaJavascript(changeCep);
-      webdriver.waitLoad(10000);
+      webdriver.waitLoad(6000);
 
       waitForElement(webdriver.driver, "#cep");
       WebElement cep = webdriver.driver.findElement(By.cssSelector("#cep"));
@@ -195,7 +181,7 @@ public class BrasilMercatoemcasaCrawler extends CrawlerRankingKeywords {
       waitForElement(webdriver.driver, "button[onclick=\"setCepClickHandler();\"]");
       WebElement send = webdriver.driver.findElement(By.cssSelector("button[onclick=\"setCepClickHandler();\"]"));
       webdriver.clickOnElementViaJavascript(send);
-      webdriver.waitLoad(15000);
+      webdriver.waitLoad(6000);
 
       doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
