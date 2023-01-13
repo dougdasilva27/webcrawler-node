@@ -1,16 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class SaopauloSubmarinoCrawler extends B2WCrawler {
 
@@ -28,8 +21,4 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       super.homePage = HOME_PAGE;
       super.urlPageOffers = URL_PAGE_OFFERS;
    }
-
-
-
-
 }

@@ -41,7 +41,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.nio.charset.StandardCharsets;
-import java.text.Normalizer;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -773,53 +772,24 @@ public class B2WCrawler extends Crawler {
    protected String crawlDescription(JSONObject apolloJson, Document doc, String internalPid) {
       StringBuilder description = new StringBuilder();
 
-      boolean alreadyCapturedHtmlSlide = false;
-
-      Element datasheet = doc.selectFirst("#info-section");
-      if (datasheet != null) {
-         Element iframe = datasheet.selectFirst("iframe");
-
-         if (iframe != null) {
-            Document docDescriptionFrame = Jsoup.parse(fetchPage(iframe.attr("src"), dataFetcher, cookies, headers, session));
-            if (docDescriptionFrame != null) {
-               description.append(docDescriptionFrame.html());
-            }
-         }
-
-         // https://www.shoptime.com.br/produto/8421276/mini-system-mx-hs6500-zd-bluetooth-e-funcao-karaoke-bivolt-preto-samsung
-         // alreadyCapturedHtmlSlide as been moved here because of links like these.
-
-         alreadyCapturedHtmlSlide = true;
-         datasheet.select("iframe, h1.sc-hgHYgh").remove();
-         description.append(datasheet.html().replace("hidden", ""));
+      String descriptionAux = JSONUtils.getValueRecursive(apolloJson, "ROOT_QUERY.description", String.class);
+      if (descriptionAux != null) {
+         description.append(descriptionAux);
+         description.append(" ");
       }
-
-      if (internalPid != null) {
-         Element desc2 = doc.select(".info-description-frame-inside").first();
-
-         if (desc2 != null && !alreadyCapturedHtmlSlide) {
-            String urlDesc2 = homePage + "product-description/acom/" + internalPid;
-            Document docDescriptionFrame = Jsoup.parse(fetchPage(urlDesc2, dataFetcher, cookies, headers, session));
-            if (docDescriptionFrame != null) {
-               description.append(docDescriptionFrame.html());
-            }
-         }
-
-         Element elementProductDetails = doc.select(".info-section").last();
-         if (elementProductDetails != null) {
-            elementProductDetails.select(".info-section-header.hidden-md.hidden-lg").remove();
-            description.append(elementProductDetails.html());
-         }
-      }
-      if (description.length() == 0) {
-         Object apolloDescription = apolloJson.optQuery("/ROOT_QUERY/product({\"productId\":\"" + internalPid + "\"})/description/content");
-         if (apolloDescription != null) {
-            description.append((String) apolloDescription);
+      JSONArray attributes = JSONUtils.getValueRecursive(apolloJson, "ROOT_QUERY.product:{\"productId\":\"" + internalPid + "\"}.attributes", JSONArray.class);
+      for (Object obj : attributes) {
+         JSONObject attribute = (JSONObject) obj;
+         String attributeName = attribute.optString("name");
+         String attributeValue = attribute.optString("value");
+         if (attributeName != null && attributeValue != null) {
+            description.append(attributeName);
+            description.append(" ");
+            description.append(attributeValue);
+            description.append(" ");
          }
       }
 
-      return Normalizer.normalize(description.toString(), Normalizer.Form.NFD).replaceAll("[^\n\t\r\\p{Print}]", "");
+      return description.toString();
    }
-
-
 }
