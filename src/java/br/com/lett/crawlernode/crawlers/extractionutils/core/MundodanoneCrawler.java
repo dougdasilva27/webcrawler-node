@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -13,10 +12,10 @@ import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.Pair;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
@@ -140,7 +139,8 @@ public class MundodanoneCrawler extends Crawler {
    private Product extractProduct(JSONObject productJson, String internalPid) throws OfferException, MalformedPricingException, MalformedProductException {
       String internalId = productJson.optString("sku");
       String name = productJson.optString("name");
-      String primaryImage = CrawlerUtils.completeUrl(JSONUtils.getValueRecursive(productJson, "media_gallery_entries.0.file", String.class), "https", "media.mundodanone.com.br/catalog/product");
+      String primaryImage = crawlPrimaryImage(productJson);
+      List<String> secondaryImages = crawlSecondaryImage(productJson, primaryImage);
       String stock = productJson.optString("stock_status");
       boolean available = stock != null ? !stock.contains("OUT_OF_STOCK") : null;
       String description = crawlDescription(productJson);
@@ -152,10 +152,50 @@ public class MundodanoneCrawler extends Crawler {
          .setInternalPid(internalPid)
          .setName(name)
          .setPrimaryImage(primaryImage)
+         .setSecondaryImages(secondaryImages)
          .setDescription(description)
          .setRatingReviews(ratingsReviews)
          .setOffers(offers)
          .build();
+   }
+
+   private String crawlPrimaryImage(JSONObject productJson) {
+      JSONArray imagesJson = JSONUtils.getValueRecursive(productJson, "media_gallery_entries", ".", JSONArray.class, new JSONArray());
+
+      if (imagesJson.isEmpty()) {
+         return null;
+      }
+
+      int minValue = imagesJson.optJSONObject(0).optInt("position");
+
+      for (Object o : imagesJson) {
+         if (o instanceof JSONObject) {
+            JSONObject imageJson = (JSONObject) o;
+            Integer imagePosition = JSONUtils.getIntegerValueFromJSON(imageJson, "position", null);
+
+            if (imagePosition != null && imagePosition == 0) {
+               return imageJson.optString("file");
+            }
+
+            if (imagePosition != null && imagePosition < minValue) {
+               minValue = imagePosition;
+            }
+         }
+      }
+
+      List<String> imagesUrls = CrawlerUtils.scrapImagesListFromJSONArray(imagesJson, "file", new Pair<>("position", minValue), "https", "media.mundodanone.com.br/catalog/product", session);
+
+      return !imagesUrls.isEmpty() ? imagesUrls.get(0) : null;
+   }
+
+   private List<String> crawlSecondaryImage(JSONObject productJson, String primaryImage) {
+      List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(JSONUtils.getValueRecursive(productJson, "media_gallery_entries", ".", JSONArray.class, new JSONArray()), "file", null, "https", "media.mundodanone.com.br/catalog/product", session);
+
+      if (primaryImage != null) {
+         images.remove(primaryImage);
+      }
+
+      return images;
    }
 
    private String crawlDescription(JSONObject productJson) {
@@ -242,7 +282,7 @@ public class MundodanoneCrawler extends Crawler {
 
       JSONObject saleJson = JSONUtils.getValueRecursive(productJson, "price_tiers.0", JSONObject.class);
       if (saleJson != null) {
-         Integer discount = Math.toIntExact(Math.round(JSONUtils.getValueRecursive(saleJson, "discount.percent_off", Double.class)));
+         Integer discount = JSONUtils.getValueRecursive(saleJson, "discount.percent_off", Integer.class);
          Integer quantity = saleJson.optInt("quantity");
          Double priceDiscount = JSONUtils.getValueRecursive(saleJson, "final_price.value", Double.class);
          StringBuilder stringBuilder = new StringBuilder();
