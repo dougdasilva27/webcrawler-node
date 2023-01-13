@@ -591,7 +591,7 @@ public abstract class Crawler extends Task {
       if (session.getOptions().optBoolean("miranha_attempt") && attemptVoid == 2) {
          attemptVoidJson.put("attempt", attemptVoid + 1);
          attemptVoidJson.put("is_miranha", true);
-         message.put("attempt_void", attemptVoidJson);
+         message.put("attemptVoid", attemptVoidJson);
          message.put("proxies", DatabaseDataFetcher.fetchProxiesFromMongoFetcher(session.getOptions().optJSONArray("proxies")));
 
          Logging.printLogInfo(logger, session, "Send attempt:  " + (attemptVoid) + " to queue miranha.");
@@ -606,7 +606,7 @@ public abstract class Crawler extends Task {
          attemptVoidJson.put("attempt", attemptVoid + 1);
          attemptVoidJson.put("is_miranha", false);
 
-         message.put("attempt_void", attemptVoidJson);
+         message.put("attemptVoid", attemptVoidJson);
          Logging.printLogInfo(logger, session, "Send attempt: " + (attemptVoid) + " to queue.");
          Logging.printLogInfo(logger, session, message.toString());
 
