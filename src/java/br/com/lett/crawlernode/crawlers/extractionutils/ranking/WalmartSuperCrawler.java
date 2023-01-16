@@ -27,7 +27,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
 
    public WalmartSuperCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.JSOUP;
    }
 
    String store_id = session.getOptions().optString("store_id");
@@ -116,7 +116,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
          .setCookies(cookies)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
@@ -125,7 +125,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
          .mustSendContentEncoding(false)
          .build();
 
-      String response = CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+      String response = CrawlerUtils.retryRequestString(request, List.of(new JsoupDataFetcher(), new ApacheDataFetcher(), new FetcherDataFetcher()), session);
       return CrawlerUtils.stringToJson(response);
 
    }
