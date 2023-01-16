@@ -308,4 +308,34 @@ public class JSONUtils {
          return defaultValue;
       }
    }
+
+   /**
+    * This filter json array items by a specific field value.
+    *
+    * @param jsonArray JSONArray to filter.
+    * @param keyValue  Pair with the key and the value that we want to filter.
+    * @return JSONArray filtered.
+    */
+   public static JSONArray filterItemsByKeyValue(JSONArray jsonArray, Pair<String, Object> keyValue) {
+      JSONArray filteredJsonArray = new JSONArray();
+
+      if (jsonArray == null) {
+         return filteredJsonArray;
+      }
+
+      jsonArray.forEach(obj -> {
+         if (obj instanceof JSONObject) {
+            JSONObject item = (JSONObject) obj;
+
+            if (keyValue != null) {
+               Object objKeyValue = item.opt(keyValue.getFirst());
+               if (!JSONObject.NULL.equals(objKeyValue) && objKeyValue.equals(keyValue.getSecond())) {
+                  filteredJsonArray.put(item);
+               }
+            }
+         }
+      });
+
+      return filteredJsonArray;
+   }
 }
