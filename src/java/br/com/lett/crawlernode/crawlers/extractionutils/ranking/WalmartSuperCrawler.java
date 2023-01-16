@@ -101,15 +101,15 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
       String referer = "https://super.walmart.com.mx/productos?Ntt=" + this.keywordEncoded;
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("Host", "super.walmart.com.mx");
+      headers.put(HttpHeaders.HOST, "super.walmart.com.mx");
       headers.put(HttpHeaders.CONNECTION, "keep-alive");
       headers.put("x-dtreferer", referer);
       headers.put(HttpHeaders.ACCEPT, "application/json");
-      headers.put("Content-Type", "application/json");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put(HttpHeaders.REFERER, referer);
-      headers.put("Accept-Encoding", "");
-      headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      headers.put("Cache-Control", "no-cache");
+      headers.put(HttpHeaders.ACCEPT_ENCODING, "");
+      headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put(HttpHeaders.CACHE_CONTROL, "no-cache");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
