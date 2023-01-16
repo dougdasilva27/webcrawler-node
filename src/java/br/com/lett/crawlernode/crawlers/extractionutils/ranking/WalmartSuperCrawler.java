@@ -27,7 +27,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
 
    public WalmartSuperCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.JSOUP;
    }
 
    String store_id = session.getOptions().optString("store_id");
@@ -101,22 +101,22 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
       String referer = "https://super.walmart.com.mx/productos?Ntt=" + this.keywordEncoded;
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("Host", "super.walmart.com.mx");
+      headers.put(HttpHeaders.HOST, "super.walmart.com.mx");
       headers.put(HttpHeaders.CONNECTION, "keep-alive");
       headers.put("x-dtreferer", referer);
       headers.put(HttpHeaders.ACCEPT, "application/json");
-      headers.put("Content-Type", "application/json");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put(HttpHeaders.REFERER, referer);
-      headers.put("Accept-Encoding", "");
-      headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      headers.put("Cache-Control", "no-cache");
+      headers.put(HttpHeaders.ACCEPT_ENCODING, "");
+      headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put(HttpHeaders.CACHE_CONTROL, "no-cache");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
@@ -125,7 +125,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
          .mustSendContentEncoding(false)
          .build();
 
-      String response = CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+      String response = CrawlerUtils.retryRequestString(request, List.of(new JsoupDataFetcher(), new ApacheDataFetcher(), new FetcherDataFetcher()), session);
       return CrawlerUtils.stringToJson(response);
 
    }
