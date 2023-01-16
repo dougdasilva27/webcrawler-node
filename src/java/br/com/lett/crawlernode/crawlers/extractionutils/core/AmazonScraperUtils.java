@@ -486,6 +486,10 @@ public class AmazonScraperUtils {
          if (sellerId == null) {
             sellerId = CommonMethods.toSlug(seller);
          }
+         String promoBuyMoreThanOne = CrawlerUtils.scrapStringSimpleInfo(doc, ".promoPriceBlockMessage div span", true);
+         if (promoBuyMoreThanOne != null && !promoBuyMoreThanOne.isEmpty()) {
+            sales.add(promoBuyMoreThanOne);
+         }
 
          return Offer.OfferBuilder.create()
             .setInternalSellerId(sellerId)
