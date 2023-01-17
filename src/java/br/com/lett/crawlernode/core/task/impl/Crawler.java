@@ -565,52 +565,56 @@ public abstract class Crawler extends Task {
          Logging.printLogInfo(logger, session, "The previous processed is also void. Finishing active void.");
          return product;
       }
-
-      Logging.printLogInfo(logger, session, "The previous processed is not void, starting active void attempts...");
-
-      // starting the active void iterations
-      // until a maximum number of attempts, we will rerun the extract
-      // method and check if the newly extracted product is void
-      // in case it isn't, the loop interrupts and returns the product
-      // when attempts reach it's maximum, we interrupt the loop and return the last extracted
-      // product, even if it's void
       Product currentProduct = product;
 
       int attemptVoid = session.getAttemptsVoid().optInt("attempt", 1);
-      JSONObject attemptVoidJson = session.getAttemptsVoid();
-      JSONObject message = Scheduler.mountMessageToSendToQueue(session);
 
-      if (session.getOptions().optBoolean("miranha_attempt") && attemptVoid == 2) {
-         attemptVoidJson.put("attempt", attemptVoid + 1);
-         attemptVoidJson.put("is_miranha", true);
-         message.put("attemptVoid", attemptVoidJson);
-         message.put("proxies", DatabaseDataFetcher.fetchProxiesFromMongoFetcher(session.getOptions().optJSONArray("proxies")));
+      if (attemptVoid < 3) {
+         //1 attempt, 2 attempt/miranha
+         //1 attempt, 2 attempt/not miranha
 
-         Logging.printLogInfo(logger, session, "Send attempt:  " + (attemptVoid) + " to queue miranha.");
-         Logging.printLogInfo(logger, session, message.toString());
+         Logging.printLogInfo(logger, session, "The previous processed is not void, starting active void attempts...");
 
-         Scheduler.sendMessagesToQueue(message, true, session.isWebDriver(), session);
+         // starting the active void iterations
+         // until a maximum number of attempts, we will rerun the extract
+         // method and check if the newly extracted product is void
+         // in case it isn't, the loop interrupts and returns the product
+         // when attempts reach it's maximum, we interrupt the loop and return the last extracted
+         // product, even if it's void
 
-         return null;
+         JSONObject attemptVoidJson = session.getAttemptsVoid();
+         JSONObject message = Scheduler.mountMessageToSendToQueue(session);
 
-      } else if (attemptVoid <= 3 && !session.isAttemptMiranha()) {
+         if (session.getOptions().optBoolean("miranha_attempt") && attemptVoid == 2) {
+            attemptVoidJson.put("attempt", attemptVoid + 1);
+            attemptVoidJson.put("is_miranha", true);
+            message.put("attemptVoid", attemptVoidJson);
+            message.put("proxies", DatabaseDataFetcher.fetchProxiesFromMongoFetcher(session.getOptions().optJSONArray("proxies")));
 
-         attemptVoidJson.put("attempt", attemptVoid + 1);
-         attemptVoidJson.put("is_miranha", false);
+            Logging.printLogInfo(logger, session, "Send attempt:  " + (attemptVoid) + " to queue miranha.");
+            Logging.printLogInfo(logger, session, message.toString());
 
-         message.put("attemptVoid", attemptVoidJson);
-         Logging.printLogInfo(logger, session, "Send attempt: " + (attemptVoid) + " to queue.");
-         Logging.printLogInfo(logger, session, message.toString());
+            Scheduler.sendMessagesToQueue(message, true, session.isWebDriver(), session);
 
+            return null;
 
-         Scheduler.sendMessagesToQueue(message, false, session.isWebDriver(), session);
+         } else {
 
-         return null;
+            attemptVoidJson.put("attempt", attemptVoid + 1);
+            attemptVoidJson.put("is_miranha", false);
 
+            message.put("attemptVoid", attemptVoidJson);
+            Logging.printLogInfo(logger, session, "Send attempt: " + (attemptVoid) + " to queue.");
+            Logging.printLogInfo(logger, session, message.toString());
+
+            Scheduler.sendMessagesToQueue(message, false, session.isWebDriver(), session);
+
+            return null;
+
+         }
       }
 
-
-      Logging.printLogDebug(logger, session, "Product still void. Finishing active void after " + (attemptVoid - 1) + " attempts.");
+      Logging.printLogDebug(logger, session, "Product still void. Finishing active void after " + (attemptVoid) + " attempts.");
 
       return currentProduct;
 
