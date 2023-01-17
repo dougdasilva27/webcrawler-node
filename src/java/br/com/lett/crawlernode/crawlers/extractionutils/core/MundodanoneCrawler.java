@@ -166,6 +166,8 @@ public class MundodanoneCrawler extends Crawler {
          return null;
       }
 
+      imagesJson = JSONUtils.filterItemsByKeyValue(imagesJson, new Pair<>("disabled", false));
+
       int minValue = imagesJson.optJSONObject(0).optInt("position");
 
       for (Object o : imagesJson) {
@@ -189,7 +191,7 @@ public class MundodanoneCrawler extends Crawler {
    }
 
    private List<String> crawlSecondaryImage(JSONObject productJson, String primaryImage) {
-      List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(JSONUtils.getValueRecursive(productJson, "media_gallery_entries", ".", JSONArray.class, new JSONArray()), "file", null, "https", "media.mundodanone.com.br/catalog/product", session);
+      List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(JSONUtils.getValueRecursive(productJson, "media_gallery_entries", ".", JSONArray.class, new JSONArray()), "file", new Pair<>("disabled", false), "https", "media.mundodanone.com.br/catalog/product", session);
 
       if (primaryImage != null) {
          images.remove(primaryImage);
