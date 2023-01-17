@@ -112,7 +112,7 @@ public class Scheduler {
             queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
          } else {
            // queueName = isWebDriver ? QueueName.WEB_SCRAPER_PRODUCT_DELAY_ATTEMPT_WD.toString() : QueueName.WEB_SCRAPER_PRODUCT_DELAY_ATTEMPT.toString();
-            queueName = QueueName.WEB_SCRAPER_DISCOVERER_BY_KEYWORDS.toString();
+            queueName = "web-scraper-product-charge-test";
          }
       }
 
