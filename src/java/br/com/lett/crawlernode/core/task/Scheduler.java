@@ -110,7 +110,7 @@ public class Scheduler {
          if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
             queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
          } else {
-            queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();         }
+            queueName = "web-scraper-product-charge-test";         }
       }
 
       SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
