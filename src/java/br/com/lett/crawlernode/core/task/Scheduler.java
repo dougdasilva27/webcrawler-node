@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.core.task;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.Logging;
@@ -74,20 +75,20 @@ public class Scheduler {
 
    }
 
-   public static void sendMessagesToQueue(JSONObject jsonToSentToQueue, boolean isMiranha, Session session) {
+   public static void sendMessagesToQueue(JSONObject jsonToSentToQueue, boolean isMiranha, boolean isWebDriver, Session session) {
 
       List<SendMessageBatchRequestEntry> entries = new ArrayList<>();
 
       long sendMessagesStartTime = System.currentTimeMillis();
 
       SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
-      entry.setId(String.valueOf(1)); // the id must be unique in the batch
+      entry.setId(session.getSessionId()); // the id must be unique in the batch
 
       entry.setMessageBody(jsonToSentToQueue.toString());
 
       entries.add(entry);
 
-      populateMessagesInToQueue(entries, isMiranha);
+      populateMessagesInToQueue(entries, isMiranha, isWebDriver);
 
       JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
          .put("aws_type", "sqs");
@@ -96,7 +97,7 @@ public class Scheduler {
 
    }
 
-   public static void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isMiranha) {
+   public static void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isMiranha, boolean isWebDriver) {
       Map<String, String> mapUrlMessageId = new HashMap<>();
       String queueName;
 
@@ -104,13 +105,15 @@ public class Scheduler {
          if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
             queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString();
          } else {
-            queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString();
+            queueName = QueueName.WEB_SCRAPER_MIRANHA_DELAY_ATTEMPT.toString();
          }
       } else {
          if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
             queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
          } else {
-            queueName = "web-scraper-product-charge-test";         }
+           // queueName = isWebDriver ? QueueName.WEB_SCRAPER_PRODUCT_DELAY_ATTEMPT_WD.toString() : QueueName.WEB_SCRAPER_PRODUCT_DELAY_ATTEMPT.toString();
+            queueName = QueueName.WEB_SCRAPER_DISCOVERER_BY_KEYWORDS.toString();
+         }
       }
 
       SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
@@ -119,18 +122,16 @@ public class Scheduler {
       List<SendMessageBatchResultEntry> successResultEntryList = messagesResult.getSuccessful();
 
       if (!successResultEntryList.isEmpty()) {
-         int count = 0;
-         for (SendMessageBatchResultEntry resultEntry : successResultEntryList) { // the successfully
+            for (int i = 0; i < successResultEntryList.size(); i++) { // the successfully
             // sent messages
 
             // the _id field in the document will be the message id, which is the session id in the
             // crawler
-            String messageId = resultEntry.getMessageId();
-            mapUrlMessageId.put(entries.get(count).getMessageBody(), messageId);
-            count++;
+            String messageId = successResultEntryList.get(i).getMessageId();
+            mapUrlMessageId.put(entries.get(i).getMessageBody(), messageId);
          }
 
-         LOGGER.info(successResultEntryList.size() + " messages sended to " + queueName);
+         Logging.printLogInfo( LOGGER, successResultEntryList.size() + " messages sended to " + queueName);
       }
 
    }

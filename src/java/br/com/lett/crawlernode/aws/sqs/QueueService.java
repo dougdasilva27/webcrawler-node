@@ -75,6 +75,9 @@ public class QueueService {
       queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_DEV.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_PRODUCT_DEV.toString());
       queueURLMap.put(QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_PROD.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_PROD.toString());
       queueURLMap.put(QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString());
+      queueURLMap.put(QueueName.WEB_SCRAPER_MIRANHA_DELAY_ATTEMPT.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_MIRANHA_DELAY_ATTEMPT.toString());
+      queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_DELAY_ATTEMPT.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_PRODUCT_DELAY_ATTEMPT.toString());
+      queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_DELAY_ATTEMPT_WD.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_PRODUCT_DELAY_ATTEMPT_WD.toString());
       queueURLMap.put("web-scraper-product-charge-test", QUEUE_URL + "web-scraper-product-charge-test");
 
    }

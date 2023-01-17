@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.core.task.impl;
 import br.com.lett.crawlernode.aws.dynamodb.Dynamo;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
@@ -18,7 +17,6 @@ import br.com.lett.crawlernode.core.models.RequestMethod;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.*;
-import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.sentinel.SentinelCrawlerSession;
 import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
@@ -32,18 +30,12 @@ import br.com.lett.crawlernode.exceptions.RequestException;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import br.com.lett.crawlernode.integration.redis.config.RedisDb;
-import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
-import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
-import enums.QueueName;
 import models.Offer;
 import models.Offers;
 import org.apache.http.cookie.Cookie;
@@ -597,7 +589,7 @@ public abstract class Crawler extends Task {
          Logging.printLogInfo(logger, session, "Send attempt:  " + (attemptVoid) + " to queue miranha.");
          Logging.printLogInfo(logger, session, message.toString());
 
-         Scheduler.sendMessagesToQueue(attemptVoidJson, true, session);
+         Scheduler.sendMessagesToQueue(attemptVoidJson, true, session.isWebDriver(), session);
 
          return null;
 
@@ -611,7 +603,7 @@ public abstract class Crawler extends Task {
          Logging.printLogInfo(logger, session, message.toString());
 
 
-         Scheduler.sendMessagesToQueue(attemptVoidJson, false, session);
+         Scheduler.sendMessagesToQueue(attemptVoidJson, false, session.isWebDriver(), session);
 
          return null;
 
