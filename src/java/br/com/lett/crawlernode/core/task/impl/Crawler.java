@@ -589,7 +589,7 @@ public abstract class Crawler extends Task {
          Logging.printLogInfo(logger, session, "Send attempt:  " + (attemptVoid) + " to queue miranha.");
          Logging.printLogInfo(logger, session, message.toString());
 
-         Scheduler.sendMessagesToQueue(attemptVoidJson, true, session.isWebDriver(), session);
+         Scheduler.sendMessagesToQueue(message, true, session.isWebDriver(), session);
 
          return null;
 
@@ -603,7 +603,7 @@ public abstract class Crawler extends Task {
          Logging.printLogInfo(logger, session, message.toString());
 
 
-         Scheduler.sendMessagesToQueue(attemptVoidJson, false, session.isWebDriver(), session);
+         Scheduler.sendMessagesToQueue(message, false, session.isWebDriver(), session);
 
          return null;
 
