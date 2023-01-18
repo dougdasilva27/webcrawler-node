@@ -614,7 +614,7 @@ public abstract class Crawler extends Task {
          }
       }
 
-      Logging.printLogDebug(logger, session, "Product still void. Finishing active void after " + (attemptVoid) + " attempts.");
+      Logging.printLogInfo(logger, session, "Product still void. Finishing active void after " + (attemptVoid) + " attempts.");
 
       return currentProduct;
 
