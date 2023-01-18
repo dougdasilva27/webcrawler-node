@@ -383,7 +383,8 @@ public class AmazonScraperUtils {
    public String crawlDescription(Document doc) {
       StringBuilder description = new StringBuilder();
       Element prodInfoElement = doc.selectFirst("#prodDetails");
-      Element productDescription = doc.selectFirst("div#productDescription_feature_div.a-row.feature");
+      String productDescription = CrawlerUtils.scrapStringSimpleInfo(doc, "#productDescription > p > span", true);
+      Element featureDescription = doc.selectFirst("#productOverview_feature_div tbody");
 
       Elements elementsDescription =
          doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
@@ -427,10 +428,14 @@ public class AmazonScraperUtils {
       }
 
       if (prodInfoElement != null) {
-         description.append(prodInfoElement.toString());
+         description.append(prodInfoElement);
       }
       if (productDescription != null) {
-         description.append(productDescription.toString());
+         description.append(productDescription);
+      }
+
+      if (featureDescription != null) {
+         description.append(featureDescription);
       }
 
       return description.toString();
