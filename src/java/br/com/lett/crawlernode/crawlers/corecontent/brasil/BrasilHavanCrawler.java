@@ -22,7 +22,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -126,6 +125,7 @@ public class BrasilHavanCrawler extends Crawler {
    private boolean isProductPage(Document document) {
       return document.selectFirst(".column.main") != null;
    }
+
    private String getVariantName(String name, JSONArray variants, int i) {
       String jsonName = JSONUtils.getValueRecursive(variants, i + ".label", String.class);
       if (jsonName != null) {
@@ -229,9 +229,10 @@ public class BrasilHavanCrawler extends Crawler {
 
       Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "5e9bcbac-4433-4a16-992a-1bbd2d62067c", this.dataFetcher);
 
+      String avgRatingString = CrawlerUtils.scrapStringSimpleInfoByAttribute(docRating, "meta[itemprop=ratingValue]", "content");
+      Double avgRating = avgRatingString != null && !avgRatingString.isEmpty() ? Double.parseDouble(avgRatingString) : 0.0;
 
       Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
-      Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
       AdvancedRatingReview advancedRatingReview = yourReviews.getTotalStarsFromEachValue(internalPid);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
