@@ -111,8 +111,7 @@ public class Scheduler {
          if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
             queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
          } else {
-           // queueName = isWebDriver ? QueueName.WEB_SCRAPER_PRODUCT_DELAY_ATTEMPT_WD.toString() : QueueName.WEB_SCRAPER_PRODUCT_DELAY_ATTEMPT.toString();
-            queueName = "web-scraper-product-charge-test";
+            queueName = isWebDriver ? QueueName.WEB_SCRAPER_PRODUCT_DELAY_ATTEMPT_WD.toString() : QueueName.WEB_SCRAPER_PRODUCT_DELAY_ATTEMPT.toString();
          }
       }
 
