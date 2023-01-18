@@ -384,7 +384,7 @@ public class AmazonScraperUtils {
       StringBuilder description = new StringBuilder();
       Element prodInfoElement = doc.selectFirst("#prodDetails");
       String productDescription = CrawlerUtils.scrapStringSimpleInfo(doc, "#productDescription > p > span", true);
-      String featureDescription = CrawlerUtils.scrapSimpleDescription(doc,Arrays.asList("#productOverview_feature_div tbody > tr > td > span"));
+      String featureDescription = CrawlerUtils.scrapStringSimpleInfo(doc,"#productOverview_feature_div tbody", false);
 
       Elements elementsDescription =
          doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
