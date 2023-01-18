@@ -430,7 +430,7 @@ public class AmazonScraperUtils {
       if (prodInfoElement != null) {
          description.append(prodInfoElement);
       }
-      if (productDescription != null) {
+      if (productDescription != null && !productDescription.isEmpty()) {
          description.append(productDescription);
       }
 
