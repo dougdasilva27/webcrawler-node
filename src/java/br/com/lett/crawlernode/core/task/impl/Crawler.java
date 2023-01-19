@@ -569,7 +569,7 @@ public abstract class Crawler extends Task {
 
       int attemptVoid = session.getAttemptsVoid().optInt("attempt", 1);
 
-      if (attemptVoid < 3) {
+      if (attemptVoid < MAX_VOID_ATTEMPTS) {
          //1 attempt, 2 attempt/miranha
          //1 attempt, 2 attempt/not miranha
 
@@ -586,13 +586,12 @@ public abstract class Crawler extends Task {
          JSONObject message = Scheduler.mountMessageToSendToQueue(session);
 
          if (session.getOptions().optBoolean("miranha_attempt") && attemptVoid == 2) {
-            attemptVoidJson.put("attempt", attemptVoid + 1);
+            attemptVoidJson.put("attempt", attemptVoid++);
             attemptVoidJson.put("is_miranha", true);
             message.put("attemptVoid", attemptVoidJson);
             message.put("proxies", DatabaseDataFetcher.fetchProxiesFromMongoFetcher(session.getOptions().optJSONArray("proxies")));
 
             Logging.printLogInfo(logger, session, "Send attempt:  " + (attemptVoid) + " to queue miranha.");
-            Logging.printLogInfo(logger, session, message.toString());
 
             Scheduler.sendMessagesToQueue(message, true, session.isWebDriver(), session);
 
@@ -600,12 +599,11 @@ public abstract class Crawler extends Task {
 
          } else {
 
-            attemptVoidJson.put("attempt", attemptVoid + 1);
+            attemptVoidJson.put("attempt", attemptVoid++);
             attemptVoidJson.put("is_miranha", false);
 
             message.put("attemptVoid", attemptVoidJson);
             Logging.printLogInfo(logger, session, "Send attempt: " + (attemptVoid) + " to queue.");
-            Logging.printLogInfo(logger, session, message.toString());
 
             Scheduler.sendMessagesToQueue(message, false, session.isWebDriver(), session);
 

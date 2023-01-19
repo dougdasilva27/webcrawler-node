@@ -53,7 +53,6 @@ public class Scheduler {
    }
 
    public static JSONObject mountMessageToSendToQueue(Session session) {
-      String sessionId = UUID.randomUUID().toString();
 
       JSONObject jsonToSendToCrawler = new JSONObject();
       JSONObject marketInfo = new JSONObject();
@@ -63,7 +62,7 @@ public class Scheduler {
       marketInfo.put("marketId", session.getMarket().getId());
       marketInfo.put("use_browser", session.isWebDriver());
       marketInfo.put("name", session.getMarket().getName());
-      jsonToSendToCrawler.put("sessionId", sessionId);
+      jsonToSendToCrawler.put("sessionId", session.getSessionId());
       jsonToSendToCrawler.put("internalId", session.getInternalId());
       jsonToSendToCrawler.put("type", session.getScraperType());
       jsonToSendToCrawler.put("options", session.getOptions());
