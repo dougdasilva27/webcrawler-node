@@ -586,7 +586,9 @@ public abstract class Crawler extends Task {
          JSONObject message = Scheduler.mountMessageToSendToQueue(session);
 
          if (session.getOptions().optBoolean("miranha_attempt") && attemptVoid == 2) {
-            attemptVoidJson.put("attempt", attemptVoid++);
+            attemptVoid++;
+
+            attemptVoidJson.put("attempt", attemptVoid);
             attemptVoidJson.put("is_miranha", true);
             message.put("attemptVoid", attemptVoidJson);
             message.put("proxies", DatabaseDataFetcher.fetchProxiesFromMongoFetcher(session.getOptions().optJSONArray("proxies")));
@@ -598,8 +600,9 @@ public abstract class Crawler extends Task {
             return null;
 
          } else {
+            attemptVoid++;
 
-            attemptVoidJson.put("attempt", attemptVoid++);
+            attemptVoidJson.put("attempt", attemptVoid);
             attemptVoidJson.put("is_miranha", false);
 
             message.put("attemptVoid", attemptVoidJson);
