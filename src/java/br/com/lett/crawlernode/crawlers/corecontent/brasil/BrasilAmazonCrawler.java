@@ -187,15 +187,15 @@ public class BrasilAmazonCrawler extends Crawler {
       int attempt = 0;
 
       while (docDescription.select("#productDescription_feature_div.celwidget").isEmpty() && attempt++ < 3) {
-         Logging.printLogInfo(logger, session, "This document not have description selector, initiating attempt :" + attempt);
+         Logging.printLogInfo(logger, session, "This document not have description selector, initiating attempt: " + attempt);
          docDescription = Jsoup.parse(requestMethod(session.getOriginalURL()));
-
       }
-       if (!docDescription.select("#productDescription_feature_div.celwidget").isEmpty()){
-          Logging.printLogInfo(logger, session, "Success! After " + attempt + " attempt the document load description");
-       } else {
-          Logging.printLogInfo(logger, session, "Failed! After " + attempt + " the document not load description");
-       }
+
+      if (!docDescription.select("#productDescription_feature_div.celwidget").isEmpty()) {
+         Logging.printLogInfo(logger, session, "Success! After " + attempt + " attempt the document load description");
+      } else {
+         Logging.printLogInfo(logger, session, "Failed! After " + attempt + " the document not load description");
+      }
 
       return CrawlerUtils.scrapElementsDescription(docDescription, Arrays.asList("#productDetails_feature_div", "#productDescription_feature_div.celwidget", "#featurebullets_feature_div.celwidget", ".a-normal.a-spacing-micro tbody", ".aplus-v2.desktop.celwidget"));
 
