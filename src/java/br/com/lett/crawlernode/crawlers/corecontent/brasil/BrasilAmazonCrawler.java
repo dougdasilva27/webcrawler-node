@@ -64,7 +64,9 @@ public class BrasilAmazonCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "gzip, deflate, br");
       headers.put("authority", "www.amazon.com.br");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.104 Safari/537.36");
+      headers.put("cache-control", "no-cache");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -87,6 +89,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
       return response.getBody();
    }
+
 
    @Override
    protected Document fetch() {
@@ -126,7 +129,7 @@ public class BrasilAmazonCrawler extends Crawler {
          String primaryImage = this.amazonScraperUtils.scrapPrimaryImage(images, doc, IMAGES_PROTOCOL, IMAGES_HOST);
          List<String> secondaryImages = this.amazonScraperUtils.scrapSecondaryImages(images, IMAGES_PROTOCOL, IMAGES_HOST);
 
-         String description = this.amazonScraperUtils.crawlDescription(doc);
+         String description = crawlDescription(doc);
          Integer stock = null;
          List<String> eans = amazonScraperUtils.crawlEan(doc);
          Offer mainPageOffer = amazonScraperUtils.scrapMainPageOffer(doc);
@@ -177,6 +180,25 @@ public class BrasilAmazonCrawler extends Crawler {
       } while (doc.selectFirst("#aod-offer") == null && attempt <= maxAttempt);
 
       return doc;
+   }
+
+   public String crawlDescription(Document doc) {
+      Document docDescription = doc;
+      int attempt = 0;
+
+      while (docDescription.select("#productDescription_feature_div.celwidget").isEmpty() && attempt++ < 3) {
+         Logging.printLogInfo(logger, session, "This document not have description selector, initiating attempt: " + attempt);
+         docDescription = Jsoup.parse(requestMethod(session.getOriginalURL()));
+      }
+
+      if (!docDescription.select("#productDescription_feature_div.celwidget").isEmpty()) {
+         Logging.printLogInfo(logger, session, "Success! After " + attempt + " attempt the document load description");
+      } else {
+         Logging.printLogInfo(logger, session, "Failed! After " + attempt + " the document not load description");
+      }
+
+      return CrawlerUtils.scrapElementsDescription(docDescription, Arrays.asList("#productDetails_feature_div", "#productDescription_feature_div.celwidget", "#featurebullets_feature_div.celwidget", ".a-normal.a-spacing-micro tbody", ".aplus-v2.desktop.celwidget"));
+
    }
 
 
