@@ -570,17 +570,14 @@ public abstract class Crawler extends Task {
       int attemptVoid = session.getAttemptsVoid().optInt("attempt", 1);
 
       if (attemptVoid < MAX_VOID_ATTEMPTS) {
-         //1 attempt, 2 attempt/miranha
-         //1 attempt, 2 attempt/not miranha
 
          Logging.printLogInfo(logger, session, "The previous processed is not void, starting active void attempts...");
 
          // starting the active void iterations
-         // until a maximum number of attempts, we will rerun the extract
-         // method and check if the newly extracted product is void
+         // until a maximum number of attempts, we will send message to queue with delay
+         // and check if the newly extracted product is void
          // in case it isn't, the loop interrupts and returns the product
-         // when attempts reach it's maximum, we interrupt the loop and return the last extracted
-         // product, even if it's void
+         // when attempts reach it's maximum, we interrupt the loop and return the product, even if it's void
 
          JSONObject attemptVoidJson = session.getAttemptsVoid();
          JSONObject message = Scheduler.mountMessageToSendToQueue(session);

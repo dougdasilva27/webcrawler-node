@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.core.task;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.Logging;
@@ -120,7 +119,7 @@ public class Scheduler {
       List<SendMessageBatchResultEntry> successResultEntryList = messagesResult.getSuccessful();
 
       if (!successResultEntryList.isEmpty()) {
-            for (int i = 0; i < successResultEntryList.size(); i++) { // the successfully
+         for (int i = 0; i < successResultEntryList.size(); i++) { // the successfully
             // sent messages
 
             // the _id field in the document will be the message id, which is the session id in the
@@ -129,7 +128,7 @@ public class Scheduler {
             mapUrlMessageId.put(entries.get(i).getMessageBody(), messageId);
          }
 
-         Logging.printLogInfo( LOGGER, successResultEntryList.size() + " messages sended to " + queueName);
+         Logging.printLogInfo(LOGGER, successResultEntryList.size() + " messages sended to " + queueName);
       }
 
    }
