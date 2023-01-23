@@ -126,7 +126,7 @@ public class BrasilAmazonCrawler extends Crawler {
          String primaryImage = this.amazonScraperUtils.scrapPrimaryImage(images, doc, IMAGES_PROTOCOL, IMAGES_HOST);
          List<String> secondaryImages = this.amazonScraperUtils.scrapSecondaryImages(images, IMAGES_PROTOCOL, IMAGES_HOST);
 
-         String description = this.amazonScraperUtils.crawlDescription(doc);
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#productDetails_feature_div", "#productDescription_feature_div.celwidget", "#featurebullets_feature_div.celwidget", ".a-normal.a-spacing-micro tbody", ".aplus-v2.desktop.celwidget") );
          Integer stock = null;
          List<String> eans = amazonScraperUtils.crawlEan(doc);
          Offer mainPageOffer = amazonScraperUtils.scrapMainPageOffer(doc);
