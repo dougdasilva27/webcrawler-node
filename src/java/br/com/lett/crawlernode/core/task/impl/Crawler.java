@@ -14,10 +14,11 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RequestMethod;
-import br.com.lett.crawlernode.core.session.sentinel.SentinelCrawlerSession;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.*;
+import br.com.lett.crawlernode.core.session.sentinel.SentinelCrawlerSession;
+import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.config.CrawlerConfig;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
@@ -46,10 +47,7 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -77,6 +75,8 @@ public abstract class Crawler extends Task {
    protected static final int MAX_VOID_ATTEMPTS = 3;
 
    protected DataFetcher dataFetcher;
+
+   private final Map<String, String> mapUrlMessageId = new HashMap<>();
 
    protected CrawlerConfig config;
 
@@ -291,19 +291,20 @@ public abstract class Crawler extends Task {
 
       // Before process and save to PostgreSQL
       // we must send the raw crawled data to Kinesis
-      sendToKinesis(activeVoidResultProduct);
+      if (activeVoidResultProduct != null) {
+         sendToKinesis(activeVoidResultProduct);
 
-      if (executionParameters.isSendToKinesisCatalog()) {
-         try {
-            KPLProducer.sendMessageCatalogToKinesis(crawledProduct, session);
-            Logging.printLogDebug(logger, "Sucess to send to kinesis sessionId: " + session.getSessionId());
+         if (executionParameters.isSendToKinesisCatalog()) {
+            try {
+               KPLProducer.sendMessageCatalogToKinesis(crawledProduct, session);
+               Logging.printLogDebug(logger, "Sucess to send to kinesis sessionId: " + session.getSessionId());
 
-         } catch (Exception e) {
-            Logging.printLogError(logger, "Failed to send to kinesis sessionId: " + session.getSessionId());
+            } catch (Exception e) {
+               Logging.printLogError(logger, "Failed to send to kinesis sessionId: " + session.getSessionId());
+            }
+
          }
-
       }
-
    }
 
    private void sendProgress(Integer progress) {
@@ -379,9 +380,9 @@ public abstract class Crawler extends Task {
 
          Parser parser = this.config.getParser();
 
-         if (parser != Parser.NONE && config.getFetcher() != FetchMode.MIRANHA) {
+         if (parser != Parser.NONE && config.getFetcher() != FetchMode.MIRANHA && !session.isAttemptMiranha()) {
             response = fetchResponse();
-         } else if (config.getFetcher() == FetchMode.MIRANHA) {
+         } else if (session.isAttemptMiranha() || config.getFetcher() == FetchMode.MIRANHA) {
             obj = fetchMiranha();
          } else {
             obj = fetch();
@@ -407,7 +408,7 @@ public abstract class Crawler extends Task {
          } else if (obj instanceof JSONArray) {
             products = extractInformation((JSONArray) obj);
          }
-         if(session instanceof SentinelCrawlerSession && products.isEmpty()) {
+         if (session instanceof SentinelCrawlerSession && products.isEmpty()) {
             throw new NotFoundProductException("No products found in Sentinel");
          }
          for (Product p : products) {
@@ -561,38 +562,57 @@ public abstract class Crawler extends Task {
 
       if (session.scheduledProductIsVoid()) {
 
-         Logging.printLogDebug(logger, session, "The previous processed is also void. Finishing active void.");
+         Logging.printLogInfo(logger, session, "The previous processed is also void. Finishing active void.");
          return product;
       }
-
-      Logging.printLogDebug(logger, session, "The previous processed is not void, starting active void attempts...");
-
-      // starting the active void iterations
-      // until a maximum number of attempts, we will rerun the extract
-      // method and check if the newly extracted product is void
-      // in case it isn't, the loop interrupts and returns the product
-      // when attempts reach it's maximum, we interrupt the loop and return the last extracted
-      // product, even if it's void
       Product currentProduct = product;
-      while (session.getVoidAttempts() < MAX_VOID_ATTEMPTS) {
-         session.incrementVoidAttemptsCounter();
 
-         Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPT]" + session.getVoidAttempts());
-         List<Product> products = extract();
-         currentProduct = filter(products, session.getInternalId());
+      int attemptVoid = session.getAttemptsVoid().optInt("attempt", 1);
 
-         if (!currentProduct.isVoid()) {
-            Logging.printLogDebug(logger, session, "Product is not void anymore, active void works after " + session.getVoidAttempts() + "! Finishing.");
-            break;
+      if (attemptVoid < MAX_VOID_ATTEMPTS) {
+
+         Logging.printLogInfo(logger, session, "The previous processed is not void, starting active void attempts...");
+
+         // starting the active void iterations
+         // until a maximum number of attempts, we will send message to queue with delay
+         // and check if the newly extracted product is void
+         // in case it isn't, the loop interrupts and returns the product
+         // when attempts reach it's maximum, we interrupt the loop and return the product, even if it's void
+
+         JSONObject attemptVoidJson = session.getAttemptsVoid();
+         JSONObject message = Scheduler.mountMessageToSendToQueue(session);
+
+         if (session.getOptions().optBoolean("miranha_attempt") && attemptVoid == 2) {
+            attemptVoid++;
+
+            attemptVoidJson.put("attempt", attemptVoid);
+            attemptVoidJson.put("is_miranha", true);
+            message.put("attemptVoid", attemptVoidJson);
+            message.put("proxies", DatabaseDataFetcher.fetchProxiesFromMongoFetcher(session.getOptions().optJSONArray("proxies")));
+
+            Logging.printLogInfo(logger, session, "Send attempt:  " + (attemptVoid) + " to queue miranha.");
+
+            Scheduler.sendMessagesToQueue(message, true, session.isWebDriver(), session);
+
+            return null;
+
+         } else {
+            attemptVoid++;
+
+            attemptVoidJson.put("attempt", attemptVoid);
+            attemptVoidJson.put("is_miranha", false);
+
+            message.put("attemptVoid", attemptVoidJson);
+            Logging.printLogInfo(logger, session, "Send attempt: " + (attemptVoid) + " to queue.");
+
+            Scheduler.sendMessagesToQueue(message, false, session.isWebDriver(), session);
+
+            return null;
+
          }
       }
 
-      // if we ended with a void product after all the attempts
-      // we must set void status of the existent processed product to true
-      if (currentProduct.isVoid()) {
-         Logging.printLogDebug(logger, session, "Product still void. Finishing active void.");
-
-      }
+      Logging.printLogInfo(logger, session, "Product still void. Finishing active void after " + (attemptVoid) + " attempts.");
 
       return currentProduct;
 

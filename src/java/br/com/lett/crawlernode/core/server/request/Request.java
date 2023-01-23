@@ -28,6 +28,8 @@ public class Request {
    private boolean sendDiscover;
 
    private String fileS3Miranha;
+
+   private JSONObject attemptsVoid = new JSONObject();
    public Request() {
       super();
    }
@@ -164,5 +166,17 @@ public class Request {
    }
    public boolean isSendDiscover() {
       return sendDiscover;
+   }
+
+   public void setSendDiscover(boolean sendDiscover) {
+      this.sendDiscover = sendDiscover;
+   }
+
+   public JSONObject getAttemptsVoid() {
+      return attemptsVoid;
+   }
+
+   public void setAttemptsVoid(JSONObject attemptsVoid) {
+      this.attemptsVoid = attemptsVoid;
    }
 }

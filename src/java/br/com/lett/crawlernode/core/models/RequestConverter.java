@@ -123,6 +123,11 @@ public class RequestConverter {
          request.setSendDiscover(sendDiscover);
       }
 
+      JSONObject attemptsVoid = body.optJSONObject("attemptVoid");
+      if (attemptsVoid != null){
+         request.setAttemptsVoid(attemptsVoid);
+      }
+
       if (request instanceof CrawlerSeedRequest) {
          ((CrawlerSeedRequest) request).setTaskId(body.optString(BODY_SEED_TASK_ID));
       }
