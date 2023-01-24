@@ -18,6 +18,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
@@ -71,7 +72,7 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
       headers.put("authority", "mercado.carrefour.com.br");
       headers.put("referer", "https://mercado.carrefour.com.br/");
 
-      String url = "https://mercado.carrefour.com.br/api/graphql?operationName=ProductsQuery&variables={\"first\":20,\"after\":\"" + (this.currentPage - 1) * this.pageSize + "\",\"sort\":\"score_desc\",\"term\":\"" + this.keywordEncoded + "\",\"selectedFacets\":[{\"key\":\"region-id\",\"value\":\"" + regionId + "\"},{\"key\":\"channel\",\"value\":\"{\\\"salesChannel\\\":\\\"2\\\",\\\"regionId\\\":\\\"" + regionId + "\\\"}\"},{\"key\":\"locale\",\"value\":\"pt-BR\"}]}";
+      String url = "https://mercado.carrefour.com.br/api/graphql?operationName=ProductsQuery&variables={\"first\":20,\"after\":\"" + (this.currentPage - 1) * this.pageSize + "\",\"sort\":\"score_desc\",\"term\":\"" + this.keywordWithoutAccents + "\",\"selectedFacets\":[{\"key\":\"region-id\",\"value\":\"" + regionId + "\"},{\"key\":\"channel\",\"value\":\"{\\\"salesChannel\\\":\\\"2\\\",\\\"regionId\\\":\\\"" + regionId + "\\\"}\"},{\"key\":\"locale\",\"value\":\"pt-BR\"}]}";
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -79,7 +80,7 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
          .setCookies(this.cookies)
          .build();
 
-      return CrawlerUtils.stringToJSONObject(new FetcherDataFetcher().get(session, request).getBody());
+      return CrawlerUtils.stringToJSONObject(CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get").getBody());
    }
 
    @Override
