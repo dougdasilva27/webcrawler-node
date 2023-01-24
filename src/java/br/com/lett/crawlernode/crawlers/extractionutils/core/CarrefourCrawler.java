@@ -57,14 +57,6 @@ public class CarrefourCrawler extends Crawler {
       return "https://www.carrefour.com.br/";
    }
 
-   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
-      return null;
-   }
-
-   protected Document sanitizeDescription(Object obj) {
-      return Jsoup.parse(obj.toString().replace("[\"", "").replace("\"]", "").replace("\\r\\n\\r\\n\\r\\n", "").replace("\\", ""));
-   }
-
    @Override
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
@@ -304,11 +296,5 @@ public class CarrefourCrawler extends Crawler {
       if (pricing != null) sales.add(CrawlerUtils.calculateSales(pricing));
       return sales;
    }
-
-   protected Double scrapPaymentDiscount(JSONObject teaser) {
-      Double discount = 0d;
-
-      return discount;
-   }
-
+   
 }
