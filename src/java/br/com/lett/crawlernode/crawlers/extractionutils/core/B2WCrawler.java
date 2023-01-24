@@ -81,7 +81,7 @@ public class B2WCrawler extends Crawler {
       headers.put("user-agent", UserAgent.get(random.nextInt(UserAgent.size())));
       headers.put(HttpHeaders.REFERER, homePage);
       headers.put(
-         HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9"
+         HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
       );
       headers.put(HttpHeaders.CACHE_CONTROL, "max-age=0");
       headers.put(HttpHeaders.CONNECTION, "keep-alive");
