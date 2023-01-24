@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -21,6 +22,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.yaml.snakeyaml.util.UriEncoder;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -68,6 +70,10 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
       return this.session.getOptions().optString("cep");
    }
 
+   protected String getRegionId() {
+      return "v2.0E68B2A9BF71F2194EF2890250AAAAF4";
+   }
+
    protected String buildUrl(String homepage) {
       StringBuilder url = new StringBuilder();
       url.append(homepage);
@@ -105,14 +111,46 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
       return url.toString();
    }
 
+   private JSONObject fetchResponse() {
+      String hash = "c7192b2bcf338b74cf67aabc37f24634920025b52e8849393bcf1c547e598d9b";
+
+      String regionId = getRegionId();
+      String extensions = "{\"persistedQuery\":{\"sha256Hash\":\"" + hash + "\"}}";
+      String variables = "{\"fullText\": \"" + this.keywordEncoded + "\",\"selectedFacets\": [{\"key\": \"region-id\",\"value\": \"" + regionId + "\"}],\"sort\": \"\",\"from\": " + (this.currentPage - 1) * this.pageSize + ",\"to\": " + (this.currentPage * this.pageSize - 1) + "}";
+      String variablesBase64 = Base64.getEncoder().encodeToString(variables.getBytes());
+
+      StringBuilder url = new StringBuilder();
+      url.append("https://mercado.carrefour.com.br/graphql/?operationName=SearchQuery");
+//      url.append(extensions);
+      url.append("&extensions=").append(URLEncoder.encode(extensions.toString(), StandardCharsets.UTF_8));
+
+
+      url.append("&variables=");
+      url.append(variablesBase64);
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "*/*");
+      headers.put("authority", "mercado.carrefour.com.br");
+      headers.put("referer", "https://mercado.carrefour.com.br/");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://mercado.carrefour.com.br/graphql/?operationName=SearchQuery&extensions={\"persistedQuery\":{\"sha256Hash\":\"c7192b2bcf338b74cf67aabc37f24634920025b52e8849393bcf1c547e598d9b\"}}&variables=\"eyJmdWxsVGV4dCI6ImNlcnZlamEiLCJzZWxlY3RlZEZhY2V0cyI6W3sia2V5IjoicmVnaW9uLWlkIiwidmFsdWUiOiJ2Mi4wRTY4QjJBOUJGNzFGMjE5NEVGMjg5MDI1MEFBQUFGNCJ9XSwic29ydCI6IiIsImZyb20iOjAsInRvIjoxNX0=\"")
+         .setHeaders(headers)
+         .setCookies(this.cookies)
+         .build();
+
+      return CrawlerUtils.stringToJSONObject(new FetcherDataFetcher().get(session, request).getBody());
+   }
+
    @Override
    protected void extractProductsFromCurrentPage()  {
+      this.pageSize = 16;
       this.log("Página " + this.currentPage);
 
       String homePage = getHomePage();
       String url = buildUrl(homePage);
 
-      JSONObject jsonResponse = JSONUtils.stringToJson(BrasilCarrefourFetchUtils.fetchPage(url, getLocation(), getCep(), session));
+      JSONObject jsonResponse = fetchResponse();
       JSONArray products = JSONUtils.getValueRecursive(jsonResponse, "data.vtex.productSearch.products",  JSONArray.class);
 
       if (products != null && !products.isEmpty()) {

@@ -1,9 +1,17 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.CarrefourCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import exceptions.MalformedPricingException;
@@ -15,17 +23,17 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * 02/02/2018
  *
  * @author gabriel
  */
-public class BrasilCarrefourCrawler extends CarrefourCrawler {
+public class BrasilCarrefourCrawler extends VTEXNewScraper {
 
    private static final String HOME_PAGE = "https://www.carrefour.com.br/";
+   private static final List<String> SELLERS = Collections.singletonList("Carrefour");
 
    public BrasilCarrefourCrawler(Session session) {
       super(session);
@@ -37,11 +45,60 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
       return HOME_PAGE;
    }
 
-   @Override
    protected String getLocationToken() {
       return "eyJjYW1wYWlnbnMiOm51bGwsImNoYW5uZWwiOiIxIiwicHJpY2VUYWJsZXMiOm51bGwsInJlZ2lvbklkIjoidjIuM0U1OTEzRDJGQTczQUM0MDBCQjY2OTBEQkU0MUVBMkEiLCJ1dG1fY2FtcGFpZ24iOm51bGwsInV0bV9zb3VyY2UiOm51bGwsInV0bWlfY2FtcGFpZ24iOm51bGwsImN1cnJlbmN5Q29kZSI6IkJSTCIsImN1cnJlbmN5U3ltYm9sIjoiUiQiLCJjb3VudHJ5Q29kZSI6IkJSQSIsImN1bHR1cmVJbmZvIjoicHQtQlIiLCJjaGFubmVsUHJpdmFjeSI6InB1YmxpYyJ9";
    }
 
+   protected Response fetchPage(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "*/*");
+      headers.put("authority", "mercado.carrefour.com.br");
+      headers.put("referer", "https://mercado.carrefour.com.br/");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setSendUserAgent(false)
+         .setCookies(this.cookies)
+         .mustSendContentEncoding(false)
+         .setFetcheroptions(
+            FetcherOptions.FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .build())
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.LUMINATI_SERVER_BR)
+         )
+         .build();
+
+      return alternativeFetch(request);
+   }
+
+   protected Response alternativeFetch(Request request) {
+      List<DataFetcher> dataFetchers = Arrays.asList(new ApacheDataFetcher(), new JsoupDataFetcher());
+
+      Response response = null;
+
+      for (DataFetcher localDataFetcher : dataFetchers) {
+         response = localDataFetcher.get(session, request);
+         if (checkResponse(response)) {
+            return response;
+         }
+      }
+
+      return response;
+   }
+
+   private boolean checkResponse(Response response) {
+      int statusCode = response.getLastStatusCode();
+
+      return (Integer.toString(statusCode).charAt(0) == '2'
+         || Integer.toString(statusCode).charAt(0) == '3'
+         || statusCode == 404);
+   }
+
+   @Override
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
       JSONObject productApi = new JSONObject();
 
@@ -210,6 +267,7 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
       return creditCards;
    }
 
+   @Override
    protected Installment setInstallment(Integer installmentNumber, Double value, Double interests, Double totalValue, Double discount) throws MalformedPricingException {
       if (interests != null && (interests.isNaN() || interests.isInfinite())) {
          interests = null;
@@ -241,4 +299,7 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
       return spotlightPrice;
    }
 
+   protected List<String> getMainSellersNames() {
+      return SELLERS;
+   }
 }

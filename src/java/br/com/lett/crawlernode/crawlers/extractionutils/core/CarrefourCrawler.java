@@ -9,8 +9,12 @@ import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptions
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Parser;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
@@ -26,6 +30,7 @@ import models.pricing.CreditCards;
 import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.yaml.snakeyaml.util.UriEncoder;
 
@@ -34,12 +39,13 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class CarrefourCrawler extends VTEXNewScraper {
+public class CarrefourCrawler extends Crawler {
 
    private static final List<String> SELLERS = Collections.singletonList("Carrefour");
    public static final String HOME_PAGE = "https://mercado.carrefour.com.br/";
-   private JSONArray crawlerApi;
-   private JSONObject productObject;
+   protected final String homePage = getHomePage();
+   protected final List<String> mainSellersNames = getMainSellersNames();
+   protected String storeCard = null;
 
    public CarrefourCrawler(Session session) {
       super(session);
@@ -47,16 +53,65 @@ public class CarrefourCrawler extends VTEXNewScraper {
       super.config.setParser(Parser.HTML);
    }
 
-   @Override
    protected String getHomePage() {
-      return homePage;
+      return "https://www.carrefour.com.br/";
    }
 
-   /**
-    * Usually it is the "vtex_segment" cookie
-    *
-    * @return location token string
-    */
+   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
+      return null;
+   }
+
+   protected Document sanitizeDescription(Object obj) {
+      return Jsoup.parse(obj.toString().replace("[\"", "").replace("\"]", "").replace("\\r\\n\\r\\n\\r\\n", "").replace("\\", ""));
+   }
+
+   @Override
+   public boolean shouldVisit() {
+      String href = this.session.getOriginalURL().toLowerCase();
+      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
+
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      List<Product> products = new ArrayList<>();
+
+      JSONObject contextJson = scrapContextJson(doc);
+
+      String internalPid = contextJson.optString("sku");
+
+      if (internalPid != null) {
+         JSONObject productJson = crawlProductApi(internalPid);
+
+         String url = JSONUtils.getValueRecursive(contextJson, "offers.url", ".", String.class, null);
+         String internalId = productJson.optString("id");
+         String name = productJson.optString("name");
+         CategoryCollection categories = scrapCategories(productJson);
+         List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(productJson.optJSONArray("image"), "url", null, "https", "carrefourbrfood.vtexassets.com", session);
+         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+         List<String> secondaryImages = images;
+         String description = productJson.optString("description");
+         Offers offers = scrapOffer(productJson);
+
+         Product product = ProductBuilder.create()
+            .setUrl(url)
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setOffers(offers)
+            .setDescription(description)
+            .build();
+
+         products.add(product);
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + session.getOriginalURL());
+      }
+
+      return products;
+   }
+
    protected String getLocationToken() {
       return session.getOptions().optString("vtex_segment");
    }
@@ -119,72 +174,34 @@ public class CarrefourCrawler extends VTEXNewScraper {
          || statusCode == 404);
    }
 
+   private CategoryCollection scrapCategories(JSONObject productJson) {
+      CategoryCollection categories = new CategoryCollection();
 
+      JSONArray categoriesListJson = JSONUtils.getValueRecursive(productJson, "breadcrumbList.itemListElement", ".", JSONArray.class, new JSONArray());
 
-   @Override
-   protected String scrapPidFromApi(Document doc) {
-      String internalPid = super.scrapPidFromApi(doc);
-      if (internalPid == null) {
-         JSONObject json = crawlProductApi(internalPid, null);
-         internalPid = json != null ? json.optString("productId") : null;
+      List<String> categoriesListString = JSONUtils.jsonArrayToStringList(categoriesListJson, "name", ".");
+      if (categoriesListString.size() > 0) {
+         categoriesListString.remove(categoriesListString.size() - 1);
       }
-      return internalPid;
+
+      categories.addAll(categoriesListString);
+      return categories;
    }
 
-
-   @Override
-   protected JSONObject crawlProductApi(String internalPid, String parameters) {
-
-      JSONObject productApi = new JSONObject();
-
-      if (productObject != null && !productObject.isEmpty()) {
-         productApi = productObject;
-      } else {
-         if (session.getOriginalURL().contains("carrefour.com.ar")) {
-            session.setOriginalURL(session.getOriginalURL().replace("supermercado", "www"));
-
-            String path = session.getOriginalURL().replace(homePage, "").toLowerCase();
-
-            String url = homePage + "api/catalog_system/pub/products/search/" + path;
-
-            if (crawlerApi == null) {
-               String body = fetchPage(url).getBody();
-               crawlerApi = CrawlerUtils.stringToJsonArray(body);
-            }
-
-            if (!crawlerApi.isEmpty()) {
-               productApi = crawlerApi.optJSONObject(0) == null ? new JSONObject() : crawlerApi.optJSONObject(0);
-            } else {
-               productApi = super.crawlProductApi(internalPid, parameters);
-            }
-         } else {
-
-            String hash = "23b86dcb5a024ded294ae53d368a436a618bbe6ab70de9b84cfdf6b37b76d648";
-            String productSlug = regex("//.*[/](.*)/p", session.getOriginalURL());
-
-            String regionId = BrasilCarrefourFetchUtils.getRegionId(dataFetcher, this.getCep(), session);
-            String extensions = "{\"persistedQuery\":{\"sha256Hash\":\"" + hash + "\"}}";
-            String variables = "{\"slug\":\"" + productSlug + "\", \"regionId\":\"" +  regionId + "\"}";
-            String variablesBase64 = Base64.getEncoder().encodeToString(variables.getBytes());
-
-            StringBuilder url = new StringBuilder();
-            url.append("https://mercado.carrefour.com.br/graphql/?operationName=ProductQuery&extensions=");
-            url.append(extensions);
-            url.append("&variables=");
-            url.append(variablesBase64);
-
-            String urlEncoded = UriEncoder.encode(url.toString());
-
-            String body = fetchPage(urlEncoded).getBody();
-            JSONObject api = CrawlerUtils.stringToJSONObject(body);
-            productApi = JSONUtils.getValueRecursive(api, "data.vtex.product", JSONObject.class);
-            productObject = productApi;
-         }
-      }
-      return productApi;
+   private JSONObject scrapContextJson(Document doc) {
+      String contextJSONString = doc.selectFirst("script:containsData(Product)").data();
+      return CrawlerUtils.stringToJSONObject(contextJSONString);
    }
 
-   @Override
+   private JSONObject crawlProductApi(String internalPid) {
+
+      String regionId = BrasilCarrefourFetchUtils.getRegionId(dataFetcher, this.getCep(), session);
+      String body = fetchPage("https://mercado.carrefour.com.br/api/graphql?operationName=BrowserProductQuery&variables={\"locator\":[{\"key\":\"id\",\"value\":\"" + internalPid + "\"},{\"key\":\"channel\",\"value\":\"{\\\"salesChannel\\\":\\\"2\\\",\\\"regionId\\\":\\\"" + regionId + "\\\"}\"},{\"key\":\"locale\",\"value\":\"pt-BR\"}]}").getBody();
+      JSONObject api = CrawlerUtils.stringToJSONObject(body);
+
+      return JSONUtils.getValueRecursive(api, "data.product", JSONObject.class);
+   }
+
    protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
       if (productJson.has("productName")) {
          return productJson.optString("productName");
@@ -197,31 +214,28 @@ public class CarrefourCrawler extends VTEXNewScraper {
       }
    }
 
-   @Override
-   protected Offers scrapOffer(Document doc, JSONObject jsonSku, String internalId, String internalPid) throws OfferException, MalformedPricingException {
+   private Offers scrapOffer(JSONObject productJson) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
-      JSONArray sellers = jsonSku.optJSONArray("sellers");
+      JSONArray sellers = productJson.optJSONArray("sellers");
       if (sellers != null) {
          int position = 1;
          for (Object o : sellers) {
             JSONObject offerJson = o instanceof JSONObject ? (JSONObject) o
                : new JSONObject();
-            JSONObject commertialOffer = offerJson.optJSONObject("commercialOffer");
+            JSONObject commertialOffer = offerJson.optJSONObject("commertialOffer");
             String sellerFullName = "Carrefour";
             boolean isDefaultSeller = offerJson.optBoolean("sellerDefault", true);
 
             if (commertialOffer != null && sellerFullName != null) {
-               Integer stock = commertialOffer.optInt("availableQuantity");
+               Integer stock = commertialOffer.optInt("AvailableQuantity");
 
                if (stock > 0) {
-                  JSONObject discounts = scrapDiscounts(commertialOffer);
-
                   boolean isBuyBox = sellers.length() > 1;
                   boolean isMainRetailer = isMainRetailer(sellerFullName);
 
-                  Pricing pricing = scrapPricing(doc, internalId, commertialOffer, discounts, jsonSku);
-                  List<String> sales = isDefaultSeller ? scrapSales(doc, offerJson, internalId, internalPid, pricing) : new ArrayList<>();
+                  Pricing pricing = scrapPricing(productJson);
+                  List<String> sales = isDefaultSeller ? scrapSales(pricing) : new ArrayList<>();
 
                   offers.add(Offer.OfferBuilder.create()
                      .setUseSlugNameAsInternalSellerId(true)
@@ -242,21 +256,22 @@ public class CarrefourCrawler extends VTEXNewScraper {
       return offers;
    }
 
-   protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson, JSONObject jsonSku) throws MalformedPricingException {
-      Double principalPrice = JSONUtils.getDoubleValueFromJSON(comertial, "spotPrice", false);
-      Double priceFrom = JSONUtils.getDoubleValueFromJSON(comertial, "listPrice", false);
+   private Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
+      JSONObject offersJson = productJson.optJSONObject("offers");
 
-      if(jsonSku.optString("measurementUnit").equals("kg")) {
-         Double unitMultiplier = jsonSku.optDouble("unitMultiplier");
-         principalPrice = Math.floor((principalPrice * unitMultiplier) * 100) / 100.0;
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(offersJson, "lowPrice", false);
+      Double priceFrom = JSONUtils.getValueRecursive(productJson, "offers.offers.0.listPrice", ".", Double.class, null);
+
+      if(productJson.optString("measurementUnit").equals("kg")) {
+         Double unitMultiplier = productJson.optDouble("unitMultiplier");
+         spotlightPrice = Math.floor((spotlightPrice * unitMultiplier) * 100) / 100.0;
          if(priceFrom != null) priceFrom = Math.floor((priceFrom * unitMultiplier) * 100) / 100.0;
       }
 
-      CreditCards creditCards = scrapCreditCards(comertial, discountsJson, true);
-      BankSlip bankSlip = scrapBankSlip(principalPrice, comertial, discountsJson, true);
+      CreditCards creditCards = new CreditCards();
+      BankSlip bankSlip = scrapBankSlip(spotlightPrice);
 
-      Double spotlightPrice = scrapSpotlightPrice(doc, internalId, principalPrice, comertial, discountsJson);
-      if (priceFrom != null && spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
+      if (spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
          priceFrom = null;
       }
 
@@ -266,115 +281,34 @@ public class CarrefourCrawler extends VTEXNewScraper {
          .setBankSlip(bankSlip)
          .setCreditCards(creditCards)
          .build();
+
    }
 
-   private String regex(String pathern, String str) {
-
-      final Pattern pattern = Pattern.compile(pathern, Pattern.MULTILINE);
-      final Matcher matcher = pattern.matcher(str);
-
-      String result = null;
-      if (matcher.find()) {
-         result = matcher.group(1);
-      }
-      return result;
+   protected boolean isMainRetailer(String sellerName) {
+      return SELLERS.stream().anyMatch(seller -> seller.toLowerCase().startsWith(sellerName.toLowerCase()));
    }
 
-
-   @Override
    protected List<String> getMainSellersNames() {
       return SELLERS;
    }
 
-   @Override
-   protected Double scrapSpotlightPrice(Document doc, String internalId, Double principalPrice, JSONObject comertial, JSONObject discountsJson) {
-      Double spotlightPrice = super.scrapSpotlightPrice(doc, internalId, principalPrice, comertial, discountsJson);
-
-      try {
-         BankSlip bank = scrapBankSlip(principalPrice, comertial, discountsJson, false);
-
-         if (bank.getFinalPrice() < spotlightPrice) {
-            spotlightPrice = bank.getFinalPrice();
-         }
-      } catch (MalformedPricingException e) {
-         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-      }
-
-      return spotlightPrice;
-   }
-
-   @Override
-   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
-      return (JSONUtils.getStringValue(productJson, "description") + "\n" + scrapSpecsDescriptions(productJson)).trim();
-   }
-
-   @Override
-   protected BankSlip scrapBankSlip(Double spotlightPrice, JSONObject comertial, JSONObject discounts, boolean mustSetDiscount) throws MalformedPricingException {
-      Double bankSlipPrice = spotlightPrice;
-      Double discount = 0d;
-
-      JSONObject paymentOptions = comertial.optJSONObject("PaymentOptions");
-      if (paymentOptions != null) {
-         JSONArray cardsArray = paymentOptions.optJSONArray("installmentOptions");
-         if (cardsArray != null) {
-            for (Object o : cardsArray) {
-               JSONObject paymentJson = (JSONObject) o;
-
-               String name = paymentJson.optString("paymentName");
-
-               if (name.toLowerCase().contains("boleto")) {
-                  if (paymentJson.has("installments")) {
-                     JSONArray bankSlipInstallments = paymentJson.optJSONArray("installments");
-                     for (Object i : bankSlipInstallments) {
-                        bankSlipPrice = ((JSONObject) i).optDouble("total") / 100;
-                     }
-                  }
-                  break;
-               }
-            }
-         }
-      }
-
-      if (!mustSetDiscount) {
-         discount = null;
-      }
-
+   protected BankSlip scrapBankSlip(Double spotlightPrice) throws MalformedPricingException {
       return BankSlip.BankSlipBuilder.create()
-         .setFinalPrice(bankSlipPrice)
-         .setOnPageDiscount(discount)
+         .setFinalPrice(spotlightPrice)
          .build();
    }
 
-   @Override
-   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
 
-      RatingsReviews ratingReviews = new RatingsReviews();
-      AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
+   private List<String> scrapSales(Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+      if (pricing != null) sales.add(CrawlerUtils.calculateSales(pricing));
+      return sales;
+   }
 
-      String apiRating = "https://carrefourbrasil.mais.social/reviews/transit/get/products/crf/" + internalId + "/reviews/offuser/first";
+   protected Double scrapPaymentDiscount(JSONObject teaser) {
+      Double discount = 0d;
 
-      Request request = Request.RequestBuilder.create().setUrl(apiRating).build();
-      JSONObject response = CrawlerUtils.stringToJson(new ApacheDataFetcher().get(session, request).getBody());
-
-      int totalNumberOfReviews = JSONUtils.getIntegerValueFromJSON(response, "total", 0);
-      JSONObject aggregateRating = JSONUtils.getJSONValue(response, "aggregateRating");
-      Double avgRating = JSONUtils.getDoubleValueFromJSON(aggregateRating, "ratingValue", false);
-      JSONObject stars = JSONUtils.getJSONValue(aggregateRating, "ratingComposition");
-
-      advancedRatingReview.setTotalStar1(stars.optInt("1"));
-      advancedRatingReview.setTotalStar2(stars.optInt("2"));
-      advancedRatingReview.setTotalStar3(stars.optInt("3"));
-      advancedRatingReview.setTotalStar4(stars.optInt("4"));
-      advancedRatingReview.setTotalStar5(stars.optInt("5"));
-
-      ratingReviews.setDate(session.getDate());
-      ratingReviews.setInternalId(internalId);
-      ratingReviews.setTotalRating(totalNumberOfReviews);
-      ratingReviews.setTotalWrittenReviews(totalNumberOfReviews);
-      ratingReviews.setAverageOverallRating(avgRating);
-      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-
-      return ratingReviews;
+      return discount;
    }
 
 }

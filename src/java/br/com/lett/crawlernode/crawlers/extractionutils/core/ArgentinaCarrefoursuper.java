@@ -28,13 +28,17 @@ import java.util.*;
  *
  * @author gabriel
  */
-public abstract class ArgentinaCarrefoursuper extends CarrefourCrawler {
+public abstract class ArgentinaCarrefoursuper extends VTEXNewScraper {
 
    private static final String SELLER_FULL_NAME = "CARREFOUR";
 
    protected ArgentinaCarrefoursuper(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
+   }
+
+   protected String getLocationToken() {
+      return session.getOptions().optString("vtex_segment");
    }
 
    @Override
