@@ -73,7 +73,7 @@ public class KPLProducer {
     * @param session session
     */
    public void put(Product p, Session session) {
-      ByteBuffer data = ByteBuffer.wrap((p.serializeToKinesis() + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
+      ByteBuffer data = ByteBuffer.wrap((p.serializeToKinesis(session) + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
 
       FutureCallback<UserRecordResult> myCallback = getCallback(session);
 

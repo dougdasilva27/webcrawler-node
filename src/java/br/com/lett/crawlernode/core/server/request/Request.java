@@ -30,6 +30,8 @@ public class Request {
    private String fileS3Miranha;
 
    private JSONObject attemptsVoid = new JSONObject();
+
+   private Integer readNumber;
    public Request() {
       super();
    }
@@ -178,5 +180,13 @@ public class Request {
 
    public void setAttemptsVoid(JSONObject attemptsVoid) {
       this.attemptsVoid = attemptsVoid;
+   }
+
+   public Integer getReadNumber() {
+      return readNumber;
+   }
+
+   public void setReadNumber(Integer readNumber) {
+      this.readNumber = readNumber;
    }
 }
