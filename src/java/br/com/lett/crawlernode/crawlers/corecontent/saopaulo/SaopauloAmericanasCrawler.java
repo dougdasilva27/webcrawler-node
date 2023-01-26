@@ -20,6 +20,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
       super.urlPageOffers = URL_PAGE_OFFERS;
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.MIRANHA);
    }
 }
