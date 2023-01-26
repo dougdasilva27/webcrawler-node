@@ -84,24 +84,28 @@ public class BrasilShopeeCrawler extends Crawler {
    private String mountName(JSONObject variation, String name) {
       String namevariation = variation.getString("name");
       if (namevariation != null && !namevariation.isEmpty()) {
-        return name + " " + namevariation;
+         return name + " " + namevariation;
       }
       return name;
 
    }
 
    private String getPrimaryImg(JSONObject data, JSONObject variation, JSONArray tier_variations) {
+      String image = null;
       if (tier_variations != null && !tier_variations.isEmpty()) {
-         JSONArray index = JSONUtils.getValueRecursive(variation, "extinfo.tier_index", JSONArray.class);
-         if (index != null && !index.isEmpty()) {
-            String cod = tier_variations.getString((Integer) index.get(0));
-            return mountUrl(cod);
+         Integer index = JSONUtils.getValueRecursive(variation, "extinfo.tier_index.0", Integer.class);
+         if (index != null && index != 0) {
+            String cod = tier_variations.getString(index);
+            image = mountUrl(cod);
          }
-      } else {
-         String cod = data.optString("image");
-         return mountUrl(cod);
       }
-      return null;
+
+      if (image == null) {
+         String cod = data.optString("image");
+         image = mountUrl(cod);
+      }
+
+      return image;
    }
 
    private String mountUrl(String cod) {
