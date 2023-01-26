@@ -389,7 +389,7 @@ public class B2WCrawler extends Crawler {
             if (sellersFromHTML.isEmpty()) {
                String urlOffer = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a[class^=\"more-offers\"]", "href");
                String offersPageUrl = "";
-               if (urlOffer != null) {
+               if (urlOffer != null && !urlOffer.isEmpty()) {
                   offersPageUrl = urlPageOffers + urlOffer.replace("/parceiros/", "").replaceAll("productSku=([0-9]+)", "productSku=" + internalId);
                   sellersDoc = accessOffersPage(offersPageUrl);
                   sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
