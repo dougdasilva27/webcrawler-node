@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
@@ -11,6 +14,8 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+
+import java.util.List;
 
 public class MexicoCornershopCrawlerRanking extends CrawlerRankingKeywords {
 
@@ -33,13 +38,15 @@ public class MexicoCornershopCrawlerRanking extends CrawlerRankingKeywords {
    public void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
 
-      String url = "https://cornershopapp.com/api/v1/branches/"
+      String url = "https://cornershopapp.com/api/v2/branches/"
          + STORE_ID + "/search?query="
          + this.keywordEncoded;
       this.log("Link onde são feitos os crawlers: " + url);
 
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      JSONArray categories = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setProxyservice(List.of(ProxyCollection.SMART_PROXY_MX, ProxyCollection.NETNUT_RESIDENTIAL_BR)).build();
+      Response response = this.dataFetcher.get(session, request);
+      JSONObject json = CrawlerUtils.stringToJson(response.getBody());
+      JSONArray categories = json != null ? json.optJSONArray("aisles") : new JSONArray();
 
       if (categories.length() > 0) {
          for (Object o : categories) {

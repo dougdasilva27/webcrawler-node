@@ -43,7 +43,7 @@ public class CornershopCrawler extends Crawler {
    }
 
    private static final String HOME_PAGE = "https://web.cornershopapp.com";
-   private static final String PRODUCTS_API_URL = "https://cornershopapp.com/api/v1/branches/";
+   private static final String PRODUCTS_API_URL = "https://cornershopapp.com/api/v2/branches/";
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(),
       Card.DINERS.toString(), Card.SHOP_CARD.toString());
 
