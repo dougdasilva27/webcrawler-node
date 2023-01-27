@@ -137,7 +137,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          for (int i = 0; i < imagesJson.length(); i++) {
             String imageFile = JSONUtils.getValueRecursive(imagesJson, i + ".file", String.class);
             if (imageFile != null) {
-               String image = "https://img.drogaraia.com.br/catalog/product/" + imageFile;
+               String image = "https://img.drogaraia.com.br/catalog/product/" + imageFile.replace("/p","p");
                images.add(image);
             } else {
                String img = CrawlerUtils.scrapSimplePrimaryImage(doc, ".swiper-lazy img", Arrays.asList("src"), "https", "");
