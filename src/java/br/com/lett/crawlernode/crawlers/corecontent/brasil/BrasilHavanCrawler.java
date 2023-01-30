@@ -22,7 +22,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,8 +57,9 @@ public class BrasilHavanCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title .base", false);
          boolean available = doc.selectFirst("#product-addtocart-button") != null;
 
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fotorama__stage .fotorama__stage__frame", Arrays.asList("href"), "https", "https://www.havan.com.br/");
-         List<String> secondaryImages = getSecondaryImages(doc);
+         List<String> images = getImages(doc);
+         String primaryImage = images.size() > 0 ? images.remove(0) : null;
+
          RatingsReviews ratingReviews = scrapRatingReviews(doc, internalPid);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li a");
          String description =
@@ -88,7 +88,7 @@ public class BrasilHavanCrawler extends Crawler {
                   .setCategory2(categories.getCategory(1))
                   .setCategory3(categories.getCategory(2))
                   .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
+                  .setSecondaryImages(images)
                   .setDescription(description)
                   .setRatingReviews(ratingReviews)
                   .setOffers(offers)
@@ -107,7 +107,7 @@ public class BrasilHavanCrawler extends Crawler {
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
+               .setSecondaryImages(images)
                .setDescription(description)
                .setRatingReviews(ratingReviews)
                .setOffers(offers)
@@ -126,6 +126,7 @@ public class BrasilHavanCrawler extends Crawler {
    private boolean isProductPage(Document document) {
       return document.selectFirst(".column.main") != null;
    }
+
    private String getVariantName(String name, JSONArray variants, int i) {
       String jsonName = JSONUtils.getValueRecursive(variants, i + ".label", String.class);
       if (jsonName != null) {
@@ -135,26 +136,22 @@ public class BrasilHavanCrawler extends Crawler {
       }
    }
 
-   private List<String> getSecondaryImages(Document doc) {
+   private List<String> getImages(Document doc) {
       List<String> images = new ArrayList<>();
       String script = CrawlerUtils.scrapScriptFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]");
       JSONArray jsonArray = script != null ? CrawlerUtils.stringToJsonArray(script) : null;
-      JSONArray dataImage = jsonArray != null ? JSONUtils.getValueRecursive(jsonArray, "0.[data-gallery-role=gallery-placeholder].Hibrido_FastProductImages/js/gallery/custom_gallery.data", JSONArray.class) : new JSONArray();
+      JSONArray dataImage = jsonArray != null ? JSONUtils.getValueRecursive(jsonArray, "0.[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class) : new JSONArray();
 
-      int n = 0;
       for (Object o : dataImage) {
          if (o instanceof JSONObject) {
             JSONObject jsonWithImages = (JSONObject) o;
-            String image = jsonWithImages.optString("img").replace("/", "");
-            if (n != 0) {
+            String image = jsonWithImages.optString("img", "");
+            if (!image.isEmpty()) {
                images.add(image);
             }
          }
-         n++;
       }
-
       return images;
-
 
    }
 
