@@ -14,7 +14,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -53,6 +52,7 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
          .setFollowRedirects(true)
          .build();
       Response response = dataFetcher.get(session, request);
+      this.categoryUrl = this.categoryUrl == null ? response.getRedirectUrl() : this.categoryUrl;
 
       return Jsoup.parse(response.getBody());
    }
@@ -62,13 +62,20 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
       this.pageSize = 48;
       String url = " ";
       this.log("Página " + this.currentPage);
-     String searchUrl = categoryUrl != null ? categoryUrl : HOME_PAGE;
 
       if (allow3pSeller) {
-         url = searchUrl + "/search?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
+         if (this.categoryUrl != null) {
+            url = this.categoryUrl + "?page=" + this.currentPage;
+         } else {
+            url = HOME_PAGE + "/search?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
+         }
       } else {
          String storeName = getStoreName(HOME_PAGE);
-         url = searchUrl + "/search?Ntt=" + this.keywordEncoded + "&subdomain=" + storeName + "&page=" + this.currentPage + "&store=" + storeName;
+         if (this.categoryUrl != null) {
+            url = this.categoryUrl + "?subdomain=" + storeName + "&page=" + this.currentPage + "&store=" + storeName;
+         } else {
+            url = HOME_PAGE + "/search?Ntt=" + this.keywordEncoded + "&subdomain=" + storeName + "&page=" + this.currentPage + "&store=" + storeName;
+         }
       }
 
       this.log("Link onde são feitos os crawlers: " + url);
