@@ -78,7 +78,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
          obj = JSONUtils.getValueRecursive(obj, "pageProps.fallback./api/search.searchResult", JSONObject.class);
          if (obj != null) {
             JSONArray products = obj.getJSONArray("products");
-            if(this.totalProducts == 0){
+            if (this.totalProducts == 0) {
                this.totalProducts = obj.optInt("productTotal");
             }
             if (!products.isEmpty()) {
