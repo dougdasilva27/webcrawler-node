@@ -75,15 +75,13 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
       JSONObject obj = fetchJson();
       if (obj != null) {
-         obj = JSONUtils.getValueRecursive(obj, "pageProps.fallback./api/search", JSONObject.class);
+         obj = JSONUtils.getValueRecursive(obj, "pageProps.fallback./api/search.searchResult", JSONObject.class);
          if (obj != null) {
-
-            JSONArray products = obj.optJSONArray("products");
-
+            JSONArray products = obj.getJSONArray("products");
+            if (this.totalProducts == 0) {
+               this.totalProducts = obj.optInt("productTotal");
+            }
             if (!products.isEmpty()) {
-               if (this.totalProducts == 0) {
-                  this.totalProducts = obj.optInt("productTotal");
-               }
                JSONArray prices = fetchPrices(products);
                for (Object o : products) {
                   JSONObject productObj = (JSONObject) o;
@@ -276,4 +274,5 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       }
       return id;
    }
+
 }
