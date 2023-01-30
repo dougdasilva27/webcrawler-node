@@ -31,7 +31,7 @@ public class Request {
 
    private JSONObject attemptsVoid = new JSONObject();
 
-   private Integer readNumber;
+   private Integer readingNumber;
    public Request() {
       super();
    }
@@ -182,11 +182,11 @@ public class Request {
       this.attemptsVoid = attemptsVoid;
    }
 
-   public Integer getReadNumber() {
-      return readNumber;
+   public Integer getReadingNumber() {
+      return readingNumber;
    }
 
-   public void setReadNumber(Integer readNumber) {
-      this.readNumber = readNumber;
+   public void setReadingNumber(Integer readingNumber) {
+      this.readingNumber = readingNumber;
    }
 }

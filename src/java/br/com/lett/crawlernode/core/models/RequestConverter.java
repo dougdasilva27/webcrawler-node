@@ -128,9 +128,9 @@ public class RequestConverter {
          request.setAttemptsVoid(attemptsVoid);
       }
 
-      Integer readNumber = body.optInt("readNumber");
-      if (readNumber != null){
-         request.setReadNumber(readNumber);
+      Integer readingNumber = body.optInt("readingNumber");
+      if (readingNumber != null){
+         request.setReadingNumber(readingNumber);
       }
 
       if (request instanceof CrawlerSeedRequest) {
