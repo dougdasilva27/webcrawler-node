@@ -1,9 +1,11 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -19,8 +21,10 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.intellij.lang.annotations.Identifier;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.util.*;
@@ -48,6 +52,18 @@ public class BrasilCarrefourCrawler extends VTEXNewScraper {
    protected String getLocationToken() {
       return "eyJjYW1wYWlnbnMiOm51bGwsImNoYW5uZWwiOiIxIiwicHJpY2VUYWJsZXMiOm51bGwsInJlZ2lvbklkIjoidjIuM0U1OTEzRDJGQTczQUM0MDBCQjY2OTBEQkU0MUVBMkEiLCJ1dG1fY2FtcGFpZ24iOm51bGwsInV0bV9zb3VyY2UiOm51bGwsInV0bWlfY2FtcGFpZ24iOm51bGwsImN1cnJlbmN5Q29kZSI6IkJSTCIsImN1cnJlbmN5U3ltYm9sIjoiUiQiLCJjb3VudHJ5Q29kZSI6IkJSQSIsImN1bHR1cmVJbmZvIjoicHQtQlIiLCJjaGFubmVsUHJpdmFjeSI6InB1YmxpYyJ9";
    }
+
+   @Override
+   protected Object fetch() {
+      Request request = Request.RequestBuilder.create()
+         .setCookies(cookies)
+         .setUrl(session.getOriginalURL())
+         .build();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new ApacheDataFetcher(), new FetcherDataFetcher()), session);
+
+      return response;
+   }
+
 
    protected Response fetchPage(String url) {
       Map<String, String> headers = new HashMap<>();
