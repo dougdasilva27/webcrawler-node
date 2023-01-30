@@ -396,7 +396,7 @@ public class Session {
       return readingNumber;
    }
 
-   public void setReadingNumberInteger readingNumber) {
+   public void setReadingNumber(Integer readingNumber) {
       this.readingNumber = readingNumber;
    }
 }
