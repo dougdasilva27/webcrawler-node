@@ -25,6 +25,8 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
    private final String HOME_PAGE = getHomePage();
    private final boolean allow3pSeller = isAllow3pSeller();
 
+   private String categoryUrl = null;
+
    public FalabellaCrawler(Session session) {
       super(session);
    }
@@ -48,9 +50,10 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(head)
-         .setFollowRedirects(false)
+         .setFollowRedirects(true)
          .build();
       Response response = dataFetcher.get(session, request);
+
       return Jsoup.parse(response.getBody());
    }
 
@@ -59,12 +62,13 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
       this.pageSize = 48;
       String url = " ";
       this.log("Página " + this.currentPage);
+     String searchUrl = categoryUrl != null ? categoryUrl : HOME_PAGE;
 
       if (allow3pSeller) {
-         url = HOME_PAGE + "/search?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
+         url = searchUrl + "/search?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
       } else {
          String storeName = getStoreName(HOME_PAGE);
-         url = HOME_PAGE + "/search?Ntt=" + this.keywordEncoded + "&subdomain=" + storeName + "&page=" + this.currentPage + "&store=" + storeName;
+         url = searchUrl + "/search?Ntt=" + this.keywordEncoded + "&subdomain=" + storeName + "&page=" + this.currentPage + "&store=" + storeName;
       }
 
       this.log("Link onde são feitos os crawlers: " + url);
