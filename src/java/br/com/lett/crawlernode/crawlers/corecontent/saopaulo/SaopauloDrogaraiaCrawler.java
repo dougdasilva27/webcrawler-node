@@ -26,6 +26,7 @@ import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
@@ -47,11 +48,11 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      Elements scriptHTML = doc.select("script[type=\"application/ld+json\"]");
+      Element scriptHTML = doc.selectFirst("script[type=\"application/ld+json\"]");
       JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, " ", false, false);
       JSONObject data = JSONUtils.getValueRecursive(json, "props.pageProps.pageData.productData.productBySku", JSONObject.class);
 
-      if (!scriptHTML.isEmpty()) {
+      if (scriptHTML != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          JSONObject scriptJson = CrawlerUtils.stringToJson(scriptHTML.html());
