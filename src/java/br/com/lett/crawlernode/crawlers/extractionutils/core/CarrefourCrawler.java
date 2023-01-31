@@ -57,6 +57,10 @@ public class CarrefourCrawler extends Crawler {
       return "https://www.carrefour.com.br/";
    }
 
+   private String getRegionId() {
+      return session.getOptions().optString("regionId");
+   }
+
    @Override
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
@@ -187,7 +191,7 @@ public class CarrefourCrawler extends Crawler {
 
    private JSONObject crawlProductApi(String internalPid) {
 
-      String regionId = BrasilCarrefourFetchUtils.getRegionId(dataFetcher, this.getCep(), session);
+      String regionId = getRegionId();
       String body = fetchPage("https://mercado.carrefour.com.br/api/graphql?operationName=BrowserProductQuery&variables={\"locator\":[{\"key\":\"id\",\"value\":\"" + internalPid + "\"},{\"key\":\"channel\",\"value\":\"{\\\"salesChannel\\\":\\\"2\\\",\\\"regionId\\\":\\\"" + regionId + "\\\"}\"},{\"key\":\"locale\",\"value\":\"pt-BR\"}]}").getBody();
       JSONObject api = CrawlerUtils.stringToJSONObject(body);
 
