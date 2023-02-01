@@ -389,7 +389,7 @@ public class Product implements Serializable {
       linkedMap.put("description", ((description != null && !description.isEmpty()) ? description : BsonNull.VALUE));
       linkedMap.put("eans", (eans != null ? eans : Collections.emptyList()));
       linkedMap.put("timestamp", timestamp);
-      linkedMap.put("read_number", session.getReadNumber());
+      linkedMap.put("reading_number", session.getReadingNumber());
 
       RatingsReviews rating = this.ratingReviews != null ? this.ratingReviews : new RatingsReviews();
 

@@ -137,7 +137,7 @@ public class Request {
    public String toString() {
       return "Request[sessionId= " + sessionId + ", messageId=" + messageId + ", fileS3Miranha=" + fileS3Miranha + ",messageBody=" + parameter + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
             + ", internalId=" + internalId + ", processedId=" + processedId + ", marketId=" + market + ", queueName=" + queueName
-            + ", supplierId=" + supplierId + ", useBrowser=" + useBrowser + ", isVoid=" + isVoid + "]";
+            + ", supplierId=" + supplierId + ", useBrowser=" + useBrowser + ", isVoid=" + isVoid  + ", readingNumber=" + readingNumber + " ]";
    }
 
    public String getClassName() {
