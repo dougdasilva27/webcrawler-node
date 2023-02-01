@@ -39,29 +39,30 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
          setOffersForMainPageSeller(offers, apolloJson, doc);
 
       } else {
+         setOffersForMainPageSeller(offers, apolloJson, doc);
 
+         Elements sellerMainFromHTML = null;
+         Document sellersDoc = null;
+         Elements sellersFromHTML = doc.select(listSelectors.get("offers"));
          if (!doc.select(listSelectors.get("hasPageOffers")).isEmpty()) {
+            if (sellersFromHTML.isEmpty()) {
+               String urlOffer = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a[class^=\"more-offers\"]", "href");
+               String offersPageUrl = "";
 
-            Document sellersDoc = null;
-            Elements sellersFromHTML = null;
-            Elements sellerMainFromHTML = null;
-
-            String urlOffer = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a[class^=\"more-offers\"]", "href");
-            String offersPageUrl = "";
-
-            if (urlOffer != null) {
-               offersPageUrl = urlPageOffers + urlOffer.replace("/parceiros/", "").replaceAll("productSku=([0-9]+)", "productSku=" + internalId);
-               sellersDoc = accessOffersPage(offersPageUrl);
-               if (sellersDoc != null) {
-                  sellersFromHTML = sellersDoc.select(listSelectors.get("offers"));
-                  sellerMainFromHTML = sellersDoc.select("div[class^=\"src__MainOffer\"]");
+               if (urlOffer != null && !urlOffer.isEmpty()) {
+                  offersPageUrl = urlPageOffers + urlOffer.replace("/parceiros/", "").replaceAll("productSku=([0-9]+)", "productSku=" + internalId);
+                  sellersDoc = accessOffersPage(offersPageUrl);
+                  if (sellersDoc != null) {
+                     sellersFromHTML = sellersDoc.select(listSelectors.get("offers"));
+                     sellerMainFromHTML = sellersDoc.select("div[class^=\"src__MainOffer\"]");
+                  }
                }
-            }
 
-            if (sellersFromHTML == null && sellersFromHTML.isEmpty()) {
-               offersPageUrl = urlPageOffers + internalPid + "?productSku=" + internalId;
-               sellersDoc = accessOffersPage(offersPageUrl);
-               sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
+               if (sellersFromHTML == null && sellersFromHTML.isEmpty()) {
+                  offersPageUrl = urlPageOffers + internalPid + "?productSku=" + internalId;
+                  sellersDoc = accessOffersPage(offersPageUrl);
+                  sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
+               }
             }
 
             if (sellerMainFromHTML != null && !sellerMainFromHTML.isEmpty()) {
@@ -73,10 +74,6 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
 
                setOffersForSellersPage(offers, sellersFromHTML, listSelectors, sellersDoc);
             }
-
-         } else {
-
-            setOffersForMainPageSeller(offers, apolloJson, doc);
 
          }
 

@@ -220,6 +220,8 @@ public class B2WCrawler extends Crawler {
       return products;
    }
 
+
+
    private String getSellerFromApolloJson(JSONObject apolloJson) {
       String seller = "";
       JSONObject json = SaopauloB2WCrawlersUtils.getJson(apolloJson, "Seller");
@@ -381,28 +383,30 @@ public class B2WCrawler extends Crawler {
          setOffersForMainPageSeller(offers, apolloJson, doc);
 
          Document sellersDoc = null;
-         Elements sellersFromHTML = null;
+         Elements sellersFromHTML = doc.select(listSelectors.get("offers"));
 
          if (!doc.select(listSelectors.get("hasPageOffers")).isEmpty()) {
-            String urlOffer = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a[class^=\"more-offers\"]", "href");
-            String offersPageUrl = "";
-            if (urlOffer != null) {
-               offersPageUrl = urlPageOffers + urlOffer.replace("/parceiros/", "").replaceAll("productSku=([0-9]+)", "productSku=" + internalId);
-               sellersDoc = accessOffersPage(offersPageUrl);
-               sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
+            if (sellersFromHTML.isEmpty()) {
+               String urlOffer = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a[class^=\"more-offers\"]", "href");
+               String offersPageUrl = "";
+               if (urlOffer != null && !urlOffer.isEmpty()) {
+                  offersPageUrl = urlPageOffers + urlOffer.replace("/parceiros/", "").replaceAll("productSku=([0-9]+)", "productSku=" + internalId);
+                  sellersDoc = accessOffersPage(offersPageUrl);
+                  sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
+               }
+
+               if (sellersFromHTML == null && sellersFromHTML.isEmpty()) {
+                  offersPageUrl = urlPageOffers + internalPid + "?productSku=" + internalId;
+                  sellersDoc = accessOffersPage(offersPageUrl);
+                  sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
+               }
             }
 
-            if (sellersFromHTML == null && sellersFromHTML.isEmpty()) {
-               offersPageUrl = urlPageOffers + internalPid + "?productSku=" + internalId;
-               sellersDoc = accessOffersPage(offersPageUrl);
-               sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
+            if (sellersFromHTML != null && !sellersFromHTML.isEmpty()) {
+
+               setOffersForSellersPage(offers, sellersFromHTML, listSelectors, sellersDoc);
+
             }
-         }
-
-         if (sellersFromHTML != null && !sellersFromHTML.isEmpty()) {
-
-            setOffersForSellersPage(offers, sellersFromHTML, listSelectors, sellersDoc);
-
          }
 
         /*
