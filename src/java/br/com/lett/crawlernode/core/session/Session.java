@@ -96,7 +96,7 @@ public class Session {
 
    protected String className;
 
-   protected Integer readingNumber;
+   protected Integer readingNumber = null;
 
    /**
     * Default empty constructor

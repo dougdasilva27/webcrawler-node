@@ -129,7 +129,7 @@ public class RequestConverter {
       }
 
       Integer readingNumber = body.optInt("readingNumber");
-      if (readingNumber != null){
+      if (readingNumber != 0){
          request.setReadingNumber(readingNumber);
       }
 
