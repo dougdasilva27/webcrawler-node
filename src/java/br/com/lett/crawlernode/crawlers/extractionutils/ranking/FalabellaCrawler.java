@@ -14,7 +14,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,8 +54,8 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
          .build();
       Response response = dataFetcher.get(session, request);
       String category = response.getRedirectUrl();
-  //this is necessary because when has category, we need catch from redirection, but cannot have redirection if the store not allowed 3P.
-      if (category != null && category.contains("category")){
+      //this is necessary because when has category, we need catch from redirection, but cannot have redirection if the store not allowed 3P.
+      if (category != null && category.contains("category")) {
          this.categoryUrl = this.categoryUrl == null ? response.getRedirectUrl() : this.categoryUrl;
       } else {
          request.setFollowRedirects(false);
@@ -101,8 +100,8 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
          for (Object obj : products) {
             if (obj instanceof JSONObject) {
                JSONObject product = (JSONObject) obj;
-               String internalId = product.optString("productId");
-               String productUrl = product.optString("url");
+               String internalId = product.optString("skuId");
+               String productUrl = scrapUrl(product, internalId);
                String name = product.optString("displayName");
                String imageUrl = JSONUtils.getValueRecursive(product, "mediaUrls.0", String.class);
                Integer price = scrapPrice(product);
@@ -132,6 +131,15 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String scrapUrl(JSONObject product, String internalId) {
+      String productUrl = product.optString("url");
+      if (productUrl != null) {
+         productUrl = productUrl.replace("?", "/" + internalId + "?");
+      }
+
+      return productUrl;
    }
 
    private String getStoreName(String homePage) {
