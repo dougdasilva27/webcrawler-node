@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -15,6 +17,7 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SuperlagoaCrawler extends CrawlerRankingKeywords {
@@ -26,6 +29,7 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
    }
+
    protected String getToken() {
       String url = "https://www.merconnect.com.br/oauth/token";
 
@@ -38,7 +42,7 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setPayload(payload)
          .build();
-      Response content = CrawlerUtils.retryRequest(request, session, this.dataFetcher, false);
+      Response content = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post");
 
       JSONObject json = CrawlerUtils.stringToJson(content.getBody());
 
@@ -58,7 +62,7 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
          .setUrl(url)
          .setHeaders(headers)
          .build();
-      Response content = CrawlerUtils.retryRequest(request, session, this.dataFetcher, false);
+      Response content = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get");
 
       return CrawlerUtils.stringToJson(content.getBody());
    }

@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -47,11 +50,9 @@ public class SuperlagoaCrawler extends Crawler {
          .setUrl(url)
          .setHeaders(headers)
          .build();
-      String content = this.dataFetcher
-         .get(session, request)
-         .getBody();
+      Response content = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get");
 
-      return CrawlerUtils.stringToJson(content);
+      return CrawlerUtils.stringToJson(content.getBody());
    }
 
    protected String getToken() {
@@ -66,12 +67,10 @@ public class SuperlagoaCrawler extends Crawler {
          .setHeaders(headers)
          .setPayload(payload)
          .build();
-      String content = this.dataFetcher
-         .post(session, request)
-         .getBody();
+      Response content = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post");
 
 
-      JSONObject json = CrawlerUtils.stringToJson(content);
+      JSONObject json = CrawlerUtils.stringToJson(content.getBody());
 
       return json.optString("access_token");
    }
