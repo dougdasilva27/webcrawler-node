@@ -26,11 +26,6 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
    }
-
-   public void setStoreId(String storeId) {
-      this.storeId = storeId;
-   }
-
    protected String getToken() {
       String url = "https://www.merconnect.com.br/oauth/token";
 

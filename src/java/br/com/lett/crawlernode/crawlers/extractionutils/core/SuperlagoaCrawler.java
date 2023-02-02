@@ -33,10 +33,6 @@ public class SuperlagoaCrawler extends Crawler {
       super.config.setFetcher(FetchMode.JSOUP);
    }
 
-   public void setStoreId(String storeId) {
-      this.storeId = storeId;
-   }
-
    @Override
    protected JSONObject fetch() {
       String id = CrawlerUtils.getStringBetween(session.getOriginalURL(), "produto/", "origin").replace("?", "");
