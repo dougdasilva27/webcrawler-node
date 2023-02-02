@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
@@ -17,6 +18,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +63,7 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
    }
 
    protected String getRegionId() {
-      return BrasilCarrefourFetchUtils.getRegionId(new ApacheDataFetcher(), getCep(), session);
+      return session.getOptions().optString("regionId");
    }
 
    private JSONObject fetchResponse() {
@@ -78,9 +80,15 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
          .setUrl(url)
          .setHeaders(headers)
          .setCookies(this.cookies)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
          .build();
 
-      return CrawlerUtils.stringToJSONObject(CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get").getBody());
+      return CrawlerUtils.stringToJSONObject(CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get").getBody());
    }
 
    @Override
@@ -105,8 +113,8 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
             String internalId = product.optString("id");
             String internalPid = product.optString("sku");
             String name = product.optString("name");
-            String image = JSONUtils.getValueRecursive(product, "image.0", ".", String.class, null);
-            Double price = JSONUtils.getValueRecursive(product, "image.0", ".", Double.class, 0.0);
+            String image = JSONUtils.getValueRecursive(product, "image.0.url", ".", String.class, null);
+            Double price = JSONUtils.getValueRecursive(product, "offers.lowPrice", ".", Double.class, 0.0);
             boolean isAvailable = price != null && price != 0.0;
             Integer priceInCents = isAvailable ? MathUtils.parseInt(price * 100) : null;
 
