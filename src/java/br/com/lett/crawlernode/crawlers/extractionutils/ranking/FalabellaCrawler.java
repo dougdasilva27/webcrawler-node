@@ -9,10 +9,11 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +53,15 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
          .setFollowRedirects(true)
          .build();
       Response response = dataFetcher.get(session, request);
-      this.categoryUrl = this.categoryUrl == null ? response.getRedirectUrl() : this.categoryUrl;
+      String category = response.getRedirectUrl();
+      //this is necessary because when has category, we need catch from redirection, but cannot have redirection if the store not allowed 3P.
+      if (category != null && category.contains("category")) {
+         this.categoryUrl = this.categoryUrl == null ? response.getRedirectUrl() : this.categoryUrl;
+      } else {
+         request.setFollowRedirects(false);
+         response = dataFetcher.get(session, request);
+      }
+
 
       return Jsoup.parse(response.getBody());
    }
@@ -81,38 +90,40 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
+      JSONObject jsonObject = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "#__NEXT_DATA__", null, null, false, false);
+      JSONArray products = jsonObject != null ? JSONUtils.getValueRecursive(jsonObject, "props.pageProps.results", JSONArray.class) : null;
 
-      Elements products = this.currentDoc.select(".search-results--products > div");
-
-      if (!products.isEmpty()) {
+      if (products != null && !products.isEmpty()) {
          if (this.totalProducts == 0) {
-            setTotalProducts();
+            setTotalProducts(jsonObject);
          }
-         for (Element e : products) {
+         for (Object obj : products) {
+            if (obj instanceof JSONObject) {
+               JSONObject product = (JSONObject) obj;
+               String internalId = product.optString("skuId");
+               String productUrl = scrapUrl(product, internalId);
+               String name = product.optString("displayName");
+               String imageUrl = JSONUtils.getValueRecursive(product, "mediaUrls.0", String.class);
+               Integer price = scrapPrice(product);
+               boolean isAvailable = price != null;
 
-            String internalId = scrapInternalId(e);
-            String productUrl = crawlProductUrl(e);
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".pod-details span b", false);
-            String imageUrl = crawlProductImageUrl(e);
-            Integer price = scrapPrice(e);
-            boolean isAvailable = price != null;
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setInternalPid(internalId)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setImageUrl(imageUrl)
+                  .build();
 
-            RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(productUrl)
-               .setInternalId(internalId)
-               .setInternalPid(internalId)
-               .setName(name)
-               .setPriceInCents(price)
-               .setAvailability(isAvailable)
-               .setImageUrl(imageUrl)
-               .build();
+               saveDataProduct(productRanking);
 
-            saveDataProduct(productRanking);
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
 
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
             }
-
          }
       } else {
          this.result = false;
@@ -120,6 +131,15 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String scrapUrl(JSONObject product, String internalId) {
+      String productUrl = product.optString("url");
+      if (productUrl != null) {
+         productUrl = productUrl.replace("?", "/" + internalId + "?");
+      }
+
+      return productUrl;
    }
 
    private String getStoreName(String homePage) {
@@ -133,24 +153,17 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
       return null;
    }
 
-   protected String scrapInternalId(Element e) {
-      String value = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[id*=testId-pod-]", "id");
-      return CommonMethods.getLast(value.split("-"));
-   }
 
-   @Override
-   protected void setTotalProducts() {
-      String result = CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc, "#search_numResults", "data-results");
-
-      this.totalProducts = result != null ? Integer.parseInt(result) : 0;
+   protected void setTotalProducts(JSONObject product) {
+      this.totalProducts = JSONUtils.getValueRecursive(product, "props.pageProps.pagination.count", Integer.class);
       this.log("Total da busca: " + this.totalProducts);
    }
 
 
-   private Integer scrapPrice(Element e) {
+   private Integer scrapPrice(JSONObject product) {
       Integer price = null;
       // price is in pesos, like: 1,500, 749 and 1.649.900
-      String priceStr = CrawlerUtils.scrapStringSimpleInfo(e, ".cmr-icon-container span", true);
+      String priceStr = JSONUtils.getValueRecursive(product, "prices.0.price.0", String.class);
       if (priceStr != null) {
          if (priceStr.contains(",") || !priceStr.contains(".")) {
             price = CommonMethods.stringPriceToIntegerPrice(priceStr, '.', null);
@@ -161,22 +174,6 @@ public class FalabellaCrawler extends CrawlerRankingKeywords {
       }
 
       return price;
-   }
-
-   private String crawlProductUrl(Element e) {
-      String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".pod-head a", "href");
-      if (url == null) {
-         url = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".section-head a", "href");
-      }
-      return url;
-   }
-
-   private String crawlProductImageUrl(Element e) {
-      String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".pod-head div > a img", "src");
-      if (imageUrl == null) {
-         imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".section-head a", "href");
-      }
-      return imageUrl;
    }
 
 }
