@@ -23,7 +23,7 @@ import java.util.*;
 public class SuperlagoaCrawler extends Crawler {
 
    private static final String MAINSELLER = "Super Lagoa";
-   private String storeId;
+   private String storeId = session.getOptions().optString("store_id");
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.HIPERCARD.toString(), Card.ELO.toString());
 
@@ -31,10 +31,6 @@ public class SuperlagoaCrawler extends Crawler {
    public SuperlagoaCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.JSOUP);
-   }
-
-   public String getStoreId() {
-      return storeId;
    }
 
    public void setStoreId(String storeId) {

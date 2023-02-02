@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -18,17 +19,12 @@ import java.util.Map;
 
 public class SuperlagoaCrawler extends CrawlerRankingKeywords {
 
-   private String storeId;
+   private String storeId = session.getOptions().optString("store_id");
 
 
    public SuperlagoaCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
-
-   }
-
-   public String getStoreId() {
-      return storeId;
    }
 
    public void setStoreId(String storeId) {
@@ -47,12 +43,9 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setPayload(payload)
          .build();
-      String content = this.dataFetcher
-         .post(session, request)
-         .getBody();
+      Response content = CrawlerUtils.retryRequest(request, session, this.dataFetcher, false);
 
-
-      JSONObject json = CrawlerUtils.stringToJson(content);
+      JSONObject json = CrawlerUtils.stringToJson(content.getBody());
 
       return json.optString("access_token");
    }
@@ -70,11 +63,9 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
          .setUrl(url)
          .setHeaders(headers)
          .build();
-      String content = this.dataFetcher
-         .get(session, request)
-         .getBody();
+      Response content = CrawlerUtils.retryRequest(request, session, this.dataFetcher, false);
 
-      return CrawlerUtils.stringToJson(content);
+      return CrawlerUtils.stringToJson(content.getBody());
    }
 
    @Override
@@ -104,10 +95,10 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
                   String urlProduct = urlProduct(product, internalPid);
 
                   String imgUrl = product.optString("image");
-                  Double priceDouble =  product.optDouble("price");
+                  Double priceDouble = product.optDouble("price");
                   Integer priceInCents = (int) Math.round(100 * priceDouble);
                   String name = product.optString("description");
-                  boolean isAvailable = product.optInt("stock")>0;
+                  boolean isAvailable = product.optInt("stock") > 0;
 
                   RankingProduct productRanking = RankingProductBuilder.create()
                      .setUrl(urlProduct)
