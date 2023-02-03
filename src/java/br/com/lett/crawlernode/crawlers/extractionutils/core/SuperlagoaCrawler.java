@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -23,7 +26,7 @@ import java.util.*;
 public class SuperlagoaCrawler extends Crawler {
 
    private static final String MAINSELLER = "Super Lagoa";
-   private String storeId;
+   private String storeId = session.getOptions().optString("store_id");
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.HIPERCARD.toString(), Card.ELO.toString());
 
@@ -31,14 +34,6 @@ public class SuperlagoaCrawler extends Crawler {
    public SuperlagoaCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.JSOUP);
-   }
-
-   public String getStoreId() {
-      return storeId;
-   }
-
-   public void setStoreId(String storeId) {
-      this.storeId = storeId;
    }
 
    @Override
@@ -55,11 +50,9 @@ public class SuperlagoaCrawler extends Crawler {
          .setUrl(url)
          .setHeaders(headers)
          .build();
-      String content = this.dataFetcher
-         .get(session, request)
-         .getBody();
+      Response content = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get");
 
-      return CrawlerUtils.stringToJson(content);
+      return CrawlerUtils.stringToJson(content.getBody());
    }
 
    protected String getToken() {
@@ -74,12 +67,10 @@ public class SuperlagoaCrawler extends Crawler {
          .setHeaders(headers)
          .setPayload(payload)
          .build();
-      String content = this.dataFetcher
-         .post(session, request)
-         .getBody();
+      Response content = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post");
 
 
-      JSONObject json = CrawlerUtils.stringToJson(content);
+      JSONObject json = CrawlerUtils.stringToJson(content.getBody());
 
       return json.optString("access_token");
    }
