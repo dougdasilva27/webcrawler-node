@@ -36,7 +36,7 @@ public class BrasilIfood extends Crawler {
 
    public BrasilIfood(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.MIRANHA);
    }
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
@@ -225,7 +225,10 @@ public class BrasilIfood extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, "div.product-detail__price > div > span > div > span", null, false, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, "div.product-detail__info > div.product-detail__price > div > span", null, false, ',', session);
       if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, "div.product-detail__price > div", null, false, ',', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, ".product-detail__price > div > span", null, true, ',', session);
+      }
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, ".product-detail__price > div", null, true, ',', session);
       }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
