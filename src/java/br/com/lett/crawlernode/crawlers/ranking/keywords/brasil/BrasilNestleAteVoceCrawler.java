@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -12,6 +14,7 @@ import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import com.google.common.net.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -21,6 +24,7 @@ import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
@@ -41,16 +45,19 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
 
    protected Map<String, String> fetchToken() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("content-type", "application/json");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      headers.put(HttpHeaders.ACCEPT, "*/*");
+      headers.put(HttpHeaders.ORIGIN, "https://www.nestleatevoce.com.br");
+      headers.put(HttpHeaders.REFERER, "https://www.nestleatevoce.com.br/login");
       headers.put("x-authorization", "");
 
-      String payload = "{\"operationName\":\"signIn\",\"variables\":{\"taxvat\":\"" + LOGIN + "\",\"password\":\"" + PASSWORD + "\"},\"query\":\"mutation signIn($taxvat: String!, $password: String!) {\\ngenerateCustomerToken(taxvat: $taxvat, password: $password) {\\ntoken\\nis_clube_nestle\\nenabled_club_nestle\\n__typename\\n}\\n}\\n\"}";
+      String payload = "{\"operationName\":\"signIn\",\"variables\":{\"taxvat\":\"" + LOGIN + "\",\"password\":\"" + PASSWORD + "\", \"chatbot\":null},\"query\":\"mutation signIn($taxvat: String!, $password: String!, $chatbot: String) {\\ngenerateCustomerToken(taxvat: $taxvat, password: $password, chatbot: $chatbot) {\\ntoken\\nis_clube_nestle\\nenabled_club_nestle\\n__typename\\n}\\n}\\n\"}";
 
       Request requestToken = Request.RequestBuilder.create()
          .setUrl("https://www.nestleatevoce.com.br/graphql")
          .setHeaders(headers)
          .setPayload(payload)
-         .setProxyservice(Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .build();
 
       Response responseToken = CrawlerUtils.retryRequest(requestToken, session, new JsoupDataFetcher(), false);
@@ -92,12 +99,12 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       JSONObject bodyJson = fetchJSONObject();
 
-      if (!bodyJson.isEmpty()) {
+      if (bodyJson != null && !bodyJson.isEmpty()) {
          if (this.currentPage == 1) {
-            this.totalProducts = JSONUtils.getValueRecursive(bodyJson, "data.products.total_count", Integer.class);
+            this.totalProducts = JSONUtils.getValueRecursive(bodyJson, "data.products.total_count", Integer.class, 0);
          }
-         JSONArray products = JSONUtils.getValueRecursive(bodyJson, "data.products.items", JSONArray.class);
-         int alternativePosition = 1;
+         JSONArray products = JSONUtils.getValueRecursive(bodyJson, "data.products.items", JSONArray.class, new JSONArray());
+         int alternativePosition = this.currentPage == 1 ? 1 : (this.currentPage * 20) + 1;
 
          if (!products.isEmpty()) {
             for (Object o : products) {
