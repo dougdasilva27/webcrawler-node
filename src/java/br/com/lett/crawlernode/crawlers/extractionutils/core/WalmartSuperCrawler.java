@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -20,7 +21,11 @@ import models.Offer;
 import models.Offers;
 import models.pricing.CreditCards;
 import models.pricing.Pricing;
+import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -33,7 +38,7 @@ public class WalmartSuperCrawler extends Crawler {
    public WalmartSuperCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.JSOUP);
-      super.config.setParser(Parser.JSON);
+      super.config.setParser(Parser.HTML);
    }
 
    String store_id = session.getOptions().optString("store_id");
@@ -46,38 +51,8 @@ public class WalmartSuperCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
-      String url = session.getOriginalURL();
-
-      if (url.contains("?")) {
-         url = url.split("\\?")[0];
-      }
-
-      String finalParameter = CommonMethods.getLast(url.split("/"));
-
-      if (finalParameter.contains("_")) {
-         finalParameter = CommonMethods.getLast(finalParameter.split("_")).trim();
-      }
-
-      String apiUrl =
-         "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId=" + store_id + "&upc="
-            + finalParameter + "&skuId=" + finalParameter;
-
-      Request requestJsoup = Request.RequestBuilder.create()
-         .setUrl(apiUrl)
-         .setCookies(cookies)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector(".Mantn-presionado-el").build())
-         .build();
-
-
-      Request requestFetcher = Request.RequestBuilder.create()
-         .setUrl(apiUrl)
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
@@ -86,44 +61,34 @@ public class WalmartSuperCrawler extends Crawler {
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
          .build();
+      return CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+   }
 
-      Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestJsoup;
-
-      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
-
-      int statusCode = response.getLastStatusCode();
-
-      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-         Integer.toString(statusCode).charAt(0) != '3'
-         && statusCode != 404)) {
-
-         if (dataFetcher instanceof FetcherDataFetcher) {
-            response = new JsoupDataFetcher().get(session, requestJsoup);
-         } else {
-            response = new FetcherDataFetcher().get(session, requestFetcher);
-         }
-      }
-
-      return response;
+   JSONObject getJsonFromHtml(Document doc) {
+      String script = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
+      JSONArray scriptArray = JSONUtils.stringToJsonArray(script);
+      Object json = scriptArray.get(0);
+      JSONObject jsonObject = (JSONObject) json;
+      return JSONUtils.getValueRecursive(jsonObject, "props.pageProps.initialData.data", JSONObject.class, new JSONObject());
    }
 
    @Override
-   public List<Product> extractInformation(JSONObject apiJson) throws Exception {
+   public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
-
-      if (apiJson.has("skuId")) {
+      JSONObject json = getJsonFromHtml(doc);
+      JSONObject productJson = json.optJSONObject("product");
+      if (productJson.has("usItemId")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-         String internalId = apiJson.optString("skuId");
-         String name = apiJson.optString("skuDisplayNameText");
-         String primaryImage = crawlPrimaryImage(internalId);
-         List<String> secondaryImages = crawlSecondaryImages(internalId);
-         CategoryCollection categories = crawlCategories(apiJson);
-         String description = crawlDescription(apiJson);
+         String internalId = productJson.optString("usItemId");
+         String name = productJson.optString("name");
+         String primaryImage = JSONUtils.getValueRecursive(productJson, "imageInfo.thumbnailUrl", String.class, null);
+         List<String> secondaryImages = crawlSecondaryImages(productJson, primaryImage);
+         CategoryCollection categories = crawlCategories(productJson);
+         String description = crawlDescription(json);
          List<String> eans = new ArrayList<>();
          eans.add(internalId);
-         boolean available = crawlAvailability(apiJson);
-         Offers offers = available ? crawlOffers(apiJson, internalId) : new Offers();
+         boolean available = crawlAvailability(productJson);
+         Offers offers = available ? crawlOffers(productJson) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -148,9 +113,9 @@ public class WalmartSuperCrawler extends Crawler {
 
    }
 
-   private Offers crawlOffers(JSONObject apiJson, String internalId) throws OfferException, MalformedPricingException {
+   private Offers crawlOffers(JSONObject json) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(apiJson, internalId);
+      Pricing pricing = scrapPricing(json);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -164,23 +129,19 @@ public class WalmartSuperCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject apiJson, String internalId) throws MalformedPricingException {
-      String spotlightPriceString = apiJson.optString("specialPrice");
-      String priceFromString = apiJson.optString("basePrice");
+   private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
+      JSONObject spotlightPriceObject = JSONUtils.getValueRecursive(json, "priceInfo.currentPrice", JSONObject.class, new JSONObject());
+      JSONObject priceFromObject = JSONUtils.getValueRecursive(json, "priceInfo.wasPrice", JSONObject.class, new JSONObject());
       Double spotlightPrice = null;
       Double priceFrom = null;
 
-      if (spotlightPriceString.isEmpty()) {
-         JSONObject priceObject = crawlPriceApi(internalId);
-         spotlightPrice = CommonMethods.objectToDouble(priceObject.optQuery("/skuinfo/" + internalId + "_" + store_id + "/activeSpecialPrice"));
-         priceFrom = CommonMethods.objectToDouble(priceObject.optQuery("/skuinfo/" + internalId + "_" + store_id + "/activeOriginalPrice"));
-      } else {
-         spotlightPrice = Double.valueOf(spotlightPriceString);
-         priceFrom = Double.valueOf(priceFromString);
+      if (!spotlightPriceObject.isEmpty()) {
+         int priceInt = spotlightPriceObject.optInt("price", 0);
+         spotlightPrice = priceInt != 0 ? priceInt * 1.0 : null;
       }
-
-      if (Objects.equals(spotlightPrice, priceFrom)) {
-         priceFrom = null;
+      if (!priceFromObject.isEmpty()) {
+         int priceInt = priceFromObject.optInt("price", 0);
+         priceFrom = priceInt != 0 ? priceInt * 1.0 : null;
       }
 
       CreditCards creditCards = CrawlerUtils.scrapCreditCards(spotlightPrice, cards);
@@ -192,112 +153,46 @@ public class WalmartSuperCrawler extends Crawler {
          .build();
    }
 
-   private JSONObject crawlPriceApi(String internalId) {
-      Request request = Request.RequestBuilder.create()
-         .setUrl("https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuPriceInventoryPromotions?skuId=" + internalId + "&storeId=" + store_id)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
-         .build();
-
-      return CrawlerUtils.stringToJson(dataFetcher.get(session, request).getBody());
-   }
 
    private boolean crawlAvailability(JSONObject apiJson) {
-      boolean available = false;
-
-      if (apiJson.has("status")) {
-         String status = apiJson.optString("status");
-
-         available = status.equalsIgnoreCase("SELLABLE");
-      }
-
-      return available;
+      return apiJson.optString("availabilityStatus").equals("IN_STOCK");
    }
 
-   private String crawlPrimaryImage(String id) {
-      return "https://res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/gr/images/product-images/img_large/" + id + "L.jpg";
-   }
-
-   private List<String> crawlSecondaryImages(String id) {
+   private List<String> crawlSecondaryImages(JSONObject json, String primaryImage) {
       List<String> secondaryImages = new ArrayList<>();
-
-      for (int i = 1; i < 4; i++) {
-         String img = "https://res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/gr/images/product-images/img_large/" + id + "L" + i + ".jpg";
-         secondaryImages.add(img);
+      JSONArray images = JSONUtils.getValueRecursive(json, "imageInfo.allImages", JSONArray.class, new JSONArray());
+      for (Object objImage : images) {
+         JSONObject image = (JSONObject) objImage;
+         secondaryImages.add(image.optString("url"));
       }
-
+      if (primaryImage != null) {
+         secondaryImages.remove(primaryImage);
+      }
       return secondaryImages;
    }
 
-   private CategoryCollection crawlCategories(JSONObject apiJson) {
+   private CategoryCollection crawlCategories(JSONObject json) {
       CategoryCollection categories = new CategoryCollection();
-
-      if (apiJson.has("breadcrumb") && apiJson.get("breadcrumb") instanceof JSONObject) {
-         JSONObject breadcrumb = apiJson.optJSONObject("breadcrumb");
-
-         if (breadcrumb.has("departmentName")) {
-            categories.add(breadcrumb.get("departmentName").toString());
-         }
-
-         if (breadcrumb.has("familyName")) {
-            categories.add(breadcrumb.get("familyName").toString());
-         }
-
-         if (breadcrumb.has("fineLineName")) {
-            categories.add(breadcrumb.get("fineLineName").toString());
-         }
+      JSONArray pathsCategories = JSONUtils.getValueRecursive(json, "category.path", JSONArray.class, new JSONArray());
+      for (Object objCategory : pathsCategories) {
+         JSONObject catrgory = (JSONObject) objCategory;
+         categories.add(catrgory.optString("name"));
       }
-
       return categories;
    }
 
-   private String crawlDescription(JSONObject apiJson) {
+   private String crawlDescription(JSONObject json) {
       StringBuilder description = new StringBuilder();
-
-      if (apiJson.has("longDescription")) {
-         description.append("<div id=\"desc\"> <h3> Descripción </h3>");
-         description.append(apiJson.get("longDescription") + "</div>");
-      }
-
-      StringBuilder nutritionalTable = new StringBuilder();
-      StringBuilder caracteristicas = new StringBuilder();
-
-      if (apiJson.has("attributesMap")) {
-         JSONObject attributesMap = apiJson.optJSONObject("attributesMap");
-
-         for (String key : attributesMap.keySet()) {
-            JSONObject attribute = attributesMap.optJSONObject(key);
-
-            if (attribute != null && attribute.optJSONObject("attrGroupId") != null) {
-               JSONObject attrGroupId = attribute.optJSONObject("attrGroupId");
-
-               if (attrGroupId.optString("optionValue") != null) {
-                  String optionValue = attrGroupId.optString("optionValue");
-
-                  if (optionValue.equalsIgnoreCase("Tabla nutrimental")) {
-                     setAPIDescription(attribute, nutritionalTable);
-                  } else if (optionValue.equalsIgnoreCase("Características")) {
-                     setAPIDescription(attribute, caracteristicas);
-                  }
-               }
-            }
-         }
-      }
-
-      if (!nutritionalTable.toString().isEmpty()) {
-         description.append("<div id=\"table\"> <h3> Nutrición </h3>");
-         description.append(nutritionalTable + "</div>");
-      }
-
-      if (!caracteristicas.toString().isEmpty()) {
-         description.append("<div id=\"short\"> <h3> Características </h3>");
-         description.append(caracteristicas + "</div>");
-      }
+//      String longDescription = json.getString("longDescription");
+//      longDescription = JSONUtils.
+//      if (json.has("longDescription")) {
+//         description.append("<div id=\"desc\"> <h3> Descripción </h3>");
+//         description.append(json.get("longDescription") + "</div>");
+//      }
+//      if (json.has("shortDescription")) {
+//         description.append("<div id=\"desc\"> <h4> Descripción </h4>");
+//         description.append(json.get("longDescription") + "</div>");
+//      }
 
       return description.toString();
    }
@@ -310,5 +205,6 @@ public class WalmartSuperCrawler extends Crawler {
          desc.append("</div>");
       }
    }
+
 }
 
