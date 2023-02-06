@@ -36,7 +36,7 @@ public class BrasilIfood extends Crawler {
 
    public BrasilIfood(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.MIRANHA);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
