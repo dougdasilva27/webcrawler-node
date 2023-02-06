@@ -22,8 +22,10 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.nodes.Document;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -126,6 +128,42 @@ public class CornershopCrawler extends Crawler {
 
       return products;
    }
+   @Override
+   public List<Product> extractInformation(Document document) throws Exception {
+      List<Product> products = new ArrayList<>();
+
+      if (isProductPage(document)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+         String internalId = CommonMethods.getLast(session.getOriginalURL().split("/"));
+         String name = CrawlerUtils.scrapStringSimpleInfo(document,".product-name > h2", true);
+         String description = CrawlerUtils.scrapStringSimpleInfo(document,".description", false);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document,".image-to-zoom", Arrays.asList("src"),"https","s.cornershopapp.com");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(document,".image-to-zoom", Arrays.asList("src"),"https","s.cornershopapp.com", primaryImage);
+         boolean available = document.selectFirst(".product-detail-add-product") != null;
+         Offers offers = available ? scrapOffers(document) : new Offers();
+
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalId)
+            .setName(name)
+            .setDescription(description)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setOffers(offers)
+            .build();
+         products.add(product);
+
+
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+      }
+
+      return products;
+   }
+
+   private boolean isProductPage(Document document) {return document.selectFirst(".product.detail") != null;}
 
    private List<String> scrapSecondaryImages(JSONObject data) {
       List<String> list = new ArrayList<>();
@@ -166,6 +204,45 @@ public class CornershopCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject jsonSku) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonSku, "price", false);
       Double priceFrom = JSONUtils.getDoubleValueFromJSON(jsonSku, "original_price", true);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+   private Offers scrapOffers(Document document) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(document);
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+
+   }
+
+   private Pricing scrapPricing(Document document) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document,"td > .price > span",null,false,'.',session);
+      if(spotlightPrice == null){
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document,".current-price  > span",null,true,'.',session);
+      }
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document,".original-price > span",null,false,'.',session);
+
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
