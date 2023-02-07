@@ -85,7 +85,7 @@ public class SiteMercadoCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String pruductUrl = session.getOriginalURL().replace("//produto", "/produto");
-         String internalId = jsonSku.optString("idLojaProduto");
+         String internalId = jsonSku.optString("idProduct");
          String name = jsonSku.optString("excerpt");
          String description = crawlDescription(jsonSku);
          CategoryCollection categories = crawlCategories(jsonSku);
