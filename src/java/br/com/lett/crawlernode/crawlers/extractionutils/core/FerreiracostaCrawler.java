@@ -71,6 +71,7 @@ public class FerreiracostaCrawler extends Crawler {
          .setProxyservice(List.of(
             ProxyCollection.LUMINATI_SERVER_BR,
             ProxyCollection.BUY,
+            ProxyCollection.SMART_PROXY_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .build();
