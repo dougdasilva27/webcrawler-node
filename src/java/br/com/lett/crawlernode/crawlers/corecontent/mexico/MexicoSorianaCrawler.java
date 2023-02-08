@@ -3,6 +3,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -30,28 +32,11 @@ public class MexicoSorianaCrawler extends Crawler {
 
    public MexicoSorianaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
-      super.config.setParser(Parser.HTML);
-   }
-
-   @Override
-   protected Response fetchResponse() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.ACCEPT, "*/*");
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.SMART_PROXY_MX,
-            ProxyCollection.SMART_PROXY_MX_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY
-         ))
-         .setHeaders(headers)
-         .build();
-      return CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher()), session, "get");
+      config.setFetcher(FetchMode.MIRANHA);
 
    }
+
+
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
