@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
+import com.google.common.net.HttpHeaders;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
@@ -48,18 +49,26 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
 
    protected Map<String, String> fetchToken() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("content-type", "application/json");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      headers.put(HttpHeaders.ACCEPT, "*/*");
+      headers.put(HttpHeaders.ORIGIN, "https://www.nestleatevoce.com.br");
+      headers.put(HttpHeaders.REFERER, "https://www.nestleatevoce.com.br/login");
       headers.put("x-authorization", "");
 
-      String payload = "{\"operationName\":\"signIn\",\"variables\":{\"taxvat\":\"" + LOGIN + "\",\"password\":\"" + PASSWORD + "\"},\"query\":\"mutation signIn($taxvat: String!, $password: String!) {\\ngenerateCustomerToken(taxvat: $taxvat, password: $password) {\\ntoken\\nis_clube_nestle\\nenabled_club_nestle\\n__typename\\n}\\n}\\n\"}";
+      String payload = "{\"operationName\":\"signIn\",\"variables\":{\"taxvat\":\"" + LOGIN + "\",\"password\":\"" + PASSWORD + "\", \"chatbot\":null},\"query\":\"mutation signIn($taxvat: String!, $password: String!, $chatbot: String) {\\ngenerateCustomerToken(taxvat: $taxvat, password: $password, chatbot: $chatbot) {\\ntoken\\nis_clube_nestle\\nenabled_club_nestle\\n__typename\\n}\\n}\\n\"}";
 
       Request requestToken = Request.RequestBuilder.create()
          .setUrl("https://www.nestleatevoce.com.br/graphql")
          .setHeaders(headers)
          .setPayload(payload)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.LUMINATI_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ))
          .build();
-
       Response responseToken = CrawlerUtils.retryRequest(requestToken, session, new JsoupDataFetcher(), false);
       if (responseToken != null) {
          JSONObject objResponseToken = JSONUtils.stringToJson(responseToken.getBody());
@@ -224,6 +233,9 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
       Double spotlightPrice = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.final_price.value", Double.class, null);
       Double priceFrom = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.regular_price.value", Double.class, null);
 
+      if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
+         priceFrom = null;
+      }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()

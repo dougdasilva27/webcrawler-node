@@ -1,8 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -24,7 +22,6 @@ import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
@@ -57,7 +54,13 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
          .setUrl("https://www.nestleatevoce.com.br/graphql")
          .setHeaders(headers)
          .setPayload(payload)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ))
          .build();
 
       Response responseToken = CrawlerUtils.retryRequest(requestToken, session, new JsoupDataFetcher(), false);
@@ -87,7 +90,14 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create()
          .setUrl(requestURL)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(ProxyCollection.LUMINATI_RESIDENTIAL_BR, ProxyCollection.BUY, ProxyCollection.SMART_PROXY_BR_HAPROXY))
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR
+            )
+         )
          .build();
 
       Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
@@ -104,8 +114,11 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
             this.totalProducts = JSONUtils.getValueRecursive(bodyJson, "data.products.total_count", Integer.class, 0);
          }
          JSONArray products = JSONUtils.getValueRecursive(bodyJson, "data.products.items", JSONArray.class, new JSONArray());
-         int alternativePosition = this.currentPage == 1 ? 1 : (this.currentPage * 20) + 1;
-
+         /*
+            the api returns 20 products at a time this logic tries to
+            adjust the position of the product based on the return of products per page
+         */
+         int alternativePosition = ((this.currentPage - 1) * 20) + 1;
          if (!products.isEmpty()) {
             for (Object o : products) {
                JSONObject product = (JSONObject) o;
@@ -123,7 +136,6 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
 
                   boolean availability = JSONUtils.getValueRecursive(variantProduct, "stock_status", String.class).equals("IN_STOCK");
                   Integer price = getPrice(availability, variantProduct);
-
                   RankingProduct productRanking = RankingProductBuilder.create()
                      .setUrl(productUrl)
                      .setInternalId(internalId)
@@ -137,9 +149,7 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
 
                   saveDataProduct(productRanking);
                }
-
                alternativePosition++;
-
                if (this.arrayProducts.size() == productsLimit)
                   break;
             }
