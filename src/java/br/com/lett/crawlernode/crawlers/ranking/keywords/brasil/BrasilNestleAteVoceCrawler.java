@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import com.google.common.net.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -41,16 +42,25 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
 
    protected Map<String, String> fetchToken() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("content-type", "application/json");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      headers.put(HttpHeaders.ACCEPT, "*/*");
+      headers.put(HttpHeaders.ORIGIN, "https://www.nestleatevoce.com.br");
+      headers.put(HttpHeaders.REFERER, "https://www.nestleatevoce.com.br/login");
       headers.put("x-authorization", "");
 
-      String payload = "{\"operationName\":\"signIn\",\"variables\":{\"taxvat\":\"" + LOGIN + "\",\"password\":\"" + PASSWORD + "\"},\"query\":\"mutation signIn($taxvat: String!, $password: String!) {\\ngenerateCustomerToken(taxvat: $taxvat, password: $password) {\\ntoken\\nis_clube_nestle\\nenabled_club_nestle\\n__typename\\n}\\n}\\n\"}";
+      String payload = "{\"operationName\":\"signIn\",\"variables\":{\"taxvat\":\"" + LOGIN + "\",\"password\":\"" + PASSWORD + "\", \"chatbot\":null},\"query\":\"mutation signIn($taxvat: String!, $password: String!, $chatbot: String) {\\ngenerateCustomerToken(taxvat: $taxvat, password: $password, chatbot: $chatbot) {\\ntoken\\nis_clube_nestle\\nenabled_club_nestle\\n__typename\\n}\\n}\\n\"}";
 
       Request requestToken = Request.RequestBuilder.create()
          .setUrl("https://www.nestleatevoce.com.br/graphql")
          .setHeaders(headers)
          .setPayload(payload)
-         .setProxyservice(Arrays.asList(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ))
          .build();
 
       Response responseToken = CrawlerUtils.retryRequest(requestToken, session, new JsoupDataFetcher(), false);
@@ -80,7 +90,14 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create()
          .setUrl(requestURL)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(ProxyCollection.LUMINATI_RESIDENTIAL_BR, ProxyCollection.BUY, ProxyCollection.SMART_PROXY_BR_HAPROXY))
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR
+            )
+         )
          .build();
 
       Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
@@ -92,13 +109,16 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       JSONObject bodyJson = fetchJSONObject();
 
-      if (!bodyJson.isEmpty()) {
+      if (bodyJson != null && !bodyJson.isEmpty()) {
          if (this.currentPage == 1) {
-            this.totalProducts = JSONUtils.getValueRecursive(bodyJson, "data.products.total_count", Integer.class);
+            this.totalProducts = JSONUtils.getValueRecursive(bodyJson, "data.products.total_count", Integer.class, 0);
          }
-         JSONArray products = JSONUtils.getValueRecursive(bodyJson, "data.products.items", JSONArray.class);
-         int alternativePosition = 1;
-
+         JSONArray products = JSONUtils.getValueRecursive(bodyJson, "data.products.items", JSONArray.class, new JSONArray());
+         /*
+            the api returns 20 products at a time this logic tries to
+            adjust the position of the product based on the return of products per page
+         */
+         int alternativePosition = ((this.currentPage - 1) * 20) + 1;
          if (!products.isEmpty()) {
             for (Object o : products) {
                JSONObject product = (JSONObject) o;
@@ -116,7 +136,6 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
 
                   boolean availability = JSONUtils.getValueRecursive(variantProduct, "stock_status", String.class).equals("IN_STOCK");
                   Integer price = getPrice(availability, variantProduct);
-
                   RankingProduct productRanking = RankingProductBuilder.create()
                      .setUrl(productUrl)
                      .setInternalId(internalId)
@@ -130,9 +149,7 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
 
                   saveDataProduct(productRanking);
                }
-
                alternativePosition++;
-
                if (this.arrayProducts.size() == productsLimit)
                   break;
             }

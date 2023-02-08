@@ -88,9 +88,8 @@ public class VipcommerceRanking extends CrawlerRankingKeywords {
             String productUrl = "";
             String name = product.optString("descricao");
             String imageUrl = CrawlerUtils.completeUrl(product.optString("imagem"), " https://", "s3.amazonaws.com/produtos.vipcommerce.com.br/250x250");
-
             double pricedouble = product.optDouble("preco");
-            Integer price = !Double.isNaN(pricedouble) ? Math.toIntExact( Math.round(pricedouble * 100)) : null;
+            Integer price = !Double.isNaN(pricedouble) ? Math.toIntExact(Math.round(pricedouble * 100)) : null;
 
             if (urlProductIncomplete != null && urlHost != null) {
                productUrl = "https://" + urlHost + urlProductIncomplete;
