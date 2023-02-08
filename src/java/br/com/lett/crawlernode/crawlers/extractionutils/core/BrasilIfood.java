@@ -222,8 +222,8 @@ public class BrasilIfood extends Crawler {
    }
 
    private Pricing scrapPricing(Document document) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, "div.product-detail__price > div > span > div > span", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, "div.product-detail__info > div.product-detail__price > div > span", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, "div.product-detail__price > div > span > div > span", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, "div.product-detail__info > div.product-detail__price > div > span", null, true, ',', session);
       if (spotlightPrice == null) {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, ".product-detail__price > div > span", null, true, ',', session);
       }
