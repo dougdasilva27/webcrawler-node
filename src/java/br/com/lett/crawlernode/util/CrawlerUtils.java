@@ -455,7 +455,7 @@ public class CrawlerUtils {
    public static List<String> scrapSecondaryImagesFromElements(Elements elements, String cssSelector, List<String> attributes, String protocol, String host, String primaryImage) {
       List<String> secondaryImages = new ArrayList<>();
 
-      Elements images = cssSelector != null? elements.select(cssSelector): elements;
+      Elements images = cssSelector != null ? elements.select(cssSelector) : elements;
       for (Element e : images) {
          String image = sanitizeUrl(e, attributes, protocol, host);
 
@@ -1321,6 +1321,18 @@ public class CrawlerUtils {
       return categories;
    }
 
+   public static CategoryCollection crawlCategories(Document document, String selector, boolean ignoreFirstChild, boolean ignoreLastChild) {
+      CategoryCollection categories = new CategoryCollection();
+      Elements elementCategories = document.select(selector);
+      int quantityCategories = ignoreLastChild ? elementCategories.size() -1 : elementCategories.size();
+      for (int i = ignoreFirstChild ? 1 : 0; i < quantityCategories; i++) {
+         categories.add(elementCategories.get(i).text().trim());
+      }
+
+      return categories;
+   }
+
+
    public static Float getFloatValueFromJSON(JSONObject json, String key) {
       return getFloatValueFromJSON(json, key, true, null);
    }
@@ -1672,8 +1684,7 @@ public class CrawlerUtils {
       JSONArray secondaryImages = scrapSecondaryImagesArrayMagento(images, primaryImage);
       if (secondaryImages.length() > 0) {
          return secondaryImages.toList().stream().map(Objects::toString).collect(Collectors.toList());
-      }
-      else{
+      } else {
          return null;
       }
    }
@@ -1681,10 +1692,9 @@ public class CrawlerUtils {
    @Deprecated
    public static String scrapSecondaryImagesMagento(JSONArray images, String primaryImage) {
       JSONArray secondaryImages = scrapSecondaryImagesArrayMagento(images, primaryImage);
-      if(secondaryImages.length() > 0){
+      if (secondaryImages.length() > 0) {
          return secondaryImages.toString();
-      }
-      else{
+      } else {
          return null;
       }
    }
@@ -2430,7 +2440,7 @@ public class CrawlerUtils {
       }
 
       if (!response.isSuccess()) {
-         Logging.printLogWarn(LOGGER, session, "Request failed " + attemps +  " attemps");
+         Logging.printLogWarn(LOGGER, session, "Request failed " + attemps + " attemps");
       }
 
 
@@ -2438,7 +2448,7 @@ public class CrawlerUtils {
    }
 
    public static Response retryRequestWithListDataFetcher(Request request, List<DataFetcher> dataFetcherList, Session session) {
-     return retryRequestWithListDataFetcher(request, dataFetcherList, session, "get");
+      return retryRequestWithListDataFetcher(request, dataFetcherList, session, "get");
    }
 
    public static String retryRequestString(Request request, List<DataFetcher> dataFetcherList, Session session) {
