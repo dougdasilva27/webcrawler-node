@@ -30,6 +30,8 @@ public class Request {
    private String fileS3Miranha;
 
    private JSONObject attemptsVoid = new JSONObject();
+
+   private Integer readingNumber;
    public Request() {
       super();
    }
@@ -135,7 +137,7 @@ public class Request {
    public String toString() {
       return "Request[sessionId= " + sessionId + ", messageId=" + messageId + ", fileS3Miranha=" + fileS3Miranha + ",messageBody=" + parameter + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
             + ", internalId=" + internalId + ", processedId=" + processedId + ", marketId=" + market + ", queueName=" + queueName
-            + ", supplierId=" + supplierId + ", useBrowser=" + useBrowser + ", isVoid=" + isVoid + "]";
+            + ", supplierId=" + supplierId + ", useBrowser=" + useBrowser + ", isVoid=" + isVoid  + ", readingNumber=" + readingNumber + " ]";
    }
 
    public String getClassName() {
@@ -178,5 +180,13 @@ public class Request {
 
    public void setAttemptsVoid(JSONObject attemptsVoid) {
       this.attemptsVoid = attemptsVoid;
+   }
+
+   public Integer getReadingNumber() {
+      return readingNumber;
+   }
+
+   public void setReadingNumber(Integer readingNumber) {
+      this.readingNumber = readingNumber;
    }
 }

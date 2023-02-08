@@ -96,6 +96,8 @@ public class Session {
 
    protected String className;
 
+   protected Integer readingNumber = null;
+
    /**
     * Default empty constructor
     */
@@ -133,6 +135,7 @@ public class Session {
       attemptsVoid = request.getAttemptsVoid();
       isAttemptMiranha = attemptsVoid.optBoolean("is_miranha");
       className = request.getClassName();
+      readingNumber = request.getReadingNumber();
 
       this.options = request.getOptions();
 
@@ -389,4 +392,11 @@ public class Session {
       return isAttemptMiranha;
    }
 
+   public Integer getReadingNumber() {
+      return readingNumber;
+   }
+
+   public void setReadingNumber(Integer readingNumber) {
+      this.readingNumber = readingNumber;
+   }
 }

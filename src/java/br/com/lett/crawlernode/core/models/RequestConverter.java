@@ -128,6 +128,11 @@ public class RequestConverter {
          request.setAttemptsVoid(attemptsVoid);
       }
 
+      Integer readingNumber = body.optInt("readingNumber");
+      if (readingNumber != 0){
+         request.setReadingNumber(readingNumber);
+      }
+
       if (request instanceof CrawlerSeedRequest) {
          ((CrawlerSeedRequest) request).setTaskId(body.optString(BODY_SEED_TASK_ID));
       }

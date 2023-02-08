@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import exceptions.MalformedRatingModel;
 import exceptions.OfferException;
@@ -366,7 +367,7 @@ public class Product implements Serializable {
             .toString();
    }
 
-   public String serializeToKinesis() {
+   public String serializeToKinesis(Session session) {
       Map<String, Object> linkedMap = new LinkedHashMap<>();
 
       linkedMap.put("url", (url != null ? url : BsonNull.VALUE));
@@ -388,6 +389,7 @@ public class Product implements Serializable {
       linkedMap.put("description", ((description != null && !description.isEmpty()) ? description : BsonNull.VALUE));
       linkedMap.put("eans", (eans != null ? eans : Collections.emptyList()));
       linkedMap.put("timestamp", timestamp);
+      linkedMap.put("reading_number", session.getReadingNumber());
 
       RatingsReviews rating = this.ratingReviews != null ? this.ratingReviews : new RatingsReviews();
 

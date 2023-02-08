@@ -1,17 +1,13 @@
 package br.com.lett.crawlernode.core.server.endpoints;
 
-import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.core.models.RequestConverter;
 import br.com.lett.crawlernode.core.server.ServerCrawler;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.server.request.checkers.CrawlerTaskRequestChecker;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
-import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.ToBuyCrawlerSession;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
-import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.util.Logging;
 import org.slf4j.Logger;
@@ -21,8 +17,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-
-import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
 
 public class CrawlerTaskEndpoint extends HttpServlet {
 
