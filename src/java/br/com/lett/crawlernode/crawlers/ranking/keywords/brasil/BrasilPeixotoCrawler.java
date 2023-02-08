@@ -109,6 +109,9 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
          waitForElement(webdriver.driver, "#branch-select option[value='5']");
          webdriver.findAndClick("#branch-select option[value='5']", 10000);
 
+         waitForElement(webdriver.driver, "option[value=\"pagamento_antecipado\"]");
+         webdriver.findAndClick("option[value=\"pagamento_antecipado\"]", 2000);
+
          waitForElement(webdriver.driver, "button.b2b-choices");
          webdriver.findAndClick("button.b2b-choices", 10000);
 
