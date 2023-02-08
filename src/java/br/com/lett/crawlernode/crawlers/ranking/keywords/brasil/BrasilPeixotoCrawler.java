@@ -103,17 +103,17 @@ public class BrasilPeixotoCrawler extends CrawlerRankingKeywords {
          pass.sendKeys(session.getOptions().optString("pass"));
 
          waitForElement(webdriver.driver, ".page-main button.login");
-         webdriver.findAndClick(".page-main button.login", 10000);
+         webdriver.findAndClick(".page-main button.login", 4000);
 
          //chose catalão - GO = 5
          waitForElement(webdriver.driver, "#branch-select option[value='5']");
-         webdriver.findAndClick("#branch-select option[value='5']", 10000);
+         webdriver.findAndClick("#branch-select option[value='5']", 4000);
 
          waitForElement(webdriver.driver, "option[value=\"pagamento_antecipado\"]");
          webdriver.findAndClick("option[value=\"pagamento_antecipado\"]", 2000);
 
          waitForElement(webdriver.driver, "button.b2b-choices");
-         webdriver.findAndClick("button.b2b-choices", 10000);
+         webdriver.findAndClick("button.b2b-choices", 4000);
 
          Set<Cookie> cookiesResponse = webdriver.driver.manage().getCookies();
 
