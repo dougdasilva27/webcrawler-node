@@ -88,10 +88,8 @@ public class VipcommerceRanking extends CrawlerRankingKeywords {
             String productUrl = "";
             String name = product.optString("descricao");
             String imageUrl = CrawlerUtils.completeUrl(product.optString("imagem"), " https://", "s3.amazonaws.com/produtos.vipcommerce.com.br/250x250");
-
-//            double pricedouble = product.optDouble("preco");
-//            Integer price = !Double.isNaN(pricedouble) ? Math.toIntExact( Math.round(pricedouble * 100)) : null;
-            Integer price = getPrice(product);
+            double pricedouble = product.optDouble("preco");
+            Integer price = !Double.isNaN(pricedouble) ? Math.toIntExact(Math.round(pricedouble * 100)) : null;
 
             if (urlProductIncomplete != null && urlHost != null) {
                productUrl = "https://" + urlHost + urlProductIncomplete;
@@ -119,17 +117,6 @@ public class VipcommerceRanking extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-   }
-   private Integer getPrice(JSONObject product) {
-      JSONObject offer = product.optJSONObject("oferta");
-      if (offer != null && !offer.isEmpty()) {
-         Double priceDouble = offer.optDouble("preco_oferta", 0.0);
-         if (priceDouble != 0.0) {
-            return Math.toIntExact(Math.round(priceDouble * 100));
-         }
-      }
-      double pricedouble = product.optDouble("preco");
-      return  !Double.isNaN(pricedouble) ? Math.toIntExact(Math.round(pricedouble * 100)) : null;
    }
 
    @Override
