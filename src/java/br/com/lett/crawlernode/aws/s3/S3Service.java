@@ -250,7 +250,7 @@ public class S3Service {
    public static Document fetchHtml(Session session, String name, String bucket) {
       StringBuilder contentBuilder = new StringBuilder();
       try {
-         Logging.printLogInfo(logger, session, "Downloading HTML from S3 bucket " + bucket);
+         Logging.printLogInfo(logger, session, "Downloading HTML from S3 bucket " + bucket + " name file:  "+ session.getFileS3Miranha());
          S3Object fileObj = s3clientCrawlerSessions.getObject(new GetObjectRequest(bucket, name));
          Scanner fileIn = new Scanner(new GZIPInputStream(fileObj.getObjectContent()));
          while (fileIn.hasNextLine()) {
