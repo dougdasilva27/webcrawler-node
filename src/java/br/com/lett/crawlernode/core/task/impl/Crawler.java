@@ -582,7 +582,7 @@ public abstract class Crawler extends Task {
          JSONObject attemptVoidJson = session.getAttemptsVoid();
          JSONObject message = Scheduler.mountMessageToSendToQueue(session);
 
-         if (session.getOptions().optBoolean("miranha_attempt") && attemptVoid == 2) {
+         if ((session.getOptions().optBoolean("miranha_attempt") && attemptVoid == 2) || session.getOptions().optBoolean("is_miranha")) {
             attemptVoid++;
 
             attemptVoidJson.put("attempt", attemptVoid);
