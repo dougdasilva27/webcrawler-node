@@ -128,6 +128,7 @@ public class CornershopCrawler extends Crawler {
 
       return products;
    }
+
    @Override
    public List<Product> extractInformation(Document document) throws Exception {
       List<Product> products = new ArrayList<>();
@@ -136,11 +137,11 @@ public class CornershopCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = CommonMethods.getLast(session.getOriginalURL().split("/"));
-         String name = CrawlerUtils.scrapStringSimpleInfo(document,".product-name > h2", true);
-         String description = CrawlerUtils.scrapStringSimpleInfo(document,".description", false);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document,".image-to-zoom", Arrays.asList("src"),"https","s.cornershopapp.com");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(document,".image-to-zoom", Arrays.asList("src"),"https","s.cornershopapp.com", primaryImage);
-         boolean available = document.selectFirst(".product-detail-add-product") != null;
+         String name = CrawlerUtils.scrapStringSimpleInfo(document, ".product-name > h2", true);
+         String description = CrawlerUtils.scrapStringSimpleInfo(document, ".description", false);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".image-to-zoom", Arrays.asList("src"), "https", "s.cornershopapp.com");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(document, ".image-to-zoom", Arrays.asList("src"), "https", "s.cornershopapp.com", primaryImage);
+         boolean available = isAvailable(document);
          Offers offers = available ? scrapOffers(document) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -163,12 +164,26 @@ public class CornershopCrawler extends Crawler {
       return products;
    }
 
-   private boolean isProductPage(Document document) {return document.selectFirst(".product.detail") != null;}
+   private boolean isAvailable(Document document) {
+      String isAvailable = CrawlerUtils.scrapStringSimpleInfo(document, ".content > div.label", false);
+      if (isAvailable == null && isAvailable.isEmpty()) {
+         return true;
+      }
+      if (isAvailable != null && isAvailable.contains("Out of stock")) {
+         return false;
+      }
+
+      return true;
+   }
+
+   private boolean isProductPage(Document document) {
+      return document.selectFirst(".product.detail") != null;
+   }
 
    private List<String> scrapSecondaryImages(JSONObject data) {
       List<String> list = new ArrayList<>();
       JSONArray arr = data.optJSONArray("extra_img_urls");
-      if(arr !=null && !arr.isEmpty()){
+      if (arr != null && !arr.isEmpty()) {
          for (Integer i = 0; i < arr.length(); i++) {
             String image = (String) arr.get(i);
             if (image != null && !image.isEmpty()) {
@@ -216,6 +231,7 @@ public class CornershopCrawler extends Crawler {
          .setBankSlip(bankSlip)
          .build();
    }
+
    private Offers scrapOffers(Document document) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(document);
@@ -237,11 +253,11 @@ public class CornershopCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document document) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document,"td > .price > span",null,false,'.',session);
-      if(spotlightPrice == null){
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document,".current-price  > span",null,true,'.',session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, "td > .price > span", null, false, '.', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, ".current-price  > span", null, true, '.', session);
       }
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document,".original-price > span",null,false,'.',session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, ".original-price > span", null, false, '.', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
