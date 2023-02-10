@@ -29,7 +29,7 @@ public class BrasilLojinhaBabyMeCrawler extends CrawlerRankingKeywords {
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item-photo", "data-id");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[data-price-box*=product-id]", "data-product-id");
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item-photo", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-name a", true);
             String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image-wrapper img", Collections.singletonList("src"), "https", "www.lojinhababyandme.com.br").replace("4b21a695c360ef29dc1a3e8e073c7d35","fa0b1991bb146595e0635a88fa579466");
