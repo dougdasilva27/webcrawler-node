@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -280,7 +281,7 @@ public abstract class RappiCrawler extends Crawler {
          .mustSendContentEncoding(false)
          .build();
 
-      JSONObject json = JSONUtils.stringToJson(new FetcherDataFetcher().post(session, request).getBody());
+      JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post").getBody());
 
       String token = json.optString("access_token");
       String tokenType = json.optString("token_type");
