@@ -14,8 +14,7 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
-import models.pricing.CreditCards;
-import models.pricing.Pricing;
+import models.pricing.*;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -37,36 +36,37 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
    public List<Product> extractInformation(Document document) throws Exception {
       super.extractInformation(document);
       List<Product> products = new ArrayList<>();
-      if (!isProductPage(document)) {
-         Logging.printLogDebug(logger, session, "Not a product page" + session.getOriginalURL());
-         return products;
-      }
-      // Get all product information
-      String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".base", false);
-      String productInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".price-box.price-final_price", "data-product-id");
-      String productInternalPid = productInternalId;
-      String productDescription = CrawlerUtils.scrapStringSimpleInfo(document, ".product.attribute.description .value", false);
-      String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, "img.gallery-placeholder__image", Arrays.asList("src"), "", "");
-      List<String> productSecondaryImages = ImageCapture(document);
+      if (isProductPage(document)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".base", false);
+         String productInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".price-box.price-final_price", "data-product-id");
+         String productInternalPid = productInternalId;
+         String productDescription = CrawlerUtils.scrapStringSimpleInfo(document, ".product.attribute.description .value", false);
+         String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, "img.gallery-placeholder__image", Arrays.asList("src"), "", "");
+         List<String> productSecondaryImages = ImageCapture(document);
+         boolean available = document.selectFirst(".stock.unavailable") != null;
+         Offers offers = !available ? scrapOffers(document) : new Offers();
 
-      ProductBuilder builder = ProductBuilder.create().setUrl(session.getOriginalURL());
-      Product product = ProductBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setInternalId(productInternalId)
-         .setInternalPid(productInternalPid)
-         .setName(productName)
-         .setPrimaryImage(productPrimaryImage)
-         .setSecondaryImages(productSecondaryImages)
-         .setDescription(productDescription)
-         .setOffers(scrapOffers(document, productInternalId))
-         .build();
-      products.add(product);
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(productInternalId)
+            .setInternalPid(productInternalPid)
+            .setName(productName)
+            .setPrimaryImage(productPrimaryImage)
+            .setSecondaryImages(productSecondaryImages)
+            .setDescription(productDescription)
+            .setOffers(offers)
+            .build();
+         products.add(product);
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+      }
       return products;
    }
 
-   private Offers scrapOffers(Document document, String productInternalId) throws MalformedPricingException, OfferException {
+   private Offers scrapOffers(Document document) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(document, productInternalId);
+      Pricing pricing = scrapPricing(document);
       List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
       offers.add(new Offer.OfferBuilder()
          .setIsBuybox(false)
@@ -80,7 +80,7 @@ public class ArgentinaPintureriasrexCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document document, String id) throws MalformedPricingException {
+   private Pricing scrapPricing(Document document) throws MalformedPricingException {
       Double price = formatSpotlightPrice(document);
       Double priceFrom = formatPriceFrom(document);
       CreditCards creditCards = CrawlerUtils.scrapCreditCards(price, cards);
