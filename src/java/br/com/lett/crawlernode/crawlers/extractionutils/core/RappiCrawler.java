@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -48,6 +51,8 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    private final String grammatureRegex = "(\\d+[.,]?\\d*\\s?)(ml|l|g|gr|mg|kg)";
+
+   private String DEVICE_ID = UUID.randomUUID().toString();
 
    protected String getStoreId() {
       return session.getOptions().optString("storeId");
@@ -237,15 +242,37 @@ public abstract class RappiCrawler extends Crawler {
       return productDescription;
    }
 
-   protected String fetchToken() {
-      String url = "https://services." + getHomeDomain() + "/api/auth/guest_access_token";
+   private String fetchPassportToken() {
+      String url = "https://services." + getHomeDomain() + "/api/rocket/v2/guest/passport/";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
       headers.put("content-type", "application/json");
+      headers.put("deviceid", DEVICE_ID);
+      headers.put("needAppsFlyerId", "false");
 
-      String payload = "{\"headers\":{\"normalizedNames\":{},\"lazyUpdate\":null},\"grant_type\":\"guest\"}";
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .build();
+
+      JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true).getBody());
+
+      return json.optString("token");
+   }
+
+   protected String fetchToken() {
+      String url = "https://services." + getHomeDomain() + "/api/rocket/v2/guest";
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "application/json, text/plain, */*");
+      headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
+      headers.put("content-type", "application/json");
+      headers.put("deviceId", DEVICE_ID);
+      headers.put("x-guest-api-key", fetchPassportToken());
+
+      String payload = "";
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -254,7 +281,7 @@ public abstract class RappiCrawler extends Crawler {
          .mustSendContentEncoding(false)
          .build();
 
-      JSONObject json = JSONUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
+      JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post").getBody());
 
       String token = json.optString("access_token");
       String tokenType = json.optString("token_type");
@@ -267,7 +294,7 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    protected JSONObject fetchProductApi(String productId, String token) {
-      String url = "https://services." + getHomeDomain() + "/api/ms/web-proxy/dynamic-list/cpgs";
+      String url = "https://services." + getHomeDomain() + "/api/web-gateway/web/dynamic/context/content/";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
@@ -275,11 +302,10 @@ public abstract class RappiCrawler extends Crawler {
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
       headers.put("content-type", "application/json");
       headers.put("authorization", token);
+      headers.put("deviceid", DEVICE_ID);
+      headers.put("app-version", "web_v1.140.9");
 
-      String productFriendlyUrl = getStoreId() + "_" + productId;
-
-      String payload = "{\"dynamic_list_request\":{\"context\":\"product_detail\",\"state\":{\"lat\":\"1\",\"lng\":\"1\"},\"limit\":100,\"offset\":0},\"dynamic_list_endpoint\":\"context/content\",\"proxy_input\":{\"product_friendly_url\":\"" + productFriendlyUrl + "\"}}";
-
+      String payload = "{\"state\":{\"product_id\":\"" + productId + "\",\"lat\":\"1\",\"lng\":\"1\"},\"stores\":[" + getStoreId() + "],\"context\":\"product_detail\",\"limit\":10,\"offset\":0}";
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -291,7 +317,7 @@ public abstract class RappiCrawler extends Crawler {
 
       JSONObject jsonObject = CrawlerUtils.stringToJSONObject(body);
 
-      return JSONUtils.getValueRecursive(jsonObject, "dynamic_list_response.data.components.0.resource.product", ".", JSONObject.class, new JSONObject());
+      return JSONUtils.getValueRecursive(jsonObject, "data.components.0.resource.product", ".", JSONObject.class, new JSONObject());
    }
 
    @Override
