@@ -21,26 +21,16 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-
-import static br.com.lett.crawlernode.crawlers.extractionutils.core.AngelonieletroUtils.crawlInternalId;
+import java.util.*;
 
 public class BrasilLojinhaBabyMeCrawler extends Crawler {
    public BrasilLojinhaBabyMeCrawler(Session session) {
       super(session);
    }
+
    private static final String SELLER_FULL_NAME = "Lojinha Baby e Me";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.ELO.toString(),
       Card.DINERS.toString(), Card.DISCOVER.toString(), Card.AMEX.toString(), Card.JCB.toString(), Card.AURA.toString(), Card.HIPERCARD.toString());
-
-//   @Override
-//   public boolean shouldVisit() {
-//      String href = session.getOriginalURL().toLowerCase();
-//      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-//   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -54,9 +44,7 @@ public class BrasilLojinhaBabyMeCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.page-title span", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.items li.item a");
          List<String> secondaryImages = crawImagesArray(doc);
-         String primaryImage = secondaryImages != null && !secondaryImages.isEmpty() ? secondaryImages.get(0) : null;
-            //CrawlerUtils.scrapSimplePrimaryImage(doc, "div.fotorama__stage__frame.fotorama__active img", Arrays.asList("src"), "https:", "www.lojinhababyandme.com.br");
-
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder__image", Arrays.asList("src"), "https", "www.lojinhababyandme.com.br");
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".product.description p"));
          boolean availableToBuy = doc.selectFirst(".product-info-stock-sku .available") != null;
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
@@ -90,8 +78,11 @@ public class BrasilLojinhaBabyMeCrawler extends Crawler {
          JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class, new JSONArray());
          List<String> imagesList = new ArrayList<>();
          for (int i = 1; i < imageArray.length(); i++) {
-            String imageList = JSONUtils.getValueRecursive(imageArray, i + ".img", String.class);
-            imagesList.add(imageList);
+            Boolean isMainImage = JSONUtils.getValueRecursive(imageArray, i + ".isMain", Boolean.class);
+            if (!isMainImage) {
+               String imageList = JSONUtils.getValueRecursive(imageArray, i + ".img", String.class);
+               imagesList.add(imageList);
+            }
          }
          return imagesList;
       }
@@ -124,6 +115,10 @@ public class BrasilLojinhaBabyMeCrawler extends Crawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-price [id*=product-price] .price", null, true, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-price .old-price .price", null, true, ',', session);
 
+      if(spotlightPrice == null && priceFrom == null){
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[data-price-type=\"maxPrice\"] span", null, true, ',', session);
+      }
+
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
@@ -141,6 +136,13 @@ public class BrasilLojinhaBabyMeCrawler extends Crawler {
 
       if (firstSales != null && !firstSales.isEmpty()) {
          sales.add(firstSales);
+      }
+
+      Element salesOneComboElement = doc.selectFirst(".label .product-name");
+      String firstSalesCombo = salesOneComboElement != null ? salesOneComboElement.text() : null;
+
+      if (firstSalesCombo != null && !firstSalesCombo.isEmpty()) {
+         sales.add(firstSalesCombo);
       }
 
       return sales;
