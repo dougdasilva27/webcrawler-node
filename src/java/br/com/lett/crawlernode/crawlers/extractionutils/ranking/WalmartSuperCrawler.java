@@ -140,7 +140,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
                String internalId = product.optString("usItemId");
                String name = product.optString("name");
                String imageUrl = product.optString("image");
-               boolean isSponsored = product.opt("sponsoredProduct") != null;
+               boolean isSponsored = product.optJSONObject("sponsoredProduct") != null;
                boolean isAvailable = product.optString("availabilityStatusDisplayValue", "").equals("In stock");
                Integer price = isAvailable ? product.optInt("price", 0) * 100 : null;
 
