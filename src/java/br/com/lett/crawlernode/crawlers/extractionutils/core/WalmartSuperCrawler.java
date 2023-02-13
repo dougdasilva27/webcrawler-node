@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
@@ -22,6 +23,8 @@ import models.Offer;
 import models.Offers;
 import models.pricing.CreditCards;
 import models.pricing.Pricing;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -37,10 +40,10 @@ public class WalmartSuperCrawler extends Crawler {
 
    private static final List<String> PROXIES = Arrays.asList(
       ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY);
+      ProxyCollection.SMART_PROXY_MX_HAPROXY
+      );
    private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString());
 
    public WalmartSuperCrawler(Session session) {
@@ -106,8 +109,13 @@ public class WalmartSuperCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(PROXIES)
          .build();
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
-      this.cookies = response.getCookies();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request,List.of(new ApacheDataFetcher(), new JsoupDataFetcher()),session,"post");
+
+      for (Cookie cookie : response.getCookies()) {
+         BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
+         basicClientCookie.setDomain(".walmart.com.mx");
+         this.cookies.add(basicClientCookie);
+      }
    }
 
    @Override
