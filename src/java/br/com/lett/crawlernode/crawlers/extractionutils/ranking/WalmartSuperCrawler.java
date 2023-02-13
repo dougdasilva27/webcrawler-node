@@ -21,6 +21,8 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +37,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
 
    private static final String HOME_PAGE = "https://super.walmart.com.mx";
    private static final List<String> PROXIES = Arrays.asList(
-      ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_MX,
       ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
       ProxyCollection.SMART_PROXY_MX_HAPROXY

@@ -39,7 +39,7 @@ public class WalmartSuperCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Walmart Super Mexico";
 
    private static final List<String> PROXIES = Arrays.asList(
-      ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_MX,
       ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
       ProxyCollection.SMART_PROXY_MX_HAPROXY
