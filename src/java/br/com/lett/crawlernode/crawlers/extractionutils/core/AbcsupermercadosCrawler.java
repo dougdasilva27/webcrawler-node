@@ -21,6 +21,12 @@ import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,6 +43,7 @@ public class AbcsupermercadosCrawler extends Crawler {
    }
 
    private final String idLoja = getIdLoja();
+
    protected String getIdLoja() {
       return session.getOptions().optString("id_loja");
    }
@@ -83,7 +90,7 @@ public class AbcsupermercadosCrawler extends Crawler {
          String name = productJson.optString("Descricao");
          JSONArray imagesJson = productJson.optJSONArray("Urls");
          List<String> images = imagesJson != null ? CrawlerUtils.scrapImagesListFromJSONArray(imagesJson, "url", null, "", "", session) : null;
-         String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
+         String primaryImage = crawlImages(images);
 
          boolean available = JSONUtils.getIntegerValueFromJSON(productJson, "EstoqueDisponivel", 0) > 0;
          Offers offers = available ? scrapOffers(productJson) : new Offers();
@@ -104,6 +111,80 @@ public class AbcsupermercadosCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String crawlImages(List<String> images) throws IOException {
+      String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
+      String noImage = "https://superabc.com.br/imagens/no-image.jpg";
+
+      byte[] imageBytes = getFileImage(primaryImage);
+
+      if (imageBytes != null) {
+         /**
+          * There are some products that do not have an image in the html, but the api has a link to a broken image.
+          * Through the selectors, even using the web-driver, it is not possible to identify that there is no image.
+          * So to fix I am checking if the image is corrupted.
+          * ex:  https://www.superabc.com.br/linguica-calabresa-rezende-reta-kg--7894904578191/p ,https://www.superabc.com.br/17894904577870-steak-fgo-rezende-bife-100g-/p
+          */
+
+         boolean isValid = Objects.equals(primaryImage, noImage) || checkImage(imageBytes);
+         if (isValid) {
+            return primaryImage;
+         } else {
+            return noImage;
+         }
+      } else {
+         return noImage;
+      }
+
+   }
+
+
+   private boolean checkImage(byte[] imageBytes) {
+
+      ImageInputStream imageInputStream;
+      try {
+         imageInputStream = ImageIO.createImageInputStream(new ByteArrayInputStream(imageBytes));
+
+         Iterator<ImageReader> imageReaders = ImageIO
+            .getImageReaders(imageInputStream);
+         if (!imageReaders.hasNext()) {
+            return false;
+         }
+         ImageReader imageReader = imageReaders.next();
+         imageReader.setInput(imageInputStream);
+         BufferedImage image = imageReader.read(0);
+         if (image == null) {
+            return false;
+         }
+         image.flush();
+         if (imageReader.getFormatName().equals("JPEG")) {
+            imageInputStream.seek(imageInputStream.getStreamPosition() - 2);
+            final byte[] lastTwoBytes = new byte[2];
+            imageInputStream.read(lastTwoBytes);
+            return lastTwoBytes[0] == (byte) 0xff && lastTwoBytes[1] == (byte) 0xd9;
+         }
+      } catch (IOException e) {
+         return false;
+      }
+
+      return true;
+   }
+
+   private byte[] getFileImage(String urlImage) throws IOException {
+      URL url = new URL(urlImage);
+      InputStream in = new BufferedInputStream(url.openStream());
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      byte[] buf = new byte[1024];
+      int n = 0;
+      while (-1 != (n = in.read(buf))) {
+         out.write(buf, 0, n);
+      }
+      out.close();
+      in.close();
+      byte[] response = out.toByteArray();
+
+      return response;
    }
 
    private Offers scrapOffers(JSONObject product) throws OfferException, MalformedPricingException {
