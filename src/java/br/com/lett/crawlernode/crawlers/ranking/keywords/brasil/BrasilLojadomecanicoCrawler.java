@@ -2,12 +2,12 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
-import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.Arrays;
 
@@ -22,26 +22,25 @@ public class BrasilLojadomecanicoCrawler extends CrawlerRankingKeywords {
 
       this.log("Página " + this.currentPage);
 
-      String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
-      String url = "https://busca.lojadomecanico.com.br/busca?q=" + key + "&results_per_page=" + this.pageSize + "&page=" + this.currentPage;
+      String key = this.keywordWithoutAccents.replaceAll(" ", "+");
+      String url = "https://www.lojadomecanico.com.br/busca?q=" + key + "&page=" + this.currentPage;
 
       this.log("Url: " + url);
-
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".neemu-products-container li.nm-product-item");
+      Elements products = this.currentDoc.select(".position-relative .container__showcase");
       pageSize = products.size();
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) setTotalProducts();
          for (Element e : products) {
-            String internalId = e.id().replace("nm-product-", "").trim();
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[name=\"product\"]", "value");
             String internalPid = null;
-            String productUrl = CrawlerUtils.scrapUrl(e, "a[itemprop=\"url\"]", "href", "https:", "www.lojadomecanico.com.br");
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".nm-product-link", true);
-            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "img.nm-product-img", Arrays.asList("src"), "https", "img.lojadomecanico.com.br");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".nm-price-value span", null, false, ',', session, null);
-            boolean isAvailable = CrawlerUtils.scrapStringSimpleInfo(e, "div.out-stock", false) == null;
+            String productUrl = CrawlerUtils.scrapUrl(e, "a.showcase__link-img", "href", "https", "www.lojadomecanico.com.br");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-description a", true);
+            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".img-responsive", Arrays.asList("src"), "https", "img.lojadomecanico.com.br");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "p.price", null, false, ',', session, null);
+            boolean isAvailable = e.selectFirst(".add-to-cart-btn") != null;
             if (!isAvailable) {
                price = null;
             }
@@ -58,12 +57,10 @@ public class BrasilLojadomecanicoCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productRanking);
 
-
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
          }
-
 
       } else {
          this.result = false;
