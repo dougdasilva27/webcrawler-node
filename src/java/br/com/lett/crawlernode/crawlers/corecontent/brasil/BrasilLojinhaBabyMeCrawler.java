@@ -21,7 +21,10 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilLojinhaBabyMeCrawler extends Crawler {
    public BrasilLojinhaBabyMeCrawler(Session session) {
@@ -77,7 +80,7 @@ public class BrasilLojinhaBabyMeCrawler extends Crawler {
          JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
          JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class, new JSONArray());
          List<String> imagesList = new ArrayList<>();
-         for (int i = 1; i < imageArray.length(); i++) {
+         for (int i = 0; i < imageArray.length(); i++) {
             Boolean isMainImage = JSONUtils.getValueRecursive(imageArray, i + ".isMain", Boolean.class);
             if (!isMainImage) {
                String imageList = JSONUtils.getValueRecursive(imageArray, i + ".img", String.class);
@@ -115,7 +118,7 @@ public class BrasilLojinhaBabyMeCrawler extends Crawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-price [id*=product-price] .price", null, true, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-price .old-price .price", null, true, ',', session);
 
-      if(spotlightPrice == null && priceFrom == null){
+      if (spotlightPrice == null && priceFrom == null) {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[data-price-type=\"maxPrice\"] span", null, true, ',', session);
       }
 

@@ -32,7 +32,7 @@ public class BrasilLojinhaBabyMeCrawler extends CrawlerRankingKeywords {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[data-price-box*=product-id]", "data-product-id");
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item-photo", "href");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-name a", true);
-            String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image-wrapper img", Collections.singletonList("src"), "https", "www.lojinhababyandme.com.br").replace("4b21a695c360ef29dc1a3e8e073c7d35","fa0b1991bb146595e0635a88fa579466");
+            String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".product-image-wrapper img", Collections.singletonList("src"), "https", "www.lojinhababyandme.com.br").replace("4b21a695c360ef29dc1a3e8e073c7d35", "fa0b1991bb146595e0635a88fa579466");
             boolean available = e.selectFirst("[data-event=\"addToCart\"]") != null;
             Integer priceInCents = available ? scrapPrice(e) : null;
 
@@ -56,7 +56,7 @@ public class BrasilLojinhaBabyMeCrawler extends CrawlerRankingKeywords {
    private Integer scrapPrice(Element e) {
       Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "[id*=product-price] .price", null, true, ',', session, null);
 
-      if (price == null){
+      if (price == null) {
          price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "[data-price-type=\"maxPrice\"] span", null, true, ',', session, null);
       }
 
