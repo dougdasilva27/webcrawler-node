@@ -126,6 +126,9 @@ public class WalmartSuperCrawler extends Crawler {
    JSONObject getJsonFromHtml(Document doc) {
       String script = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
       JSONArray scriptArray = JSONUtils.stringToJsonArray(script);
+      if (scriptArray == null || scriptArray.isEmpty()) {
+         throw new RuntimeException("Could not find JSON in page");
+      }
       Object json = scriptArray.get(0);
       JSONObject jsonObject = (JSONObject) json;
       return JSONUtils.getValueRecursive(jsonObject, "props.pageProps.initialData.data", JSONObject.class, new JSONObject());

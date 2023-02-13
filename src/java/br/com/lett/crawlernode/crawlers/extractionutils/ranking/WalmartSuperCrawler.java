@@ -100,6 +100,9 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
    private JSONObject getJsonFromHtml(Document doc) {
       String script = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
       JSONArray scriptArray = JSONUtils.stringToJsonArray(script);
+      if (scriptArray == null || scriptArray.isEmpty()) {
+         return new JSONObject();
+      }
       Object json = scriptArray.get(0);
       JSONObject jsonObject = (JSONObject) json;
       return JSONUtils.getValueRecursive(jsonObject, "props.pageProps.initialData.searchResult.itemStacks.0", JSONObject.class, new JSONObject());
