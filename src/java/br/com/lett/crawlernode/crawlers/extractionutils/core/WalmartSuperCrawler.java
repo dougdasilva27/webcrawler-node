@@ -3,15 +3,12 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -28,8 +25,6 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -43,7 +38,7 @@ public class WalmartSuperCrawler extends Crawler {
       ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
       ProxyCollection.SMART_PROXY_MX_HAPROXY
-      );
+   );
    private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString());
 
    public WalmartSuperCrawler(Session session) {
@@ -109,7 +104,7 @@ public class WalmartSuperCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(PROXIES)
          .build();
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request,List.of(new ApacheDataFetcher(), new JsoupDataFetcher()),session,"post");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
 
       for (Cookie cookie : response.getCookies()) {
          BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
@@ -125,7 +120,7 @@ public class WalmartSuperCrawler extends Crawler {
          .setCookies(this.cookies)
          .setProxyservice(PROXIES)
          .build();
-      return CrawlerUtils.retryRequestWithListDataFetcher(request,List.of(new ApacheDataFetcher(), new JsoupDataFetcher()),session,"get");
+      return CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher()), session, "get");
    }
 
    JSONObject getJsonFromHtml(Document doc) {
@@ -141,13 +136,13 @@ public class WalmartSuperCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
       JSONObject json = getJsonFromHtml(doc);
       JSONObject productJson = json.optJSONObject("product");
-      if (productJson.has("usItemId")) {
+      if (!json.isEmpty() && productJson.has("usItemId")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalId = productJson.optString("usItemId");
          String name = productJson.optString("name");
          String primaryImage = JSONUtils.getValueRecursive(productJson, "imageInfo.thumbnailUrl", String.class, null);
          List<String> secondaryImages = crawlSecondaryImages(productJson, primaryImage);
-         CategoryCollection categories = crawlCategories(productJson);
+         List<String> categories = crawlCategories(productJson);
          String description = crawlDescription(json);
          List<String> eans = new ArrayList<>();
          eans.add(internalId);
@@ -172,9 +167,7 @@ public class WalmartSuperCrawler extends Crawler {
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
-
       return products;
-
    }
 
    private Offers crawlOffers(JSONObject json) throws OfferException, MalformedPricingException {
@@ -226,8 +219,11 @@ public class WalmartSuperCrawler extends Crawler {
       List<String> secondaryImages = new ArrayList<>();
       JSONArray images = JSONUtils.getValueRecursive(json, "imageInfo.allImages", JSONArray.class, new JSONArray());
       for (Object objImage : images) {
-         JSONObject image = (JSONObject) objImage;
-         secondaryImages.add(image.optString("url"));
+         JSONObject imageObject = (JSONObject) objImage;
+         String image = imageObject.optString("url", "");
+         if (!image.isEmpty()) {
+            secondaryImages.add(image);
+         }
       }
       if (primaryImage != null) {
          secondaryImages.remove(primaryImage);
@@ -239,36 +235,26 @@ public class WalmartSuperCrawler extends Crawler {
       CategoryCollection categories = new CategoryCollection();
       JSONArray pathsCategories = JSONUtils.getValueRecursive(json, "category.path", JSONArray.class, new JSONArray());
       for (Object objCategory : pathsCategories) {
-         JSONObject catrgory = (JSONObject) objCategory;
-         categories.add(catrgory.optString("name"));
+         JSONObject categoryObject = (JSONObject) objCategory;
+         String category = categoryObject.optString("name", "");
+         if (!category.isEmpty()) {
+            categories.add(category);
+         }
       }
       return categories;
    }
 
    private String crawlDescription(JSONObject json) {
       StringBuilder description = new StringBuilder();
-//      String longDescription = json.getString("longDescription");
-//      longDescription = JSONUtils.
-//      if (json.has("longDescription")) {
-//         description.append("<div id=\"desc\"> <h3> Descripción </h3>");
-//         description.append(json.get("longDescription") + "</div>");
-//      }
-//      if (json.has("shortDescription")) {
-//         description.append("<div id=\"desc\"> <h4> Descripción </h4>");
-//         description.append(json.get("longDescription") + "</div>");
-//      }
-
+      String longDescription = JSONUtils.getValueRecursive(json, "idml.longDescription", String.class, "");
+      String shortDescription = JSONUtils.getValueRecursive(json, "idml.shortDescription", String.class, "");
+      if (longDescription != null && !longDescription.isEmpty()) {
+         description.append(longDescription);
+      }
+      if (shortDescription != null && !shortDescription.isEmpty()) {
+         description.append(longDescription);
+      }
       return description.toString();
    }
-
-   private void setAPIDescription(JSONObject attributesMap, StringBuilder desc) {
-      if (attributesMap.has("attrDesc") && attributesMap.has("value")) {
-         desc.append("<div>");
-         desc.append("<span float=\"left\">" + attributesMap.get("attrDesc") + "&nbsp </span>");
-         desc.append("<span float=\"right\">" + attributesMap.get("value") + " </span>");
-         desc.append("</div>");
-      }
-   }
-
 }
 
