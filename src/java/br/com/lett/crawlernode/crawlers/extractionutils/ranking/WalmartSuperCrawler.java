@@ -14,6 +14,8 @@ import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import com.google.common.net.HttpHeaders;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -34,10 +36,10 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
    private static final String HOME_PAGE = "https://super.walmart.com.mx";
    private static final List<String> PROXIES = Arrays.asList(
       ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
       ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY);
+      ProxyCollection.SMART_PROXY_MX_HAPROXY
+   );
 
    @Override
    protected void processBeforeFetch() {
@@ -87,8 +89,12 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setProxyservice(PROXIES)
          .build();
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request,List.of(new ApacheDataFetcher(), new JsoupDataFetcher()),session,"post");
-      this.cookies = response.getCookies();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
+      for (Cookie cookie : response.getCookies()) {
+         BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
+         basicClientCookie.setDomain(".walmart.com.mx");
+         this.cookies.add(basicClientCookie);
+      }
    }
 
    private JSONObject getJsonFromHtml(Document doc) {
@@ -99,14 +105,15 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
       return JSONUtils.getValueRecursive(jsonObject, "props.pageProps.initialData.searchResult.itemStacks.0", JSONObject.class, new JSONObject());
    }
 
-   private JSONObject fetchJSONArray(String url) {
+   @Override
+   protected Document fetchDocument(String url) {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setProxyservice(PROXIES)
          .setCookies(this.cookies)
          .build();
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request,List.of(new ApacheDataFetcher(), new JsoupDataFetcher()),session,"get");
-      return getJsonFromHtml(Jsoup.parse(response.getBody()));
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher()), session, "get");
+      return Jsoup.parse(response.getBody());
    }
 
    @Override
@@ -115,8 +122,9 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
       String url = "https://super.walmart.com.mx/search?q=" + this.keywordEncoded + "&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
+      this.currentDoc = fetchDocument(url);
 
-      JSONObject search = fetchJSONArray(url);
+      JSONObject search = getJsonFromHtml(this.currentDoc);
       if (this.totalProducts == 0) {
          this.totalProducts = search.optInt("count", 0);
       }
@@ -132,8 +140,9 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
                String internalId = product.optString("usItemId");
                String name = product.optString("name");
                String imageUrl = product.optString("image");
-               int price = product.optInt("price", 0) * 100;
+               boolean isSponsored = product.opt("sponsoredProduct") != null;
                boolean isAvailable = product.optString("availabilityStatusDisplayValue", "").equals("In stock");
+               Integer price = isAvailable ? product.optInt("price", 0) * 100 : null;
 
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
@@ -142,6 +151,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
                   .setPriceInCents(price)
                   .setAvailability(isAvailable)
                   .setImageUrl(imageUrl)
+                  .setIsSponsored(isSponsored)
                   .build();
 
                saveDataProduct(productRanking);
