@@ -125,7 +125,7 @@ public class WalmartSuperCrawler extends Crawler {
          .setCookies(this.cookies)
          .setProxyservice(PROXIES)
          .build();
-      return CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+      return CrawlerUtils.retryRequestWithListDataFetcher(request,List.of(new ApacheDataFetcher(), new JsoupDataFetcher()),session,"get");
    }
 
    JSONObject getJsonFromHtml(Document doc) {

@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -86,7 +87,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setProxyservice(PROXIES)
          .build();
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request,List.of(new ApacheDataFetcher(), new JsoupDataFetcher()),session,"post");
       this.cookies = response.getCookies();
    }
 
@@ -104,7 +105,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
          .setProxyservice(PROXIES)
          .setCookies(this.cookies)
          .build();
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request,List.of(new ApacheDataFetcher(), new JsoupDataFetcher()),session,"get");
       return getJsonFromHtml(Jsoup.parse(response.getBody()));
    }
 
