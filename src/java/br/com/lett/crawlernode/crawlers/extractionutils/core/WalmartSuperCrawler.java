@@ -127,7 +127,7 @@ public class WalmartSuperCrawler extends Crawler {
       String script = CrawlerUtils.scrapScriptFromHtml(doc, "#__NEXT_DATA__");
       JSONArray scriptArray = JSONUtils.stringToJsonArray(script);
       if (scriptArray == null || scriptArray.isEmpty()) {
-         new JSONObject();
+        return new JSONObject();
       }
       Object json = scriptArray.get(0);
       JSONObject jsonObject = (JSONObject) json;
