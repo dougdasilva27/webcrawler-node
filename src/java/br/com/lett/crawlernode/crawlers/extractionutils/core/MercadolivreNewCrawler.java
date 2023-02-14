@@ -65,7 +65,6 @@ public class MercadolivreNewCrawler {
                                      RatingsReviews ratingReviews
    ) throws OfferException, MalformedPricingException, MalformedProductException {
       Product product = null;
-      //if (){}
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       boolean availableToBuy = isAvailable(doc);
