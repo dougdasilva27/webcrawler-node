@@ -58,7 +58,7 @@ public class EspanaAlcampoCrawler extends Crawler {
                webdriver.terminate();
             }
          }
-      } while (!success && attempts++ < proxies.size());
+      } while (!success && attempts++ < (proxies.size() - 1));
 
       return doc;
 

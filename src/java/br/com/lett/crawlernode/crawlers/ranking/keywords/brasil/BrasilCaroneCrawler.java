@@ -74,7 +74,7 @@ public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
             Logging.printLogWarn(logger, "Página não capturada");
          }
 
-      } while (!sucess && attempt++ < proxies.size());
+      } while (!sucess && attempt++ < (proxies.size() - 1));
 
       return doc;
    }
