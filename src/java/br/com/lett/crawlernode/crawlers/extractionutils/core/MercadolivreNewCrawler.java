@@ -295,9 +295,10 @@ public class MercadolivreNewCrawler {
       boolean isMainRetailer;
 
       isMainRetailer = checkIsMainRetailer(sellerFullName);
+      Double priceInMainOffer = findSpotlightPrice(doc);
 
-      if (isMainRetailer || allow3PSellers) {
-         Pricing pricing = scrapPricing(doc);
+      if ((isMainRetailer || allow3PSellers) && priceInMainOffer != 0.0) {
+         Pricing pricing = scrapPricing(doc, priceInMainOffer);
          List<String> sales = scrapSales(doc);
 
          String currentSeller = sellerFullName;
@@ -358,6 +359,10 @@ public class MercadolivreNewCrawler {
       if (sellersPageUrl == null) {
          sellersPageUrl = CrawlerUtils.scrapUrl(doc, ".ui-pdp-products__list a", "href", "https", "www.mercadolivre.com.br");
       }
+      if (sellersPageUrl == null) {
+         sellersPageUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".ui-pdp-actions__container.ui-pdp-actions__container--one-element button", "formaction"), "https", "www.mercadolivre.com.br");
+      }
+
       if (sellersPageUrl != null) {
          String nextUrl = sellersPageUrl;
 
@@ -440,6 +445,28 @@ public class MercadolivreNewCrawler {
       }
 
       return sales;
+   }
+
+   private Pricing scrapPricing(Element doc, Double spotlightPrice) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "del.price-tag", null, false, ',', session);
+      if (priceFrom == null) {
+         priceFrom = scrapPricingFromSellersPage(doc);
+         if (priceFrom == spotlightPrice) {
+            priceFrom = null;
+         }
+      }
+
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      BankSlip bankTicket = BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      return PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankTicket)
+         .build();
    }
 
    private Pricing scrapPricing(Element doc) throws MalformedPricingException {
