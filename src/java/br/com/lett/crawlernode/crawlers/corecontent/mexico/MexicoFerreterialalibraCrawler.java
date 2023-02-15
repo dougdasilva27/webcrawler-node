@@ -39,7 +39,7 @@ public class MexicoFerreterialalibraCrawler extends Crawler {
       if (isProductPage(doc)) {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".sku_wrapper .sku", true);
-         String internalPid = crawlInternalId(doc);
+         String internalPid = crawlInternalPid(doc);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title.entry-title", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".ct-image-container", Collections.singletonList("href"), "https", "ferreterialalibra.com");
          List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".flexy-pills li span img", Collections.singletonList("src"), "https", "ferreterialalibra.com", primaryImage);
@@ -71,9 +71,9 @@ public class MexicoFerreterialalibraCrawler extends Crawler {
       return doc.selectFirst(".ct-container-full .product-entry-wrapper") != null;
    }
 
-   private String crawlInternalId(Element e) {
+   private String crawlInternalPid(Element e) {
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product.type-product", "id");
-      if (internalId != null) {
+      if (internalId != null && internalId.contains("-")) {
          internalId = internalId.split("-")[1];
       }
       return internalId;

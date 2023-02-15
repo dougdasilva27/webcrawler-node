@@ -63,7 +63,7 @@ public class MexicoFerreterialalibraCrawler extends CrawlerRankingKeywords {
 
    private String crawlInternaPid(Element e) {
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "id");
-      if (internalId != null) {
+      if (internalId != null && internalId.contains("-")) {
          internalId = internalId.split("-")[1];
       }
       return internalId;
