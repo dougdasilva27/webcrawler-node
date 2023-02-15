@@ -57,15 +57,13 @@ public class BrasilRennerCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
-      Response response;
-      do {
-         Request request = Request.RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setProxyservice(List.of(ProxyCollection.BUY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.SMART_PROXY_BR))
-            .build();
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setProxyservice(List.of(ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.BUY))
+         .build();
 
-         response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
-      } while (!response.isSuccess());
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
+
       return response;
    }
 
