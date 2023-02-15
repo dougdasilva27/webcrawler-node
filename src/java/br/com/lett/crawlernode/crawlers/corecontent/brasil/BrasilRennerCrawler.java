@@ -21,6 +21,7 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -87,8 +88,10 @@ public class BrasilRennerCrawler extends Crawler {
                String variationName = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".ProductAttributes_inputCheckbox__5Y371", "data-name");
                String productName = displayName + " " + variationName;
                boolean available = !productJson.optBoolean("outOfStock");
+               RatingsReviews ratingsReviews = ratingsReviews(productJson);
                JSONObject productResponse = fetchProductResponse(internalId, internalPid);
                String primaryImage = getPrimaryImage(productResponse);
+               List<String> secondaryImages = getSecondaryImages(productResponse);
                Offers offers = available ? scrapOffers(productResponse, internalId, internalPid) : new Offers();
 
                Product product = ProductBuilder.create()
@@ -97,9 +100,10 @@ public class BrasilRennerCrawler extends Crawler {
                   .setInternalPid(internalPid)
                   .setName(productName)
                   .setPrimaryImage(primaryImage)
-                  //.setSecondaryImages(secondaryImages)
+                  .setSecondaryImages(secondaryImages)
                   .setDescription(description)
                   .setCategories(categories)
+                  .setRatingReviews(ratingsReviews)
                   .setOffers(offers)
                   .build();
                products.add(product);
@@ -121,6 +125,22 @@ public class BrasilRennerCrawler extends Crawler {
          }
       }
       return primaryImage;
+   }
+
+   private List<String> getSecondaryImages(JSONObject object) {
+      JSONArray mediaSets = JSONUtils.getValueRecursive(object, "mediaSets", JSONArray.class);
+      JSONObject images;
+      List<String> secondaryImages = new ArrayList<>();
+      if (mediaSets != null && !mediaSets.isEmpty()) {
+         for (int i = 0; i < mediaSets.length(); i++) {
+            images = (JSONObject) mediaSets.opt(i);
+            secondaryImages.add(images.optString("largeImageUrl"));
+         }
+      }
+      if (secondaryImages.size() > 0) {
+         secondaryImages.remove(0);
+      }
+      return secondaryImages;
    }
 
    private String getDescription(JSONObject object) {
@@ -204,5 +224,18 @@ public class BrasilRennerCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   private RatingsReviews ratingsReviews(JSONObject object) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      JSONObject review = JSONUtils.getValueRecursive(object, "review", JSONObject.class);
+      Integer totalNumOfEvaluations = review.optInt("count");
+      Double avgRating = review.optDouble("average");
+
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+
+      return ratingReviews;
    }
 }
