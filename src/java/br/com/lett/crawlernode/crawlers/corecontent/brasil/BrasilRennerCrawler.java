@@ -160,7 +160,7 @@ public class BrasilRennerCrawler extends Crawler {
 
    private JSONObject fetchProductResponse(String internalId, String internalPid) {
       String urlVariation = "https://www.lojasrenner.com.br/rest/model/lrsa/api/CatalogActor/refreshProductPage?skuId=" + internalId + "&productId=" + internalPid;
-      Request request = Request.RequestBuilder.create().setUrl(urlVariation).build();
+      Request request = Request.RequestBuilder.create().setUrl(urlVariation).setProxyservice(List.of(ProxyCollection.LUMINATI_SERVER_BR)).build();
       return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
    }
 
