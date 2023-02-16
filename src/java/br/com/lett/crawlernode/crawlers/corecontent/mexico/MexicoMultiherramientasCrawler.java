@@ -58,6 +58,7 @@ public class MexicoMultiherramientasCrawler extends Crawler {
          String internalId = CommonMethods.getLast(session.getOriginalURL().split("="));
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".exzoom_img_ul > li > img", Arrays.asList("src"), "https", "multiherramientas.mx");
          List<String> secondaryImages = getSecondaryImages(document);
+         String description = CrawlerUtils.scrapSimpleDescription(document,Arrays.asList(".col-md-6.m-4"));
          boolean available = document.selectFirst(".text-success") != null;
          Offers offers = available ? scrapOffers(document) : new Offers();
 
@@ -68,7 +69,7 @@ public class MexicoMultiherramientasCrawler extends Crawler {
             .setName(productName)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
-            .setDescription(productName)
+            .setDescription(description)
             .setOffers(offers)
             .build();
          products.add(product);
