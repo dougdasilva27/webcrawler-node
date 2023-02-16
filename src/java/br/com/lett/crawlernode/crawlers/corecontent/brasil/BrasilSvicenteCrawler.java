@@ -112,8 +112,8 @@ public class BrasilSvicenteCrawler extends Crawler {
          .setInstallmentPrice(spotlightPrice)
          .build());
 
-      Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.HIPERCARD.toString(),
-         Card.DINERS.toString(), Card.HIPER.toString(), Card.ELO.toString(), Card.SOROCRED.toString(), Card.AMEX.toString());
+      Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.GOOD_CARD.toString(), Card.ELO.toString(), Card.HIPERCARD.toString(), Card.MASTERCARD.toString(),
+         Card.DINERS.toString(), Card.AMEX.toString(), Card.ALELO.toString(), Card.VR_CARD.toString(), Card.FACIL.toString());
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
