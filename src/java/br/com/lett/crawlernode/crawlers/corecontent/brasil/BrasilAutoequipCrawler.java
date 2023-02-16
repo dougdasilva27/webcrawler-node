@@ -107,8 +107,8 @@ public class BrasilAutoequipCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal .acoes-produto .preco-promocional", null, false, '.', this.session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal .acoes-produto .preco-venda", null, false, '.', this.session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal .acoes-produto .preco-promocional", null, false, ',', this.session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal .acoes-produto .preco-venda", null, false, ',', this.session);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
