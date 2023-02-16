@@ -36,6 +36,7 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
       int attempts = 0;
       do {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempts), session);
+         webdriver.waitLoad(10000);
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
       }
       while (doc == null && attempts++ < 3);
@@ -44,7 +45,7 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 10);
+      WebDriverWait wait = new WebDriverWait(driver, 15);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
@@ -65,7 +66,7 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".options > button", "data-fkproduct");
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, "div > span.label > a", true);
             String productUrl = CrawlerUtils.scrapUrl(product, "div > span.label > a", "href", "https", "multiherramientas.mx");
-            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".PRODUCT_IMAGE_CONTAINER > img", "src");
+            String imageUrl = getImageUrl(product);
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".price > a > span.final", null, false, '.', session, null);
             boolean available = price > 0;
 
@@ -93,6 +94,19 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
    @Override
    protected boolean hasNextPage() {
       return !this.currentDoc.select("#btn-showmore > button").isEmpty();
+   }
+
+   private String getImageUrl(Element element) {
+      String imageUrl = null;
+      String[] arrayImage;
+      String selectorImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "div[class=\"adv-product produc \"]  > figure.text-center", "style");
+      if(selectorImage != null && !selectorImage.isEmpty() ){
+         arrayImage = selectorImage.split(" ");
+         if(arrayImage.length > 1 && arrayImage != null){
+            imageUrl = arrayImage[1].replace("url(/","").replace(")","");
+         }
+      }
+      return CrawlerUtils.completeUrl(imageUrl,"https","multiherramientas.mx");
    }
 
    private Document fetchNextPage() {
