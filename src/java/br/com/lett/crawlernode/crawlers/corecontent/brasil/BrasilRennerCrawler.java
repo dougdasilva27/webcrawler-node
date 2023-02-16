@@ -119,7 +119,7 @@ public class BrasilRennerCrawler extends Crawler {
       if (mediaSets != null && !mediaSets.isEmpty()) {
          JSONObject images = (JSONObject) mediaSets.opt(0);
          if (images != null && !images.isEmpty()) {
-            primaryImage = "https:" + images.optString("largeImageUrl");
+            primaryImage = CrawlerUtils.completeUrl(images.optString("largeImageUrl"),"https","");
          }
       }
       return primaryImage;
@@ -132,7 +132,7 @@ public class BrasilRennerCrawler extends Crawler {
       if (mediaSets != null && !mediaSets.isEmpty()) {
          for (int i = 0; i < mediaSets.length(); i++) {
             images = (JSONObject) mediaSets.opt(i);
-            secondaryImages.add(images.optString("largeImageUrl"));
+            secondaryImages.add(CrawlerUtils.completeUrl(images.optString("largeImageUrl"),"https",""));
          }
       }
       if (secondaryImages.size() > 0) {
