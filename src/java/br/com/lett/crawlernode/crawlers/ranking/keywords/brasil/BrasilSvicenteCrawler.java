@@ -73,7 +73,7 @@ public class BrasilSvicenteCrawler extends CrawlerRankingKeywords {
    }
 
    private Integer scrapPrice(Element product) {
-      String spotlightPriceStr = CrawlerUtils.scrapStringSimpleInfo(product, ".productPrice.productPrice--flag .productPrice__price", true);
+      String spotlightPriceStr = CrawlerUtils.scrapStringSimpleInfo(product, ".productPrice__priceContainer .productPrice__price", true);
       if (spotlightPriceStr != null && !spotlightPriceStr.isEmpty()) {
          return CommonMethods.stringPriceToIntegerPrice(spotlightPriceStr, ',', null);
       }
