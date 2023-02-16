@@ -8,12 +8,10 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Collections;
 
 public class BrasilSvicenteCrawler extends CrawlerRankingKeywords {
    public BrasilSvicenteCrawler(Session session) {
@@ -31,7 +29,7 @@ public class BrasilSvicenteCrawler extends CrawlerRankingKeywords {
       if (products != null && !products.isEmpty()) {
          for (Element e : products) {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".quantity__maxorder.quantity__maxorder--producttile", "data-pid");
-            String productUrl = CrawlerUtils.scrapUrl(e, ".productTile__body .productTile__name", "data-product-url", "https:", HOME_PAGE);
+            String productUrl = scrapUrl(e);
             String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".productTile__name", "title");
             String image = scrapImage(e);
             boolean available = scrapAvailability(e);
@@ -52,6 +50,14 @@ public class BrasilSvicenteCrawler extends CrawlerRankingKeywords {
          }
       }
 
+   }
+
+   private String scrapUrl(Element product) {
+      String suffixUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".productTile__body .productTile__name", "data-product-url");
+      if (suffixUrl != null && !suffixUrl.isEmpty()) {
+         return HOME_PAGE + suffixUrl;
+      }
+      return null;
    }
 
    private boolean scrapAvailability(Element product) {
