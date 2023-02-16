@@ -177,7 +177,7 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
 
       for (badgeKey in badges.keySet()) {
          val badge = badges.optJSONObject(badgeKey);
-         if (badge.optString("type") != null && badge.optString("value") != null) {
+         if (badge != null && badge.optString("type") != null && badge.optString("value") != null) {
             sales.add(badge.optString("type") + ": " + badge.optString("value"))
          }
       }
@@ -189,6 +189,13 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
       var spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".primary", null, false, ',', session)
       var priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".secondary", null, false, ',', session)
 
+      if(spotlightPrice == null){
+         spotlightPrice = ScrapSpotlightPrice(doc)
+      }
+      if(priceFrom == null){
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".m2", null, false, ',', session)
+      }
+
       val bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null)
       val creditCards: CreditCards = scrapCreditCards(spotlightPrice)
 
@@ -198,6 +205,17 @@ open class SodimacCrawler(session: Session?) : Crawler(session) {
          .setBankSlip(bankSlip)
          .setCreditCards(creditCards)
          .build()
+   }
+
+   private fun ScrapSpotlightPrice(doc: Document): Double? {
+
+      var spotlightPrice1 = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price > div > div > span:nth-child(2)", null, false, ',', session)
+      var spotlightPrice2 = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price > div > div > span:nth-child(3)", null, false, ',', session)
+      if(spotlightPrice1 !== null && spotlightPrice2 !== null){
+         return  spotlightPrice1 + spotlightPrice2
+      }
+
+      return null;
    }
 
    protected fun scrapCreditCards(spotlightPrice: Double?): CreditCards {
