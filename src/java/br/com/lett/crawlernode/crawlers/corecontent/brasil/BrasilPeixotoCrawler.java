@@ -108,7 +108,7 @@ public class BrasilPeixotoCrawler extends Crawler {
 
       do {
          getCookiesFromWD(proxies.get(attemp));
-      } while (this.cookies.isEmpty() && attemp++ < proxies.size());
+      } while (this.cookies.isEmpty() && attemp++ < (proxies.size() -1));
 
       Map<String, String> headers = new HashMap<>();
       headers.put("authority", "www.peixoto.com.br");

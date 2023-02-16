@@ -46,7 +46,7 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
             Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
             Logging.printLogWarn(logger, "Page not captured");
          }
-      } while (!succes && attemp++ < proxies.size());
+      } while (!succes && attemp++ < (proxies.size() - 1));
       return doc;
    }
 
