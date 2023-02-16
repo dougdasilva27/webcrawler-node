@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.RankingProductBuilder
 import br.com.lett.crawlernode.core.session.Session
@@ -65,7 +66,7 @@ class BrasilRennerCrawler(session: Session) : CrawlerRankingKeywords(session) {
    }
 
    private fun scrapPrice(element: JSONObject): Int? {
-      if(element.has("salePriceCents")) {
+      if (element.has("salePriceCents")) {
          return element.optInt("salePriceCents")
       } else {
          return element.optInt("priceCents")
@@ -77,20 +78,22 @@ class BrasilRennerCrawler(session: Session) : CrawlerRankingKeywords(session) {
    }
 
    private fun requestApi(): JSONObject {
-      val url = "https://recs.richrelevance.com/rrserver/api/find/v1/24f07d816ef94d7f" +
-         "?log=true&lang=pt&placement=search_page.find&ssl=true&mm=3%3C90%25" +
-         "&query=$keywordEncoded" +
-         "&rows=$pageSize" +
-         "&start=${(currentPage - 1) * pageSize}"
+      val url =
+         "https://recs.richrelevance.com/rrserver/api/find/v1/24f07d816ef94d7f?query=$keywordEncoded" + "&placement=search_page.find&mm=5%3C90%25&sort=&start=${(currentPage - 1) * pageSize}" + "&rows=$pageSize" + "&log=true&ssl=true&lang=pt&rcs=eF5j4cotK8lMETA0NzfVNdQ1ZClN9kg2M09KMjBP1jUwMDPRNUk2StVNTgJxk80MLdKMkszNE1MBmHAOwA"
 
       val headers: MutableMap<String, String> = HashMap()
       headers["Content-Type"] = "application/json"
 
-      val request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build()
+      val request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setProxyservice(listOf(ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.BUY))
+         .mustSendContentEncoding(false).build()
 
       val json = CrawlerUtils.stringToJson(dataFetcher[session, request].body)
 
       return json.optJSONArray("placements").optJSONObject(0)
+   }
+
+   override fun hasNextPage(): Boolean {
+      return true
    }
 
    fun setTotalProducts(search: JSONObject) {
