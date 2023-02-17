@@ -60,11 +60,12 @@ public class MexicoFerrePatCrawler extends CrawlerRankingKeywords {
       if (json != null && !json.isEmpty() && json.has("products")) {
          for (Object object : json.optJSONArray("products")) {
             Element productHtml = Jsoup.parse(object.toString());
-            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(productHtml,".product-card a","href");
-            String internalId = CommonMethods.getLast(productUrl.split("/"));
-            String name = CrawlerUtils.scrapStringSimpleInfo(productHtml,".brand",true);
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(productHtml,".new-price",null,true,'.',session,null);
-            String image = CrawlerUtils.scrapStringSimpleInfoByAttribute(productHtml,"img","src");
+
+            String internalId = getInternalId(productHtml);
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(productHtml, ".product-card a", "href");
+            String name = CrawlerUtils.scrapStringSimpleInfo(productHtml, ".description span", true);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(productHtml, ".new-price", null, true, '.', session, null);
+            String image = CrawlerUtils.scrapStringSimpleInfoByAttribute(productHtml, "img", "src");
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setInternalPid(internalId)
@@ -78,9 +79,21 @@ public class MexicoFerrePatCrawler extends CrawlerRankingKeywords {
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
-
          }
       }
+   }
 
+   private String getInternalId(Element div) {
+      String metaInfoStr = CrawlerUtils.scrapStringSimpleInfoByAttribute(div, ".product-card a", "data-info-meta");
+      if (metaInfoStr != null && !metaInfoStr.isEmpty()) {
+          JSONObject meta_info = CrawlerUtils.stringToJson(metaInfoStr);
+          return meta_info.optString("id");
+      }
+      return null;
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      return true;
    }
 }
