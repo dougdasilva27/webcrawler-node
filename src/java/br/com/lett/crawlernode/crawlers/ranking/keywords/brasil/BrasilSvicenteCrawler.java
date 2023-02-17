@@ -23,7 +23,7 @@ public class BrasilSvicenteCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       int start = (this.currentPage - 1) * 24;
-      String url = HOME_PAGE + "/on/demandware.store/Sites-SaoVicente-Site/pt_BR/Search-UpdateGrid?q=" + this.keywordEncoded + "&start=" + start + "&sz=24";
+      String url = HOME_PAGE + "/on/demandware.store/Sites-SaoVicente-Site/pt_BR/Search-UpdateGrid?q=" + this.keywordEncoded + "&start=" + start + "&sz=24&selectedUrl";
       this.currentDoc = fetchDocument(url);
       Elements products = this.currentDoc.select(".searchResults__productGrid__product");
       if (products != null && !products.isEmpty()) {
