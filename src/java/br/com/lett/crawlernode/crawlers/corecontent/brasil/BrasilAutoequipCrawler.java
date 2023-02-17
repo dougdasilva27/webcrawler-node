@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -15,11 +16,13 @@ import models.Offers;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class BrasilAutoequipCrawler extends Crawler {
 
@@ -38,33 +41,49 @@ public class BrasilAutoequipCrawler extends Crawler {
 
       if (isProductPage(doc)) {
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".principal .acoes-produto", "data-produto-id");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nome-produto.titulo", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteiner-imagem img", Collections.singletonList("src"), "https", "www.autoequip.com.br");
-         List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".thumbs-vertical  #carouselImagem.flexslider .miniaturas.slides li img", Collections.singletonList("src"), "https", "www.autoequip.com.br", primaryImage);
-         String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList("#descricao"));
-         boolean availability = doc.selectFirst(".indisponivel") == null;
-         Offers offers = availability ? scrapOffers(doc) : new Offers();
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li a", true);
-         List<String> eans = crawlEans(doc);
+         Elements variations = doc.select(".atributo-comum li");
+         if (variations.size() > 0) {
+            for (Element variation : variations) {
+               String variationId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, ".atributo-item", "data-variacao-id");
+               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".acoes-produto[data-variacao-id='" + variationId + "']", "data-produto-id");
+               products.add(extractProduct(doc, internalId));
+            }
+         } else {
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".acoes-produto", "data-produto-id");
+            products.add(extractProduct(doc, internalId));
+         }
 
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setName(name)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(images)
-            .setCategories(categories)
-            .setDescription(description)
-            .setEans(eans)
-            .setOffers(offers)
-            .build();
-
-         products.add(product);
 
       }
 
       return products;
+   }
+
+   private Product extractProduct(Document doc, String internalId) throws MalformedPricingException, OfferException, MalformedProductException {
+      String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".codigo-produto [itemprop='sku']", true);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nome-produto.titulo", true);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteiner-imagem img", Collections.singletonList("src"), "https", "www.autoequip.com.br");
+      List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".thumbs-vertical  #carouselImagem.flexslider .miniaturas.slides li img", Collections.singletonList("src"), "https", "www.autoequip.com.br", primaryImage);
+      String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList("#descricao"));
+      boolean availability = doc.selectFirst(".indisponivel") == null;
+      Offers offers = availability ? scrapOffers(doc) : new Offers();
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li a", true);
+      List<String> eans = crawlEans(doc);
+
+      Product product = ProductBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setInternalId(internalId)
+         .setInternalPid(internalPid)
+         .setName(name)
+         .setPrimaryImage(primaryImage)
+         .setSecondaryImages(images)
+         .setCategories(categories)
+         .setDescription(description)
+         .setEans(eans)
+         .setOffers(offers)
+         .build();
+
+      return product;
    }
 
    private List<String> crawlEans(Document doc) {
@@ -80,11 +99,9 @@ public class BrasilAutoequipCrawler extends Crawler {
       return doc.selectFirst(".pagina-produto") != null;
    }
 
-   private String crawlInternalPid(Element e) {
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product.type-product", "id");
-      if (internalId != null && internalId.contains("-")) {
-         internalId = internalId.split("-")[1];
-      }
+   private String crawlInternalId(Document doc) {
+      String internalId = null;
+      Pattern pattern = Pattern.compile("producto/\\([0-9]+)");
       return internalId;
    }
 

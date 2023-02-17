@@ -36,15 +36,15 @@ public class BrasilAutoequipCrawler extends CrawlerRankingKeywords {
          for (Element e : products) {
             String imgUrl = CrawlerUtils.scrapUrl(e, ".imagem-produto img", "src", "https", "www.autoequip.com.br");
             String productUrl = CrawlerUtils.scrapUrl(e, ".listagem-item a", "href", "https", "www.autoequip.com.br");
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".trustvox-stars","data-trustvox-product-code");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfo(e, ".produto-sku",true);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".nome-produto", true);
             Integer priceInCents = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".preco-promocional", "data-sell-price", true, '.', session, null);
             boolean availability = e.select(".produto-avise").size() == 0 && priceInCents != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalId)
-               .setInternalPid(null)
+               .setInternalId(null)
+               .setInternalPid(internalPid)
                .setImageUrl(imgUrl)
                .setName(name)
                .setPriceInCents(priceInCents)
