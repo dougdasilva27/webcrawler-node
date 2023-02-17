@@ -39,7 +39,7 @@ public class MexicoMultiherramientasCrawler extends Crawler {
    protected Response fetchResponse() {
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
-         .setProxyservice(List.of(ProxyCollection.BUY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NETNUT_RESIDENTIAL_MX))
+         .setProxyservice(List.of(ProxyCollection.BUY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NETNUT_RESIDENTIAL_MX,ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
          .build();
 
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
