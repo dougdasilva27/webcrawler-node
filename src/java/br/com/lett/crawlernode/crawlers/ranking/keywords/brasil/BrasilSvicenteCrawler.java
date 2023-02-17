@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -8,10 +10,14 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import com.google.common.net.HttpHeaders;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 
 public class BrasilSvicenteCrawler extends CrawlerRankingKeywords {
    public BrasilSvicenteCrawler(Session session) {
@@ -19,6 +25,40 @@ public class BrasilSvicenteCrawler extends CrawlerRankingKeywords {
    }
 
    private static final String HOME_PAGE = "https://www.svicente.com.br";
+
+   @Override
+   protected void processBeforeFetch() {
+      HashMap<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.ACCEPT, "application/json, text/javascript, */*; q=0.01");
+      headers.put(HttpHeaders.REFERER, "https://www.svicente.com.br/pagina-inicial");
+      headers.put("authority", "www.svicente.com.br");
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.svicente.com.br/pagina-inicial")
+         .setHeaders(headers)
+         .build();
+      Response response = this.dataFetcher.get(session, request);
+      if (response.getCookies() != null && !response.getCookies().isEmpty()) {
+         for (Cookie cookie : response.getCookies()) {
+            BasicClientCookie cookieAdd = new BasicClientCookie(cookie.getName(), cookie.getValue());
+            cookieAdd.setDomain("www.svicente.com.br");
+            cookieAdd.setPath("/");
+            this.cookies.add(cookieAdd);
+         }
+
+      }
+      String store = session.getOptions().optString("store");
+
+      BasicClientCookie dw_store = new BasicClientCookie("dw_store", store);
+      dw_store.setDomain("www.svicente.com.br");
+      dw_store.setPath("/");
+      this.cookies.add(dw_store);
+
+
+      BasicClientCookie has_selected_store = new BasicClientCookie("hasSelectedStore", store);
+      has_selected_store.setDomain("www.svicente.com.br");
+      has_selected_store.setPath("/");
+      this.cookies.add(has_selected_store);
+   }
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {

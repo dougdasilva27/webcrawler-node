@@ -17,6 +17,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -56,16 +57,38 @@ public class BrasilSvicenteCrawler extends Crawler {
    }
 
    @Override
+   public void handleCookiesBeforeFetch() {
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.svicente.com.br/pagina-inicial")
+         .setHeaders(this.headers)
+         .build();
+      Response response = this.dataFetcher.get(session, request);
+      if (response.getCookies() != null && !response.getCookies().isEmpty()) {
+         for (Cookie cookie : response.getCookies()) {
+            BasicClientCookie cookieAdd = new BasicClientCookie(cookie.getName(), cookie.getValue());
+            cookieAdd.setDomain("www.svicente.com.br");
+            cookieAdd.setPath("/");
+            this.cookies.add(cookieAdd);
+         }
+
+      }
+      String store = session.getOptions().optString("store");
+
+      BasicClientCookie dw_store = new BasicClientCookie("dw_store", store);
+      dw_store.setDomain("www.svicente.com.br");
+      dw_store.setPath("/");
+      this.cookies.add(dw_store);
+
+
+      BasicClientCookie has_selected_store = new BasicClientCookie("hasSelectedStore", store);
+      has_selected_store.setDomain("www.svicente.com.br");
+      has_selected_store.setPath("/");
+      this.cookies.add(has_selected_store);
+   }
+
+   @Override
    protected Response fetchResponse() {
 
-      BasicClientCookie cookieSid = new BasicClientCookie("sid", "ZdgS92V9jyexhnhyBzftwYcvNodFVi0wLhw");
-      cookieSid.setDomain("www.svicente.com.br");
-      cookieSid.setPath("/");
-      this.cookies.add(cookieSid);
-      BasicClientCookie cookieDwsid = new BasicClientCookie("dwsid", "fIaJ9ooIVwT_eaPNcUmwdp5xrYaqI_UTYOM1LQMSE4DyJbSo51Y-DoDMrC9-NtYaW7K84V_VZYZgwg_D_Z9hxw==");
-      cookieDwsid.setDomain("www.svicente.com.br");
-      cookieDwsid.setPath("/");
-      this.cookies.add(cookieDwsid);
       Request reqForProduct = Request.RequestBuilder.create()
          .setUrl("https://www.svicente.com.br/on/demandware.store/Sites-SaoVicente-Site/pt_BR/Product-ShowQuickView?pid=" + getId())
          .setHeaders(this.headers)
