@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -32,11 +33,13 @@ public class BrasilSvicenteCrawler extends CrawlerRankingKeywords {
       headers.put(HttpHeaders.ACCEPT, "application/json, text/javascript, */*; q=0.01");
       headers.put(HttpHeaders.REFERER, "https://www.svicente.com.br/pagina-inicial");
       headers.put("authority", "www.svicente.com.br");
+      String store = session.getOptions().optString("store");
+
       Request request = Request.RequestBuilder.create()
-         .setUrl("https://www.svicente.com.br/pagina-inicial")
+         .setUrl("https://www.svicente.com.br/on/demandware.store/Sites-SaoVicente-Site/pt_BR/Stores-SelectStore?storeId=" + store)
          .setHeaders(headers)
          .build();
-      Response response = this.dataFetcher.get(session, request);
+      Response response = new ApacheDataFetcher().get(session, request);
       if (response.getCookies() != null && !response.getCookies().isEmpty()) {
          for (Cookie cookie : response.getCookies()) {
             BasicClientCookie cookieAdd = new BasicClientCookie(cookie.getName(), cookie.getValue());
@@ -46,18 +49,6 @@ public class BrasilSvicenteCrawler extends CrawlerRankingKeywords {
          }
 
       }
-      String store = session.getOptions().optString("store");
-
-      BasicClientCookie dw_store = new BasicClientCookie("dw_store", store);
-      dw_store.setDomain("www.svicente.com.br");
-      dw_store.setPath("/");
-      this.cookies.add(dw_store);
-
-
-      BasicClientCookie has_selected_store = new BasicClientCookie("hasSelectedStore", store);
-      has_selected_store.setDomain("www.svicente.com.br");
-      has_selected_store.setPath("/");
-      this.cookies.add(has_selected_store);
    }
 
    @Override
