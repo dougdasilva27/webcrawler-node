@@ -606,7 +606,7 @@ public class B2WCrawler extends Crawler {
    }
 
    private Double scrapPriceFrom(JSONObject info) {
-      return JSONUtils.getDoubleValueFromJSON(info, "salesPrice", false);
+      return JSONUtils.getDoubleValueFromJSON(info, "listPrice", false);
    }
 
 
