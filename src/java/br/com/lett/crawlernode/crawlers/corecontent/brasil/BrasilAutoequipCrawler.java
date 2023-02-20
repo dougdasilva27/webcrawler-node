@@ -99,12 +99,6 @@ public class BrasilAutoequipCrawler extends Crawler {
       return doc.selectFirst(".pagina-produto") != null;
    }
 
-   private String crawlInternalId(Document doc) {
-      String internalId = null;
-      Pattern pattern = Pattern.compile("producto/\\([0-9]+)");
-      return internalId;
-   }
-
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
