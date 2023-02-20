@@ -66,18 +66,6 @@ public class BrasilAutoequipCrawler extends CrawlerRankingKeywords {
    }
 
 
-   private String crawlInternaId(String imgUrl) {
-      String internalId = null;
-      if (imgUrl != null) {
-         Pattern pattern = Pattern.compile("produto\\/([0-9]*)");
-         Matcher matcher = pattern.matcher(imgUrl);
-         if (matcher.find()) {
-            internalId = matcher.group(1);
-         }
-      }
-      return internalId;
-   }
-
    @Override
    protected boolean hasNextPage() {
       return true;
