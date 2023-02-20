@@ -175,7 +175,7 @@ public class SaopauloB2WCrawlersUtils {
             sku.put("eans", skuJson.optJSONArray("eans"));
          }
 
-         JSONObject offers = getJson(skuJson, "offers");
+         JSONObject offers = getJson(skuJson, "offers({\"promoted\":true,\"sellerId\":\"\"})");
          if (offers != null && offers.has("result")) {
             sku.put("offers", offers.optJSONArray("result"));
          }

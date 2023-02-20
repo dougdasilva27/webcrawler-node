@@ -392,10 +392,10 @@ public class B2WCrawler extends Crawler {
                if (urlOffer != null && !urlOffer.isEmpty()) {
                   offersPageUrl = urlPageOffers + urlOffer.replace("/parceiros/", "").replaceAll("productSku=([0-9]+)", "productSku=" + internalId);
                   sellersDoc = accessOffersPage(offersPageUrl);
-                  sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
+                  sellersFromHTML = sellersDoc != null ? sellersDoc.select("div[class^=\"src__Card\"]") : null;
                }
 
-               if (sellersFromHTML == null && sellersFromHTML.isEmpty()) {
+               if (sellersFromHTML != null && sellersFromHTML.isEmpty()) {
                   offersPageUrl = urlPageOffers + internalPid + "?productSku=" + internalId;
                   sellersDoc = accessOffersPage(offersPageUrl);
                   sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
