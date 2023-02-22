@@ -88,9 +88,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
             ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY,
             ProxyCollection.SMART_PROXY_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
          ))
          .build();
 
