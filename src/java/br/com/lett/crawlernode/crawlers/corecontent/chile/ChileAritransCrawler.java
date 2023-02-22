@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -40,7 +41,8 @@ public class ChileAritransCrawler extends Crawler {
 
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title", false);
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".sku", false);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#comment_post_ID", "value");
+         String selectorPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "link[rel=\"shortlink\"]", "href");
+         String internalPid = CommonMethods.getLast(selectorPid.split("="));
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".woocommerce-Tabs-panel--description", false);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".summary.entry-summary > span > a");
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "meta[property=\"og:image\"]", "content");
