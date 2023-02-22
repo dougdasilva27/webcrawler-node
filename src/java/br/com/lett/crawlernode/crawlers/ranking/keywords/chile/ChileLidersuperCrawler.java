@@ -28,6 +28,11 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
    }
 
    private static final String HOME_PAGE = "https://www.lider.cl/supermercado/";
+   private final String storeId = storeId();
+
+   protected String storeId() {
+      return session.getOptions().optString("storeId");
+   }
 
    private final List<String> proxies = Arrays.asList(
       ProxyCollection.NETNUT_RESIDENTIAL_MX,
@@ -44,7 +49,6 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("origin", "www.lider.cl");
       headers.put("referer", "www.lider.cl/");
-      headers.put("content-lenght", "<calculated when request is sent>");
       headers.put("tenant", "supermercado");
       headers.put("authority", "apps.lider.cl");
       headers.put("accept-language", "en-US,en;q=0.9,pt;q=0.8,pt-PT;q=0.7");
@@ -53,6 +57,9 @@ public class ChileLidersuperCrawler extends CrawlerRankingKeywords {
       headers.put("x-channel", "SOD");
 
       String payload = "{\"page\":" + this.currentPage + ",\"facets\":[],\"sortBy\":\"\",\"hitsPerPage\":16,\"query\":\"" + this.keywordWithoutAccents + "\"}";
+      if (storeId != null && !storeId.isEmpty()) {
+         payload = "{\"page\":" + this.currentPage + ",\"facets\":[],\"sortBy\":\"\",\"hitsPerPage\":16,\"storeId\": " + storeId + " ,\"query\":\"" + this.keywordWithoutAccents + "\"}";
+      }
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
