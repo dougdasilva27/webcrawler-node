@@ -56,8 +56,6 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES,
             ProxyCollection.BUY,
             ProxyCollection.SMART_PROXY_BR
          ))

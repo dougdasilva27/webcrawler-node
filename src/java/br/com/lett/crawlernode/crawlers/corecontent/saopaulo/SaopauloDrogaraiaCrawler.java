@@ -117,7 +117,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.BUY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
             ))
          .setSendUserAgent(true)
