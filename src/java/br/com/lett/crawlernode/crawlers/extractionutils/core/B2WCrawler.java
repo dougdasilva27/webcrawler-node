@@ -395,7 +395,7 @@ public class B2WCrawler extends Crawler {
                   sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
                }
 
-               if (sellersFromHTML != null && sellersFromHTML.isEmpty()) {
+               if (sellersFromHTML == null || sellersFromHTML.isEmpty()) {
                   offersPageUrl = urlPageOffers + internalPid + "?productSku=" + internalId;
                   sellersDoc = accessOffersPage(offersPageUrl);
                   sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
