@@ -109,7 +109,7 @@ public class B2WCrawler extends Crawler {
       listSelectors.put("selectorSellerName", "p[class^=\"sold-and-delivery__Seller-sc\"]");
       listSelectors.put("selectorSellerId", "a[class^=\"src__ButtonUI-sc\"]");
       listSelectors.put("selectorSellerId2", "a[class^=\"styles__ButtonUI-sc\"]");
-      listSelectors.put("offers", "div[class^=\"src__Divider\"]");
+      listSelectors.put("offers", "div[class^=\"src__Card\"]");
       listSelectors.put("hasPageOffers", "span[class^=\"more-offers__Text-sc\"]");
 
       return listSelectors;
@@ -395,7 +395,7 @@ public class B2WCrawler extends Crawler {
                   sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
                }
 
-               if (sellersFromHTML == null && sellersFromHTML.isEmpty()) {
+               if (sellersFromHTML == null || sellersFromHTML.isEmpty()) {
                   offersPageUrl = urlPageOffers + internalPid + "?productSku=" + internalId;
                   sellersDoc = accessOffersPage(offersPageUrl);
                   sellersFromHTML = sellersDoc != null ? sellersDoc.select(listSelectors.get("offers")) : null;
@@ -606,7 +606,7 @@ public class B2WCrawler extends Crawler {
    }
 
    private Double scrapPriceFrom(JSONObject info) {
-      return JSONUtils.getDoubleValueFromJSON(info, "salesPrice", false);
+      return JSONUtils.getDoubleValueFromJSON(info, "listPrice", false);
    }
 
 
