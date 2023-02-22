@@ -68,7 +68,7 @@ public class Scheduler {
       jsonToSendToCrawler.put("market", marketInfo);
       jsonToSendToCrawler.put("className", session.getClassName());
       jsonToSendToCrawler.put("parameters", session.getOriginalURL());
-
+      jsonToSendToCrawler.put("readingNumber", session.getReadingNumber());
       return jsonToSendToCrawler;
 
    }
