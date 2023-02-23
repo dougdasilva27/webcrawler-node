@@ -13,7 +13,6 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import com.google.common.net.HttpHeaders;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
@@ -60,11 +59,11 @@ public class MexicoFerrePatCrawler extends CrawlerRankingKeywords {
       if (json != null && !json.isEmpty() && json.has("products")) {
          for (Object object : json.optJSONArray("products")) {
             Element productHtml = Jsoup.parse(object.toString());
-
-            String internalId = getInternalId(productHtml);
+            JSONObject dataInfoMetaJson = getMetaDataJson(productHtml);
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(productHtml, ".product-card a", "href");
-            String name = CrawlerUtils.scrapStringSimpleInfo(productHtml, ".description span", true);
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(productHtml, ".new-price", null, true, '.', session, null);
+            String internalId = dataInfoMetaJson.optString("id");
+            String name = dataInfoMetaJson.optString("name");
+            Integer price = getPrice(dataInfoMetaJson);
             String image = CrawlerUtils.scrapStringSimpleInfoByAttribute(productHtml, "img", "src");
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -83,13 +82,20 @@ public class MexicoFerrePatCrawler extends CrawlerRankingKeywords {
       }
    }
 
-   private String getInternalId(Element div) {
-      String metaInfoStr = CrawlerUtils.scrapStringSimpleInfoByAttribute(div, ".product-card a", "data-info-meta");
-      if (metaInfoStr != null && !metaInfoStr.isEmpty()) {
-          JSONObject meta_info = CrawlerUtils.stringToJson(metaInfoStr);
-          return meta_info.optString("id");
+   private Integer getPrice(JSONObject json) {
+      String priceString = json.optString("price", null);
+      if (priceString != null && !priceString.isEmpty()) {
+         return CommonMethods.stringPriceToIntegerPrice(priceString, '.', null);
       }
       return null;
+   }
+
+   private JSONObject getMetaDataJson(Element product) {
+      String dataInfo = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-card a ", "data-info-meta");
+      if (dataInfo != null && !dataInfo.isEmpty()) {
+         return JSONUtils.stringToJson(dataInfo);
+      }
+      return new JSONObject();
    }
 
    @Override
