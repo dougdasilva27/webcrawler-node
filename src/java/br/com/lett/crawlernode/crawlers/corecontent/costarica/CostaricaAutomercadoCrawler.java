@@ -24,6 +24,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.HttpHeaders;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -125,9 +126,17 @@ public class CostaricaAutomercadoCrawler extends Crawler {
    }
 
    private List<String> scrapSecondaryImages() {
+      Map<String,String> headers = new HashMap<>();
+      headers.put(HttpHeaders.ACCEPT,"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+      headers.put(HttpHeaders.ACCEPT_LANGUAGE,"pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put(HttpHeaders.CACHE_CONTROL,"max-age=0");
+      headers.put(HttpHeaders.CONNECTION,"keep-alive");
+      headers.put(HttpHeaders.USER_AGENT,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36");
+
       List<String> secondaryImages = new ArrayList<>();
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
+         .setHeaders(headers)
          .setProxyservice(List.of(
             ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
