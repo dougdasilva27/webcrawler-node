@@ -52,17 +52,38 @@ public class MercadoShopCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(homePage));
    }
 
+   protected boolean acceptCatalog = isAcceptCatalog();
+
+   private boolean isAcceptCatalog() {
+      return session.getOptions().optBoolean("accept_catalog", true);
+   }
+
+   private boolean isOwnProduct() {
+      Pattern pattern = Pattern.compile("/p/");
+      Matcher matcher = pattern.matcher(session.getOriginalURL());
+      if (matcher.find()) {
+         Logging.printLogDebug(logger, session, "Is a own product " + this.session.getOriginalURL());
+         return true;
+      } else {
+         Logging.printLogDebug(logger, session, "Is not a own product " + this.session.getOriginalURL());
+         return false;
+      }
+   }
    protected Document fetchDoc(String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .build();
-      Response response = this.dataFetcher.get(session, request);
+      if (acceptCatalog || isOwnProduct()) {
+         Request request = Request.RequestBuilder.create()
+            .setUrl(url)
+            .setCookies(cookies)
+            .setHeaders(headers)
+            .build();
+         Response response = this.dataFetcher.get(session, request);
 
-      return Jsoup.parse(response.getBody());
+         return Jsoup.parse(response.getBody());
+      }else{
+         return new Document("");
+      }
    }
 
    @Override
