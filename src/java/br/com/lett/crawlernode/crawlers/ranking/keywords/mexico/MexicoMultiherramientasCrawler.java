@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import org.jsoup.Jsoup;
@@ -31,16 +32,19 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocumentWithWebDriver(String url) {
-      Document doc;
-      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.SMART_PROXY_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
+      Document doc = null;
+      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.SMART_PROXY_MX_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY);
       int attempts = 0;
       do {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempts), session);
-         webdriver.waitLoad(10000);
-         doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         try {
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempts), session);
+            waitForElement(webdriver.driver, "div[class=\"adv-product produc \"]");
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         } catch (Exception e) {
+            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+         }
       }
-      while (doc == null && attempts++ < 3);
-      waitForElement(webdriver.driver, "div[class=\"adv-product produc \"]");
+      while (doc == null && attempts++ < (proxies.size() - 1));
       return doc;
    }
 
@@ -100,13 +104,13 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
       String imageUrl = null;
       String[] arrayImage;
       String selectorImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "div[class=\"adv-product produc \"]  > figure.text-center", "style");
-      if(selectorImage != null && !selectorImage.isEmpty() ){
+      if (selectorImage != null && !selectorImage.isEmpty()) {
          arrayImage = selectorImage.split(" ");
-         if(arrayImage.length > 1 && arrayImage != null){
-            imageUrl = arrayImage[1].replace("url(/","").replace(")","");
+         if (arrayImage.length > 1 && arrayImage != null) {
+            imageUrl = arrayImage[1].replace("url(/", "").replace(")", "");
          }
       }
-      return CrawlerUtils.completeUrl(imageUrl,"https","multiherramientas.mx");
+      return CrawlerUtils.completeUrl(imageUrl, "https", "multiherramientas.mx");
    }
 
    private Document fetchNextPage() {
