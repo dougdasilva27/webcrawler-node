@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -88,7 +89,7 @@ public abstract class RappiRestauranteCrawlerRanking extends CrawlerRankingKeywo
       String nameWithoutSpaces = product.optString("name").replace(" ", "").toLowerCase(Locale.ROOT);
       String descriptionWithoutSpaces = product.optString("description").replace(" ", "").toLowerCase(Locale.ROOT);
 
-      return nameWithoutSpaces.contains(keywordSearch) || descriptionWithoutSpaces.contains(keywordSearch);
+      return CommonMethods.removeAccents(nameWithoutSpaces).contains(keywordSearch) || CommonMethods.removeAccents(descriptionWithoutSpaces).contains(keywordSearch);
    }
 
    private List<JSONObject> getSearchProducts() {
