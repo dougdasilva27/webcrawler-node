@@ -135,8 +135,8 @@ public abstract class RappiRestauranteCrawlerRanking extends CrawlerRankingKeywo
             String internalId = product.optString("productId");
             String url = getMarketBaseUrl() + storeIdAndSlug + "?productDetail=" + internalId;
             String name = product.optString("name");
-            Integer priceInCents = scrapPrice(product);
             boolean isAvailable = product.optBoolean("isAvailable");
+            Integer priceInCents = isAvailable ? scrapPrice(product) : null;
             String imageUrl = product.optString("image");
 
             RankingProduct productRanking = RankingProductBuilder.create()
