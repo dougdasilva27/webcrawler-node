@@ -110,7 +110,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
 
       if (reviews != null) {
 
-         JSONArray ratingList = (JSONArray) reviews.optQuery( "/RatingHistogram/RatingList");
+         JSONArray ratingList = (JSONArray) reviews.optQuery("/RatingHistogram/RatingList");
          if (ratingList != null) {
 
             for (int i = 0; i < ratingList.length(); i++) {
