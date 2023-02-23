@@ -42,7 +42,7 @@ public class ChileAritransCrawler extends Crawler {
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title", false);
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".sku", false);
          String selectorPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "link[rel=\"shortlink\"]", "href");
-         String internalPid = selectorPid != null && !selectorPid.isEmpty() ? CommonMethods.getLast(selectorPid.split("=")) : "";
+         String internalPid = selectorPid != null && !selectorPid.isEmpty() ? CommonMethods.getLast(selectorPid.split("=")) : null;
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".woocommerce-Tabs-panel--description", false);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".summary.entry-summary > span > a");
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "meta[property=\"og:image\"]", "content");
