@@ -101,10 +101,49 @@ public class ScraperInformation {
       if (optionsScraperSuperClassJson.has(keyProxies)) {
          optionsScraperSuperClassJson.remove(keyProxies);
       }
+      if (optionsScraperSuperClassJson.has("recipe")) {
+         JSONObject recipe = getRecipe(result, optionsScraperSuperClassJson);
+         optionsScraperSuperClassJson.remove("recipe");
+         result.put("recipe", recipe);
+      }
 
-      result.put("scraperClass", optionsScraperSuperClassJson);
+      String[] keys = JSONObject.getNames(optionsScraperSuperClassJson);
+      if (keys != null && keys.length > 0) {
+
+         for (String key : JSONObject.getNames(optionsScraperSuperClassJson)) {
+            if (!result.has(key)) {
+               result.put(key, optionsScraperSuperClassJson.get(key));
+            }
+         }
+
+         result.put("scraperClass", optionsScraperSuperClassJson);
+      }
 
       this.options = result;
+   }
+
+
+   public JSONObject getRecipe(JSONObject optionsScraperJson, JSONObject optionsScraperSuperClassJson) {
+      JSONObject recipe = new JSONObject();
+      if (optionsScraperSuperClassJson.has("recipe")) {
+         JSONObject recipeTemplate = optionsScraperSuperClassJson.optJSONObject("recipe");
+         String recipeString = recipeTemplate != null ? recipeTemplate.toString() : "";
+         JSONArray variables = optionsScraperJson.optJSONArray("variables");
+         if (variables != null) {
+            for (Object v : variables) {
+               if (v instanceof JSONObject) {
+                  JSONObject json = (JSONObject) v;
+                  String key = json.keys().next();
+                  String value = json.optString(json.keys().next());
+                  recipeString = recipeString.replace(key, value);
+               }
+            }
+         }
+
+         recipe = stringToJson(recipeString);
+      }
+
+      return recipe;
    }
 
 
