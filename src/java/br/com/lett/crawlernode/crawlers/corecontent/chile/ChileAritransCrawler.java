@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -14,10 +15,13 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import javax.print.Doc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -40,7 +44,7 @@ public class ChileAritransCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title", false);
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".sku", false);
+         String internalId = getInternalId(doc);
          String selectorPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "link[rel=\"shortlink\"]", "href");
          String internalPid = selectorPid != null && !selectorPid.isEmpty() ? CommonMethods.getLast(selectorPid.split("=")) : null;
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".woocommerce-Tabs-panel--description", false);
@@ -71,6 +75,30 @@ public class ChileAritransCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".summary.entry-summary") != null;
+   }
+
+   private String getInternalId(Document document) {
+      String internalId = CrawlerUtils.scrapStringSimpleInfo(document, ".sku", false);
+      if (internalId == null) {
+         internalId = CrawlerUtils.scrapScriptFromHtml(document, "body > script[type=\"application/ld+json\"]");
+         if (internalId != null && !internalId.isEmpty()) {
+            JSONArray script = new JSONArray(internalId);
+            if (script != null && !script.isEmpty()) {
+               JSONObject object = JSONUtils.getValueRecursive(script, "0", JSONObject.class);
+               if (object != null && !object.isEmpty()) {
+                  JSONArray array = JSONUtils.getJSONArrayValue(object, "@graph");
+                  if (array != null && !array.isEmpty()) {
+                     JSONObject itemList = JSONUtils.getValueRecursive(array, "1", JSONObject.class);
+                     if (itemList != null && !itemList.isEmpty()) {
+                        internalId = itemList.optString("sku");
+                     }
+                  }
+               }
+            }
+         }
+      }
+
+      return internalId;
    }
 
    private List<String> getSecondaryImages(Document doc) {
