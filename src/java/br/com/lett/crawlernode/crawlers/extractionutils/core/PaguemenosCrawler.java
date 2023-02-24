@@ -32,12 +32,15 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    }
 
    private static final String HOME_PAGE = "https://www.paguemenos.com.br/";
-   private static final String API_sha256Has = "8477704ffd775e34519a303459a0ffd67e80610b9ea80ee6b1ce81c2d0661bf7";
    private static final List<String> MAIN_SELLERS = Arrays.asList("Farmácias Pague Menos");
    private RatingsReviews rating = new RatingsReviews();
    private Offers offers;
-   private Pricing pricing;
    private Product product;
+   private final String API_sha256Has = getApisha256Has();
+
+   protected String getApisha256Has() {
+      return session.getOptions().optString("sha256Has", "8477704ffd775e34519a303459a0ffd67e80610b9ea80ee6b1ce81c2d0661bf7");
+   }
 
    @Override
    protected String getHomePage() {
