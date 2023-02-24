@@ -23,6 +23,7 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
+import org.jsoup.nodes.Document;
 
 import java.util.*;
 
@@ -37,7 +38,6 @@ public class BrasilIfood extends Crawler {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
    }
-
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
@@ -80,6 +80,41 @@ public class BrasilIfood extends Crawler {
       }
 
       return JSONUtils.stringToJson(content);
+   }
+
+   @Override
+   public List<Product> extractInformation(Document document) throws Exception {
+      List<Product> products = new ArrayList<>();
+      if (isProductPage(document)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+         String internalId = CommonMethods.getLast(session.getOriginalURL().split("item="));
+         String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".product-detail__description", false);
+         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".product-detail__image-container > img", "src");
+         String description = CrawlerUtils.scrapStringSimpleInfo(document, ".product-detail-long-description__text", true);
+         boolean available = document.selectFirst(".product-detail-action > .btn") != null;
+         Offers offers = available ? scrapOffer(document) : new Offers();
+
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalId)
+            .setName(productName)
+            .setPrimaryImage(primaryImage)
+            .setDescription(description)
+            .setOffers(offers)
+            .build();
+         products.add(product);
+
+
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+      }
+      return products;
+   }
+
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".product-detail__info") != null;
    }
 
 
@@ -155,6 +190,47 @@ public class BrasilIfood extends Crawler {
 
       Double priceFrom = jsonOffers.has("unitOriginalPrice") ? jsonOffers.optDouble("unitOriginalPrice") : null;
       Double spotlightPrice = jsonOffers.optDouble("unitPrice");
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .build();
+
+
+   }
+
+   private Offers scrapOffer(Document document) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(document);
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(seller_full_name)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+
+   }
+
+   private Pricing scrapPricing(Document document) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, "div.product-detail__price > div > span > div > span", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, "div.product-detail__info > div.product-detail__price > div > span", null, true, ',', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, ".product-detail__price > div > span", null, true, ',', session);
+      }
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, ".product-detail__price > div", null, true, ',', session);
+      }
+
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
