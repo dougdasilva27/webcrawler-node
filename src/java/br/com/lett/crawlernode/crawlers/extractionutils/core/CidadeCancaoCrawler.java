@@ -56,7 +56,7 @@ public class CidadeCancaoCrawler extends Crawler {
          String internalPid = scrapInternalPid(doc);
          String internalId = String.valueOf(CrawlerUtils.scrapIntegerFromHtml(doc, ".sku-align", true, null));
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false);
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image img", List.of("src"), "https", store_id + ".cidadecancao.com/", null);
+         List<String> secondaryImages = crawlListImages(doc);
          String primaryImage = !secondaryImages.isEmpty() ? secondaryImages.remove(0) : null;
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.product):not(.home)", false);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".linha-descricao, .weight-view-info"));
@@ -81,6 +81,14 @@ public class CidadeCancaoCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private List<String> crawlListImages(Document doc) {
+      List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".more-views img", List.of("src"), "https", store_id + ".cidadecancao.com/", null);
+      for (int i = 0; i < images.size(); i++) {
+         images.set(i, images.get(i).replace("thumbnail/80x", "image/855x635"));
+      }
+      return images;
    }
 
    private String scrapInternalPid(Document doc) {
