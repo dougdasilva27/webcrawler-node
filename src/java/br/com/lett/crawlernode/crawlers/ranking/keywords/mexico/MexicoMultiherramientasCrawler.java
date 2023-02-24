@@ -1,72 +1,65 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
+import org.apache.http.HttpHeaders;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
-   private int LAST_PRODUCT_INDEX = 0;
 
    public MexicoMultiherramientasCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.FETCHER;
    }
 
    @Override
-   protected Document fetchDocumentWithWebDriver(String url) {
-      Document doc = null;
-      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.SMART_PROXY_MX_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY);
-      int attempts = 0;
-      do {
-         try {
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempts), session);
-            waitForElement(webdriver.driver, "div[class=\"adv-product produc \"]");
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-         } catch (Exception e) {
-            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-         }
-      }
-      while (doc == null && attempts++ < (proxies.size() - 1));
-      return doc;
-   }
+   protected Document fetchDocument(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("authority", "multiherramientas.mx");
+      headers.put(HttpHeaders.ACCEPT, "*/*");
+      headers.put("x-requested-with", "XMLHttpRequest");
 
-   public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 15);
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+      String payload = "price_level=2&order=1&page=" + this.currentPage + "&limit=25&pmin=&pmax=&ask0=&ask1=&ask2=&tspecial=" + this.keywordEncoded.replace(" ", "+");
+
+      Request request = Request.RequestBuilder.create()
+         .setHeaders(headers)
+         .setPayload(payload)
+         .setUrl(url)
+         .setProxyservice(List.of(ProxyCollection.SMART_PROXY_MX, ProxyCollection.SMART_PROXY_MX_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX, ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
+         .build();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "post");
+
+      return Jsoup.parse(response.getBody());
    }
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 25;
-      String url = "https://multiherramientas.mx/catalogo.php?cat=999&text=" + keywordEncoded.replace(" ", "%20");
-      if (LAST_PRODUCT_INDEX == 0) {
-         this.currentDoc = fetchDocumentWithWebDriver(url);
-      } else {
-         this.currentDoc = fetchNextPage();
-      }
+      String url = "https://multiherramientas.mx/loadproducts.php";
+      this.currentDoc = fetchDocument(url);
       Elements products = this.currentDoc.select("div[class=\"adv-product produc \"]");
 
       if (products != null && !products.isEmpty()) {
-         for (int i = LAST_PRODUCT_INDEX; i < products.size(); i++) {
-            Element product = products.get(i);
+         for (Element product : products) {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".options > button", "data-fkproduct");
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, "div > span.label > a", true);
             String productUrl = CrawlerUtils.scrapUrl(product, "div > span.label > a", "href", "https", "multiherramientas.mx");
@@ -84,7 +77,6 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
-            LAST_PRODUCT_INDEX++;
             if (this.arrayProducts.size() == productsLimit)
                break;
          }
@@ -97,7 +89,7 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return !this.currentDoc.select("#btn-showmore > button").isEmpty();
+      return !this.currentDoc.select("button[onclick=\"loadmoreproducts()\"]").isEmpty();
    }
 
    private String getImageUrl(Element element) {
@@ -111,16 +103,5 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
          }
       }
       return CrawlerUtils.completeUrl(imageUrl, "https", "multiherramientas.mx");
-   }
-
-   private Document fetchNextPage() {
-      Logging.printLogDebug(logger, session, "fetching next page...");
-      webdriver.waitLoad(3000);
-      webdriver.waitForElement("#btn-showmore > button", 5);
-      WebElement button = webdriver.driver.findElement(By.cssSelector("#btn-showmore > button"));
-      webdriver.clickOnElementViaJavascript(button);
-      webdriver.waitLoad(8000);
-
-      return Jsoup.parse(webdriver.getCurrentPageSource());
    }
 }
