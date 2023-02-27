@@ -136,7 +136,7 @@ public abstract class RappiCrawler extends Crawler {
       URL url = new URL(productUrl);
       final Pattern urlPathPattern = Pattern.compile(".*/([0-9][^a-zA-Z]*)_([0-9][^a-zA-Z]*)");
 
-      boolean checkHost = url.getHost().contains("www.rappi.com");
+      boolean checkHost = url.getHost().contains(getHomeDomain());
       boolean checkPath = urlPathPattern.matcher(url.getPath()).matches();
 
       return checkHost && checkPath;
@@ -152,7 +152,7 @@ public abstract class RappiCrawler extends Crawler {
          .setFollowRedirects(true)
          .build();
 
-      Response response = dataFetcher.get(session, request);
+      Response response = new FetcherDataFetcher().get(session, request);
 
       Document docRanking = Jsoup.parse(response.getBody());
       JSONObject rankingPageJson = CrawlerUtils.selectJsonFromHtml(docRanking, "#__NEXT_DATA__", null, null, false, false);
@@ -242,7 +242,7 @@ public abstract class RappiCrawler extends Crawler {
       return productDescription;
    }
 
-   private String fetchPassportToken() {
+   protected String fetchPassportToken() {
       String url = "https://services." + getHomeDomain() + "/api/rocket/v2/guest/passport/";
 
       Map<String, String> headers = new HashMap<>();
