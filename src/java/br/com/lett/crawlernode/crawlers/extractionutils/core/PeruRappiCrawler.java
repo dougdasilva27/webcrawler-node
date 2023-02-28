@@ -76,7 +76,8 @@ public class PeruRappiCrawler extends RappiCrawler {
       return "https://www.rappi.com.pe/tiendas/";
    }
 
-   private String fetchPassportToken() {
+   @Override
+   protected String fetchPassportToken() {
       String url = "https://services." + getHomeDomain() + "/api/rocket/v2/guest/passport/";
 
       Map<String, String> headers = new HashMap<>();

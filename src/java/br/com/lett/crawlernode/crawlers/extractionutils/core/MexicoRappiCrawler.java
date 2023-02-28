@@ -63,7 +63,8 @@ public class MexicoRappiCrawler extends RappiCrawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
-   private String fetchPassportToken() {
+   @Override
+   protected String fetchPassportToken() {
       DEVICE_ID = UUID.randomUUID().toString();
       String url = "https://services." + API_BASE_URL + "/api/rocket/v2/guest/passport/";
 
