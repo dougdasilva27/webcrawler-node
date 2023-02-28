@@ -84,6 +84,6 @@ public class BrasilMafachaCrawler extends Crawler {
       return document.selectFirst("#product-preloader") != null;
    }
    private boolean isValid(Document document) {
-      return document.selectFirst(".product-unavailable") == null;
+      return document.selectFirst(".product-unavailable") == null && document.selectFirst(".product-price") != null;
    }
 }
