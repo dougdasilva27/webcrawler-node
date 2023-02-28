@@ -27,7 +27,7 @@ public class BrasilMafachaCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
 
-      String url = "https://www.mafacha.com.ar/module/iqitsearch/searchiqit?s="+this.keywordEncoded+"&page="+ this.currentPage;
+      String url = "https://www.mafacha.com.ar/module/iqitsearch/searchiqit?s=" + this.keywordEncoded + "&page=" + this.currentPage;
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".products.row.products-list .js-product-miniature-wrapper.mto-mayorista.col-12");
@@ -42,7 +42,7 @@ public class BrasilMafachaCrawler extends CrawlerRankingKeywords {
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".h3.product-title a", false);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "article > div > div.col-12.col-sm-3 > div > a > img", "data-src");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".mto-contador-resultado span", null, false, ',', session, null);
-            boolean isAvailable = price != null;
+            boolean isAvailable = price != null && price != 0;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -72,18 +72,19 @@ public class BrasilMafachaCrawler extends CrawlerRankingKeywords {
 
       return Jsoup.parse(response.getBody());
    }
+
    @Override
-   protected void setTotalProducts(){
-      String totalProduct = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc,".showing.hidden-sm-down", false);
-      if(totalProduct != null){
+   protected void setTotalProducts() {
+      String totalProduct = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, ".showing.hidden-sm-down", false);
+      if (totalProduct != null) {
          Pattern pattern = Pattern.compile("(?<=de )\\d+(?= artículo\\(s\\))");
          Matcher matcher = pattern.matcher(totalProduct);
 
          if (matcher.find()) {
-            this.totalProducts  =  Integer.parseInt(matcher.group());
+            this.totalProducts = Integer.parseInt(matcher.group());
          }
 
-      }else{
+      } else {
          this.totalProducts = 0;
       }
 
