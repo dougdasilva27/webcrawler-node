@@ -63,10 +63,10 @@ public class MercadoShopCrawler extends Crawler {
       Matcher matcher = pattern.matcher(session.getOriginalURL());
       if (matcher.find()) {
          Logging.printLogDebug(logger, session, "Is a own product " + this.session.getOriginalURL());
-         return true;
+         return false;
       } else {
          Logging.printLogDebug(logger, session, "Is not a own product " + this.session.getOriginalURL());
-         return false;
+         return true;
       }
    }
    protected Document fetchDoc(String url) {
