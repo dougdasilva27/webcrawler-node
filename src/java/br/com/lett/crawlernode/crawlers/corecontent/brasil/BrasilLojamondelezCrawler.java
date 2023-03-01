@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -28,6 +29,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
 import java.util.*;
 
 public class BrasilLojamondelezCrawler extends Crawler {
@@ -69,32 +71,40 @@ public class BrasilLojamondelezCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
+   public LettProxy getFixedIp() throws IOException {
+
+      LettProxy lettProxy = new LettProxy();
+      lettProxy.setSource("fixed_ip");
+      lettProxy.setPort(3144);
+      lettProxy.setAddress("haproxy.lett.global");
+      lettProxy.setLocation("brazil");
+
+      return lettProxy;
+   }
+
    private String cookiePHPSESSID = null;
 
    private void loginMasterAccount() {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put(HttpHeaders.REFERER, "https://www.lojamondelez.com.br/");
-
+      Response response = new Response();
       String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
+      try {
+         Request request = RequestBuilder.create()
+            .setUrl(ADMIN_URL)
+            .setPayload(payloadString)
+            .setHeaders(headers)
+            .setProxy(
+               getFixedIp()
+            )
+            .build();
 
-      Request request = RequestBuilder.create()
-         .setUrl(ADMIN_URL)
-         .setPayload(payloadString)
-         .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.BUY,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
-         ))
-         .build();
+         response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
-
-
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
       List<Cookie> cookiesResponse = response.getCookies();
 
       for (Cookie cookieResponse : cookiesResponse) {
@@ -116,45 +126,39 @@ public class BrasilLojamondelezCrawler extends Crawler {
       headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put("referer", "https://www.lojamondelez.com.br/VendaAssistida");
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
-
-      Request request = RequestBuilder.create()
-         .setUrl(LOGIN_URL)
-         .setPayload(payload.toString())
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.BUY,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES
-         ))
-         .setHeaders(headers)
-         .build();
-
-      CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new FetcherDataFetcher(),new ApacheDataFetcher()), session, "post");
+      try {
+         Request request = RequestBuilder.create()
+            .setUrl(LOGIN_URL)
+            .setPayload(payload.toString())
+            .setProxy(
+               getFixedIp()
+            )
+            .setHeaders(headers)
+            .build();
+         CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new FetcherDataFetcher(), new ApacheDataFetcher()), session, "post");
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
    }
 
    @Override
    protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
+      Response response = new Response();
+      try {
+         Request request = RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setProxy(
+               getFixedIp()
+            )
+            .setHeaders(headers)
+            .build();
+         response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
 
-      Request request = RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY,
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES
-         ))
-         .setHeaders(headers)
-         .build();
-
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
       return response;
    }
 

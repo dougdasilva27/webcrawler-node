@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -22,6 +23,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -47,21 +49,21 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put(HttpHeaders.REFERER, "https://www.lojamondelez.com.br/");
-
+      Response response = new Response();
       String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
-
+      try {
       Request request = RequestBuilder.create()
          .setUrl(ADMIN_URL)
          .setPayload(payloadString)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.BUY,
-            ProxyCollection.SMART_PROXY_BR
-         ))
+         .setProxy(
+            getFixedIp()
+         )
          .build();
-      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
-
+     response = CrawlerUtils.retryRequest(request, session, dataFetcher);
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
       List<Cookie> cookiesResponse = response.getCookies();
 
       for (Cookie cookieResponse : cookiesResponse) {
@@ -69,6 +71,16 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
             this.cookiePHPSESSID = cookieResponse.getValue();
          }
       }
+   }
+   public LettProxy getFixedIp() throws IOException {
+
+      LettProxy lettProxy = new LettProxy();
+      lettProxy.setSource("fixed_ip");
+      lettProxy.setPort(3144);
+      lettProxy.setAddress("haproxy.lett.global");
+      lettProxy.setLocation("brazil");
+
+      return lettProxy;
    }
 
    @Override
@@ -82,22 +94,20 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put("referer", "https://www.lojamondelez.com.br/VendaAssistida");
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
-
+      try {
       Request request = RequestBuilder.create()
          .setUrl(LOGIN_URL)
          .setPayload(payload.toString())
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.BUY
-         ))
+         .setProxy(
+            getFixedIp()
+         )
          .setHeaders(headers)
          .build();
 
       CrawlerUtils.retryRequest(request, session, dataFetcher);
-
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
       BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", this.cookiePHPSESSID);
       cookie.setDomain("www.lojamondelez.com.br");
       cookie.setPath("/");
@@ -106,21 +116,21 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url, List<Cookie> cookies) {
+      String response = "";
+      try {
       Request request = RequestBuilder
          .create()
          .setCookies(cookies)
          .setUrl(url)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.BUY,
-            ProxyCollection.SMART_PROXY_BR
-            ))
+         .setProxy(
+            getFixedIp()
+         )
          .build();
 
-      String response = CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
-
+      response = CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
       return Jsoup.parse(response);
    }
 
