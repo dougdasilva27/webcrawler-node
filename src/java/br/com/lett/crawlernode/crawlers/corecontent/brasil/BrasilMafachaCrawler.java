@@ -15,6 +15,7 @@ import models.Offers;
 import models.pricing.CreditCards;
 import models.pricing.Pricing;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 
 import java.util.*;
 
