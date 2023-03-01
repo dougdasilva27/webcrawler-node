@@ -24,10 +24,13 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.nodes.Element;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MexicoFarmaciasanpabloCrawler extends Crawler {
    private static final String SELLER_NAME = "Farmacia San Pablo";
@@ -167,18 +170,33 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
    private List<String> getSecondaryImages(JSONObject object) {
       List<String> secondaryImages = new ArrayList<>();
       JSONObject galleryImages = JSONUtils.getValueRecursive(object, "galleryImages", JSONObject.class);
-      JSONArray images = galleryImages.toJSONArray(new JSONArray());
-      if (images != null && !images.isEmpty()) {
-         for (int i = 0; i < images.length(); i++) {
-            JSONArray imageObject = JSONUtils.getValueRecursive((Object) images, (String) images.get(i), JSONArray.class);
-            if (imageObject != null && !imageObject.isEmpty()) {
-               JSONObject superZoom = JSONUtils.getValueRecursive(imageObject, "superZoom", JSONObject.class);
-               if (superZoom != null && !superZoom.isEmpty()) {
-                  String url = superZoom.optString("url");
-                  secondaryImages.add(url);
-               }
-
+      if (galleryImages != null && !galleryImages.isEmpty()) {
+         JSONObject imageObject = galleryImages.optJSONObject("frontView");
+         if (imageObject != null && !imageObject.isEmpty()) {
+            JSONObject superZoom = JSONUtils.getValueRecursive(imageObject, "superZoom", JSONObject.class);
+            if (superZoom != null && !superZoom.isEmpty()) {
+               String url = superZoom.optString("url");
+               secondaryImages.add(url);
             }
+
+         }
+         imageObject = galleryImages.optJSONObject("reverseView");
+         if (imageObject != null && !imageObject.isEmpty()) {
+            JSONObject superZoom = JSONUtils.getValueRecursive(imageObject, "superZoom", JSONObject.class);
+            if (superZoom != null && !superZoom.isEmpty()) {
+               String url = superZoom.optString("url");
+               secondaryImages.add(url);
+            }
+
+         }
+         imageObject = galleryImages.optJSONObject("sideView1");
+         if (imageObject != null && !imageObject.isEmpty()) {
+            JSONObject superZoom = JSONUtils.getValueRecursive(imageObject, "superZoom", JSONObject.class);
+            if (superZoom != null && !superZoom.isEmpty()) {
+               String url = superZoom.optString("url");
+               secondaryImages.add(url);
+            }
+
          }
       }
       return secondaryImages;
