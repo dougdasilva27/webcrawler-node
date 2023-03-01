@@ -169,11 +169,11 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
       JSONObject galleryImages = JSONUtils.getValueRecursive(object, "galleryImages", JSONObject.class);
       JSONArray images = galleryImages.toJSONArray(new JSONArray());
       if (images != null && !images.isEmpty()) {
-         for (int i = 0; i < images.length(); i++){
-            JSONArray imageObject = JSONUtils.getValueRecursive((Object) images, (String) images.get(i),JSONArray.class);
-            if(imageObject !=null && !imageObject.isEmpty()){
-               JSONObject superZoom = JSONUtils.getValueRecursive(imageObject,"superZoom",JSONObject.class);
-               if(superZoom != null && !superZoom.isEmpty()){
+         for (int i = 0; i < images.length(); i++) {
+            JSONArray imageObject = JSONUtils.getValueRecursive((Object) images, (String) images.get(i), JSONArray.class);
+            if (imageObject != null && !imageObject.isEmpty()) {
+               JSONObject superZoom = JSONUtils.getValueRecursive(imageObject, "superZoom", JSONObject.class);
+               if (superZoom != null && !superZoom.isEmpty()) {
                   String url = superZoom.optString("url");
                   secondaryImages.add(url);
                }
@@ -203,9 +203,27 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
       return offers;
    }
 
+   private Double getSpotLightPrice(JSONObject object) {
+      Double spotlightPrice = null;
+      JSONObject scrapSpotlightPrice = JSONUtils.getValueRecursive(object, "basePrice", JSONObject.class);
+      if (scrapSpotlightPrice != null && !scrapSpotlightPrice.isEmpty()) {
+         spotlightPrice = scrapSpotlightPrice.optDouble("value");
+      }
+      return spotlightPrice;
+   }
+
+   private Double getPriceFrom(JSONObject object) {
+      Double priceFrom = null;
+      JSONObject scrapPriceFrom = JSONUtils.getValueRecursive(object, "price", JSONObject.class);
+      if (scrapPriceFrom != null && !scrapPriceFrom.isEmpty()) {
+         priceFrom = scrapPriceFrom.optDouble("value");
+      }
+      return priceFrom;
+   }
+
    private Pricing scrapPricing(JSONObject object) throws MalformedPricingException {
-      Double spotlightPrice = JSONUtils.getValueRecursive(object, "basePrice.value", Double.class);
-      Double priceFrom = JSONUtils.getValueRecursive(object, "price.value", Double.class);
+      Double spotlightPrice = getSpotLightPrice(object);
+      Double priceFrom = getPriceFrom(object);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
