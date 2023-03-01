@@ -67,8 +67,8 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
          String internalId = getInternalId();
          String name = getName(object);
          String primaryImage = getPrimaryImage(object);
-         //List<String> secondaryImages = getSecondaryImages(object);
-         //List<String> categories = getCategories(object);
+         List<String> secondaryImages = getSecondaryImages(object);
+         List<String> categories = getCategories(object);
          String description = getDescripton(object);
          boolean available = object.optBoolean("purchasable");
          Offers offers = available ? scrapOffers(object) : new Offers();
@@ -79,7 +79,8 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
             .setInternalPid(internalId)
             .setName(name)
             .setPrimaryImage(primaryImage)
-            //.setSecondaryImages(secondaryImages)
+            .setSecondaryImages(secondaryImages)
+            .setCategories(categories)
             .setDescription(description)
             .setOffers(offers)
             .build();
@@ -148,6 +149,39 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
          imageUrl = JSONUtils.getValueRecursive(objArray, "url", String.class);
       }
       return imageUrl;
+   }
+
+   private List<String> getCategories(JSONObject object) {
+      List<String> categories = new ArrayList<>();
+      JSONArray arrayCategories = JSONUtils.getValueRecursive(object, "categories", JSONArray.class);
+      if (categories != null && categories.isEmpty()) {
+         for (Object e : arrayCategories) {
+            JSONObject objectCategory = (JSONObject) e;
+            String category = objectCategory.optString("name");
+            categories.add(category);
+         }
+      }
+      return categories;
+   }
+
+   private List<String> getSecondaryImages(JSONObject object) {
+      List<String> secondaryImages = new ArrayList<>();
+      JSONObject galleryImages = JSONUtils.getValueRecursive(object, "galleryImages", JSONObject.class);
+      JSONArray images = galleryImages.toJSONArray(new JSONArray());
+      if (images != null && !images.isEmpty()) {
+         for (int i = 0; i < images.length(); i++){
+            JSONArray imageObject = JSONUtils.getValueRecursive((Object) images, (String) images.get(i),JSONArray.class);
+            if(imageObject !=null && !imageObject.isEmpty()){
+               JSONObject superZoom = JSONUtils.getValueRecursive(imageObject,"superZoom",JSONObject.class);
+               if(superZoom != null && !superZoom.isEmpty()){
+                  String url = superZoom.optString("url");
+                  secondaryImages.add(url);
+               }
+
+            }
+         }
+      }
+      return secondaryImages;
    }
 
    private Offers scrapOffers(JSONObject object) throws OfferException, MalformedPricingException {
