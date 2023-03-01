@@ -21,6 +21,7 @@ import java.util.*;
 public class BrasilMafachaCrawler extends Crawler {
    public BrasilMafachaCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.MIRANHA);
    }
    protected Set<String> cards = Sets.newHashSet(Card.MASTERCARD.toString(), Card.VISA.toString());
    @Override
