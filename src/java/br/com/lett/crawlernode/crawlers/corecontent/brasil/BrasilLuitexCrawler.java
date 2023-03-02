@@ -2,9 +2,11 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -20,8 +22,17 @@ public class BrasilLuitexCrawler extends VTEXNewScraper {
 
    @Override
    protected List<String> getMainSellersNames() {
-      return Collections.singletonList(session.getOptions().optString("sellers"));
+      List<String> sellers = new ArrayList<>();
+      JSONArray sellersArray = session.getOptions().optJSONArray("sellers");
+      for (Object seller : sellersArray){
+         sellers.add(seller.toString());
+      }
+      return sellers;
    }
+   //   override fun getMainSellersNames(): List<String> {
+   //      return session.options?.optJSONArray("sellers")?.toList()
+   //         ?.map { obj: Any -> obj.toString() } ?: listOf()
+   //   }
 
    protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
       String name = null;
