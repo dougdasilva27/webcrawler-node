@@ -24,13 +24,10 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Element;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MexicoFarmaciasanpabloCrawler extends Crawler {
    private static final String SELLER_NAME = "Farmacia San Pablo";
@@ -49,8 +46,8 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl(this.session.getOriginalURL())
          .setProxyservice
-            (List.of(ProxyCollection.SMART_PROXY_MX,
-               ProxyCollection.SMART_PROXY_MX_HAPROXY,
+            (List.of(
+               ProxyCollection.BUY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
          .setUrl(url)
@@ -108,7 +105,7 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
    private String scrapUrlApi() {
       String urlApi = CommonMethods.getLast(this.session.getOriginalURL().split("/"));
       if (urlApi != null && !urlApi.isEmpty()) {
-         urlApi = "https://api.farmaciasanpablo.com.mx/rest/v2/fsp/products/" + this.getInternalId() + "?lang=es_MX&curr=MXN";
+         urlApi = "https://api.farmaciasanpablo.com.mx/rest/v2/fsp/products/" + this.getInternalId();
       }
       return urlApi;
    }
