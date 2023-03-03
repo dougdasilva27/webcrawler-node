@@ -90,23 +90,26 @@ public class BrasilQueroqueroCrawler extends VTEXNewScraper {
             .build());
       }
 
-      String cardBrand = "Quero-Quero";
-
-      Integer numberInstallment = CrawlerUtils.scrapIntegerFromHtml(doc, ".vtex-product-price-1-x-installmentsNumber--VerdeCardName", true, 0);
-
-      Installments installmentsShopCard = new Installments();
 
       Double priceInstallment = getPriceInstallment(doc);
-      installmentsShopCard.add(Installment.InstallmentBuilder.create()
-         .setInstallmentNumber(numberInstallment)
-         .setInstallmentPrice(priceInstallment)
-         .build());
+      if (priceInstallment != null) {
+         String cardBrand = "Quero-Quero";
 
-      creditCards.add(CreditCard.CreditCardBuilder.create()
-         .setBrand(cardBrand)
-         .setInstallments(installmentsShopCard)
-         .setIsShopCard(true)
-         .build());
+         Integer numberInstallment = CrawlerUtils.scrapIntegerFromHtml(doc, ".vtex-product-price-1-x-installmentsNumber--VerdeCardName", true, 0);
+
+         Installments installmentsShopCard = new Installments();
+         installmentsShopCard.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(numberInstallment)
+            .setInstallmentPrice(priceInstallment)
+            .build());
+
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(cardBrand)
+            .setInstallments(installmentsShopCard)
+            .setIsShopCard(true)
+            .build());
+
+      }
 
       return creditCards;
    }
@@ -115,10 +118,11 @@ public class BrasilQueroqueroCrawler extends VTEXNewScraper {
       Double priceComplete = null;
       String priceNumber = CrawlerUtils.scrapStringSimpleInfo(doc, ".vtex-product-price-1-x-currencyInteger.vtex-product-price-1-x-currencyInteger--VerdeCardName", true);
       String priceDecimal = CrawlerUtils.scrapStringSimpleInfo(doc, ".vtex-product-price-1-x-currencyFraction.vtex-product-price-1-x-currencyFraction--VerdeCardName", true);
-     if (priceNumber != null && priceDecimal != null){
-        priceComplete = MathUtils.parseDoubleWithComma(priceNumber + "," + priceDecimal);;
+      if (priceNumber != null && priceDecimal != null) {
+         priceComplete = MathUtils.parseDoubleWithComma(priceNumber + "," + priceDecimal);
+         ;
 
-     }
+      }
       return priceComplete;
 
    }
