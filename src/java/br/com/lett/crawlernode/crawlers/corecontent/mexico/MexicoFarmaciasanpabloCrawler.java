@@ -168,42 +168,19 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
 
    private List<String> getSecondaryImages(JSONObject object) {
       List<String> secondaryImages = new ArrayList<>();
-      JSONObject galleryImages = JSONUtils.getValueRecursive(object, "galleryImages", JSONObject.class);
-      if (galleryImages != null && !galleryImages.isEmpty()) {
-         JSONObject imageObject = galleryImages.optJSONObject("frontView");
-         if (imageObject != null && !imageObject.isEmpty()) {
-            JSONObject superZoom = JSONUtils.getValueRecursive(imageObject, "superZoom", JSONObject.class);
-            if (superZoom != null && !superZoom.isEmpty()) {
-               String url = superZoom.optString("url");
-               if (url != null && !url.isEmpty()) {
-                  secondaryImages.add(url);
-               }
-            }
-
-         }
-         imageObject = galleryImages.optJSONObject("reverseView");
-         if (imageObject != null && !imageObject.isEmpty()) {
-            JSONObject superZoom = JSONUtils.getValueRecursive(imageObject, "superZoom", JSONObject.class);
-            if (superZoom != null && !superZoom.isEmpty()) {
-               String url = superZoom.optString("url");
-               if (url != null && !url.isEmpty()) {
-                  secondaryImages.add(url);
-               }
-            }
-
-         }
-         imageObject = galleryImages.optJSONObject("sideView1");
-         if (imageObject != null && !imageObject.isEmpty()) {
-            JSONObject superZoom = JSONUtils.getValueRecursive(imageObject, "superZoom", JSONObject.class);
-            if (superZoom != null && !superZoom.isEmpty()) {
-               String url = superZoom.optString("url");
-               if (url != null && !url.isEmpty()) {
-                  secondaryImages.add(url);
-               }
-            }
-
-         }
+      String imageObject = JSONUtils.getValueRecursive(object, "galleryImages.frontView.superZoom.url", String.class);
+      if (imageObject != null && !imageObject.isEmpty()) {
+         secondaryImages.add(imageObject);
       }
+      imageObject = JSONUtils.getValueRecursive(object, "galleryImages.reverseView.superZoom.url", String.class);
+      if (imageObject != null && !imageObject.isEmpty()) {
+         secondaryImages.add(imageObject);
+      }
+      imageObject = JSONUtils.getValueRecursive(object, "galleryImages.sideView1.superZoom.url", String.class);
+      if (imageObject != null && !imageObject.isEmpty()) {
+         secondaryImages.add(imageObject);
+      }
+
       return secondaryImages;
    }
 
