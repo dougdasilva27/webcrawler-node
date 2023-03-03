@@ -82,13 +82,10 @@ public class MexicoFarmaciasanpabloCrawler extends CrawlerRankingKeywords {
    }
 
    private String getImageUrl(JSONObject object) {
-      String imageUrl = null;
-      JSONArray imageArray = JSONUtils.getValueRecursive(object, "images", JSONArray.class);
-      if (imageArray != null && !imageArray.isEmpty()) {
-         JSONObject objArray = JSONUtils.getValueRecursive(imageArray, "1", JSONObject.class);
-         imageUrl = JSONUtils.getValueRecursive(objArray, "url", String.class);
+      if (object != null && !object.isEmpty()) {
+         return JSONUtils.getValueRecursive(object, "images.1.url", String.class);
       }
-      return imageUrl;
+      return null;
    }
 
    private Integer getPrice(JSONObject object) {
