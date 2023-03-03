@@ -50,7 +50,7 @@ public class MexicoFarmaciasanpabloCrawler extends CrawlerRankingKeywords {
             String internalId = skuInfo.optString("code");
             String productUrl = CrawlerUtils.completeUrl(skuInfo.optString("url"), "https", "www.farmaciasanpablo.com.mx");
             String name = skuInfo.optString("name");
-            String imgUrl = getImageUrl(skuInfo);
+            String imgUrl = JSONUtils.getValueRecursive(skuInfo, "images.1.url", String.class);
             Integer price = getPrice(skuInfo);
             boolean isAvailable = skuInfo.optBoolean("availableForPurchase");
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -79,13 +79,6 @@ public class MexicoFarmaciasanpabloCrawler extends CrawlerRankingKeywords {
    protected void setTotalProducts(JSONObject jsonInfo) {
       this.totalProducts = JSONUtils.getValueRecursive(jsonInfo, "pagination.totalResults", Integer.class, 0);
       this.log("Total da busca: " + this.totalProducts);
-   }
-
-   private String getImageUrl(JSONObject object) {
-      if (object != null && !object.isEmpty()) {
-         return JSONUtils.getValueRecursive(object, "images.1.url", String.class);
-      }
-      return null;
    }
 
    private Integer getPrice(JSONObject object) {

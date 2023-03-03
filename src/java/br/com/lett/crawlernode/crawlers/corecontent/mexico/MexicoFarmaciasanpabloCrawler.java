@@ -66,7 +66,7 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
 
          String internalId = getInternalId();
          String name = getName(object);
-         String primaryImage = getPrimaryImage(object);
+         String primaryImage = JSONUtils.getValueRecursive(object, "images.0.url", String.class);
          List<String> secondaryImages = getSecondaryImages(object);
          List<String> categories = getCategories(object);
          String description = getDescription(object);
@@ -139,16 +139,6 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
          fullDescription.append(additionalDescription);
       }
       return fullDescription.toString();
-   }
-
-   private String getPrimaryImage(JSONObject object) {
-      String imageUrl = null;
-      JSONArray imageArray = JSONUtils.getValueRecursive(object, "images", JSONArray.class);
-      if (imageArray != null && !imageArray.isEmpty()) {
-         JSONObject objArray = JSONUtils.getValueRecursive(imageArray, "0", JSONObject.class);
-         imageUrl = JSONUtils.getValueRecursive(objArray, "url", String.class);
-      }
-      return imageUrl;
    }
 
    private List<String> getCategories(JSONObject object) {
