@@ -130,7 +130,43 @@ public class GPACrawler extends Crawler {
 
          products.add(product);
 
-      } else {
+      }
+      if(jsonSku.isEmpty()){
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
+         JSONObject product = JSONUtils.getValueRecursive(pageJson,"props.initialProps.componentProps.product",JSONObject.class,new JSONObject());
+
+         if(product != null && !product.isEmpty()){
+            String internalId = product.optString("id");
+            String internalPid = crawlInternalPid(jsonSku);
+            CategoryCollection categories = crawlCategories(jsonSku);
+            String primaryImage = crawlPrimaryImage(jsonSku);
+            String name = crawlName(jsonSku);
+            RatingsReviews ratingsReviews = session.getMarket().getName().contains("extramarketplace") ? extractRatingAndReviews(internalId) : null;
+            List<String> secondaryImages = crawlSecondaryImages(jsonSku);
+            String description = crawlDescription(jsonSku, doc);
+            Offers offers = scrapOffers(jsonSku, doc);
+
+            Product product1 =
+               ProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setOffers(offers)
+                  .setCategory1(categories.getCategory(0))
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description.toString())
+                  .setRatingReviews(ratingsReviews)
+                  .build();
+
+            products.add(product1);
+         }
+      }
+      else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
