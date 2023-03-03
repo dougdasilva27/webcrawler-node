@@ -69,7 +69,7 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
          String primaryImage = getPrimaryImage(object);
          List<String> secondaryImages = getSecondaryImages(object);
          List<String> categories = getCategories(object);
-         String description = getDescripton(object);
+         String description = getDescription(object);
          boolean available = object.optBoolean("purchasable");
          Offers offers = available ? scrapOffers(object) : new Offers();
 
@@ -123,7 +123,7 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
       return fullName.toString();
    }
 
-   private String getDescripton(JSONObject object) {
+   private String getDescription(JSONObject object) {
       StringBuilder fullDescription = new StringBuilder();
       String name = object.optString("name");
       String description = object.optString("description");
@@ -154,11 +154,13 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
    private List<String> getCategories(JSONObject object) {
       List<String> categories = new ArrayList<>();
       JSONArray arrayCategories = JSONUtils.getValueRecursive(object, "categories", JSONArray.class);
-      if (categories != null && categories.isEmpty()) {
+      if (arrayCategories != null && !arrayCategories.isEmpty()) {
          for (Object e : arrayCategories) {
             JSONObject objectCategory = (JSONObject) e;
             String category = objectCategory.optString("name");
-            categories.add(category);
+            if (category != null && !category.isEmpty()) {
+               categories.add(category);
+            }
          }
       }
       return categories;
@@ -173,7 +175,9 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
             JSONObject superZoom = JSONUtils.getValueRecursive(imageObject, "superZoom", JSONObject.class);
             if (superZoom != null && !superZoom.isEmpty()) {
                String url = superZoom.optString("url");
-               secondaryImages.add(url);
+               if (url != null && !url.isEmpty()) {
+                  secondaryImages.add(url);
+               }
             }
 
          }
@@ -182,7 +186,9 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
             JSONObject superZoom = JSONUtils.getValueRecursive(imageObject, "superZoom", JSONObject.class);
             if (superZoom != null && !superZoom.isEmpty()) {
                String url = superZoom.optString("url");
-               secondaryImages.add(url);
+               if (url != null && !url.isEmpty()) {
+                  secondaryImages.add(url);
+               }
             }
 
          }
@@ -191,7 +197,9 @@ public class MexicoFarmaciasanpabloCrawler extends Crawler {
             JSONObject superZoom = JSONUtils.getValueRecursive(imageObject, "superZoom", JSONObject.class);
             if (superZoom != null && !superZoom.isEmpty()) {
                String url = superZoom.optString("url");
-               secondaryImages.add(url);
+               if (url != null && !url.isEmpty()) {
+                  secondaryImages.add(url);
+               }
             }
 
          }

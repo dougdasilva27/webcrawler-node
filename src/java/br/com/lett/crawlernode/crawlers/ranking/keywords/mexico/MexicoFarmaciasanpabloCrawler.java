@@ -96,7 +96,7 @@ public class MexicoFarmaciasanpabloCrawler extends CrawlerRankingKeywords {
       JSONObject priceFormat = JSONUtils.getValueRecursive(object, "basePrice", JSONObject.class);
       if (priceFormat != null && !priceFormat.isEmpty()) {
          Double priceDouble = priceFormat.optDouble("value");
-         price = CommonMethods.doublePriceToIntegerPrice(priceDouble, 0);
+         price = CommonMethods.doublePriceToIntegerPrice(priceDouble, null);
       }
       return price;
    }
