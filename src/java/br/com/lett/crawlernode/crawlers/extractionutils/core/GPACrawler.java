@@ -138,14 +138,14 @@ public class GPACrawler extends Crawler {
 
          if(product != null && !product.isEmpty()){
             String internalId = product.optString("id");
-            String internalPid = crawlInternalPid(jsonSku);
+            String internalPid = product.optString("sku");
             CategoryCollection categories = crawlCategories(jsonSku);
-            String primaryImage = crawlPrimaryImage(jsonSku);
-            String name = crawlName(jsonSku);
+            String primaryImage = CrawlerUtils.completeUrl(product.optString("thumbPath"),"https","static.paodeacucar.com");
+            String name = product.optString("name");
             RatingsReviews ratingsReviews = session.getMarket().getName().contains("extramarketplace") ? extractRatingAndReviews(internalId) : null;
             List<String> secondaryImages = crawlSecondaryImages(jsonSku);
-            String description = crawlDescription(jsonSku, doc);
-            Offers offers = scrapOffers(jsonSku, doc);
+            String description = crawlDescription(product, doc);
+            Offers offers = scrapOffers(product, doc);
 
             Product product1 =
                ProductBuilder.create()
