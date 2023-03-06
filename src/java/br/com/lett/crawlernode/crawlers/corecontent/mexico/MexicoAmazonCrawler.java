@@ -153,6 +153,12 @@ public class MexicoAmazonCrawler extends Crawler {
       if (seller != null && !seller.isEmpty()) {
          boolean isMainRetailer = seller.equalsIgnoreCase(SELLER_NAME) || seller.equalsIgnoreCase(SELLER_NAME_2) || seller.equalsIgnoreCase(SELLER_NAME_3) || seller.equalsIgnoreCase(SELLER_NAME_4);
          Pricing pricing = scrapMainPagePricing(doc);
+         List<String> sales = new ArrayList<>();
+         sales.add(CrawlerUtils.calculateSales(pricing));
+         String promoBuyMoreThanOne = CrawlerUtils.scrapStringSimpleInfo(doc, ".promoPriceBlockMessage div span", true);
+         if (promoBuyMoreThanOne != null && !promoBuyMoreThanOne.isEmpty()) {
+            sales.add(promoBuyMoreThanOne);
+         }
          if (sellerId == null) {
             sellerId = CommonMethods.toSlug(seller);
          }
@@ -167,6 +173,7 @@ public class MexicoAmazonCrawler extends Crawler {
             .setMainPagePosition(1)
             .setIsBuybox(false)
             .setIsMainRetailer(isMainRetailer)
+            .setSales(sales)
             .setPricing(pricing)
             .build();
       }
@@ -202,6 +209,9 @@ public class MexicoAmazonCrawler extends Crawler {
             spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=price]", null, false, '.', session);
          }
          if (spotlightPrice == null) {
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#sns-tiered-price", null, true, '.', session);
+         }
+         if (spotlightPrice == null) {
             spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price > span", null, false, '.', session);
          }
       }
@@ -218,10 +228,7 @@ public class MexicoAmazonCrawler extends Crawler {
          priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=listPrice]", null, false, '.', session);
       }
       if (priceFrom == null) {
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "td.a-span12.a-color-secondary.a-size-base > span.a-price.a-text-price.a-size-base > span.a-offscreen", null, false, '.', session);
-      }
-      if (priceFrom == null) {
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price.a-text-price .a-offscreen", null, false, '.', session);
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".aok-align-center.basisPrice > span > span[aria-hidden=\"true\"]", null, false, '.', session);
 
       }
 

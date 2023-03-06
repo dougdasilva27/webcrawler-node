@@ -177,6 +177,8 @@ public class WalmartSuperCrawler extends Crawler {
    private Offers crawlOffers(JSONObject json) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(json);
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -184,6 +186,7 @@ public class WalmartSuperCrawler extends Crawler {
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(true)
+         .setSales(sales)
          .setPricing(pricing)
          .build());
 
