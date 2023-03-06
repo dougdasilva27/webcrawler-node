@@ -96,47 +96,35 @@ public class AmazonScraperUtils {
       headers.put("cache-control", "max-age=0");
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
 
-      Request requestFetcher = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
-         .build();
+      List<String> proxies = Arrays.asList(
+         ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+         ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+         ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+         ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+         ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY
+      );
 
-      Request requestJSOUP = Request.RequestBuilder.create()
+      Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .setProxyservice(proxies)
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
             .mustUseMovingAverage(false)
             .setForbiddenCssSelector("#captchacharacters").build())
          .build();
-
-      Request request = dataFetcher instanceof JsoupDataFetcher ? requestJSOUP : requestFetcher;
-
-      Response response = dataFetcher.get(session, request);
-
-      int statusCode = response.getLastStatusCode();
-
-      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-         Integer.toString(statusCode).charAt(0) != '3'
-         && statusCode != 404)) {
-
-         if (dataFetcher instanceof FetcherDataFetcher) {
-            response = new JsoupDataFetcher().get(session, requestJSOUP);
-         } else {
-            response = new FetcherDataFetcher().get(session, requestFetcher);
+      Response response;
+      List<DataFetcher> fetchers = List.of(new JsoupDataFetcher(), new FetcherDataFetcher(), new ApacheDataFetcher());
+      int attempt = 0;
+      do {
+         response = CrawlerUtils.retryRequest(request, session, fetchers.get(attempt), true);
+         attempt++;
+         if (response.isSuccess() && response.getCookies().size() > 0) {
+            return response;
          }
-      }
-
+      } while (attempt < fetchers.size());
+      Logging.printLogError(logger, session, "Request for get cookies failed!");
       return response;
    }
 
@@ -384,7 +372,7 @@ public class AmazonScraperUtils {
       StringBuilder description = new StringBuilder();
       Element prodInfoElement = doc.selectFirst("#prodDetails");
       String productDescription = CrawlerUtils.scrapStringSimpleInfo(doc, "#productDescription > p > span", true);
-      String featureDescription = CrawlerUtils.scrapStringSimpleInfo(doc,"#productOverview_feature_div tbody", false);
+      String featureDescription = CrawlerUtils.scrapStringSimpleInfo(doc, "#productOverview_feature_div tbody", false);
 
       Elements elementsDescription =
          doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
