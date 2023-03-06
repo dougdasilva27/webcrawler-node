@@ -1,8 +1,12 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -31,6 +35,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.net.URISyntaxException;
@@ -84,6 +89,20 @@ public class GPACrawler extends Crawler {
    }
 
    @Override
+   protected Response fetchResponse() {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(this.session.getOriginalURL())
+         .setProxyservice(List.of(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(dataFetcher, new ApacheDataFetcher(), new JsoupDataFetcher()), session);
+      return response;
+   }
+
+   @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
 
@@ -131,19 +150,19 @@ public class GPACrawler extends Crawler {
          products.add(product);
 
       }
-      if(jsonSku.isEmpty()){
+      if (jsonSku.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
-         JSONObject product = JSONUtils.getValueRecursive(pageJson,"props.initialProps.componentProps.product",JSONObject.class,new JSONObject());
+         JSONObject product = JSONUtils.getValueRecursive(pageJson, "props.initialProps.componentProps.product", JSONObject.class, new JSONObject());
 
-         if(product != null && !product.isEmpty()){
+         if (product != null && !product.isEmpty()) {
             String internalId = product.optString("id");
             String internalPid = product.optString("sku");
-            CategoryCollection categories = crawlCategories(jsonSku);
-            String primaryImage = CrawlerUtils.completeUrl(product.optString("thumbPath"),"https","static.paodeacucar.com");
+            CategoryCollection categories = crawlCategories(product);
+            String primaryImage = CrawlerUtils.completeUrl(product.optString("thumbPath"), "https", "static.paodeacucar.com");
             String name = product.optString("name");
             RatingsReviews ratingsReviews = session.getMarket().getName().contains("extramarketplace") ? extractRatingAndReviews(internalId) : null;
-            List<String> secondaryImages = crawlSecondaryImages(jsonSku);
+            List<String> secondaryImages = crawlSecondaryImages(product);
             String description = crawlDescription(product, doc);
             Offers offers = scrapOffers(product, doc);
 
@@ -165,8 +184,7 @@ public class GPACrawler extends Crawler {
 
             products.add(product1);
          }
-      }
-      else {
+      } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
@@ -394,7 +412,7 @@ public class GPACrawler extends Crawler {
          .split("/")[0];
    }
 
-   private String scrapSales(Pricing pricing, Document doc){
+   private String scrapSales(Pricing pricing, Document doc) {
       List<String> sales = new ArrayList<>();
 
       String diff = CrawlerUtils.calculateSales(pricing);
@@ -405,7 +423,7 @@ public class GPACrawler extends Crawler {
 
       String salesFromDoc = CrawlerUtils.scrapStringSimpleInfo(doc, ".seal-sale-box-divided__Label1-pf7r6x-1", true);
 
-      if(salesFromDoc != null){
+      if (salesFromDoc != null) {
          sales.add(salesFromDoc);
       }
 
