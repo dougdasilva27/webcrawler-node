@@ -32,7 +32,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
    protected void processBeforeFetch() {
       super.processBeforeFetch();
 
-      cookies = this.amazonScraperUtils.handleCookiesBeforeFetch("https://www.amazon.com.br/", cookies, dataFetcher);
+      cookies = this.amazonScraperUtils.handleCookiesBeforeFetch("https://www.amazon.com.br/", cookies);
    }
 
    @Override

@@ -68,8 +68,8 @@ public class AmazonScraperUtils {
       return listSelectors;
    }
 
-   public List<Cookie> handleCookiesBeforeFetch(String url, List<Cookie> cookies, DataFetcher dataFetcher) {
-      Response response = getRequestCookies(url, cookies, dataFetcher);
+   public List<Cookie> handleCookiesBeforeFetch(String url, List<Cookie> cookies) {
+      Response response = getRequestCookies(url, cookies);
       return fetchCookiesFromAPage(response, "www.amazon.com.br", "/");
    }
 
@@ -85,7 +85,7 @@ public class AmazonScraperUtils {
    }
 
 
-   public Response getRequestCookies(String url, List<Cookie> cookies, DataFetcher dataFetcher) {
+   public Response getRequestCookies(String url, List<Cookie> cookies) {
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "no");
@@ -98,8 +98,8 @@ public class AmazonScraperUtils {
 
       List<String> proxies = Arrays.asList(
          ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-         ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
          ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+         ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
          ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
          ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY
       );
@@ -128,65 +128,54 @@ public class AmazonScraperUtils {
       return response;
    }
 
-   public Response fetchProductPageResponse(List<Cookie> cookies, DataFetcher dataFetcher) {
-      return fetchResponse(session.getOriginalURL(), new HashMap<>(), cookies, dataFetcher);
+   public Response fetchProductPageResponse(List<Cookie> cookies,DataFetcher dataFetcher) {
+      return fetchResponse(session.getOriginalURL(), new HashMap<>(), cookies);
    }
 
    /**
     * Fetch html from amazon
     */
-   public String fetchPage(String url, Map<String, String> headers, List<Cookie> cookies, DataFetcher dataFetcher) {
-      return fetchResponse(url, headers, cookies, dataFetcher).getBody();
+   public String fetchPage(String url, Map<String, String> headers, List<Cookie> cookies,DataFetcher dataFetcher) {
+      Response response = fetchResponse(url, headers, cookies);
+      if (response != null) {
+         return response.getBody();
+      }
+      return null;
    }
 
-   private Response fetchResponse(String url, Map<String, String> headers, List<Cookie> cookies, DataFetcher dataFetcher) {
+   private Response fetchResponse(String url, Map<String, String> headers, List<Cookie> cookies) {
 
-      Request requestApache = RequestBuilder.create()
+      List<String> proxies = Arrays.asList(
+         ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+         ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+         ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+         ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+         ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY);
+      Request request = RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
-         .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
-         .build();
-
-      Map<String, String> headersClone = new HashMap<>(headers);
-      headersClone.put("Accept-Encoding", "no");
-
-      Request requestFetcher = RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setHeaders(headers)
+         .setProxyservice(proxies)
          .setFetcheroptions(FetcherOptionsBuilder.create()
-            .mustRetrieveStatistics(true)
             .setForbiddenCssSelector("#captchacharacters").build())
          .build();
-
-
-      Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestApache;
-
-      Response response = dataFetcher.get(session, request);
-
-      int statusCode = response.getLastStatusCode();
-
-      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-         Integer.toString(statusCode).charAt(0) != '3'
-         && statusCode != 404)) {
-
-         if (dataFetcher instanceof FetcherDataFetcher) {
-            response = new ApacheDataFetcher().get(session, requestApache);
-         } else {
+      List<DataFetcher> fetchers = List.of(new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher());
+      int attempt = 0;
+      while (attempt < fetchers.size()) {
+         DataFetcher fetcher = fetchers.get(attempt);
+         if (fetcher instanceof FetcherDataFetcher) {
             headers.put("Accept-Encoding", "no");
-            response = new FetcherDataFetcher().get(session, requestFetcher);
+            request.setFetcherOptions(FetcherOptionsBuilder.create()
+               .mustRetrieveStatistics(true)
+               .setForbiddenCssSelector("#captchacharacters").build());
+         }
+         Response response = CrawlerUtils.retryRequest(request, session, fetcher, true);
+         attempt++;
+         if (response.isSuccess()) {
+            return response;
          }
       }
-
-      return response;
+      return null;
    }
 
    /**

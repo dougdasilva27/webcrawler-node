@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
@@ -57,7 +58,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
    @Override
    public void handleCookiesBeforeFetch() {
-      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, new FetcherDataFetcher());
+      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies);
    }
 
    private String requestMethod(String url) {
@@ -74,6 +75,9 @@ public class BrasilAmazonCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.BUY,
+               ProxyCollection.SMART_PROXY_BR_HAPROXY,
+               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX,
@@ -84,10 +88,16 @@ public class BrasilAmazonCrawler extends Crawler {
             ))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
          .build();
-
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
-
-      return response.getBody();
+      int attempt = 0;
+      List<DataFetcher> fetchers = List.of(new JsoupDataFetcher(), new ApacheDataFetcher(), new FetcherDataFetcher());
+      while (attempt < fetchers.size()) {
+         Response response = CrawlerUtils.retryRequest(request, session, fetchers.get(attempt));
+         attempt++;
+         if (response.isSuccess() && !response.getBody().isEmpty()) {
+            return response.getBody();
+         }
+      }
+      return "{}";
    }
 
 
@@ -109,7 +119,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
-      return amazonScraperUtils.fetchProductPageResponse(cookies, dataFetcher);
+      return amazonScraperUtils.fetchProductPageResponse(cookies, null);
    }
 
    @Override
@@ -121,7 +131,6 @@ public class BrasilAmazonCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = amazonScraperUtils.crawlInternalId(doc);
-         String internalPid = internalId;
          String name = amazonScraperUtils.crawlName(doc);
          CategoryCollection categories = amazonScraperUtils.crawlCategories(doc);
 
@@ -144,7 +153,7 @@ public class BrasilAmazonCrawler extends Crawler {
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalPid)
+            .setInternalPid(internalId)
             .setName(name)
             .setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1))
