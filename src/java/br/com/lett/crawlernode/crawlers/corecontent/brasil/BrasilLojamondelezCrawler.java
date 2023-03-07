@@ -91,8 +91,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
          e.printStackTrace();
       }
       Map<String, String> headers = new HashMap<>();
-     // headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
-      headers.put(HttpHeaders.CONTENT_TYPE,"*/*");
+      headers.put(HttpHeaders.CONTENT_TYPE,"application/x-www-form-urlencoded");
       headers.put(HttpHeaders.REFERER, "https://www.lojamondelez.com.br/");
       Response response = new Response();
       String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
@@ -134,10 +133,10 @@ public class BrasilLojamondelezCrawler extends Crawler {
       payload.append("usuario_cnpj=" + this.CNPJ);
 
       Map<String, String> headers = new HashMap<>();
-    //  headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
-      headers.put(HttpHeaders.CONTENT_TYPE,"*/*");
+      headers.put(HttpHeaders.CONTENT_TYPE,"application/x-www-form-urlencoded");
       headers.put("referer", "https://www.lojamondelez.com.br/VendaAssistida");
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
+      Response response = new Response();
       try {
          Request request = RequestBuilder.create()
             .setUrl(LOGIN_URL)
@@ -147,7 +146,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
             )
             .setHeaders(headers)
             .build();
-         this.dataFetcher.post(session, request);
+         response = this.dataFetcher.post(session, request);
       } catch (IOException e) {
          e.printStackTrace();
       }
@@ -162,8 +161,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
       }
       Map<String, String> headers = new HashMap<>();
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
-      //headers.put("Content-Type"," application/json;charset=ISO-8859-1");
-      headers.put(HttpHeaders.CONTENT_TYPE,"*/*");
+
 
       Response response = new Response();
       try {
