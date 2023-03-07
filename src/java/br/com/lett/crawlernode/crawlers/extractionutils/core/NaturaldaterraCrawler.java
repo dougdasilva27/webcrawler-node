@@ -1,7 +1,8 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -19,8 +20,6 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.*;
 
 public class NaturaldaterraCrawler extends Crawler {
@@ -36,31 +35,19 @@ public class NaturaldaterraCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
+      String sourceCode = session.getOptions().optString("code");
       Map<String, String> headers = new HashMap<>();
       headers.put("store", "natural_da_terra");
-
       String lastParams = CommonMethods.getLast(session.getOriginalURL().split("/")).replace(".html", "");
-
-      JSONObject jsonObject = new JSONObject();
-      jsonObject.put("urlKey", lastParams);
-      jsonObject.put("sourceCode", session.getOptions().optString("code")); //options
-
-      String paramsEncoded = null;
-      try {
-         paramsEncoded = URLEncoder.encode(jsonObject.toString(), "UTF-8");
-      } catch (UnsupportedEncodingException e) {
-         e.printStackTrace();
-      }
-
-      String url = "https://naturaldaterra.com.br/graphql?query=query+getProductDetailForProductPage($urlKey:String!$sourceCode:String){products(filter:{url_key:{eq:$urlKey}}sourceCode:$sourceCode){items{id+...ProductDetailsFragment+upsell_products{id+ean+name+categories{name+__typename}price{regularPrice{amount{currency+value+__typename}__typename}__typename}price_range{maximum_price{discount{amount_off+percent_off+__typename}final_price{currency+value+__typename}regular_price{currency+value+__typename}__typename}__typename}price_tiers{discount{amount_off+percent_off+__typename}final_price{currency+value+__typename}quantity+__typename}promotion_label+sku+small_image{url+label+__typename}stock_status+stock_quantity+unity_price_description+total_unity_price+total_unity_description+url_key+url_suffix+__typename}stock_status+related_products{id+ean+name+categories{name+__typename}price{regularPrice{amount{currency+value+__typename}__typename}__typename}price_range{maximum_price{discount{amount_off+percent_off+__typename}final_price{currency+value+__typename}regular_price{currency+value+__typename}__typename}__typename}price_tiers{discount{amount_off+percent_off+__typename}final_price{currency+value+__typename}quantity+__typename}promotion_label+sku+small_image{url+label+__typename}stock_status+stock_quantity+unity_price_description+total_unity_price+total_unity_description+url_key+url_suffix+__typename}__typename}__typename}}fragment+ProductDetailsFragment+on+ProductInterface{__typename+sku+product_title_description+medium_product_weight+stock_status+stock_quantity+promotion_label+unity_price_description+total_unity_price+total_unity_description+url_key+url_suffix+meta_description+name+categories{id+name+breadcrumbs{category_id+__typename}__typename}description{html+__typename}media_gallery_entries{id+label+position+disabled+file+__typename}price{regularPrice{amount{currency+value+__typename}__typename}__typename}price_range{maximum_price{discount{amount_off+percent_off+__typename}final_price{currency+value+__typename}regular_price{currency+value+__typename}__typename}__typename}price_tiers{discount{amount_off+percent_off+__typename}final_price{currency+value+__typename}quantity+__typename}small_image{url+label+__typename}...on+CustomizableProductInterface{options{title+option_id+uid+required+sort_order+__typename}__typename}...on+ConfigurableProduct{configurable_options{attribute_code+attribute_id+id+label+values{default_label+label+store_label+use_default_value+value_index+swatch_data{...on+ImageSwatchData{thumbnail+__typename}value+__typename}__typename}__typename}variants{attributes{code+value_index+__typename}product{id+media_gallery_entries{id+disabled+file+label+position+__typename}sku+stock_status+stock_quantity+price{regularPrice{amount{currency+value+__typename}__typename}__typename}__typename}__typename}__typename}}&operationName=getProductDetailForProductPage&variables=" +
-         paramsEncoded;
+      String query = "query+getProductDetailForProductPage%28%24urlKey%3AString%21%24sourceCode%3AString%29%7Bproducts%28filter%3A%7Burl_key%3A%7Beq%3A%24urlKey%7D%7DsourceCode%3A%24sourceCode%29%7Bitems%7Bid+...ProductDetailsFragment+upsell_products%7Bid+ean+name+categories%7Bname+__typename%7Dprice%7BregularPrice%7Bamount%7Bcurrency+value+__typename%7D__typename%7D__typename%7Dprice_range%7Bmaximum_price%7Bdiscount%7Bamount_off+percent_off+__typename%7Dfinal_price%7Bcurrency+value+__typename%7Dregular_price%7Bcurrency+value+__typename%7D__typename%7D__typename%7Dprice_tiers%7Bdiscount%7Bamount_off+percent_off+__typename%7Dfinal_price%7Bcurrency+value+__typename%7Dquantity+__typename%7Dpromotion_label+sku+small_image%7Burl+label+__typename%7Dstock_status+stock_quantity+unity_price_description+total_unity_price+total_unity_description+medium_product_weight+product_title_description+url_key+url_suffix+__typename%7Dstock_status+related_products%7Bid+ean+name+categories%7Bname+__typename%7Dprice%7BregularPrice%7Bamount%7Bcurrency+value+__typename%7D__typename%7D__typename%7Dprice_range%7Bmaximum_price%7Bdiscount%7Bamount_off+percent_off+__typename%7Dfinal_price%7Bcurrency+value+__typename%7Dregular_price%7Bcurrency+value+__typename%7D__typename%7D__typename%7Dprice_tiers%7Bdiscount%7Bamount_off+percent_off+__typename%7Dfinal_price%7Bcurrency+value+__typename%7Dquantity+__typename%7Dpromotion_label+sku+small_image%7Burl+label+__typename%7Dstock_status+stock_quantity+unity_price_description+total_unity_price+total_unity_description+medium_product_weight+product_title_description+url_key+url_suffix+__typename%7D__typename%7D__typename%7D%7Dfragment+ProductDetailsFragment+on+ProductInterface%7B__typename+sku+product_title_description+medium_product_weight+stock_status+stock_quantity+promotion_label+unity_price_description+total_unity_price+total_unity_description+url_key+url_suffix+meta_description+name+categories%7Bid+name+breadcrumbs%7Bcategory_id+__typename%7D__typename%7Ddescription%7Bhtml+__typename%7Dmedia_gallery_entries%7Bid+label+position+disabled+file+__typename%7Dprice%7BregularPrice%7Bamount%7Bcurrency+value+__typename%7D__typename%7D__typename%7Dprice_range%7Bmaximum_price%7Bdiscount%7Bamount_off+percent_off+__typename%7Dfinal_price%7Bcurrency+value+__typename%7Dregular_price%7Bcurrency+value+__typename%7D__typename%7D__typename%7Dprice_tiers%7Bdiscount%7Bamount_off+percent_off+__typename%7Dfinal_price%7Bcurrency+value+__typename%7Dquantity+__typename%7Dsmall_image%7Burl+label+__typename%7D...on+CustomizableProductInterface%7Boptions%7Btitle+option_id+uid+required+sort_order+__typename%7D__typename%7D...on+ConfigurableProduct%7Bconfigurable_options%7Battribute_code+attribute_id+id+label+values%7Bdefault_label+label+store_label+use_default_value+value_index+swatch_data%7B...on+ImageSwatchData%7Bthumbnail+__typename%7Dvalue+__typename%7D__typename%7D__typename%7Dvariants%7Battributes%7Bcode+value_index+__typename%7Dproduct%7Bid+media_gallery_entries%7Bid+disabled+file+label+position+__typename%7Dsku+stock_status+stock_quantity+price%7BregularPrice%7Bamount%7Bcurrency+value+__typename%7D__typename%7D__typename%7D__typename%7D__typename%7D__typename%7D%7D";
+      String variables = "%7B%22urlKey%22%3A%22" + lastParams + "%22%2C%22sourceCode%22%3A%22" + sourceCode + "%22%7D";
+      String url = "https://naturaldaterra.com.br/graphql?query=" + query + "&variables=" + variables;
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
          .build();
-      String content = new JsoupDataFetcher().get(session, request).getBody();
-
-      return CrawlerUtils.stringToJson(content);
+      Response response = CrawlerUtils.retryRequest(request, session, new ApacheDataFetcher(), true);
+      return CrawlerUtils.stringToJson(response.getBody());
    }
 
    @Override
@@ -132,12 +119,21 @@ public class NaturaldaterraCrawler extends Crawler {
 
    }
 
+   private Double getPrice(JSONObject json, String path) {
+      Double price = JSONUtils.getValueRecursive(json, path, Double.class);
+      if (price != null) {
+         return price;
+      }
+      Integer priceInt = JSONUtils.getValueRecursive(json, path, Integer.class);
+      return priceInt != null ? priceInt * 1.0 : null;
+   }
+
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
-      Double priceFrom = JSONUtils.getValueRecursive(json, "price.regularPrice.amount.value", Double.class);
-      Double spotlightPrice = JSONUtils.getValueRecursive(json, "price_tiers.0.final_price.value", Double.class);
-     if (priceFrom.equals(spotlightPrice)){
-        priceFrom = null;
-     }
+      Double priceFrom = getPrice(json, "price.regularPrice.amount.value");
+      Double spotlightPrice = getPrice(json, "price_tiers.0.final_price.value");
+      if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
+         priceFrom = null;
+      }
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditcards(spotlightPrice);
