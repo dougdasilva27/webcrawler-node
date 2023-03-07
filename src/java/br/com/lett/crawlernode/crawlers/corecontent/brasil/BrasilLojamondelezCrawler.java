@@ -45,7 +45,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
 
    public BrasilLojamondelezCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
       super.config.setParser(Parser.HTML);
    }
 
@@ -85,8 +85,13 @@ public class BrasilLojamondelezCrawler extends Crawler {
    private String cookiePHPSESSID = null;
 
    private void loginMasterAccount() {
+      try {
+         Thread.sleep(5000);
+      } catch (InterruptedException e) {
+         e.printStackTrace();
+      }
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put(HttpHeaders.CONTENT_TYPE,"application/x-www-form-urlencoded");
       headers.put(HttpHeaders.REFERER, "https://www.lojamondelez.com.br/");
       Response response = new Response();
       String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
@@ -100,7 +105,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
             )
             .build();
 
-         response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
+         response = this.dataFetcher.post(session, request);
 
       } catch (IOException e) {
          e.printStackTrace();
@@ -117,15 +122,21 @@ public class BrasilLojamondelezCrawler extends Crawler {
 
    @Override
    public void handleCookiesBeforeFetch() {
-      loginMasterAccount();
 
+      loginMasterAccount();
+      try {
+         Thread.sleep(5000);
+      } catch (InterruptedException e) {
+         e.printStackTrace();
+      }
       StringBuilder payload = new StringBuilder();
       payload.append("usuario_cnpj=" + this.CNPJ);
 
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put(HttpHeaders.CONTENT_TYPE,"application/x-www-form-urlencoded");
       headers.put("referer", "https://www.lojamondelez.com.br/VendaAssistida");
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
+      Response response = new Response();
       try {
          Request request = RequestBuilder.create()
             .setUrl(LOGIN_URL)
@@ -135,7 +146,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
             )
             .setHeaders(headers)
             .build();
-         CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new FetcherDataFetcher(), new ApacheDataFetcher()), session, "post");
+         response = this.dataFetcher.post(session, request);
       } catch (IOException e) {
          e.printStackTrace();
       }
@@ -143,8 +154,15 @@ public class BrasilLojamondelezCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
+      try {
+         Thread.sleep(5000);
+      } catch (InterruptedException e) {
+         e.printStackTrace();
+      }
       Map<String, String> headers = new HashMap<>();
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
+
+
       Response response = new Response();
       try {
          Request request = RequestBuilder.create()
@@ -154,7 +172,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
             )
             .setHeaders(headers)
             .build();
-         response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
+         response = this.dataFetcher.get(session, request);
       } catch (IOException e) {
          e.printStackTrace();
       }
