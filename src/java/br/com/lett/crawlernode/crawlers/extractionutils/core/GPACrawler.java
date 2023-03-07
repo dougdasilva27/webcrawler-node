@@ -1,10 +1,13 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -84,6 +87,20 @@ public class GPACrawler extends Crawler {
    }
 
    @Override
+   protected Response fetchResponse() {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(this.session.getOriginalURL())
+         .setProxyservice(List.of(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(dataFetcher, new ApacheDataFetcher(), new JsoupDataFetcher()), session);
+      return response;
+   }
+
+   @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
 
@@ -97,7 +114,7 @@ public class GPACrawler extends Crawler {
 
          String internalId = crawlInternalId(jsonSku);
          String internalPid = crawlInternalPid(jsonSku);
-         CategoryCollection categories = crawlCategories(jsonSku);
+         List<String> categories = getCategories(jsonSku);
          String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);
          RatingsReviews ratingsReviews = session.getMarket().getName().contains("extramarketplace") ? extractRatingAndReviews(internalId) : null;
@@ -119,17 +136,47 @@ public class GPACrawler extends Crawler {
                .setInternalPid(internalPid)
                .setName(name)
                .setOffers(offers)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
+               .setCategories(categories)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
-               .setDescription(description.toString())
+               .setDescription(description)
                .setRatingReviews(ratingsReviews)
                .build();
 
          products.add(product);
 
+      } else if (jsonSku.isEmpty()) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
+         JSONObject product = JSONUtils.getValueRecursive(pageJson, "props.initialProps.componentProps.product", JSONObject.class, new JSONObject());
+
+         if (product != null && !product.isEmpty()) {
+            String internalId = product.optString("id");
+            String internalPid = product.optString("sku");
+            List<String> categories = getCategories(product);
+            String primaryImage = CrawlerUtils.completeUrl(product.optString("thumbPath"), "https", "static.paodeacucar.com");
+            String name = product.optString("name");
+            RatingsReviews ratingsReviews = session.getMarket().getName().contains("extramarketplace") ? extractRatingAndReviews(internalId) : null;
+            List<String> secondaryImages = crawlSecondaryImages(product);
+            String description = crawlDescription(product, doc);
+            Offers offers = scrapOffers(product, doc);
+
+            Product product1 =
+               ProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setOffers(offers)
+                  .setCategories(categories)
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setRatingReviews(ratingsReviews)
+                  .build();
+
+            products.add(product1);
+         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -205,34 +252,18 @@ public class GPACrawler extends Crawler {
    }
 
 
-   private CategoryCollection crawlCategories(JSONObject json) {
-      CategoryCollection categories = new CategoryCollection();
-
-      if (json.has("shelfList")) {
-         JSONArray shelfList = json.getJSONArray("shelfList");
-
-         Set<String> listCategories =
-            new HashSet<>(); // It is a "set" because it has been noticed that there are repeated
-         // categories
-
-         // The category fetched by crawler can be in a different ordination than showed on the website
-         // and
-         // its depends of each product.
-         if (shelfList.length() > 0) {
-            JSONObject cat1 = shelfList.getJSONObject(0);
-            JSONObject cat2 = shelfList.getJSONObject(shelfList.length() - 1);
-
-            if (cat1.has("name")) {
-               listCategories.add(cat1.getString("name"));
-            }
-
-            if (cat2.has("name")) {
-               listCategories.add(cat2.getString("name"));
+   private List<String> getCategories(JSONObject object) {
+      List<String> categories = new ArrayList<>();
+      JSONArray arrayCategories = JSONUtils.getValueRecursive(object, "shelfList", JSONArray.class);
+      if (arrayCategories != null && !arrayCategories.isEmpty()) {
+         for (Object e : arrayCategories) {
+            JSONObject objectCategory = (JSONObject) e;
+            String category = objectCategory.optString("name");
+            if (category != null && !category.isEmpty()) {
+               categories.add(category);
             }
          }
-         categories.addAll(listCategories);
       }
-
       return categories;
    }
 
@@ -358,7 +389,7 @@ public class GPACrawler extends Crawler {
          .split("/")[0];
    }
 
-   private String scrapSales(Pricing pricing, Document doc){
+   private String scrapSales(Pricing pricing, Document doc) {
       List<String> sales = new ArrayList<>();
 
       String diff = CrawlerUtils.calculateSales(pricing);
@@ -369,7 +400,7 @@ public class GPACrawler extends Crawler {
 
       String salesFromDoc = CrawlerUtils.scrapStringSimpleInfo(doc, ".seal-sale-box-divided__Label1-pf7r6x-1", true);
 
-      if(salesFromDoc != null){
+      if (salesFromDoc != null) {
          sales.add(salesFromDoc);
       }
 
