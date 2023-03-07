@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
@@ -152,7 +153,7 @@ public abstract class RappiCrawler extends Crawler {
          .setFollowRedirects(true)
          .build();
 
-      Response response = new FetcherDataFetcher().get(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), true);
 
       Document docRanking = Jsoup.parse(response.getBody());
       JSONObject rankingPageJson = CrawlerUtils.selectJsonFromHtml(docRanking, "#__NEXT_DATA__", null, null, false, false);
@@ -255,6 +256,10 @@ public abstract class RappiCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
+         .setProxyservice(List.of(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
          .build();
 
       JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true).getBody());
@@ -279,6 +284,10 @@ public abstract class RappiCrawler extends Crawler {
          .setHeaders(headers)
          .setPayload(payload)
          .mustSendContentEncoding(false)
+         .setProxyservice(List.of(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
          .build();
 
       JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post").getBody());
@@ -310,6 +319,10 @@ public abstract class RappiCrawler extends Crawler {
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
+         .setProxyservice(List.of(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
          .build();
 
       String body = this.dataFetcher.post(session, request).getBody();
