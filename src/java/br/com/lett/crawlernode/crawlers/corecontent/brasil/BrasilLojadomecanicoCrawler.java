@@ -39,20 +39,20 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
    public BrasilLojadomecanicoCrawler(Session session) {
       super(session);
       super.config.setParser(Parser.HTML);
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
    protected Response fetchResponse() {
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
-         .setFollowRedirects(true)
+         .setFollowRedirects(false)
          .setProxyservice(List.of(
-            ProxyCollection.BUY,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
          .build();
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "get");
       return response;
    }
 
