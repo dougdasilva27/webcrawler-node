@@ -147,7 +147,7 @@ public class MexicoAmazonCrawler extends Crawler {
       }
 
       if (seller == null) {
-         seller = CrawlerUtils.scrapStringSimpleInfo(doc, "div.tabular-buybox div.tabular-buybox-text span.a-size-small", false);
+         seller = CrawlerUtils.scrapStringSimpleInfo(doc, "div.tabular-buybox-container .tabular-buybox-text .tabular-buybox-text .tabular-buybox-text-message", false);
       }
 
       if (seller != null && !seller.isEmpty()) {
