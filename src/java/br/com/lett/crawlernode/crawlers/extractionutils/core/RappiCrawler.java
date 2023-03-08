@@ -52,6 +52,7 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    private final String grammatureRegex = "(\\d+[.,]?\\d*\\s?)(ml|l|g|gr|mg|kg)";
+   private final String quantityRegex = "(\\d+[.,]?\\d*\\s?)(und)";
 
    protected String DEVICE_ID = UUID.randomUUID().toString();
 
@@ -393,6 +394,20 @@ public abstract class RappiCrawler extends Crawler {
       return matcher.find() ? matcher.group(0) : "";
    }
 
+   private boolean stringHasQuantity(String string) {
+      Pattern pattern = Pattern.compile(quantityRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+      Matcher matcher = pattern.matcher(string);
+
+      return matcher.find();
+   }
+
+   private String extractQuantity(String string) {
+      Pattern pattern = Pattern.compile(quantityRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+      final Matcher matcher = pattern.matcher(string);
+
+      return matcher.find() ? matcher.group(0) : "";
+   }
+
    private String scrapName(JSONObject productJson) {
       String name = productJson.optString("name");
       String description = productJson.optString("description");
@@ -402,6 +417,12 @@ public abstract class RappiCrawler extends Crawler {
          name += " " + extractGrammature(description);
       } else if (!stringHasGrammature(name) && stringHasGrammature(presentation)) {
          name += " " + extractGrammature(presentation);
+      }
+
+      if (!stringHasQuantity(name) && stringHasQuantity(description)) {
+         name += " " + extractQuantity(description);
+      } else if (!stringHasQuantity(name) && stringHasQuantity(presentation)) {
+         name += " " + extractQuantity(presentation);
       }
 
       return name;
