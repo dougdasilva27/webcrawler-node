@@ -133,7 +133,7 @@ public abstract class RappiCrawler extends Crawler {
       return productsInfo;
    }
 
-   private boolean checkOldUrl(String productUrl) throws MalformedURLException {
+   protected boolean checkOldUrl(String productUrl) throws MalformedURLException {
       URL url = new URL(productUrl);
       final Pattern urlPathPattern = Pattern.compile(".*/([0-9][^a-zA-Z]*)_([0-9][^a-zA-Z]*)");
 
@@ -145,7 +145,7 @@ public abstract class RappiCrawler extends Crawler {
 
    protected String getProductIdFromRanking(JSONObject productJson) {
       String productName = productJson.optString("name");
-      String productNameEncoded = productName != null ? StringUtils.stripAccents(productName).replace(" ", "%20") : null;
+      String productNameEncoded = productName != null ? StringUtils.stripAccents(productName.replace("%", "")).replace(" ", "%20") : null;
       String url = getMarketBaseUrl() + getStoreId() + "/s?term=" + productNameEncoded;
       Request request = Request.RequestBuilder.create()
          .setCookies(this.cookies)
