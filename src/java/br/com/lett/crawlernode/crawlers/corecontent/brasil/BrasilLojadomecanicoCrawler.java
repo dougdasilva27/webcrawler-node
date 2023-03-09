@@ -32,7 +32,6 @@ import java.util.Set;
 
 public class BrasilLojadomecanicoCrawler extends Crawler {
    private static final String HOME_PAGE = "http://www.lojadomecanico.com.br/";
-   private static final String SELLER_FULL_NAME = "loja-do-mecanico-brasil";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.ELO.toString());
 
@@ -66,7 +65,6 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 
          JSONObject jsonIdSkuPrice = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta=", ";", true, false);
          JSONObject jsonNameDesc = CrawlerUtils.selectJsonFromHtml(doc, ".product-page script[type=\"application/ld+json\"]", "", null, false, false);
-
          String internalId = jsonIdSkuPrice.has("pid") ? jsonIdSkuPrice.getString("pid") : null;
          String internalPid = jsonIdSkuPrice.has("sku") ? jsonIdSkuPrice.getString("sku") : null;
          String name = scrapName(jsonNameDesc, doc, internalId);
@@ -187,6 +185,8 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      boolean isMainRetailer = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-products-vend .link__seller", false) == null;
+      String SELLER_FULL_NAME = isMainRetailer ? "loja-do-mecanico-brasil" : CrawlerUtils.scrapStringSimpleInfo(doc, ".box-products-vend .link__seller", false);
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(pricing);
@@ -197,7 +197,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
          .setMainPagePosition(1)
          .setSales(sales)
          .setIsBuybox(false)
-         .setIsMainRetailer(true)
+         .setIsMainRetailer(isMainRetailer)
          .setPricing(pricing)
          .build());
 
