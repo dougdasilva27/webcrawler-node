@@ -1,113 +1,217 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.prices.Prices;
 
 public class ArgentinaFravegaCrawler extends Crawler {
 
-  public ArgentinaFravegaCrawler(Session session) {
-    super(session);
-  }
+   private final String HOME_PAGE = "https://www.fravega.com/";
+   private static final String SELLER_FULL_NAME = "Frávega";
+   private static final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
 
-  private static final String HOME_PAGE = "https://www.fravega.com/";
-  private static final String MAIN_SELLER_NAME_LOWER = "frávega";
+   private static String productSKU = null;
 
-  @Override
-  public boolean shouldVisit() {
-    String href = session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-  }
+   protected String getPostalCode() {
+      return session.getOptions().optString("postal_code");
+   }
 
+   public ArgentinaFravegaCrawler(Session session) {
+      super(session);
+      super.config.setParser(Parser.JSON);
+   }
 
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
+   @Override
+   protected Response fetchResponse() {
+      String url = scrapProductUrl();
+      Map<String, String> headers = new HashMap<>();
+      headers.put("authority", "www.fravega.com");
+      headers.put("referer", "https://www.fravega.com/");
 
-    if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .build();
 
-      JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+      return this.dataFetcher.get(session, request);
+   }
 
-      String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb ul > li > a", true);
-      String description = crawlDescription(doc);
+   private @NotNull String scrapProductUrl() {
+      String[] urlParts = session.getOriginalURL().split("/");
+      String[] productSlugParts = urlParts[urlParts.length - 1].split("-");
 
-      // sku data in json
-      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      String productSlug = urlParts[urlParts.length - 1];
+      String sku = productSlugParts[productSlugParts.length - 1];
 
-      JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
+      String[] slugParts = Arrays.copyOf(productSlugParts, productSlugParts.length - 1);
+      String slug = String.join("-", slugParts);
 
-      for (int i = 0; i < arraySkus.length(); i++) {
-        JSONObject jsonSku = arraySkus.getJSONObject(i);
+      productSKU = sku;
 
-        String internalId = vtexUtil.crawlInternalId(jsonSku);
-        JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson);
-        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-        Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
-        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-        String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-        String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
-        Float price = vtexUtil.crawlMainPagePrice(prices);
-        Integer stock = vtexUtil.crawlStock(apiJSON);
-        String ean = i < eanArray.length() ? eanArray.getString(i) : null;
+      return "https://www.fravega.com/_next/data/F6xWugkgMp7lt6cbNmjb3/es-AR/p/" + productSlug + ".json?sku=" + sku + "&slug=" + slug + "&productSlug=" + productSlug;
+   }
 
-        List<String> eans = new ArrayList<>();
-        eans.add(ean);
+   @Override
+   public List<Product> extractInformation(JSONObject json) throws Exception {
+      List<Product> products = new ArrayList<>();
+      String[] urlParts = session.getOriginalURL().split("/");
+      String[] productSlugParts = urlParts[urlParts.length - 1].split("-");
 
-        // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+      String sku = productSlugParts[productSlugParts.length - 1];
+      JSONObject productJson = JSONUtils.getValueRecursive(json, "pageProps.__APOLLO_STATE__.ROOT_QUERY.sku({\"code\":\"" + sku + "\"})", JSONObject.class);
 
-        products.add(product);
+      if(productJson != null) {
+         String name = productJson.optJSONObject("item").optString("title");
+         String internalPid = productJson.optJSONObject("item").optString("id");
+         String internalId = productJson.optString("code");
+         JSONArray imagesJson = productJson.optJSONObject("item").optJSONArray("images");
+         List<String> images = formatImages(imagesJson);
+         String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
+         String description = scrapDescription(productJson.optJSONObject("item"));
+         CategoryCollection categories = scrapCategories(productJson);
+         boolean available = JSONUtils.getValueRecursive(productJson.optJSONObject("stock({\"postalCode\":\"" + getPostalCode() + "\"})"), "availability", Boolean.class);
+         Offers offers = available ? scrapOffers(productJson) : new Offers();
+
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(images)
+            .setCategories(categories)
+            .setDescription(description)
+            .setOffers(offers)
+            .build();
+
+         products.add(product);
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
+      return products;
+   }
 
-    return products;
-  }
+   private List<String> formatImages(JSONArray images) throws OfferException, MalformedPricingException {
+      List<String> formatedImages = new ArrayList<>();
+      for (Object image:images) {
+         formatedImages.add("https://images.fravega.com/f500/" + image.toString());
+      }
+      return formatedImages;
+   }
 
-  private boolean isProductPage(Document document) {
-    return document.selectFirst(".tracking-product") != null;
-  }
+   private Offers scrapOffers(JSONObject product) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(product);
+      List<String> sales = scrapSales(product);
 
-  private String crawlDescription(Document doc) {
-    StringBuilder description = new StringBuilder();
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setSales(sales)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .build());
 
-    Element productDescription = doc.selectFirst(".fichaProducto__specs__descripcion__first > div.productDescription");
+      return offers;
+   }
 
-    if (productDescription != null) {
-      description.append(productDescription.outerHtml());
-    }
+   private Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
+      JSONObject pricingObject = JSONUtils.getValueRecursive(product, "pricing({\"channel\":\"fravega-ecommerce\"}).0", JSONObject.class);
+      Double spotlightPrice =  JSONUtils.getDoubleValueFromJSON(pricingObject, "salePrice", true);
+      Double priceFrom =  JSONUtils.getDoubleValueFromJSON(pricingObject, "listPrice", true);
 
-    Element specDescription = doc.selectFirst(".fichaProducto__specs__datostecnicos.active");
+      Double bankslipDiscount = Double.valueOf(JSONUtils.getIntegerValueFromJSON(product, "discount_percent_boleto", 0));
 
-    if (specDescription != null) {
-      description.append(specDescription.outerHtml());
-    }
+      if (spotlightPrice.equals(priceFrom)) {
+         priceFrom = null;
+      }
 
-    return description.toString();
-  }
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(bankslipDiscount).build())
+         .build();
+   }
+
+   private List<String> scrapSales(JSONObject product) {
+      List<String> sales = new ArrayList<>();
+      JSONObject pricingObject = JSONUtils.getValueRecursive(product, "pricing({\"channel\":\"fravega-ecommerce\"}).0", JSONObject.class);
+      Double discount =  JSONUtils.getDoubleValueFromJSON(pricingObject, "discount", true);
+      sales.add(String.valueOf(discount));
+      return sales;
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
+
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+
+   private CategoryCollection scrapCategories(JSONObject product) {
+      CategoryCollection categories = new CategoryCollection();
+
+      JSONArray categoriesJSON = JSONUtils.getValueRecursive(product, "categorization.0", JSONArray.class);
+
+      for (Object categoryObject : categoriesJSON) {
+         JSONObject category = (JSONObject) categoryObject;
+         String categoryName = category.optString("name");
+         if (!categoryName.isEmpty()) {
+            categories.add(categoryName);
+         }
+      }
+
+      return categories;
+   }
+
+   private String scrapDescription(JSONObject product) {
+      JSONArray descriptionsArray = product.optJSONArray("descriptions");
+      String concatenatedValues = "";
+      for (int i = 0; i < descriptionsArray.length(); i++) {
+         JSONObject descriptionObject = descriptionsArray.getJSONObject(i);
+         String value = descriptionObject.getString("value");
+         concatenatedValues += value;
+      }
+
+      return concatenatedValues;
+   }
 }

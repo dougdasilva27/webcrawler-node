@@ -33,6 +33,8 @@ import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 import enums.QueueName;
 import enums.ScrapersTypes;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.Processed;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.http.cookie.Cookie;
@@ -271,7 +273,7 @@ public abstract class CrawlerRanking extends Task {
    }
 
    // função que extrai os produtos da página atual
-   protected abstract void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException;
+   protected abstract void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException, OfferException, MalformedPricingException;
 
    /**
     * função que retorna se há ou não uma próxima página default: total de produtos maior que os

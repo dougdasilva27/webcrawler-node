@@ -1,10 +1,23 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.http.cookie.Cookie;
+
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -15,46 +28,83 @@ public class ArgentinaFravegaCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
-  private List<Cookie> cookies = new ArrayList<>();
+   protected String getPostalCode() {
+      return session.getOptions().optString("postal_code");
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.log("Página " + this.currentPage);
+   @Override
+   public void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException, OfferException, MalformedPricingException {
+      this.pageSize = 24;
+      Integer offsetPage = (this.currentPage - 1) * 15;
+      this.log("Página " + this.currentPage);
+      String url = "https://www.fravega.com/l/?keyword=" + this.keywordWithoutAccents + "&page=" + this.currentPage;
+      this.log("Link onde são feitos os crawlers: " + url);
+      this.currentDoc = fetch(url);
 
-    this.pageSize = 24;
+      JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "#__NEXT_DATA__", null, null, false, false);
+      JSONArray products = JSONUtils.getValueRecursive(pageJson, "props.pageProps.__APOLLO_STATE__.ROOT_QUERY.items({\"filtering\":{\"active\":true,\"availableStock\":{\"includeThoseWithNoAvailableStockButListable\":true,\"postalCodes\":\"" + getPostalCode() + "\"},\"keywords\":{\"query\":\"" + this.keywordWithoutAccents + "\"},\"salesChannels\":[\"fravega-ecommerce\"]}}).results({\"buckets\":[{\"customSorted\":true,\"offset\":"+ offsetPage +",\"sorting\":\"TOTAL_SALES_IN_LAST_30_DAYS\"}],\"size\":15})", JSONArray.class);
+      JSONObject items = JSONUtils.getValueRecursive(pageJson, "props.pageProps.__APOLLO_STATE__.ROOT_QUERY.items({\"filtering\":{\"active\":true,\"availableStock\":{\"includeThoseWithNoAvailableStockButListable\":true,\"postalCodes\":\"" + getPostalCode() + "\"},\"keywords\":{\"query\":\"" + this.keywordWithoutAccents + "\"},\"salesChannels\":[\"fravega-ecommerce\"]}})", JSONObject.class);
 
-    String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-    String url = "https://www.fravega.com/" + keyword + "?PageNumber=" + this.currentPage;
+      if (products != null) {
+         if (this.totalProducts == 0) {
+            this.totalProducts = JSONUtils.getValueRecursive(items, "total", Integer.class);
+         }
+         for (Object o : products) {
+            JSONObject product = (JSONObject) o;
+            String internalPid = product.optString("id");
+            String internalId = JSONUtils.getValueRecursive(product.optJSONObject("skus"), "results.0.code", String.class);
+            String productUrl = formatUrl(product.optString("slug"), internalId);
+            String name = product.optString("title");
+            JSONObject priceObj = JSONUtils.getValueRecursive(product, "salePrice.amounts.0", JSONObject.class);;
+            Integer price = null;
 
-    this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url, cookies);
+            if(priceObj != null && !priceObj.isEmpty()) {
+               price = JSONUtils.getPriceInCents(priceObj, "min");
+            }
 
-    Elements products = this.currentDoc.select("li[layout] .wrapData");
-    Elements productsPid = this.currentDoc.select("li[id]");
-    int count = 0;
+            String image = JSONUtils.getValueRecursive(product, "images.0", String.class);
 
-    if (!products.isEmpty()) {
-      if (this.totalProducts == 0)
-        setTotalProducts();
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setImageUrl(formatImage(image))
+               .setPriceInCents(price)
+               .setAvailability(price != null)
+               .build();
 
-      for (Element e : products) {
-        String internalPid = crawlInternalPid(productsPid.get(count));
+            saveDataProduct(productRanking);
 
-        String productUrl = crawlProductUrl(e);
-
-        saveDataProduct(null, internalPid, productUrl);
-        count++;
-
-        if (this.arrayProducts.size() == productsLimit)
-          break;
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
+   }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
+   private String formatUrl(String slug, String sku) {
+     return "https://www.fravega.com/p/" + slug + "-" + sku + "/";
+   }
+
+   private String formatImage(String image) throws OfferException, MalformedPricingException {
+      String formatedImage = "https://images.fravega.com/f500/" + image;
+      return formatedImage;
+   }
+
+   private Document fetch(String url) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setFollowRedirects(true)
+         .build();
+
+      Response response = dataFetcher.get(session, request);
+
+      return Jsoup.parse(response.getBody());
+   }
 
   @Override
   protected void setTotalProducts() {
