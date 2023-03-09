@@ -261,7 +261,12 @@ public class MercadoShopCrawler extends Crawler {
    }
 
    private boolean isAvailable(Document doc) {
+      String adStatus = CrawlerUtils.scrapStringSimpleInfo(doc, ".andes-message__text.andes-message__text--warning", true);
+      if (adStatus != null && adStatus.contains("Anúncio pausado")) {
+         return false;
+      }
       return !doc.select(".ui-pdp-price").isEmpty();
+
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
