@@ -13,7 +13,6 @@ import org.json.JSONObject;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Objects;
 
 /**
  * Date: 31/07/2019
@@ -24,7 +23,7 @@ public class BrasilJcdistribuicaoCrawler extends LifeappsCrawler {
 
    private static final String HOME_PAGE = "https://jcdistribuicao.superon.app/";
    private static final String COMPANY_ID = "6f0ae38d-50cd-4873-89a5-6861467b5f52";    //never changes
-   private static final String API_HASH = "f8144980-bddb-11ed-b883-5709d77991bb"; //can change, but is working since 2023
+   private String API_HASH(){return this.session.getOptions().optString("api_hash");} //can change, but is working since 2023
    private static final String FORMA_PAGAMENTO = "3dedac19-6643-4401-9c08-aac81d6edb7c";  //never changes
    private static final String SELLER_NAME_LOWER = "jc distribuicao brasil";
 
@@ -44,7 +43,7 @@ public class BrasilJcdistribuicaoCrawler extends LifeappsCrawler {
 
    @Override
    public String getApiHash() {
-      return API_HASH;
+      return API_HASH();
    }
 
    @Override
