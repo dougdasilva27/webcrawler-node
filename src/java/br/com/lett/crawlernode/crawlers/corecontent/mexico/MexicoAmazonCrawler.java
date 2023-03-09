@@ -209,9 +209,6 @@ public class MexicoAmazonCrawler extends Crawler {
             spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=price]", null, false, '.', session);
          }
          if (spotlightPrice == null) {
-            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#sns-tiered-price", null, true, '.', session);
-         }
-         if (spotlightPrice == null) {
             spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price > span", null, false, '.', session);
          }
       }
