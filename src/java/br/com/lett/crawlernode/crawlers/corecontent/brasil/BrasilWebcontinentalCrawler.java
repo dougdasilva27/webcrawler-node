@@ -26,7 +26,6 @@ import java.util.Set;
 public class BrasilWebcontinentalCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.webcontinental.com.br";
-   private static final String SELLER_NAME_LOWER = "webcontinental";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -82,6 +81,8 @@ public class BrasilWebcontinentalCrawler extends Crawler {
    }
 
    private Offers scrapeOffers(JSONObject offerJson, Document doc) throws MalformedPricingException, OfferException {
+      String SELLER_NAME = CrawlerUtils.scrapStringSimpleInfo(doc, ".ProductDetails__Info .ProductDetails__SoldAndDelivered span", false);
+      boolean isMainReatailer = SELLER_NAME == "Webcontinental";
       Offers offers = new Offers();
       Double spotlightPrice = offerJson.optDouble("price");
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ProductDetails__OldPrice", null, false, ',', session);
@@ -116,10 +117,10 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_NAME_LOWER)
+         .setSellerFullName(SELLER_NAME)
          .setMainPagePosition(1)
          .setIsBuybox(false)
-         .setIsMainRetailer(true)
+         .setIsMainRetailer(isMainReatailer)
          .setPricing(pricing)
          .build());
 
