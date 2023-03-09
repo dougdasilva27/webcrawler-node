@@ -181,7 +181,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
-      boolean isMainRetailer = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-products-vend .link__seller", false) == null ? true : false;
+      boolean isMainRetailer = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-products-vend .link__seller", false) == null;
       String SELLER_FULL_NAME = isMainRetailer ? "loja-do-mecanico-brasil" : CrawlerUtils.scrapStringSimpleInfo(doc, ".box-products-vend .link__seller", false);
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
