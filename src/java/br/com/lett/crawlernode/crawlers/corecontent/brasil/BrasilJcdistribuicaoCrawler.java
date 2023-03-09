@@ -24,7 +24,7 @@ public class BrasilJcdistribuicaoCrawler extends LifeappsCrawler {
 
    private static final String HOME_PAGE = "https://jcdistribuicao.superon.app/";
    private static final String COMPANY_ID = "6f0ae38d-50cd-4873-89a5-6861467b5f52";    //never changes
-   private static final String API_HASH = "cc64548c0cbad6cf58d4d3bbd433142b694d281e-b509-42c4-8042-78cfeb0c52ff"; //can change, but is working since 2019
+   private static final String API_HASH = "f8144980-bddb-11ed-b883-5709d77991bb"; //can change, but is working since 2023
    private static final String FORMA_PAGAMENTO = "3dedac19-6643-4401-9c08-aac81d6edb7c";  //never changes
    private static final String SELLER_NAME_LOWER = "jc distribuicao brasil";
 
