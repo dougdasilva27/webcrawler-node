@@ -37,7 +37,7 @@ public class ArgentinaFravegaCrawler extends CrawlerRankingKeywords {
       this.pageSize = 24;
       Integer offsetPage = (this.currentPage - 1) * 15;
       this.log("Página " + this.currentPage);
-      String url = "https://www.fravega.com/l/?keyword=" + this.keywordWithoutAccents + "&page=" + this.currentPage;
+      String url = "https://www.fravega.com/l/?keyword=" + this.keywordWithoutAccents.replaceAll(" ", "+") + "&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetch(url);
 
