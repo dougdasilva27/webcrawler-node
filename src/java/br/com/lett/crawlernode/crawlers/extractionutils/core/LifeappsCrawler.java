@@ -135,7 +135,7 @@ public abstract class LifeappsCrawler extends Crawler {
       if (internalId != null && internalId.contains("-")) {
          String[] eanArray = internalId.split("-");
 
-         if (eanArray.length > 0) {
+         if (eanArray.length > 1) {
             eans = Collections.singletonList(eanArray[1]);
          }
       }
