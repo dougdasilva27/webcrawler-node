@@ -82,7 +82,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
 
    private Offers scrapeOffers(JSONObject offerJson, Document doc) throws MalformedPricingException, OfferException {
       String SELLER_NAME = CrawlerUtils.scrapStringSimpleInfo(doc, ".ProductDetails__Info .ProductDetails__SoldAndDelivered span", false);
-      boolean isMainReatailer = SELLER_NAME == "Webcontinental" ? true : false;
+      boolean isMainReatailer = SELLER_NAME == "Webcontinental";
       Offers offers = new Offers();
       Double spotlightPrice = offerJson.optDouble("price");
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ProductDetails__OldPrice", null, false, ',', session);
