@@ -29,8 +29,6 @@ public class ArgentinaFravegaCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Frávega";
    private static final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
 
-   private static String productSKU = null;
-
    protected String getPostalCode() {
       return session.getOptions().optString("postal_code");
    }
@@ -65,8 +63,6 @@ public class ArgentinaFravegaCrawler extends Crawler {
       String[] slugParts = Arrays.copyOf(productSlugParts, productSlugParts.length - 1);
       String slug = String.join("-", slugParts);
 
-      productSKU = sku;
-
       return "https://www.fravega.com/_next/data/F6xWugkgMp7lt6cbNmjb3/es-AR/p/" + productSlug + ".json?sku=" + sku + "&slug=" + slug + "&productSlug=" + productSlug;
    }
 
@@ -80,10 +76,10 @@ public class ArgentinaFravegaCrawler extends Crawler {
       JSONObject productJson = JSONUtils.getValueRecursive(json, "pageProps.__APOLLO_STATE__.ROOT_QUERY.sku({\"code\":\"" + sku + "\"})", JSONObject.class);
 
       if(productJson != null) {
-         String name = productJson.optJSONObject("item").optString("title");
-         String internalPid = productJson.optJSONObject("item").optString("id");
+         String name = JSONUtils.getValueRecursive(productJson, "item.title", String.class);
+         String internalPid = JSONUtils.getValueRecursive(productJson, "item.id", String.class);
          String internalId = productJson.optString("code");
-         JSONArray imagesJson = productJson.optJSONObject("item").optJSONArray("images");
+         JSONArray imagesJson = JSONUtils.getValueRecursive(productJson, "item.images", JSONArray.class);
          List<String> images = formatImages(imagesJson);
          String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
          String description = scrapDescription(productJson.optJSONObject("item"));
@@ -139,8 +135,9 @@ public class ArgentinaFravegaCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
       JSONObject pricingObject = JSONUtils.getValueRecursive(product, "pricing({\"channel\":\"fravega-ecommerce\"}).0", JSONObject.class);
-      Double spotlightPrice =  JSONUtils.getDoubleValueFromJSON(pricingObject, "salePrice", true);
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(pricingObject, "salePrice", true);
       Double priceFrom =  JSONUtils.getDoubleValueFromJSON(pricingObject, "listPrice", true);
+      if(spotlightPrice == null) { spotlightPrice = (double) 0; };
 
       Double bankslipDiscount = Double.valueOf(JSONUtils.getIntegerValueFromJSON(product, "discount_percent_boleto", 0));
 

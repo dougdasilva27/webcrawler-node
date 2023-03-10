@@ -33,7 +33,7 @@ public class ArgentinaFravegaCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   public void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException, OfferException, MalformedPricingException {
+   public void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 24;
       Integer offsetPage = (this.currentPage - 1) * 15;
       this.log("Página " + this.currentPage);
@@ -52,7 +52,7 @@ public class ArgentinaFravegaCrawler extends CrawlerRankingKeywords {
          for (Object o : products) {
             JSONObject product = (JSONObject) o;
             String internalPid = product.optString("id");
-            String internalId = JSONUtils.getValueRecursive(product.optJSONObject("skus"), "results.0.code", String.class);
+            String internalId = JSONUtils.getValueRecursive(product, "skus.results.0.code", String.class);
             String productUrl = formatUrl(product.optString("slug"), internalId);
             String name = product.optString("title");
             JSONObject priceObj = JSONUtils.getValueRecursive(product, "salePrice.amounts.0", JSONObject.class);;
@@ -90,7 +90,7 @@ public class ArgentinaFravegaCrawler extends CrawlerRankingKeywords {
      return "https://www.fravega.com/p/" + slug + "-" + sku + "/";
    }
 
-   private String formatImage(String image) throws OfferException, MalformedPricingException {
+   private String formatImage(String image) {
       String formatedImage = "https://images.fravega.com/f500/" + image;
       return formatedImage;
    }
