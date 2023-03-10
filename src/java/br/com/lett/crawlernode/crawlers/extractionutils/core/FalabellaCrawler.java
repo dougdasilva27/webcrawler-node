@@ -109,7 +109,8 @@ public class FalabellaCrawler extends Crawler {
             Offers offers = available ? scrapOffers(doc, sellerFullName, isMainSeller) : null;
             CategoryCollection categories = getCategories(doc, sellerFullName);
             List<String> images = scrapImages(doc);
-            String primaryImage = images != null ? images.remove(0) : null;
+            JSONObject obj = requestImage();
+            String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : JSONUtils.getValueRecursive(obj, "Results.0.ImageUrl", String.class);
 
             String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#productInfoContainer"));
 
@@ -225,6 +226,14 @@ public class FalabellaCrawler extends Crawler {
          }
       }
       return null;
+   }
+
+   private JSONObject requestImage() {
+      String urlApi = "https://api.bazaarvoice.com/data/products.json?passkey=2xga75eqgl9scx29oke8xx11r&locale=es_PE&allowMissing=true&apiVersion=5.4&filter=id:" + getReviewId(this.session.getOriginalURL());
+      Request request = Request.RequestBuilder.create().setUrl(urlApi).build();
+      Response response = dataFetcher.get(session, request);
+
+      return CrawlerUtils.stringToJson(response.getBody());
    }
 
    private boolean isProductPage(Document doc) {
