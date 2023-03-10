@@ -33,8 +33,6 @@ import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 import enums.QueueName;
 import enums.ScrapersTypes;
-import exceptions.MalformedPricingException;
-import exceptions.OfferException;
 import models.Processed;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.http.cookie.Cookie;
