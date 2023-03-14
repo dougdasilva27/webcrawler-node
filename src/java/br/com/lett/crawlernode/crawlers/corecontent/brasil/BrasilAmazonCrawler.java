@@ -52,13 +52,8 @@ public class BrasilAmazonCrawler extends Crawler {
 
    public BrasilAmazonCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.MIRANHA);
       super.config.setParser(Parser.HTML);
-   }
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies);
    }
 
    private String requestMethod(String url) {
@@ -138,7 +133,7 @@ public class BrasilAmazonCrawler extends Crawler {
          String primaryImage = this.amazonScraperUtils.scrapPrimaryImage(images, doc, IMAGES_PROTOCOL, IMAGES_HOST);
          List<String> secondaryImages = this.amazonScraperUtils.scrapSecondaryImages(images, IMAGES_PROTOCOL, IMAGES_HOST);
 
-         String description = crawlDescription(doc);
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#productDetails_feature_div", "#productDescription_feature_div.celwidget", "#featurebullets_feature_div.celwidget", ".a-normal.a-spacing-micro tbody", ".aplus-v2.desktop.celwidget"));;
          Integer stock = null;
          List<String> eans = amazonScraperUtils.crawlEan(doc);
          Offer mainPageOffer = amazonScraperUtils.scrapMainPageOffer(doc);
@@ -177,40 +172,28 @@ public class BrasilAmazonCrawler extends Crawler {
    }
 
    public Document fetchDocumentsOffersRequest(String internalId, int page) {
-      Document doc;
       String urlMarketPlace = "https://www.amazon.com.br/gp/product/ajax/ref=aod_page_" + page + "?asin=" + internalId + "&pc=dp&isonlyrenderofferlist=true&pageno=" + page + "&experienceId=aodAjaxMain";
-      int maxAttempt = 3;
-      int attempt = 1;
-
-      do {
-         String content = requestMethod(urlMarketPlace);
-         doc = Jsoup.parse(content);
-         attempt++;
-      } while (doc.selectFirst("#aod-offer") == null && attempt <= maxAttempt);
-
-      return doc;
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("authority", "www.amazon.com.br");
+      headers.put("cache-control", "no-cache");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36");
+      Request request = Request.RequestBuilder.create()
+         .setUrl(urlMarketPlace)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.LUMINATI_RESIDENTIAL_BR
+         ))
+         .build();
+      Response response = this.dataFetcher.get(session, request);
+      return Jsoup.parse(response.getBody());
    }
-
-   public String crawlDescription(Document doc) {
-      Document docDescription = doc;
-      int attempt = 0;
-
-      while (docDescription.select("#productDescription_feature_div.celwidget").isEmpty() && attempt++ < 3) {
-         Logging.printLogInfo(logger, session, "This document not have description selector, initiating attempt: " + attempt);
-         docDescription = Jsoup.parse(requestMethod(session.getOriginalURL()));
-      }
-
-      if (!docDescription.select("#productDescription_feature_div.celwidget").isEmpty()) {
-         Logging.printLogInfo(logger, session, "Success! After " + attempt + " attempt the document load description");
-      } else {
-         Logging.printLogInfo(logger, session, "Failed! After " + attempt + " the document not load description");
-      }
-
-      return CrawlerUtils.scrapElementsDescription(docDescription, Arrays.asList("#productDetails_feature_div", "#productDescription_feature_div.celwidget", "#featurebullets_feature_div.celwidget", ".a-normal.a-spacing-micro tbody", ".aplus-v2.desktop.celwidget"));
-
-   }
-
-
    /**
     * Fetch pages when have marketplace info
     *
