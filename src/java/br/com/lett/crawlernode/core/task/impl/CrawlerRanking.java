@@ -369,7 +369,7 @@ public abstract class CrawlerRanking extends Task {
       Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
       if ((session instanceof RankingKeywordsSession && ((RankingKeywordsSession) session).isSendDiscover()) || session instanceof RankingDiscoverKeywordsSession) {
-         JSONObject resultJson = new JSONObject();
+         JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
 
          if (resultJson.has("finished_at")) {
             //todo add check in internal_id with method isContainsSku
@@ -566,7 +566,7 @@ public abstract class CrawlerRanking extends Task {
          } else if (session instanceof EqiRankingDiscoverKeywordsSession) {
             queueName = isWebDrive ? QueueName.WEB_SCRAPER_PRODUCT_EQI_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_PRODUCT_EQI.toString();
          } else {
-            queueName = "web-scraper-product-charge-test";
+            queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();
          }
       }
 
