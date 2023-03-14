@@ -2,9 +2,10 @@ package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -22,7 +23,6 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.util.*;
@@ -32,7 +32,7 @@ public class ChileUnimarcCrawler extends Crawler {
 
    public ChileUnimarcCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.MIRANHA);
+      config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
@@ -40,7 +40,7 @@ public class ChileUnimarcCrawler extends Crawler {
 
       List<Product> products = new ArrayList<>();
 
-      Logging.printLogDebug(logger, session, "Not a product page " + session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
       JSONObject dataJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
       JSONObject data = JSONUtils.getValueRecursive(dataJson, "props.pageProps.product.data", JSONObject.class);
       if (data != null && !data.isEmpty()) {
@@ -167,8 +167,8 @@ public class ChileUnimarcCrawler extends Crawler {
    }
 
 
-   private Document getDocumentPage(DataFetcher dataFetcher) {
-
+   @Override
+   protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
@@ -181,16 +181,14 @@ public class ChileUnimarcCrawler extends Crawler {
          .setSendUserAgent(false)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.SMART_PROXY_CL_HAPROXY))
          .build();
 
-      return Jsoup.parse(dataFetcher.get(session, request).getBody());
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), dataFetcher), session, "get");
 
+      return response;
    }
-
-
 
 
 }
