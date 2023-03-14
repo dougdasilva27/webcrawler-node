@@ -1,32 +1,24 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
-import enums.QueueName;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -56,54 +48,6 @@ public class BrasilAmazonCrawler extends Crawler {
       super.config.setParser(Parser.HTML);
    }
 
-   private String requestMethod(String url) {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Accept-Encoding", "gzip, deflate, br");
-      headers.put("authority", "www.amazon.com.br");
-      headers.put("cache-control", "no-cache");
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36");
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BUY,
-               ProxyCollection.SMART_PROXY_BR_HAPROXY,
-               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY
-            ))
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
-         .build();
-      int attempt = 0;
-      List<DataFetcher> fetchers = List.of(new JsoupDataFetcher(), new ApacheDataFetcher(), new FetcherDataFetcher());
-      while (attempt < fetchers.size()) {
-         Response response = CrawlerUtils.retryRequest(request, session, fetchers.get(attempt));
-         attempt++;
-         if (response.isSuccess() && !response.getBody().isEmpty()) {
-            return response.getBody();
-         }
-      }
-      return "{}";
-   }
-
-
-   @Override
-   protected Document fetch() {
-      String url = session.getOriginalURL();
-      String content = requestMethod(url);
-      return Jsoup.parse(content);
-
-   }
-
    @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
@@ -111,11 +55,6 @@ public class BrasilAmazonCrawler extends Crawler {
    }
 
    private final AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
-
-   @Override
-   protected Response fetchResponse() {
-      return amazonScraperUtils.fetchProductPageResponse(cookies, null);
-   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -133,7 +72,7 @@ public class BrasilAmazonCrawler extends Crawler {
          String primaryImage = this.amazonScraperUtils.scrapPrimaryImage(images, doc, IMAGES_PROTOCOL, IMAGES_HOST);
          List<String> secondaryImages = this.amazonScraperUtils.scrapSecondaryImages(images, IMAGES_PROTOCOL, IMAGES_HOST);
 
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#productDetails_feature_div", "#productDescription_feature_div.celwidget", "#featurebullets_feature_div.celwidget", ".a-normal.a-spacing-micro tbody", ".aplus-v2.desktop.celwidget"));;
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#productDetails_feature_div", "#productDescription_feature_div.celwidget", "#featurebullets_feature_div.celwidget", ".a-normal.a-spacing-micro tbody", ".aplus-v2.desktop.celwidget"));
          Integer stock = null;
          List<String> eans = amazonScraperUtils.crawlEan(doc);
          Offer mainPageOffer = amazonScraperUtils.scrapMainPageOffer(doc);
@@ -173,6 +112,10 @@ public class BrasilAmazonCrawler extends Crawler {
 
    public Document fetchDocumentsOffersRequest(String internalId, int page) {
       String urlMarketPlace = "https://www.amazon.com.br/gp/product/ajax/ref=aod_page_" + page + "?asin=" + internalId + "&pc=dp&isonlyrenderofferlist=true&pageno=" + page + "&experienceId=aodAjaxMain";
+      if (page > 1) {
+         urlMarketPlace += "&isonlyrenderofferlist=true";
+      }
+      //https://www.amazon.com.br/gp/product/ajax/ref=aod_page_2?asin=B0BCSZK2NG&m=&qid=1678730229&smid=&sourcecustomerorglistid=&sourcecustomerorglistitemid=&sr=8-14&pc=dp&isonlyrenderofferlist=true&pageno=2&experienceId=aodAjaxMain
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "gzip, deflate, br");
       headers.put("authority", "www.amazon.com.br");
@@ -191,9 +134,10 @@ public class BrasilAmazonCrawler extends Crawler {
             ProxyCollection.LUMINATI_RESIDENTIAL_BR
          ))
          .build();
-      Response response = this.dataFetcher.get(session, request);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
       return Jsoup.parse(response.getBody());
    }
+
    /**
     * Fetch pages when have marketplace info
     *
@@ -262,70 +206,14 @@ public class BrasilAmazonCrawler extends Crawler {
       //send to webdriver only whirpool and gopro
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
-            if (checkIfSendToQueue(offerPage, doc)) {
-               sendMessage();
-               Logging.printLogDebug(logger, session, "Block in offers page - sending to try webdriver");
-            } else {
-               Elements ofertas = offerPage.select("#aod-offer");
-               for (Element oferta : ofertas) {
-                  amazonScraperUtils.getOffersFromOfferPage(oferta, pos, offers);
-                  pos++;
-               }
+            Elements ofertas = offerPage.select("#aod-offer");
+            for (Element oferta : ofertas) {
+               amazonScraperUtils.getOffersFromOfferPage(oferta, pos, offers);
+               pos++;
             }
          }
 
       }
       return offers;
    }
-
-   private boolean pageOfferIsBlocked(Document offerPage) {
-      Element block = offerPage.selectFirst("#aod-offer");
-      return block == null;
-   }
-
-   private boolean checkIfSendToQueue(Document offerPage, Document doc) {
-      List<Long> specificSuppliers = Arrays.asList(174l, 1470l);
-      boolean hasPageOffers = !doc.select(AmazonScraperUtils.listSelectors.get("iconArrowOffer")).isEmpty() || !doc.select(AmazonScraperUtils.listSelectors.get("linkOffer")).isEmpty();
-
-      return pageOfferIsBlocked(offerPage) && session.getSupplierId() != null && specificSuppliers.contains(session.getSupplierId()) && hasPageOffers;
-
-   }
-
-
-   private void sendMessage() {
-      if (session instanceof TestCrawlerSession) {
-         Logging.printLogWarn(logger, session, "Block in offers page - don't send to queue because is a test");
-      } else {
-         JSONObject jsonToSentToQueue = mountMessageToSendToQueue(session.getMarket());
-         QueueService.SendMessageResult(Main.queueHandler.getSqs(), QueueName.WEB_SCRAPER_PRODUCT_AMAZON_WD.toString(), jsonToSentToQueue.toString());
-      }
-   }
-
-   public JSONObject mountMessageToSendToQueue(Market market) {
-      String sessionId = UUID.randomUUID().toString();
-
-      JSONObject jsonToSendToCrawler = new JSONObject();
-      JSONObject marketInfo = new JSONObject();
-      marketInfo.put("code", market.getCode());
-      marketInfo.put("regex", market.getFirstPartyRegex());
-      marketInfo.put("fullName", market.getFullName());
-      marketInfo.put("marketId", market.getId());
-      marketInfo.put("use_browser", true);
-      marketInfo.put("name", market.getName());
-      jsonToSendToCrawler.put("type", session.getScraperType());
-      jsonToSendToCrawler.put("sessionId", sessionId);
-      jsonToSendToCrawler.put("options", new JSONObject());
-      jsonToSendToCrawler.put("market", marketInfo);
-      jsonToSendToCrawler.put("className", "br.com.lett.crawlernode.crawlers.corecontent.brasil.BrasilAmazonWDCrawler");
-      jsonToSendToCrawler.put("parameters", session.getOriginalURL());
-      if (session.getProcessedId() != null) {
-         jsonToSendToCrawler.put("processedId", session.getProcessedId());
-      }
-      if (session.getProcessedId() != null) {
-         jsonToSendToCrawler.put("internalId", session.getInternalId());
-      }
-
-      return jsonToSendToCrawler;
-   }
-
 }
