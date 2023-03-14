@@ -125,8 +125,16 @@ public class ChileUnimarcCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
       Integer spotlightPriceInt = JSONUtils.getValueRecursive(data, "sellers.0.price", Integer.class);
+      if (spotlightPriceInt == null) {
+         Double priceDouble = JSONUtils.getValueRecursive(data, "sellers.0.price", Double.class);
+         spotlightPriceInt = priceDouble.intValue();
+      }
       spotlightPriceInt = spotlightPriceInt * 100;
-      Integer priceFromInt = JSONUtils.getValueRecursive(data, "sellers.0.price.listPrice", Integer.class);
+      Integer priceFromInt = JSONUtils.getValueRecursive(data, "sellers.0.priceWithoutDiscount", Integer.class);
+      if (priceFromInt == null) {
+         Double priceDouble = JSONUtils.getValueRecursive(data, "sellers.0.priceWithoutDiscount", Double.class);
+         priceFromInt = priceDouble.intValue();
+      }
       priceFromInt = priceFromInt * 100;
       Double spotlightPrice = spotlightPriceInt / 100.0;
       Double priceFrom = priceFromInt / 100.0;
