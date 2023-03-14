@@ -115,7 +115,7 @@ public class BrasilAmazonCrawler extends Crawler {
       if (page > 1) {
          urlMarketPlace += "&isonlyrenderofferlist=true";
       }
-      //https://www.amazon.com.br/gp/product/ajax/ref=aod_page_2?asin=B0BCSZK2NG&m=&qid=1678730229&smid=&sourcecustomerorglistid=&sourcecustomerorglistitemid=&sr=8-14&pc=dp&isonlyrenderofferlist=true&pageno=2&experienceId=aodAjaxMain
+
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "gzip, deflate, br");
       headers.put("authority", "www.amazon.com.br");
@@ -197,18 +197,17 @@ public class BrasilAmazonCrawler extends Crawler {
       Elements buyBox = doc.select(".a-box.mbc-offer-row.pa_mbc_on_amazon_offer");
 
       if (buyBox != null && !buyBox.isEmpty()) {
-         for (Element oferta : buyBox) {
-            amazonScraperUtils.getOffersFromBuyBox(oferta, pos, offers);
+         for (Element offer : buyBox) {
+            amazonScraperUtils.getOffersFromBuyBox(offer, pos, offers);
             pos++;
          }
       }
 
-      //send to webdriver only whirpool and gopro
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
-            Elements ofertas = offerPage.select("#aod-offer");
-            for (Element oferta : ofertas) {
-               amazonScraperUtils.getOffersFromOfferPage(oferta, pos, offers);
+            Elements buy_offers = offerPage.select("#aod-offer");
+            for (Element buy_offer : buy_offers) {
+               amazonScraperUtils.getOffersFromOfferPage(buy_offer, pos, offers);
                pos++;
             }
          }
