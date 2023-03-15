@@ -50,11 +50,17 @@ public class ColombiaFarmatodoCrawler extends Crawler {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(PRODUCTS_API_URL + productId + "&idStoreGroup=26&token=" + API_TOKEN + "&tokenIdWebSafe=" + WEB_SAFE_TOKEN + "&key=AIzaSyDASDi-v-kJzulGnaRwT7sAfG44KEqaudA")
-         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.BUY))
+         .setProxyservice(List.of(
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.BUY
+         ))
          .setHeaders(headers)
          .build();
 
-      Response response = this.dataFetcher.get(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, this.dataFetcher, true);
       return response;
    }
 
