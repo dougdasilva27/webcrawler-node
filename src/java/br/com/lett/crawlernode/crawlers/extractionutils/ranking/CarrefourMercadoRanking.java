@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -9,7 +8,6 @@ import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilCarrefourFetchUtils;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
@@ -74,7 +72,6 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
       headers.put("authority", "mercado.carrefour.com.br");
       headers.put("referer", "https://mercado.carrefour.com.br/");
       headers.put("accept-encoding", "gzip, deflate, br");
-      //String url = "https://mercado.carrefour.com.br/api/graphql?operationName=ProductsQuery&variables={\"first\":20,\"after\":\"" + (this.currentPage - 1) * this.pageSize + "\",\"sort\":\"score_desc\",\"term\":\"" + this.keywordWithoutAccents + "\",\"selectedFacets\":[{\"key\":\"region-id\",\"value\":\"" + regionId + "\"},{\"key\":\"channel\",\"value\":\"{\\\"salesChannel\\\":\\\"2\\\",\\\"regionId\\\":\\\"" + regionId + "\\\"}\"},{\"key\":\"locale\",\"value\":\"pt-BR\"}]}";
       String url = "https://mercado.carrefour.com.br/api/graphql?operationName=ProductsQuery&variables=%7B%22first%22%3A20%2C%22after%22%3A%22" + (this.currentPage - 1) * this.pageSize + "%22%2C%22sort%22%3A%22score_desc%22%2C%22term%22%3A%22" + this.keywordEncoded + "%22%2C%22selectedFacets%22%3A%5B%7B%22key%22%3A%22region-id%22%2C%22value%22%3A%22" + regionId + "%22%7D%2C%7B%22key%22%3A%22channel%22%2C%22value%22%3A%22%7B%5C%22salesChannel%5C%22%3A%5C%222%5C%22%2C%5C%22regionId%5C%22%3A%5C%22v2.BF5CB0A0B2E63790F00315745EDC0A60%5C%22%7D%22%7D%2C%7B%22key%22%3A%22locale%22%2C%22value%22%3A%22pt-BR%22%7D%5D%7D";
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
