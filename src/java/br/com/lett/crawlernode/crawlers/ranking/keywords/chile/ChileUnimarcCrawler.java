@@ -22,8 +22,6 @@ import java.util.Map;
 public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
 
    private static final String HOME_PAGE = "https://www.unimarc.cl";
-   private Integer page;
-   private Integer endPage;
 
    public ChileUnimarcCrawler(Session session) {
       super(session);
@@ -44,9 +42,7 @@ public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
       for (Object object : products) {
 
          JSONObject product = (JSONObject) object;
-         String urlEnd = product.optString("detailUrl");
-         urlEnd = urlEnd.replaceAll("\\/p", "");
-         String productUrl = HOME_PAGE + "/product" + urlEnd;
+         String productUrl = getProductUrl(product);
          String internalPid = product.optString("productId");
          String name = product.optString("name");
          Number numberPrice = JSONUtils.getValueRecursive(product, "sellers.0.price", Number.class);
@@ -73,8 +69,8 @@ public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "*/*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_0_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36");
-      headers.put("Accept-Encoding","gzip, deflate, br");
-      headers.put("Connection","keep-alive");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Connection", "keep-alive");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -101,6 +97,15 @@ public class ChileUnimarcCrawler extends CrawlerRankingKeywords {
       JSONArray value = JSONUtils.getValueRecursive(jsonResponse, "data.availableProducts", JSONArray.class);
 
       return value;
+   }
+
+   private String getProductUrl(JSONObject object) {
+      String productUrl = object.optString("detailUrl");
+      if (productUrl != null && !productUrl.isEmpty()) {
+         return HOME_PAGE + "/product" + productUrl.substring(0, productUrl.length() - 2);
+      }
+
+      return null;
    }
 
    @Override
