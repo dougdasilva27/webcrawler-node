@@ -143,7 +143,13 @@ public class PeruJokrCrawler extends Crawler {
                   String content1UOM = cmsProduct.optString("ui_content_1_uom", "");
                   String content2 = cmsProduct.optString("ui_content_2", "");
                   String content2UOM = cmsProduct.optString("ui_content_2_uom", "");
-                  return title + " - " + content1 + content1UOM + " - " + content2 + content2UOM;
+                  if(!content1.equals("") && !content1UOM.equals("")){
+                     title = title + " - " + content1 + content1UOM;
+                  }
+                  if(!content2.equals("") && !content2UOM.equals("")){
+                     title = title + " - " + content2 + content2UOM;
+                  }
+                  return title;
 
                }
             }
