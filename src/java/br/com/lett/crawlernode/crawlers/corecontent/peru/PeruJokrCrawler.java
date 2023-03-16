@@ -203,7 +203,10 @@ public class PeruJokrCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
       Double spotlightPrice = json.optDouble("amount");
-      Double priceFrom = json.optDouble("compareAtPrice");
+      Double priceFrom = json.optDouble("compareAtPrice", 0);
+      if (priceFrom == 0) {
+         priceFrom = null;
+      }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
