@@ -69,7 +69,7 @@ public class PeruJokrCrawler extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(internalPid)
-               .setInternalId(null)
+               .setInternalId(internalPid)
                .setInternalPid(internalPid)
                .setName(name)
                .setPriceInCents(price)
