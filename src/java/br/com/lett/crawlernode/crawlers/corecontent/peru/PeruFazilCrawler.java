@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Offers;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
@@ -47,23 +48,22 @@ public class PeruFazilCrawler extends Crawler {
 
       if (json.has("data")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         JSONObject productSku = JSONUtils.getValueRecursive(json, "data.products.0", JSONObject.class);
-         Map<String, JSONObject> productSkuPrice = new HashMap<>();
-         productSkuPrice = getOffersSku();
+         JSONObject productSku = JSONUtils.getValueRecursive(json, "results.0", JSONObject.class);
 
+         String internalId = productSku.optString("productId");
          String internalPid = productSku.optString("sku");
-         String description = productSku.optString("long_description");
-         String primaryImage = JSONUtils.getValueRecursive(productSku, "packshot1_front_grid.url", String.class);
-         SELLER_NAME = productSku.optString("vendor_name");
+         String name = JSONUtils.getValueRecursive(productSku, "name.es-PE", String.class);
 
-         String name = getNamebySku(internalPid);
+         JSONArray arrayImages = JSONUtils.getValueRecursive(productSku, "images", JSONArray.class);
+         String primaryImage = arrayImages.isEmpty() ? arrayImages.remove(0) : null;
+         String description = JSONUtils.getValueRecursive(productSku, "description.es-PE", String.class);
 
          boolean isAvailable = productSkuPrice.get(internalPid) != null;
          Offers offers = isAvailable ? scrapOffers(productSkuPrice.get(internalPid)) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
-            .setInternalId(internalPid)
+            .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
             .setOffers(offers)
