@@ -34,7 +34,7 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
 
    public BrasilLojamondelezCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.APACHE;
    }
 
    private static final String LOGIN_URL = "https://www.lojamondelez.com.br/Cliente/Logar";
@@ -47,10 +47,15 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
 
    private void loginMasterAccount() {
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
       headers.put(HttpHeaders.REFERER, "https://www.lojamondelez.com.br/");
       Response response = new Response();
       String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
+      try {
+         Thread.sleep(5000);
+      } catch (InterruptedException e) {
+         e.printStackTrace();
+      }
       try {
       Request request = RequestBuilder.create()
          .setUrl(ADMIN_URL)
@@ -60,7 +65,7 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
             getFixedIp()
          )
          .build();
-     response = CrawlerUtils.retryRequest(request, session, dataFetcher);
+         response = this.dataFetcher.post(session, request);
       } catch (IOException e) {
          e.printStackTrace();
       }
@@ -82,18 +87,22 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
 
       return lettProxy;
    }
-
    @Override
    protected void processBeforeFetch() {
       loginMasterAccount();
-
+      try {
+         Thread.sleep(5000);
+      } catch (InterruptedException e) {
+         e.printStackTrace();
+      }
       StringBuilder payload = new StringBuilder();
       payload.append("usuario_cnpj=" + this.CNPJ);
 
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
       headers.put("referer", "https://www.lojamondelez.com.br/VendaAssistida");
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
+      Response response = new Response();
       try {
       Request request = RequestBuilder.create()
          .setUrl(LOGIN_URL)
@@ -104,7 +113,7 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .build();
 
-      CrawlerUtils.retryRequest(request, session, dataFetcher);
+         response = this.dataFetcher.post(session, request);
       } catch (IOException e) {
          e.printStackTrace();
       }
@@ -118,16 +127,23 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
    protected Document fetchDocument(String url, List<Cookie> cookies) {
       String response = "";
       try {
+         Thread.sleep(5000);
+      } catch (InterruptedException e) {
+         e.printStackTrace();
+      }
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
+      try {
       Request request = RequestBuilder
          .create()
-         .setCookies(cookies)
+         .setHeaders(headers)
          .setUrl(url)
          .setProxy(
             getFixedIp()
          )
          .build();
 
-      response = CrawlerUtils.retryRequestString(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
+    response = this.dataFetcher.get(session, request).getBody();
       } catch (IOException e) {
          e.printStackTrace();
       }
