@@ -135,9 +135,16 @@ public class PeruJokrCrawler extends Crawler {
             JSONArray products = JSONUtils.getValueRecursive(subCategory, "products", JSONArray.class);
             for (Object productObj : products) {
                JSONObject product = (JSONObject) productObj;
-               String cmsProductSku = JSONUtils.getValueRecursive(product, "cmsProduct.sku", String.class);
+               JSONObject cmsProduct = JSONUtils.getValueRecursive(product, "cmsProduct", JSONObject.class);
+               String cmsProductSku = cmsProduct.optString("sku");
                if (cmsProductSku.equals(internalPid)) {
-                  return JSONUtils.getValueRecursive(product, "cmsProduct.title", String.class);
+                  String title = cmsProduct.optString("title");
+                  String content1 = cmsProduct.optString("ui_content_1", "");
+                  String content1UOM = cmsProduct.optString("ui_content_1_uom", "");
+                  String content2 = cmsProduct.optString("ui_content_2", "");
+                  String content2UOM = cmsProduct.optString("ui_content_2_uom", "");
+                  return title + " - " + content1 + content1UOM + " - " + content2 + content2UOM;
+
                }
             }
          }
