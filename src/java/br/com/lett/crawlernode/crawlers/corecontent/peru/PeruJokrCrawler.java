@@ -2,8 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -31,14 +29,14 @@ public class PeruJokrCrawler extends Crawler {
    public PeruJokrCrawler(Session session) {
       super(session);
       super.config.setParser(Parser.JSON);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    String SELLER_NAME = null;
    private final String hubId = getHubId();
 
    protected String getHubId() {
-      return session.getOptions().optString("ub_id");
+      return session.getOptions().optString("hub_id");
    }
 
    @Override
@@ -52,7 +50,6 @@ public class PeruJokrCrawler extends Crawler {
          "}";
       HashMap<String, String> headers = new HashMap<>();
       headers.put("Content-type", "application/json");
-      headers.put("Accept-Encoding", "gzip, deflate, br");
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://api-prd-pe.jokrtech.com/")
@@ -63,7 +60,7 @@ public class PeruJokrCrawler extends Crawler {
          ))
          .build();
 
-      Response response = new FetcherDataFetcher().post(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher());
       return response;
    }
 
@@ -74,14 +71,13 @@ public class PeruJokrCrawler extends Crawler {
 
       if (json.has("data")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         JSONObject productSku = JSONUtils.getValueRecursive(json, "data.prducts.0", JSONObject.class);
+         JSONObject productSku = JSONUtils.getValueRecursive(json, "data.products.0", JSONObject.class);
          Map<String, JSONObject> productSkuPrice = new HashMap<>();
          productSkuPrice = getOffersSku();
 
          String internalPid = productSku.optString("sku");
-//         List<String> images = scrapImages(json);
          String description = productSku.optString("long_description");
-         String primaryImage = productSku.optString("packshot1_front_grid/url");
+         String primaryImage = JSONUtils.getValueRecursive(productSku, "packshot1_front_grid.url", String.class);
          SELLER_NAME = productSku.optString("vendor_name");
 
          String name = getNamebySku(internalPid);
@@ -116,35 +112,37 @@ public class PeruJokrCrawler extends Crawler {
          "    \"query\": \"query allCategories($hubId: String!) {\\n  availableCategories(hubId: $hubId) {\\n    hubId\\n    categories {\\n      cmsMainCategory {\\n        jokr_id\\n        title\\n        list_image_three {\\n          url(transformation: {image: {resize: {width: 200, height: 200, fit: clip}}})\\n          __typename\\n        }\\n        __typename\\n      }\\n      subCategories {\\n        cmsSubCategory {\\n          jokr_id\\n          title\\n          __typename\\n        }\\n        products {\\n          cmsProduct {\\n            ...CoreProductFields\\n            __typename\\n          }\\n          __typename\\n        }\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\\nfragment CoreProductFields on Product {\\n  sku\\n  title\\n  title2\\n  packshot1_front_grid_small: packshot1_front_grid {\\n    url(transformation: {image: {resize: {width: 266, height: 266, fit: clip}}})\\n    __typename\\n  }\\n  ui_content_1\\n  ui_content_1_uom\\n  ui_content_2\\n  ui_content_2_uom\\n  tags\\n  __typename\\n}\\n\"\n" +
          "}";
 
+      HashMap<String, String> headers = new HashMap<>();
+      headers.put("Content-type", "application/json");
+
       Request request = Request.RequestBuilder.create()
          .setUrl("https://api-prd-pe.jokrtech.com/")
          .setPayload(payload)
+         .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
          ))
          .build();
 
-      Response response = this.dataFetcher.post(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher());
       JSONObject json = JSONUtils.stringToJson(response.getBody());
-      JSONArray array = JSONUtils.getValueRecursive(json, "data.availableCategories.categories", JSONArray.class);
-      String name = null;
-      for (Object obj : array) {
-         JSONObject jsonObject = (JSONObject) obj;
-         JSONArray subCategories = jsonObject.optJSONArray("subCategories");
-         for (Object obj2 : subCategories) {
-            JSONObject jsonObject2 = (JSONObject) obj2;
-            JSONArray products = jsonObject2.optJSONArray("products");
-            for (Object obj3 : products) {
-               JSONObject jsonObject3 = (JSONObject) obj3;
-               String cmsProductSku = jsonObject3.optString("cmsProduct/sku");
+      JSONArray categories = JSONUtils.getValueRecursive(json, "data.availableCategories.categories", JSONArray.class);
+      for (Object categoryObj : categories) {
+         JSONObject category = (JSONObject) categoryObj;
+         JSONArray subCategories = JSONUtils.getValueRecursive(category, "subCategories", JSONArray.class);
+         for (Object subCategoryObj : subCategories) {
+            JSONObject subCategory = (JSONObject) subCategoryObj;
+            JSONArray products = JSONUtils.getValueRecursive(subCategory, "products", JSONArray.class);
+            for (Object productObj : products) {
+               JSONObject product = (JSONObject) productObj;
+               String cmsProductSku = JSONUtils.getValueRecursive(product, "cmsProduct.sku", String.class);
                if (cmsProductSku.equals(internalPid)) {
-                  name = jsonObject3.optString("title");
+                  return JSONUtils.getValueRecursive(product, "cmsProduct.title", String.class);
                }
             }
          }
       }
-      return name;
+      return null;
    }
 
    protected Map<String, JSONObject> getOffersSku() {
@@ -163,24 +161,26 @@ public class PeruJokrCrawler extends Crawler {
          .setUrl("https://api-prd-pe.jokrtech.com/")
          .setPayload(payload)
          .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+         ))
          .build();
-      Response response = new FetcherDataFetcher().post(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher());
       JSONObject jsonObject = JSONUtils.stringToJson(response.getBody());
-      JSONArray array = JSONUtils.getValueRecursive(jsonObject, "data.availableCategories", JSONArray.class);
+      JSONArray array = JSONUtils.getValueRecursive(jsonObject, "data.availableCategories.products", JSONArray.class);
       Map<String, JSONObject> productOffers = new HashMap<>();
       for (Object obj : array) {
          JSONObject jsonSku = (JSONObject) obj;
-         String codigo = jsonSku.optString("sku");
-         Integer quantity = jsonSku.optInt("inventory/quantity");
+         String sku = jsonSku.optString("sku");
+         Integer quantity = JSONUtils.getValueRecursive(jsonSku, "inventory.quantity", Integer.class);
 
          JSONObject price = quantity > 0 ? jsonSku.optJSONObject("price") : null;
 
-         productOffers.put(codigo, price);
+         productOffers.put(sku, price);
       }
 
       return productOffers;
    }
-
 
    protected Offers scrapOffers(JSONObject json) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
