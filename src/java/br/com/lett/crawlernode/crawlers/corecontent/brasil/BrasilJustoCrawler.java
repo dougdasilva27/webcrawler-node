@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -84,6 +83,7 @@ public class BrasilJustoCrawler extends Crawler {
          boolean isAvailable = crawlAvailability(productJson);
          CategoryCollection categories = crawlCategories(productJson);
          String primaryImage = JSONUtils.getValueRecursive(productJson, "images.0.url", String.class);
+         List<String> secondaryImages = getSecondaryImages(productJson);
          String description = productJson.optString("description");
          Offers offers = isAvailable ? crawlOffers(data) : new Offers();
 
@@ -94,7 +94,7 @@ public class BrasilJustoCrawler extends Crawler {
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
-            // this site currently has no secondary images
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
             .setEans(eans)
@@ -136,14 +136,22 @@ public class BrasilJustoCrawler extends Crawler {
       return CrawlerUtils.stringToJson(response.getBody());
    }
 
-
-   private boolean isProductPage(String obj) {
-      JSONArray data = JSONUtils.stringToJsonArray(obj);
-      String id = JSONUtils.getValueRecursive(data, "0.data.product.id", String.class);
-      if (id == null) {
-         return false;
+   private List<String> getSecondaryImages(JSONObject imageInfo) {
+      List<String> secondaryImages = new ArrayList<>();
+      JSONArray imagesList = JSONUtils.getJSONArrayValue(imageInfo, "images");
+      if (imagesList != null && !imagesList.isEmpty()) {
+         for (Object e : imagesList) {
+            JSONObject obj = (JSONObject) e;
+            String imageUrl = obj.optString("url");
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+               secondaryImages.add(imageUrl);
+            }
+         }
+         if (secondaryImages.size() > 0) {
+            secondaryImages.remove(0);
+         }
       }
-      return !id.isEmpty();
+      return secondaryImages;
    }
 
    private Offers crawlOffers(JSONObject obj) throws OfferException, MalformedPricingException {
