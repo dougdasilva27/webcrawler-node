@@ -16,8 +16,6 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 public class PeruFazilCrawler extends CrawlerRankingKeywords {
    public PeruFazilCrawler(Session session) {
