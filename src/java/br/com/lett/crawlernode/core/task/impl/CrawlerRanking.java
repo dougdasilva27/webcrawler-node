@@ -559,7 +559,7 @@ public abstract class CrawlerRanking extends Task {
        //     queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString();
        //  } else {
             if(this.session.getScraperType().equals("discoverer_by_keywords") ){
-               queueName = QueueName.WEB_SCRAPER_DISCOVERER_MIRANHA_CAPTURE_PROD.toString();
+               queueName = QueueName.WEB_SCRAPER_DISCOVERER_MIRANHA_CAPTURE.toString();
             }else{
                queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_PROD.toString();
             }
