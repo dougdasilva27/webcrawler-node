@@ -555,16 +555,16 @@ public abstract class CrawlerRanking extends Task {
       String queueName;
 
       if (isMiranha) {
-         if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
-            queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString();
-         } else {
+        // if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
+       //     queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_DEV.toString();
+       //  } else {
             if(this.session.getScraperType().equals("discoverer_by_keywords") ){
                queueName = QueueName.WEB_SCRAPER_DISCOVERER_MIRANHA_CAPTURE_PROD.toString();
             }else{
                queueName = QueueName.WEB_SCRAPER_MIRANHA_CAPTURE_PROD.toString();
             }
 
-         }
+       //  }
       } else {
          if (executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
             queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
