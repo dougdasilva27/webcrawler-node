@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -10,6 +13,8 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.List;
 
 public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
 
@@ -24,10 +29,21 @@ public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
+   protected JSONObject fetchJSONObject(String url) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(List.of(ProxyCollection.BUY,ProxyCollection.LUMINATI_SERVER_BR,ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .build();
+      Response response = this.dataFetcher.get(session, request);
+
+      return JSONUtils.stringToJson(response.getBody());
+   }
+
+   @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.log("Página " + this.currentPage);
 
-      String url = "https://api.tendaatacado.com.br/api/public/store/search?query=" + this.keywordEncoded + "&page=" + this.currentPage + "&order=relevance&save=true";
+      String url = "https://api.tendaatacado.com.br/api/public/store/search?query=" + this.keywordEncoded + "&page=" + this.currentPage + "&order=relevance&save=true" + "&cartId=6030848";
       this.log("Link onde são feitos os crawlers: " + url);
       JSONObject search = fetchJSONObject(url);
 
