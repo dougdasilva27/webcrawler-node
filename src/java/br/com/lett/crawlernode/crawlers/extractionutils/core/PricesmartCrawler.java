@@ -65,7 +65,11 @@ public class PricesmartCrawler extends Crawler {
          String url = updateUrl(this.session.getOriginalURL());
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "#itemNumber", false);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".product-page-breadcrumb a", true);
+         String descriptionCom = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-description > span", true);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#collapseOne .card-body", true);
+         if(descriptionCom != null && !descriptionCom.isEmpty()){
+            description = descriptionCom + description;
+         }
          Integer stock = null;
 
          boolean available = doc.selectFirst(".btn-add-to-cart-disabled") == null;
