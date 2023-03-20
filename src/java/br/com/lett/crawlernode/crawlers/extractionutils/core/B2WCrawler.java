@@ -126,7 +126,7 @@ public class B2WCrawler extends Crawler {
       return Jsoup.parse(fetchPage(session.getOriginalURL(), this.dataFetcher, cookies, headers, session));
    }
 
-   public static String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
+   protected String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -219,7 +219,6 @@ public class B2WCrawler extends Crawler {
 
       return products;
    }
-
 
 
    private String getSellerFromApolloJson(JSONObject apolloJson) {
@@ -589,6 +588,9 @@ public class B2WCrawler extends Crawler {
       }
       if (spotlightPrice == null) {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".priceSales", null, true, ',', session);
+      }
+      if (spotlightPrice == null) {
+         spotlightPrice = paymentOptions.optDouble("price");
       }
       CreditCards creditCards = scrapCreditCards(paymentOptions, spotlightPrice);
 
