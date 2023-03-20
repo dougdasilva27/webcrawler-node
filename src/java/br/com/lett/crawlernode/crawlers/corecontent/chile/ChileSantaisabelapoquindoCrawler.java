@@ -18,9 +18,9 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.*;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -82,6 +82,7 @@ public class ChileSantaisabelapoquindoCrawler extends Crawler {
          String description = scrapDescription(json);
          String primaryImage = JSONUtils.getValueRecursive(json, "items.0.images.0.imageUrl", String.class);
          List<String> secondaryImages = getSecondaryImages(json);
+         RatingsReviews ratingsReviews = fetchRatingReviews(internalPid);
          Integer stock = JSONUtils.getValueRecursive(json, "items.0.sellers.0.commertialOffer.AvailableQuantity", Integer.class);
          boolean available = stock > 0 ? true : false;
          Offers offers = available ? scrapOffers(json) : new Offers();
@@ -95,6 +96,7 @@ public class ChileSantaisabelapoquindoCrawler extends Crawler {
             .setDescription(description)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
+            .setRatingReviews(ratingsReviews)
             .setOffers(offers)
             .build();
 
@@ -251,5 +253,39 @@ public class ChileSantaisabelapoquindoCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   private RatingsReviews fetchRatingReviews(String internalPid) {
+      RatingsReviews ratingsReviews = new RatingsReviews();
+      Map<String, String> headers = new HashMap<>();
+      headers.put("apiKey", "WlVnnB7c1BblmgUPOfg");
+      headers.put("x-account", "santaisabel");
+      headers.put("x-consumer", "santaisabel");
+      String apiUrl = "https://sm-web-api.ecomm.cencosud.com/catalog/api/v1/reviews/ratings?ids=" + internalPid;
+
+      Request request = new Request.RequestBuilder()
+         .setUrl(apiUrl)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setProxyservice(List.of(ProxyCollection.BUY, ProxyCollection.LUMINATI_RESIDENTIAL_BR))
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get");
+
+      if (response != null) {
+         JSONArray reviewInfo = CrawlerUtils.stringToJsonArray(response.getBody());
+         Double avg = JSONUtils.getValueRecursive(reviewInfo, "0.average", Double.class);
+         if (avg == null) {
+            Integer avgDouble = JSONUtils.getValueRecursive(reviewInfo, "0.average", Integer.class);
+            avg = avgDouble.doubleValue();
+         }
+         Integer count = JSONUtils.getValueRecursive(reviewInfo, "0.totalCount", Integer.class);
+         if (avg != null && count != null) {
+            ratingsReviews.setTotalRating(count);
+            ratingsReviews.setAverageOverallRating(avg.doubleValue());
+         }
+         return ratingsReviews;
+      }
+      return null;
    }
 }
