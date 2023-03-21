@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -15,29 +15,21 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
-import models.RatingsReviews;
 import models.pricing.BankSlip;
 import models.pricing.CreditCards;
 import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.yaml.snakeyaml.util.UriEncoder;
 
-import java.io.UnsupportedEncodingException;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class CarrefourCrawler extends Crawler {
 
@@ -61,10 +53,51 @@ public class CarrefourCrawler extends Crawler {
       return session.getOptions().optString("regionId");
    }
 
+   protected String getLocationToken() {
+      return session.getOptions().optString("vtex_segment");
+   }
+
+   protected String getCep() {
+      return this.session.getOptions().optString("cep");
+   }
+
    @Override
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
+
+   @Override
+   protected Response fetchResponse() {
+      return fetchPage(session.getOriginalURL());
+   }
+
+   protected Response fetchPage(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "*/*");
+      headers.put("authority", "mercado.carrefour.com.br");
+      headers.put("referer", "https://mercado.carrefour.com.br/");
+
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setSendUserAgent(false)
+         .setCookies(this.cookies)
+         .mustSendContentEncoding(false)
+         .setFetcheroptions(
+            FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .build())
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.LUMINATI_SERVER_BR)
+         )
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get");
+      return response;
    }
 
    @Override
@@ -108,68 +141,6 @@ public class CarrefourCrawler extends Crawler {
       return products;
    }
 
-   protected String getLocationToken() {
-      return session.getOptions().optString("vtex_segment");
-   }
-
-   protected String getCep() {
-      return this.session.getOptions().optString("cep");
-   }
-
-   @Override
-   protected Response fetchResponse() {
-      return fetchPage(session.getOriginalURL());
-   }
-
-   protected Response fetchPage(String url) {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "*/*");
-      headers.put("authority", "mercado.carrefour.com.br");
-      headers.put("referer", "https://mercado.carrefour.com.br/");
-
-      Request request = RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setSendUserAgent(false)
-         .setCookies(this.cookies)
-         .mustSendContentEncoding(false)
-         .setFetcheroptions(
-            FetcherOptionsBuilder.create()
-               .mustUseMovingAverage(false)
-               .mustRetrieveStatistics(true)
-               .build())
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR)
-         )
-         .build();
-
-      return alternativeFetch(request);
-   }
-
-   protected Response alternativeFetch(Request request) {
-      List<DataFetcher> dataFetchers = Arrays.asList(new ApacheDataFetcher(), new JsoupDataFetcher());
-
-      Response response = null;
-
-      for (DataFetcher localDataFetcher : dataFetchers) {
-         response = localDataFetcher.get(session, request);
-         if (checkResponse(response)) {
-            return response;
-         }
-      }
-
-      return response;
-   }
-
-   boolean checkResponse(Response response) {
-      int statusCode = response.getLastStatusCode();
-
-      return (Integer.toString(statusCode).charAt(0) == '2'
-         || Integer.toString(statusCode).charAt(0) == '3'
-         || statusCode == 404);
-   }
-
    private CategoryCollection scrapCategories(JSONObject productJson) {
       CategoryCollection categories = new CategoryCollection();
 
@@ -190,24 +161,11 @@ public class CarrefourCrawler extends Crawler {
    }
 
    private JSONObject crawlProductApi(String internalPid) {
-
       String regionId = getRegionId();
       String body = fetchPage("https://mercado.carrefour.com.br/api/graphql?operationName=BrowserProductQuery&variables={\"locator\":[{\"key\":\"id\",\"value\":\"" + internalPid + "\"},{\"key\":\"channel\",\"value\":\"{\\\"salesChannel\\\":\\\"2\\\",\\\"regionId\\\":\\\"" + regionId + "\\\"}\"},{\"key\":\"locale\",\"value\":\"pt-BR\"}]}").getBody();
       JSONObject api = CrawlerUtils.stringToJSONObject(body);
 
       return JSONUtils.getValueRecursive(api, "data.product", JSONObject.class);
-   }
-
-   protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
-      if (productJson.has("productName")) {
-         return productJson.optString("productName");
-      } else if (jsonSku.has("nameComplete")) {
-         return jsonSku.optString("nameComplete");
-      } else if (jsonSku.has("name")) {
-         return jsonSku.optString("name");
-      } else {
-         return null;
-      }
    }
 
    private Offers scrapOffer(JSONObject productJson) throws OfferException, MalformedPricingException {
@@ -258,10 +216,10 @@ public class CarrefourCrawler extends Crawler {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(offersJson, "lowPrice", false);
       Double priceFrom = JSONUtils.getValueRecursive(productJson, "offers.offers.0.listPrice", ".", Double.class, null);
 
-      if(productJson.optString("measurementUnit").equals("kg")) {
+      if (productJson.optString("measurementUnit").equals("kg")) {
          Double unitMultiplier = productJson.optDouble("unitMultiplier");
          spotlightPrice = Math.floor((spotlightPrice * unitMultiplier) * 100) / 100.0;
-         if(priceFrom != null) priceFrom = Math.floor((priceFrom * unitMultiplier) * 100) / 100.0;
+         if (priceFrom != null) priceFrom = Math.floor((priceFrom * unitMultiplier) * 100) / 100.0;
       }
 
       CreditCards creditCards = new CreditCards();
@@ -294,11 +252,9 @@ public class CarrefourCrawler extends Crawler {
          .build();
    }
 
-
    private List<String> scrapSales(Pricing pricing) {
       List<String> sales = new ArrayList<>();
       if (pricing != null) sales.add(CrawlerUtils.calculateSales(pricing));
       return sales;
    }
-   
 }
