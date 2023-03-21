@@ -83,6 +83,7 @@ class BrasilRennerCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
       val headers: MutableMap<String, String> = HashMap()
       headers["Content-Type"] = "application/json"
+      headers["Origin"] = "https://www.lojasrenner.com.br"
 
       val request = Request.RequestBuilder.create()
          .setUrl(url)
