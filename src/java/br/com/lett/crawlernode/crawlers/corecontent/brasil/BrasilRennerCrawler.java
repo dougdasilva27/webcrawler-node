@@ -119,7 +119,7 @@ public class BrasilRennerCrawler extends Crawler {
       if (mediaSets != null && !mediaSets.isEmpty()) {
          JSONObject images = (JSONObject) mediaSets.opt(0);
          if (images != null && !images.isEmpty()) {
-            primaryImage = CrawlerUtils.completeUrl(images.optString("largeImageUrl"),"https","");
+            primaryImage = CrawlerUtils.completeUrl(images.optString("largeImageUrl"), "https", "");
          }
       }
       return primaryImage;
@@ -132,7 +132,7 @@ public class BrasilRennerCrawler extends Crawler {
       if (mediaSets != null && !mediaSets.isEmpty()) {
          for (int i = 0; i < mediaSets.length(); i++) {
             images = (JSONObject) mediaSets.opt(i);
-            secondaryImages.add(CrawlerUtils.completeUrl(images.optString("largeImageUrl"),"https",""));
+            secondaryImages.add(CrawlerUtils.completeUrl(images.optString("largeImageUrl"), "https", ""));
          }
       }
       if (secondaryImages.size() > 0) {
@@ -160,8 +160,15 @@ public class BrasilRennerCrawler extends Crawler {
 
    private JSONObject fetchProductResponse(String internalId, String internalPid) {
       String urlVariation = "https://www.lojasrenner.com.br/rest/model/lrsa/api/CatalogActor/refreshProductPage?skuId=" + internalId + "&productId=" + internalPid;
-      Request request = Request.RequestBuilder.create().setUrl(urlVariation).setProxyservice(List.of(ProxyCollection.LUMINATI_SERVER_BR)).build();
-      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      Request request = Request.RequestBuilder.create()
+         .setUrl(urlVariation)
+         .setProxyservice(List.of(
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .build();
+      Response response = CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), true);
+      return CrawlerUtils.stringToJson(response.getBody());
    }
 
    private Offers scrapOffers(JSONObject object, String internalId, String internalPid) throws MalformedPricingException, OfferException {
