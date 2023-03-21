@@ -43,9 +43,8 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
    private final String PASSWORD = getPassword();
    private final String LOGIN = getLogin();
 
-   protected String getLogin() throws UnsupportedEncodingException {
-      String encodeLogin = session.getOptions().optString("email");
-      return URLEncoder.encode(encodeLogin, "UTF-8");
+   protected String getLogin() {
+      return session.getOptions().optString("email");
    }
 
    protected String getPassword() {
@@ -60,6 +59,8 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
       headers.put("x-requested-with", "XMLHttpRequest");
       headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put("authority", "www.menonatacadista.com.br");
+      headers.put("host", "www.menonatacadista.com.br");
+      headers.put("referer", "https://www.menonatacadista.com.br/index.php?route=account/login");
       headers.put("Accept", "*/*");
       headers.put("Connection", "keep-alive");
       headers.put("Accept-Encoding", "gzip, deflate, br");
@@ -73,14 +74,15 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
          .setSendUserAgent(true)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
          ))
          .build();
 
-      Response response = new JsoupDataFetcher().post(session, request);
+      Response response = CrawlerUtils.retryRequest(request,session,new JsoupDataFetcher(), false);
 
       List<Cookie> cookiesResponse = response.getCookies();
 
