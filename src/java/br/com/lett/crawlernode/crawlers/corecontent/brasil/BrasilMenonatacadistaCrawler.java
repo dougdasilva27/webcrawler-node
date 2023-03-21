@@ -21,7 +21,6 @@ import org.apache.http.cookie.Cookie;
 import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -82,7 +81,7 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
          ))
          .build();
 
-      Response response = CrawlerUtils.retryRequest(request,session,new JsoupDataFetcher(), false);
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
 
       List<Cookie> cookiesResponse = response.getCookies();
 
