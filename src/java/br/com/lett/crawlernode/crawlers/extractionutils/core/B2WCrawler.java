@@ -86,6 +86,10 @@ public class B2WCrawler extends Crawler {
       headers.put(HttpHeaders.CACHE_CONTROL, "max-age=0");
       headers.put(HttpHeaders.CONNECTION, "keep-alive");
       headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+      headers.put("sec-fetch-site", "none");
+      headers.put("sec-fetch-mode", "navigate");
+      headers.put("sec-fetch-user", "?1");
+      headers.put("sec-fetch-dest", "document");
 
       return headers;
    }
@@ -142,6 +146,8 @@ public class B2WCrawler extends Crawler {
          )
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.SMART_PROXY_MX_HAPROXY,
+               ProxyCollection.SMART_PROXY_AR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_MX,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
