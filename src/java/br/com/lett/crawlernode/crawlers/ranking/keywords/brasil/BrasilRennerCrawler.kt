@@ -83,11 +83,18 @@ class BrasilRennerCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
       val headers: MutableMap<String, String> = HashMap()
       headers["Content-Type"] = "application/json"
+      headers["Origin"] = "https://www.lojasrenner.com.br"
 
-      val request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setProxyservice(listOf(ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.BUY))
-         .mustSendContentEncoding(false).build()
+      val request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setProxyservice(listOf(ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
+         .mustSendContentEncoding(false)
+         .build()
 
-      val json = CrawlerUtils.stringToJson(dataFetcher[session, request].body)
+      val response = CrawlerUtils.retryRequest(request, session, dataFetcher, true);
+      val json = CrawlerUtils.stringToJson(response.body)
 
       return json.optJSONArray("placements").optJSONObject(0)
    }
