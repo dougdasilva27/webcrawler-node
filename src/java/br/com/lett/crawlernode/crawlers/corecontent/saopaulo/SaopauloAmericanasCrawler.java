@@ -1,20 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.apache.http.cookie.Cookie;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 public class SaopauloAmericanasCrawler extends B2WCrawler {
 
@@ -30,35 +20,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
       super.urlPageOffers = URL_PAGE_OFFERS;
-      super.config.setFetcher(FetchMode.MIRANHA);
-   }
-
-   @Override
-   public String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .setSendUserAgent(false)
-         .setFetcheroptions(
-            FetcherOptions.FetcherOptionsBuilder.create()
-               .mustUseMovingAverage(false)
-               .mustRetrieveStatistics(true)
-               .setForbiddenCssSelector("#px-captcha")
-               .build()
-         )
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BUY,
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_SERVER_BR,
-               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.LUMINATI_RESIDENTIAL_BR
-            )
-         )
-         .build();
-      Response response = CrawlerUtils.retryRequest(request, session, new ApacheDataFetcher(), true);
-      return response.getBody();
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 }

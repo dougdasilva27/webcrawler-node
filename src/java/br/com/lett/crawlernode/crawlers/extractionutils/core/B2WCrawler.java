@@ -126,7 +126,7 @@ public class B2WCrawler extends Crawler {
       return Jsoup.parse(fetchPage(session.getOriginalURL(), this.dataFetcher, cookies, headers, session));
    }
 
-   protected String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
+   public static String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -219,6 +219,7 @@ public class B2WCrawler extends Crawler {
 
       return products;
    }
+
 
 
    private String getSellerFromApolloJson(JSONObject apolloJson) {
@@ -575,27 +576,20 @@ public class B2WCrawler extends Crawler {
       return creditCards;
    }
 
-   private Double scrapSpotlightPrice(Document doc, JSONObject payment, JSONArray installment) {
-      Double spotlightPrice = JSONUtils.getValueRecursive(installment, "0.total", Double.class);
-      if (spotlightPrice != null) {
-         return spotlightPrice;
-      }
-      Integer priceInt = JSONUtils.getValueRecursive(installment, "0.total", Integer.class);
-      if (priceInt != null) {
-         return Double.valueOf(priceInt);
-      }
-      Double alternativeSpotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".priceSales", null, true, ',', session);
-      return alternativeSpotlightPrice !=null ? alternativeSpotlightPrice : payment.optDouble("price");
-   }
-
    protected Pricing scrapPricing(JSONObject info, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice, Document doc)
       throws MalformedPricingException {
 
       JSONObject paymentOptions = SaopauloB2WCrawlersUtils.getJson(info, "paymentOptions");
       JSONArray installmentMin = SaopauloB2WCrawlersUtils.getJsonArrayInstallment(paymentOptions);
       Double priceFrom = scrapPriceFrom(info);
-      Double spotlightPrice = scrapSpotlightPrice(doc, paymentOptions, installmentMin);
-
+      Double spotlightPrice = JSONUtils.getValueRecursive(installmentMin, "0.total", Double.class);
+      if (spotlightPrice == null) {
+         Integer priceInt = JSONUtils.getValueRecursive(installmentMin, "0.total", Integer.class);
+         spotlightPrice = priceInt != null ? Double.valueOf(priceInt) : null;
+      }
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".priceSales", null, true, ',', session);
+      }
       CreditCards creditCards = scrapCreditCards(paymentOptions, spotlightPrice);
 
       if (priceFrom != null) {
