@@ -113,6 +113,7 @@ public class AmericanasmaisCrawler extends Crawler {
          if (productData != null) {
             String name = productData.optString("name");
             List<String> images = scrapImages(productData);
+            String description = scrapDescription(apolloJson);
             String primaryImage = images != null && images.size() > 0 ? images.remove(0) : null;
             JSONObject dataOffers = SaopauloB2WCrawlersUtils.getJson(apolloJson, "OffersResult");
             Offers offers = dataOffers != null ? scrapOffers(dataOffers, doc) : new Offers();
@@ -126,6 +127,7 @@ public class AmericanasmaisCrawler extends Crawler {
                .setName(name)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(images)
+               .setDescription(description)
                .setRatingReviews(rating)
                .setOffers(offers)
                .build();
@@ -173,6 +175,28 @@ public class AmericanasmaisCrawler extends Crawler {
       return product;
    }
 
+   private String scrapDescription(JSONObject apollo) {
+      StringBuilder description = new StringBuilder();
+
+      JSONObject productInfoJson = JSONUtils.getValueRecursive(apollo, "ROOT_QUERY.product:{\"productId\":\"" + getProductId() + "\"}", ".", JSONObject.class, new JSONObject());
+
+      description.append(productInfoJson.optJSONObject("description").optString("content"));
+      description.append("\n");
+
+      JSONArray attributes = productInfoJson.optJSONArray("attributes");
+
+      for (Object attr : attributes) {
+         JSONObject attributeJson = (JSONObject) attr;
+         if ("Attribute".equals(attributeJson.optString("__typename"))) {
+            description.append(attributeJson.optString("name"));
+            description.append(": ");
+            description.append(attributeJson.optString("value"));
+            description.append("\n");
+         }
+      }
+
+      return description.toString();
+   }
 
    private String getProductId() {
       String[] extractId = session.getOriginalURL().split("&conteudo=");
