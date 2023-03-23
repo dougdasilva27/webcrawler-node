@@ -238,14 +238,18 @@ public class AmericanasmaisCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject dataOffers) throws MalformedPricingException {
       Double spotlightPrice = dataOffers.optDouble("salesPrice");
+      Double priceFrom = dataOffers.optDouble("listPrice", 0.0);
+      if (priceFrom == 0.0) {
+         priceFrom = null;
+      }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
-      //Site hasn't any product with old price
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
