@@ -70,27 +70,30 @@ public class BrasilRennerCrawler extends Crawler {
    @Override
    public List<Product> extractInformation(Document document) throws Exception {
       List<Product> products = new ArrayList<>();
+
       JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(document, "#__NEXT_DATA__", null, null, false, false);
       JSONObject productJson = JSONUtils.getValueRecursive(pageJson, "props.pageProps.product", JSONObject.class);
 
-      Elements variations = document.select(".ProductAttributes_ProductAttributeWrapper__aRm_h");
-
       if (productJson != null && !productJson.isEmpty()) {
+         String internalId = productJson.optString("skuId");
+         String internalPid = productJson.optString("productId");
+         String description = getDescription(pageJson);
+         String displayName = productJson.optString("displayName");
+         List<String> categories = CrawlerUtils.crawlCategories(document, "ul[aria-label='breadcrumb'] li:not(:first-child):not(:last-child) a", true);
+         boolean available = productJson.optBoolean("purchasable");
+         RatingsReviews ratingsReviews = ratingsReviews(productJson);
+         JSONObject productResponse = fetchProductResponse(internalId, internalPid);
+         String primaryImage = getPrimaryImage(productResponse);
+         List<String> secondaryImages = getSecondaryImages(productResponse);
+         Offers offers = available ? scrapOffers(productResponse, internalId, internalPid) : new Offers();
+
+         Elements variations = document.select(".ProductAttributes_ProductAttributeWrapper__aRm_h");
+
          if (variations.size() > 0) {
             for (Element e : variations) {
-               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".ProductAttributes_inputCheckbox__5Y371", "data-sku");
-               String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "input[name=product]", "value");
-               String description = getDescription(pageJson);
-               List<String> categories = CrawlerUtils.crawlCategories(document, "ul[aria-label='breadcrumb'] li:not(:first-child):not(:last-child) a", true);
-               String displayName = productJson.optString("displayName");
+               internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".ProductAttributes_inputCheckbox__5Y371", "data-sku");
                String variationName = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".ProductAttributes_inputCheckbox__5Y371", "data-name");
                String productName = displayName + " " + variationName;
-               boolean available = !productJson.optBoolean("outOfStock");
-               RatingsReviews ratingsReviews = ratingsReviews(productJson);
-               JSONObject productResponse = fetchProductResponse(internalId, internalPid);
-               String primaryImage = getPrimaryImage(productResponse);
-               List<String> secondaryImages = getSecondaryImages(productResponse);
-               Offers offers = available ? scrapOffers(productResponse, internalId, internalPid) : new Offers();
 
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
@@ -106,6 +109,20 @@ public class BrasilRennerCrawler extends Crawler {
                   .build();
                products.add(product);
             }
+         } else {
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(displayName)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setCategories(categories)
+               .setRatingReviews(ratingsReviews)
+               .setOffers(offers)
+               .build();
+            products.add(product);
          }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
