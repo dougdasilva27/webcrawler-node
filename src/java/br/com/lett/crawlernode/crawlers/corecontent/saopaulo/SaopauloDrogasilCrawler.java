@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -9,35 +8,19 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.Pair;
+import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.BankSlip;
-import models.pricing.CreditCard;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
-import models.pricing.Installments;
-import models.pricing.Pricing;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+
+import java.util.*;
 
 public class SaopauloDrogasilCrawler extends Crawler {
 
@@ -59,7 +42,9 @@ public class SaopauloDrogasilCrawler extends Crawler {
       }
       return sellersList;
    }
+
    private List<String> SELLERS = getSellers();
+
    public SaopauloDrogasilCrawler(Session session) {
       super(session);
    }
@@ -101,16 +86,16 @@ public class SaopauloDrogasilCrawler extends Crawler {
             } else if (!images.isEmpty()) {
                primaryImage = images.get(0);
             }
-            if(images != null && images.size() == 0){
-               images = CrawlerUtils.scrapSecondaryImages(doc," div.swiper-wrapper  noscript > img", Arrays.asList("src"),"https", "", primaryImage);
-               if(images != null && images.size() > 0){
-                  for (int i = 0; i < images.size() ;i++){
+            if (images != null && images.size() == 0) {
+               images = CrawlerUtils.scrapSecondaryImages(doc, " div.swiper-wrapper  noscript > img", Arrays.asList("src"), "https", "", primaryImage);
+               if (images != null && images.size() > 0) {
+                  for (int i = 0; i < images.size(); i++) {
                      images.set(i, images.get(i).split("\\?")[0]);
                   }
                }
             }
 
-            String description = scrapDescription(data);
+            String description = scrapDescription(data, doc);
             List<String> ean = new ArrayList<>();
             ean.add(CrawlerUtils.scrapStringSimpleInfo(doc, "tr:nth-child(2) > td", false));
             Boolean available = JSONUtils.getValueRecursive(data,
@@ -193,6 +178,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
       return offers;
 
    }
+
    private String isMainSeller(Document doc) {
       String isMarketPlace = CrawlerUtils.scrapStringSimpleInfo(doc, "div[class*='SoldAndDelivered'] a", true);
 
@@ -202,6 +188,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
       return SELLER_FULL_NAME;
    }
+
    private List<String> scrapSales(Pricing pricing, JSONObject data) {
       List<String> sales = new ArrayList<>();
       sales.add(CrawlerUtils.calculateSales(pricing));
@@ -262,17 +249,27 @@ public class SaopauloDrogasilCrawler extends Crawler {
       return creditCards;
    }
 
-   private String scrapDescription(JSONObject json) {
+   private String scrapDescription(JSONObject json, Document doc) {
       JSONArray descriptionArray = json.optJSONArray("custom_attributes");
 
       if (descriptionArray != null) {
          for (Object attribute : descriptionArray) {
+
             if (JSONUtils.getValueRecursive(attribute, "attribute_code", String.class).equals("description")) {
-               return JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
+               String jsonDescription = JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
+
+               if (!doc.select("div[class*=\"ProductAttributestyles__Product\"]").isEmpty()) {
+                  String htmlDescription = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("[class*=\"ProductInfostyles__ProductDescriptionStyles-sc\"] ul li", "td div", "td a"));
+                  if (!htmlDescription.isEmpty()) {
+                     return jsonDescription + htmlDescription;
+                  }
+
+               }
+
+               return jsonDescription;
             }
          }
       }
-
       return null;
    }
 
