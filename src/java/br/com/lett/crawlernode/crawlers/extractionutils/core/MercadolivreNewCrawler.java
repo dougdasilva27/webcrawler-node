@@ -392,7 +392,7 @@ public class MercadolivreNewCrawler {
                      boolean sellerNameIsMainRetailer = checkIsMainRetailer(sellerName);
                      String currentSeller = sellerName;
                      if (sellerNameIsMainRetailer && !mainSellerNameLower.isEmpty()) currentSeller = mainSellerNameLower;
-                     if (sellerNameIsMainRetailer || allow3PSellers) {
+                     if ((sellerNameIsMainRetailer || allow3PSellers) && currentSeller != null) {
                         Pricing pricing = scrapPricing(e);
                         List<String> sales = scrapSales(e);
                         offers.add(OfferBuilder.create()
