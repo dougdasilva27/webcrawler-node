@@ -180,7 +180,7 @@ public class AmericanasmaisCrawler extends Crawler {
 
       JSONObject productInfoJson = JSONUtils.getValueRecursive(apollo, "ROOT_QUERY.product:{\"productId\":\"" + getProductId() + "\"}", ".", JSONObject.class, new JSONObject());
 
-      description.append(productInfoJson.optJSONObject("description").optString("content"));
+      description.append(JSONUtils.getValueRecursive(productInfoJson, "description.content", ".", String.class, ""));
       description.append("\n");
 
       JSONArray attributes = productInfoJson.optJSONArray("attributes");
@@ -239,7 +239,7 @@ public class AmericanasmaisCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject dataOffers) throws MalformedPricingException {
       Double spotlightPrice = dataOffers.optDouble("salesPrice");
       Double priceFrom = dataOffers.optDouble("listPrice", 0.0);
-      if (priceFrom == 0.0) {
+      if (priceFrom == 0.0 || priceFrom.equals(spotlightPrice)) {
          priceFrom = null;
       }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
