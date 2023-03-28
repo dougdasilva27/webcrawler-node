@@ -27,7 +27,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -72,7 +71,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          List<String> images = scrapListImages(data, doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
 
-         String description = scrapDescription(data);
+         String description = scrapDescription(data, doc);
 
          Boolean available = crawlAvailability(internalId, data);
 
@@ -137,7 +136,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          for (int i = 0; i < imagesJson.length(); i++) {
             String imageFile = JSONUtils.getValueRecursive(imagesJson, i + ".file", String.class);
             if (imageFile != null) {
-               String image = "https://img.drogaraia.com.br/catalog/product/" + imageFile.replace("/p/","p/");
+               String image = "https://img.drogaraia.com.br/catalog/product/" + imageFile.replace("/p/", "p/");
                images.add(image);
             } else {
                String img = CrawlerUtils.scrapSimplePrimaryImage(doc, ".swiper-lazy img", Arrays.asList("src"), "https", "");
@@ -149,17 +148,27 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return images;
    }
 
-   private String scrapDescription(JSONObject json) {
+   private String scrapDescription(JSONObject json, Document doc) {
       JSONArray descriptionArray = json.optJSONArray("custom_attributes");
 
       if (descriptionArray != null) {
          for (Object attribute : descriptionArray) {
-            if (JSONUtils.getValueRecursive(attribute, "attribute_code", String.class).equals("description")) {
-               return JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
+
+            if (JSONUtils.getValueRecursive(attribute, "attribute_code", String.class, "").equals("description")) {
+               String jsonDescription = JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
+
+               if (!doc.select("div[data-testid=\"table-features\"]").isEmpty()) {
+                  String htmlDescription = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("[class*=\"ConverterHtmlstyles\"] li", "div[data-testid=\"htmlParse\"]", "[class*=\"RaiaProductDescriptionstyles\"] a"));
+                  if (!htmlDescription.isEmpty()) {
+                     return jsonDescription + htmlDescription;
+                  }
+
+               }
+
+               return jsonDescription;
             }
          }
       }
-
       return null;
    }
 
