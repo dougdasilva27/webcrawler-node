@@ -55,33 +55,23 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
    @Override
    public void handleCookiesBeforeFetch() {
       Map<String, String> headers = new HashMap<>();
-      headers.put("x-requested-with", "XMLHttpRequest");
-      headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("Content-Type", "application/x-www-form-urlencoded");
       headers.put("authority", "www.menonatacadista.com.br");
-      headers.put("host", "www.menonatacadista.com.br");
-      headers.put("referer", "https://www.menonatacadista.com.br/index.php?route=account/login");
-      headers.put("Accept", "*/*");
-      headers.put("Connection", "keep-alive");
-      headers.put("Accept-Encoding", "gzip, deflate, br");
-
-      String payloadString = "email=" + this.LOGIN + "&password=" + this.PASSWORD;
+      String payloadString = "email="+this.LOGIN+"&password="+this.PASSWORD;
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.menonatacadista.com.br/index.php?route=account/login")
          .setPayload(payloadString)
-         .setFollowRedirects(false)
-         .setSendUserAgent(true)
          .setHeaders(headers)
+         .setFollowRedirects(false)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.SMART_PROXY_BR
          ))
          .build();
-
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
+      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher);
 
       List<Cookie> cookiesResponse = response.getCookies();
 
