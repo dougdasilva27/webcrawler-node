@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldNewImpl
-import br.com.lett.crawlernode.util.CommonMethods
 import br.com.lett.crawlernode.util.CrawlerUtils
 import br.com.lett.crawlernode.util.JSONUtils
 import br.com.lett.crawlernode.util.toDoc
@@ -50,9 +49,9 @@ class BrasilDrogariaSaoPauloCrawler(session: Session) : VTEXOldNewImpl(session) 
    }
 
    override fun scrapDescription(doc: Document?, productJson: JSONObject?): String? {
-      val descriptionSort = JSONUtils.getStringValue(productJson, "description")
-      val descriptionFull = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".productDescription"))
-      val description = descriptionSort + ' ' + descriptionFull
+      val descriptionFullJson = JSONUtils.getStringValue(productJson, "description")
+      val descriptionShortHtml = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".productDescriptionShort p"))
+      val description = descriptionShortHtml + ' ' + descriptionFullJson
       return description
    }
 }
