@@ -154,7 +154,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       if (descriptionArray != null) {
          for (Object attribute : descriptionArray) {
 
-            if (JSONUtils.getValueRecursive(attribute, "attribute_code", String.class).equals("description")) {
+            if (JSONUtils.getValueRecursive(attribute, "attribute_code", String.class, "").equals("description")) {
                String jsonDescription = JSONUtils.getValueRecursive(attribute, "value_string.0", String.class);
 
                if (!doc.select("div[data-testid=\"table-features\"]").isEmpty()) {
