@@ -1,37 +1,21 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.util.*;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.AdvancedRatingReview;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
@@ -43,6 +27,21 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * date: 27/03/2018
@@ -232,7 +231,7 @@ public class BrasilPetloveCrawler extends Crawler {
    private Offers scrapOffers(JSONObject skuJson, Document doc, String urlVariant) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       List<String> sales = scrapSales(doc);
-      Pricing pricing = scrapPricing(skuJson, doc, urlVariant);
+      Pricing pricing = scrapPricing(skuJson, urlVariant);
 
       offers.add(OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
@@ -276,7 +275,7 @@ public class BrasilPetloveCrawler extends Crawler {
       return priceFrom;
    }
 
-   private Pricing scrapPricing(JSONObject skuJson, Document doc, String urlVariant) throws MalformedPricingException {
+   private Pricing scrapPricing(JSONObject skuJson, String urlVariant) throws MalformedPricingException {
       Double priceFrom = getPriceFrom(urlVariant);
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(skuJson, "price", true);
 
@@ -284,7 +283,7 @@ public class BrasilPetloveCrawler extends Crawler {
          priceFrom = null;
       }
 
-      CreditCards creditCards = scrapCreditCards(skuJson, spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
             .build();
@@ -297,7 +296,7 @@ public class BrasilPetloveCrawler extends Crawler {
             .build();
    }
 
-   private CreditCards scrapCreditCards(JSONObject skuJson, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
