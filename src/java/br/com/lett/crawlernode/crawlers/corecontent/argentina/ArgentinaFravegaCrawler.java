@@ -2,8 +2,12 @@ package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
 import java.util.*;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -16,12 +20,13 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 public class ArgentinaFravegaCrawler extends Crawler {
 
@@ -35,45 +40,55 @@ public class ArgentinaFravegaCrawler extends Crawler {
 
    public ArgentinaFravegaCrawler(Session session) {
       super(session);
-      super.config.setParser(Parser.JSON);
+      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setParser(Parser.HTML);
    }
 
    @Override
    protected Response fetchResponse() {
-      String url = scrapProductUrl();
-      Map<String, String> headers = new HashMap<>();
-      headers.put("authority", "www.fravega.com");
-      headers.put("referer", "https://www.fravega.com/");
-
       Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
+         .setUrl(session.getOriginalURL())
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY, ProxyCollection.LUMINATI_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.SMART_PROXY_AR))
          .build();
 
-      return this.dataFetcher.get(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+      JSONObject productJson = getProductJson(response);
+
+      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
+      if(productJson == null) {
+         for (int i = 0; i < 3; i++) {
+            if(getProductJson(response) == null) {
+               request.setProxyServices(Arrays.asList(proxies.get(i)));
+               response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+            }
+         }
+      }
+
+      return response;
    }
 
-   private @NotNull String scrapProductUrl() {
+   private JSONObject getProductJson(Response response) {
+      JSONObject jsonT = CrawlerUtils.selectJsonFromHtml(Jsoup.parse(response.getBody()), "#__NEXT_DATA__", null, " ", false, false);
+
       String[] urlParts = session.getOriginalURL().split("/");
       String[] productSlugParts = urlParts[urlParts.length - 1].split("-");
 
-      String productSlug = urlParts[urlParts.length - 1];
       String sku = productSlugParts[productSlugParts.length - 1];
-
-      String[] slugParts = Arrays.copyOf(productSlugParts, productSlugParts.length - 1);
-      String slug = String.join("-", slugParts);
-
-      return "https://www.fravega.com/_next/data/F6xWugkgMp7lt6cbNmjb3/es-AR/p/" + productSlug + ".json?sku=" + sku + "&slug=" + slug + "&productSlug=" + productSlug;
+      JSONObject productJson = JSONUtils.getValueRecursive(jsonT, "props.pageProps.__APOLLO_STATE__.ROOT_QUERY.sku({\"code\":\"" + sku + "\"})", JSONObject.class);
+      return productJson;
    }
 
    @Override
-   public List<Product> extractInformation(JSONObject json) throws Exception {
+   public List<Product> extractInformation(Document document) throws Exception {
+      super.extractInformation(document);
       List<Product> products = new ArrayList<>();
+      JSONObject jsonT = CrawlerUtils.selectJsonFromHtml(document, "#__NEXT_DATA__", null, " ", false, false);
+
       String[] urlParts = session.getOriginalURL().split("/");
       String[] productSlugParts = urlParts[urlParts.length - 1].split("-");
 
       String sku = productSlugParts[productSlugParts.length - 1];
-      JSONObject productJson = JSONUtils.getValueRecursive(json, "pageProps.__APOLLO_STATE__.ROOT_QUERY.sku({\"code\":\"" + sku + "\"})", JSONObject.class);
+      JSONObject productJson = JSONUtils.getValueRecursive(jsonT, "props.pageProps.__APOLLO_STATE__.ROOT_QUERY.sku({\"code\":\"" + sku + "\"})", JSONObject.class);
 
       if(productJson != null) {
          String name = JSONUtils.getValueRecursive(productJson, "item.title", String.class);
