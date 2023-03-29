@@ -77,7 +77,7 @@ public class BrasilPetloveCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String nuxtData = doc.selectFirst("script:containsData(window.__NUXT__)").data();
-         String nuxtDataSanitized = CommonMethods.getLast(nuxtData.split("}\\(\"\",true,void 0,\"id\",false,null,")).replace("));", "");
+         String nuxtDataSanitized = CommonMethods.getLast(nuxtData.split("}\\(\"\",true,void 0,\"id\",.{2,20}\"")).replace("));", "");
          JSONObject productJson = CrawlerUtils.stringToJSONObject(doc.selectFirst("script:containsData(\"@type\":\"Product\")").data());
          String internalPid = productJson.optString("sku");
          CategoryCollection categories = crawlCategories(doc);
@@ -86,6 +86,7 @@ public class BrasilPetloveCrawler extends Crawler {
 
          JSONArray variantOffers = JSONUtils.getValueRecursive(productJson, "offers.offers", ".", JSONArray.class, new JSONArray());
          List<String> variantSkus = JSONUtils.jsonArrayToStringList(variantOffers, "sku");
+         variantSkus.removeIf(sku -> !nuxtDataSanitized.matches(".*\\d{2,20},\"" + sku + "\".*"));
          List<String> variantGrammature = doc.select(".variant-list-modal .font-bold").eachText();
          Map<String, String> variantMap = IntStream.range(0, variantSkus.size()).boxed().collect(Collectors.toMap(variantSkus::get, variantGrammature::get));
 
@@ -132,7 +133,6 @@ public class BrasilPetloveCrawler extends Crawler {
       return doc.selectFirst(".product__content") != null;
    }
 
-
    private RatingsReviews crawlRating(JSONObject productJson) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
@@ -154,7 +154,15 @@ public class BrasilPetloveCrawler extends Crawler {
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
       Matcher matcher = pattern.matcher(nuxtDataSanitized);
 
-      return matcher.find() ? matcher.group(1).replace("\\u002F", "/") : null;
+      if (matcher.find()){
+         return matcher.group(1).replace("\\u002F", "/");
+      }
+
+      String regexSingleImage = "(https:\\\\u002F\\\\u002Fwww.petlove.com.br\\\\u002Fimages\\\\u002Fproducts\\\\u002F\\d{2,10}\\\\u002Fproduct\\\\u002F.{2,220})\",";
+      Pattern patternSingleImage = Pattern.compile(regexSingleImage, Pattern.MULTILINE);
+      Matcher matcherSingleImage = patternSingleImage.matcher(nuxtDataSanitized);
+
+      return matcherSingleImage.find() ? matcherSingleImage.group(1).replace("\\u002F", "/") : null;
    }
 
    private List<String> crawlSecondaryImages(String internalId, String nuxtDataSanitized, String primaryImage) {
@@ -167,6 +175,19 @@ public class BrasilPetloveCrawler extends Crawler {
          String secondaryImage = matcher.group(1).replace("\\u002F", "/");
          if (!secondaryImage.equals(primaryImage)) {
             secondaryImages.add(secondaryImage);
+         }
+      }
+
+      if (secondaryImages.isEmpty()) {
+         String regexSingleImage = "(https:\\\\u002F\\\\u002Fwww.petlove.com.br\\\\u002Fimages\\\\u002Fproducts\\\\u002F\\d{2,10}\\\\u002Fproduct\\\\u002F.{2,220})\",";
+         Pattern patternSingleImage = Pattern.compile(regexSingleImage, Pattern.MULTILINE);
+         Matcher matcherSingleImage = patternSingleImage.matcher(nuxtDataSanitized);
+
+         while (matcherSingleImage.find()) {
+            String secondaryImage = matcherSingleImage.group(1).replace("\\u002F", "/");
+            if (!secondaryImage.equals(primaryImage)) {
+               secondaryImages.add(secondaryImage);
+            }
          }
       }
 
