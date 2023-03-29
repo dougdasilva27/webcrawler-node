@@ -104,8 +104,7 @@ In your eclipse, set your project for a maven project, after that the dependenci
 Or you can run it in terminal:
 
 ```bash
-#
-# 3nvm clean install -U
+# mvn clean install -U
 ```
 
 > NOTE: This command will clean and force install maven dependencies.
