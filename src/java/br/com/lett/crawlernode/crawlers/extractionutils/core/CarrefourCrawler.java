@@ -111,8 +111,6 @@ public class CarrefourCrawler extends Crawler {
 
       if (internalPid != null) {
          JSONObject productJson = crawlProductApi(internalPid);
-
-         String url = JSONUtils.getValueRecursive(contextJson, "offers.url", ".", String.class, null);
          String internalId = productJson.optString("id");
          String name = productJson.optString("name");
          CategoryCollection categories = scrapCategories(productJson);
