@@ -25,6 +25,7 @@ import models.Offers;
 import models.pricing.BankSlip;
 import models.pricing.CreditCards;
 import models.pricing.Pricing;
+import org.eclipse.jetty.util.ajax.JSON;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -110,8 +111,6 @@ public class CarrefourCrawler extends Crawler {
 
       if (internalPid != null) {
          JSONObject productJson = crawlProductApi(internalPid);
-
-         String url = JSONUtils.getValueRecursive(contextJson, "offers.url", ".", String.class, null);
          String internalId = productJson.optString("id");
          String name = productJson.optString("name");
          CategoryCollection categories = scrapCategories(productJson);
@@ -122,7 +121,7 @@ public class CarrefourCrawler extends Crawler {
          Offers offers = scrapOffer(productJson);
 
          Product product = ProductBuilder.create()
-            .setUrl(url)
+            .setUrl(this.session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
@@ -156,8 +155,12 @@ public class CarrefourCrawler extends Crawler {
    }
 
    private JSONObject scrapContextJson(Document doc) {
-      String contextJSONString = doc.selectFirst("script:containsData(Product)").data();
-      return CrawlerUtils.stringToJSONObject(contextJSONString);
+      String contextJSONString = doc.selectFirst("#__NEXT_DATA__").data();
+     JSONObject json = CrawlerUtils.stringToJSONObject(contextJSONString);
+     if(json != null){
+        return JSONUtils.getValueRecursive(json, "props.pageProps.data.product", JSONObject.class);
+     }
+     return null;
    }
 
    private JSONObject crawlProductApi(String internalPid) {
