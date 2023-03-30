@@ -64,6 +64,11 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
             waitForElement(webdriver.driver, "#s-ch-change-channel");
             webdriver.findAndClick("#s-ch-change-channel", 30000);
+            webdriver.waitLoad(10000);
+
+            waitForElement(webdriver.driver, "#s-ch-change-channel");
+            webdriver.findAndClick("#s-ch-change-channel", 30000);
+            webdriver.waitLoad(10000);
 
             waitForElement(webdriver.driver, ".fulltext-search-box.ui-autocomplete-input");
             WebElement pass = webdriver.driver.findElement(By.cssSelector(".fulltext-search-box.ui-autocomplete-input"));
@@ -78,9 +83,13 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
          } catch (Exception e) {
             Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
 
+         } finally {
+            if (webdriver != null) {
+               webdriver.terminate();
+            }
          }
       } while (doc == null && attempts++ < 3);
-      waitForElement(webdriver.driver, "div.prd-list-item");
+
       return doc;
    }
 
@@ -90,8 +99,6 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
       if (this.currentPage == 1) {
          this.currentDoc = fetchDocumentWithWebDriver(HOME_PAGE);
-      } else {
-         this.currentDoc = fetchNextPage();
       }
       this.log("Link onde são feitos os crawlers: " + HOME_PAGE);
 
@@ -137,21 +144,6 @@ public class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
       return price;
 
-   }
-
-   @Override
-   protected boolean hasNextPage() {
-      return !this.currentDoc.select(".pager.bottom > ul > li.next").isEmpty();
-   }
-
-   private Document fetchNextPage() {
-      Logging.printLogDebug(logger, session, "fetching next page...");
-      webdriver.waitForElement(".pager.bottom > ul > li.next", 5);
-      WebElement button = webdriver.driver.findElement(By.cssSelector(".pager.bottom > ul > li.next"));
-      webdriver.clickOnElementViaJavascript(button);
-      webdriver.waitLoad(10000);
-
-      return Jsoup.parse(webdriver.getCurrentPageSource());
    }
 
 }
