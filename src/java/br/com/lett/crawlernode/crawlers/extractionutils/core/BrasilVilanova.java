@@ -1,11 +1,14 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -13,11 +16,16 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.apache.kafka.common.security.JaasUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
 import java.util.*;
 
 import static java.util.Collections.singletonList;
@@ -32,6 +40,7 @@ public class BrasilVilanova extends Crawler {
 
    public BrasilVilanova(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.APACHE);
       super.config.setParser(Parser.HTML);
    }
 
@@ -52,32 +61,75 @@ public class BrasilVilanova extends Crawler {
    }
 
    @Override
-   protected Response fetchResponse() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", getCookieLogin());
-      Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setHeaders(headers).build();
+   public void handleCookiesBeforeFetch() {
+      Response loginResponse = new Response();
+      try {
+         Request request = Request.RequestBuilder.create()
+            .setUrl("https://www.vilanova.com.br/loginlett/access/account/token/60498706000157")
+            .setProxy(
+               getFixedIp()
+            )
+            .build();
+         loginResponse = this.dataFetcher.get(session, request);
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
 
-      return this.dataFetcher.get(session, request);
+      List<Cookie> cookiesResponse = loginResponse.getCookies();
 
+      for (Cookie cookieResponse : cookiesResponse) {
+         BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
+         cookie.setDomain("www.vilanova.com.br");
+         cookie.setPath("/");
+         this.cookies.add(cookie);
+      }
    }
+   public LettProxy getFixedIp() throws IOException {
+      LettProxy lettProxy = new LettProxy();
+      lettProxy.setSource("fixed_ip");
+      lettProxy.setPort(3144);
+      lettProxy.setAddress("haproxy.lett.global");
+      lettProxy.setLocation("brazil");
+      return lettProxy;
+   }
+   @Override
+   protected Response fetchResponse() {
+
+      Response response = new Response();
+      try {
+         Request request = Request.RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setProxy(
+               getFixedIp()
+            )
+            .setCookies(this.cookies)
+            .build();
+         response = this.dataFetcher.get(session, request);
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
+
+      return response;
+   }
+
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataLayer = window.dataLayer || []; window.dataLayer.push(", ");", false, true);
-
+         String jsonString = CrawlerUtils.scrapScriptFromHtml(doc, "#product-options-wrapper > div > script");
+         JSONArray jsonArray = JSONUtils.stringToJsonArray(jsonString);
+         JSONObject json = JSONUtils.getValueRecursive(jsonArray, "0.[data-role=swatch-options].Magento_Swatches/js/swatch-renderer", JSONObject.class);
          if (json != null && !json.isEmpty()) {
-            JSONObject jsonProduct = json.optJSONObject("productData");
+            JSONObject jsonProduct = json.optJSONObject("jsonConfig");
 
-            String internalPid = jsonProduct.optString("productID");
+            String internalPid = jsonProduct.optString("productId");
             List<String> eans = singletonList(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".variacao-container", "data-produtoean"));
             CategoryCollection categories = scrapCategories(jsonProduct);
-            String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".tab-content"));
+            String description = CrawlerUtils.scrapSimpleDescription(doc, singletonList(".product.attribute.description"));
 
             Elements variations = doc.select(".product-details-body .item.picking");
 
@@ -113,7 +165,7 @@ public class BrasilVilanova extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select("div.product-row").isEmpty();
+      return !doc.select(".product-info-basic").isEmpty();
    }
 
    private String getName(Document document, Element variation) {
