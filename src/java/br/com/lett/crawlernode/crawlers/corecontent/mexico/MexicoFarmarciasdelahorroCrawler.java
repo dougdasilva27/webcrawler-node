@@ -50,7 +50,12 @@ public class MexicoFarmarciasdelahorroCrawler extends Crawler {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
-         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX))
+         .setProxyservice(List.of(
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+         ))
          .setHeaders(headers)
          .build();
 
