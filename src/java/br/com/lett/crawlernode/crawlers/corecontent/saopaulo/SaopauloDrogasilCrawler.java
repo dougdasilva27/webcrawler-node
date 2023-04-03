@@ -25,25 +25,8 @@ import java.util.*;
 public class SaopauloDrogasilCrawler extends Crawler {
 
    private static String SELLER_FULL_NAME = "Drogasil (São Paulo)";
-   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.ELO.toString(), Card.HIPERCARD.toString(), Card.HIPER.toString(),
-      Card.DINERS.toString(), Card.DISCOVER.toString(), Card.AURA.toString());
-   // I could'nt find another selector for this description
-   private static final String SMALL_DESCRIPTION_SELECTOR = ".sc-fzqNJr.hXQgjp";
-
-   private List<String> getSellers() {
-      JSONArray sellersArray = session.getOptions().optJSONArray("sellers");
-      List<String> sellersList = new ArrayList<>();
-
-      if (sellersArray != null && !sellersArray.isEmpty()) {
-         for (Object o : sellersArray) {
-            String seller = (String) o;
-            sellersList.add(seller);
-         }
-      }
-      return sellersList;
-   }
-
-   private List<String> SELLERS = getSellers();
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(),
+      Card.ELO.toString(), Card.HIPERCARD.toString(), Card.HIPER.toString(), Card.DINERS.toString(), Card.DISCOVER.toString(), Card.AURA.toString());
 
    public SaopauloDrogasilCrawler(Session session) {
       super(session);
@@ -98,11 +81,9 @@ public class SaopauloDrogasilCrawler extends Crawler {
             String description = scrapDescription(data, doc);
             List<String> ean = new ArrayList<>();
             ean.add(CrawlerUtils.scrapStringSimpleInfo(doc, "tr:nth-child(2) > td", false));
-            Boolean available = JSONUtils.getValueRecursive(data,
-               "extension_attributes.stock_item.is_in_stock",
-               Boolean.class);
+            Boolean available = JSONUtils.getValueRecursive(data, "liveComposition.liveStock.qty", Integer.class) > 0;
             RatingsReviews ratingsReviews = crawlRating(internalId);
-            Offers offers = available != null && available ? scrapOffers(data, doc) : new Offers();
+            Offers offers = available ? scrapOffers(data, doc) : new Offers();
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
