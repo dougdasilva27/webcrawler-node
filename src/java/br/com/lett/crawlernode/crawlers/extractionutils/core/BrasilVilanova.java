@@ -43,14 +43,6 @@ public class BrasilVilanova extends Crawler {
       super.config.setParser(Parser.HTML);
    }
 
-   public String getCnpj() {
-      return session.getOptions().optString("cnpj");
-   }
-
-   public String getPassword() {
-      return session.getOptions().optString("password");
-   }
-
    public String getSellerFullname() {
       return session.getOptions().optString("seller");
    }

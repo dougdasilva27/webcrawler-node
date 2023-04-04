@@ -26,10 +26,6 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
       super(session);
    }
 
-   public String getToken() {
-      return session.getOptions().optString("token");
-   }
-
    private final BrasilVilaNovaUtils brasilVilaNovaUtils = new BrasilVilaNovaUtils(session);
 
    @Override
