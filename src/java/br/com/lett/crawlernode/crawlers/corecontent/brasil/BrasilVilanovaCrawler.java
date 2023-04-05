@@ -23,6 +23,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -44,45 +45,33 @@ public class BrasilVilanovaCrawler extends Crawler {
 
    public BrasilVilanovaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
+   }
+
+   public LettProxy getFixedIp() throws IOException {
+      LettProxy lettProxy = new LettProxy();
+      lettProxy.setSource("fixed_ip");
+      lettProxy.setPort(3144);
+      lettProxy.setAddress("haproxy.lett.global");
+      lettProxy.setLocation("brazil");
+      return lettProxy;
    }
 
    @Override
    public void handleCookiesBeforeFetch() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
+      Response loginResponse = new Response();
+      try {
+         Request request = RequestBuilder.create()
+            .setUrl("https://www.vilanova.com.br/loginlett/access/account/token/60498706000157")
+            .setProxy(
+               getFixedIp()
+            )
+            .build();
+         loginResponse = this.dataFetcher.post(session, request);
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
 
-      Request requestHome = RequestBuilder.create()
-         .setUrl(HOME_PAGE)
-         .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BONANZA
-            ))
-         .build();
-      Response response = this.dataFetcher.get(session, requestHome);
-      this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, "www.vilanova.com.br", "/", cookies, session, new HashMap<>(), dataFetcher);
-      this.proxy = response.getProxyUsed();
-
-      StringBuilder payload = new StringBuilder();
-      payload.append("usuario_cnpj=").append(CNPJ);
-      payload.append("&usuario_senha=").append(PASSWORD);
-
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
-      headers.put("sec-fetch-mode", "cors");
-      headers.put("sec-fetch-site", "same-origin");
-      headers.put("origin", "https://www.vilanova.com.br");
-      headers.put("X-Requested-With", "XMLHttpRequest");
-
-      Request request = RequestBuilder.create()
-         .setUrl(LOGIN_URL)
-         .setPayload(payload.toString())
-         .setCookies(this.cookies)
-         .setHeaders(headers)
-         .setProxy(this.proxy)
-         .build();
-
-      Response loginResponse = this.dataFetcher.post(session, request);
       List<Cookie> cookiesResponse = loginResponse.getCookies();
 
       for (Cookie cookieResponse : cookiesResponse) {
@@ -94,17 +83,23 @@ public class BrasilVilanovaCrawler extends Crawler {
    }
 
    @Override
-   protected Object fetch() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
+   protected Response fetchResponse() {
 
-      Request request = RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setCookies(this.cookies)
-         .setProxy(this.proxy)
-         .build();
+      Response response = new Response();
+      try {
+         Request request = RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setProxy(
+               getFixedIp()
+            )
+            .setCookies(this.cookies)
+            .build();
+         response = this.dataFetcher.get(session, request);
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
 
-      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+      return response;
    }
 
    @Override
