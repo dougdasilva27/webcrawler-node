@@ -46,15 +46,6 @@ public class BrasilVilanova extends Crawler {
    public String getSellerFullname() {
       return session.getOptions().optString("seller");
    }
-
-   public String getMarket() {
-      return session.getOptions().optString("market");
-   }
-
-   public String getToken() {
-      return session.getOptions().optString("token");
-   }
-
    private final BrasilVilaNovaUtils brasilVilaNovaUtils = new BrasilVilaNovaUtils(session);
 
    @Override
@@ -142,8 +133,7 @@ public class BrasilVilanova extends Crawler {
 
    private String scrapImage(Document doc) {
       String imageFullUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".gallery-placeholder__image", "src");
-      int indexPointer = imageFullUrl.indexOf('?');
-      return imageFullUrl.substring(0, indexPointer);
+      return brasilVilaNovaUtils.getSanitizedUrl(imageFullUrl);
    }
 
    private String getPrimaryImageFromJson(JSONArray images) {

@@ -133,7 +133,7 @@ public class BrasilVilaNovaUtils {
 
    public String getSanitizedUrl(String url) {
       int indexPointer = url.indexOf('?');
-      return url.substring(0, indexPointer);
+      return indexPointer != -1 ? url.substring(0, indexPointer) : url;
    }
 
    public String getInternalId(String internalPid, String label) {
