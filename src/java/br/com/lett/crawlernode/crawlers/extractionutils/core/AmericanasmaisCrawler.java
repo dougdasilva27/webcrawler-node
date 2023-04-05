@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
+import com.google.common.net.HttpHeaders;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
@@ -26,10 +27,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class AmericanasmaisCrawler extends Crawler {
 
@@ -51,6 +49,41 @@ public class AmericanasmaisCrawler extends Crawler {
       return session.getOptions().optString("store_id");
    }
 
+   protected Map<String, String> headers = getHeaders();
+
+   private static final List<String> UserAgent = Arrays.asList(
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (iPad; CPU OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (iPod; CPU iPhone OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; SM-A205U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; SM-A102U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; SM-G960U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; LM-X420) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; LM-Q710(FGN)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36"
+   );
+
+   public static Map<String, String> getHeaders() {
+      Random random = new Random();
+
+      Map<String, String> headers = new HashMap<>();
+
+      headers.put("user-agent", UserAgent.get(random.nextInt(UserAgent.size())));
+      headers.put(HttpHeaders.REFERER, HOME_PAGE);
+      headers.put(
+         HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+      );
+      headers.put(HttpHeaders.CACHE_CONTROL, "max-age=0");
+      headers.put(HttpHeaders.CONNECTION, "keep-alive");
+      headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+      headers.put("sec-fetch-site", "none");
+      headers.put("sec-fetch-mode", "navigate");
+      headers.put("sec-fetch-user", "?1");
+      headers.put("sec-fetch-dest", "document");
+
+      return headers;
+   }
+
    @Override
    protected Object fetch() {
 
@@ -60,6 +93,7 @@ public class AmericanasmaisCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .mustSendContentEncoding(false)
+         .setHeaders(headers)
          .setFetcheroptions(
             FetcherOptions.FetcherOptionsBuilder.create()
                .mustUseMovingAverage(false)
