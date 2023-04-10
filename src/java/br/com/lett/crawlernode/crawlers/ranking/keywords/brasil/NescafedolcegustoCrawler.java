@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -28,7 +29,7 @@ public class NescafedolcegustoCrawler extends CrawlerRankingKeywords {
       if (!products.isEmpty()) {
 
          for (Element product : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".price-box.price-final_price", "data-product-id");
+            String internalId = getInternalId(product);
             String productUrl = CrawlerUtils.scrapUrl(product, ".product-card__name--link", "href", "https", "www.nescafe-dolcegusto.com.br");
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".product-card__name--link", false);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-card__image", "data-hover-image");
@@ -37,7 +38,8 @@ public class NescafedolcegustoCrawler extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalPid(internalPid)
+               .setInternalPid(internalId)
+               .setInternalId(internalId)
                .setName(productName)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
@@ -58,6 +60,14 @@ public class NescafedolcegustoCrawler extends CrawlerRankingKeywords {
    @Override
    protected boolean hasNextPage() {
       return !this.currentDoc.select(".pages .items.pages-items .item.pages-item-next").isEmpty();
+   }
+
+   private String getInternalId(Element element) {
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".price-box.price-final_price", "data-product-id");
+      if (internalId == null) {
+         internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".amxnotif-container", "data-product-id");
+      }
+      return internalId;
    }
 
 }
