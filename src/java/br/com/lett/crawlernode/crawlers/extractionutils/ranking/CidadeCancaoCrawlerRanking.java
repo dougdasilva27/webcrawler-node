@@ -1,17 +1,24 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Collections;
+import java.util.List;
 
 public class CidadeCancaoCrawlerRanking extends CrawlerRankingKeywords {
    public CidadeCancaoCrawlerRanking(Session session) {
@@ -26,6 +33,24 @@ public class CidadeCancaoCrawlerRanking extends CrawlerRankingKeywords {
       cookie.setDomain(store_id + ".cidadecancao.com");
       cookie.setPath("/");
       this.cookies.add(cookie);
+   }
+
+   @Override
+   protected Document fetchDocument(String url, List<Cookie> cookies) {
+      this.currentDoc = new Document(url);
+
+      if (this.currentPage == 1) {
+         this.session.setOriginalURL(url);
+      }
+
+      Request request = Request.RequestBuilder.create()
+         .setCookies(cookies)
+         .setUrl(url)
+         .build();
+
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+
+      return Jsoup.parse(response.getBody());
    }
 
    @Override
