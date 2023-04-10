@@ -46,15 +46,12 @@ public class CidadeCancaoCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (!session.getOriginalURL().contains(store_id)) {
-         throw new Exception("URL não pertence a localidade correta");
-      }
-
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalPid = scrapInternalPid(doc);
          String internalId = String.valueOf(CrawlerUtils.scrapIntegerFromHtml(doc, ".sku-align", true, null));
+         String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product > .current", "href");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false);
          List<String> secondaryImages = crawlListImages(doc);
          String primaryImage = !secondaryImages.isEmpty() ? secondaryImages.remove(0) : null;
@@ -64,7 +61,7 @@ public class CidadeCancaoCrawler extends Crawler {
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
+            .setUrl(url)
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
