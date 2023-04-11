@@ -46,6 +46,7 @@ public class BrasilVilanova extends Crawler {
    public String getSellerFullname() {
       return session.getOptions().optString("seller");
    }
+
    private final BrasilVilaNovaUtils brasilVilaNovaUtils = new BrasilVilaNovaUtils(session);
 
    @Override
@@ -107,8 +108,7 @@ public class BrasilVilanova extends Crawler {
                } else {
                   primaryImage = scrapImage(doc);
                }
-               boolean available = objectMarket.optBoolean("status");
-               Offers offers = available ? getOffersJson(idProductMarket, jsonProduct) : new Offers();
+               Offers offers = idProductMarket != null ? getOffersJson(idProductMarket, jsonProduct) : new Offers();
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
                   .setInternalId(internalId)
@@ -162,24 +162,27 @@ public class BrasilVilanova extends Crawler {
    }
 
    private Pricing scrapPricingJSON(JSONObject json) throws MalformedPricingException {
-      JSONObject oldPrice = json.optJSONObject("oldPrice");
-      JSONObject finalPrice = json.optJSONObject("finalPrice");
-      Double priceFrom = JSONUtils.getDoubleValueFromJSON(oldPrice, "amount", false);
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(finalPrice, "amount", false);
+      if (!json.isEmpty()) {
+         JSONObject oldPrice = json.optJSONObject("oldPrice");
+         JSONObject finalPrice = json.optJSONObject("finalPrice");
+         Double priceFrom = JSONUtils.getDoubleValueFromJSON(oldPrice, "amount", false);
+         Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(finalPrice, "amount", false);
 
-      if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
-         priceFrom = null;
+         if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
+            priceFrom = null;
+         }
+
+         BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+         CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+         return Pricing.PricingBuilder.create()
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setBankSlip(bankSlip)
+            .setCreditCards(creditCards)
+            .build();
       }
-
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCards(spotlightPrice);
-
-      return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom)
-         .setSpotlightPrice(spotlightPrice)
-         .setBankSlip(bankSlip)
-         .setCreditCards(creditCards)
-         .build();
+      return Pricing.PricingBuilder.create().build();
    }
 
    private Offers getOffersJson(String id, JSONObject json) throws MalformedPricingException, OfferException {

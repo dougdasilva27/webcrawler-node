@@ -42,6 +42,7 @@ public class BrasilVilanova extends CrawlerRankingKeywords {
                brasilVilaNovaUtils.getFixedIp()
             )
             .setCookies(this.cookies)
+            .setFollowRedirects(true)
             .build();
          Response response = this.dataFetcher.get(session, request);
          return Jsoup.parse(response.getBody());
