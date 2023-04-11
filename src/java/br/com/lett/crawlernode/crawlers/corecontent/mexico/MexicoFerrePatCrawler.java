@@ -18,7 +18,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -109,15 +108,15 @@ public class MexicoFerrePatCrawler extends Crawler {
    }
 
    private List<String> scrapImages(Document doc) {
-      Set<String> images = new HashSet<>();
-      Elements imagesHtml = doc.select(".gallery .thumbnails li img");
+      List<String> images = new ArrayList<>();
+      Elements imagesHtml = doc.select(".info .gallery li img");
       for (Element element : imagesHtml) {
          String imagePath = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "img", "src");
          if (imagePath != null && !imagePath.isEmpty()) {
             images.add(imagePath);
          }
       }
-      return new ArrayList<>(images);
+      return images;
    }
 
    private boolean crawlAvailability(Element product) {
