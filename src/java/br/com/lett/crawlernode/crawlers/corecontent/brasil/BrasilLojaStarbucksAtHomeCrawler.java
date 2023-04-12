@@ -85,7 +85,7 @@ public class BrasilLojaStarbucksAtHomeCrawler extends Crawler {
 
    private Offers scrapOffer(Document doc, String internalId) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(internalId, doc);
+      Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(doc);
 
       offers.add(Offer.OfferBuilder.create()
