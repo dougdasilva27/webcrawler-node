@@ -5,11 +5,12 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
@@ -18,7 +19,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -45,6 +45,7 @@ public class NescafedolcegustoCrawler extends Crawler {
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product.attribute.overview > div"));
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".gallery-placeholder__image > img", "src");
          List<String> secondaryImages = getImageListFromScript(doc);
+         List<String> categories = CrawlerUtils.crawlCategories(doc,".breadcrumbs > ul > li");
          RatingsReviews ratingsReviews = crawlRatingReviews(doc);
          boolean isAvailable = doc.select("#product-addtocart-button") != null;
          Offers offers = isAvailable ? scrapOffers(doc, internalId) : new Offers();
@@ -57,7 +58,7 @@ public class NescafedolcegustoCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            //.setCategories(categories)
+            .setCategories(categories)
             .setRatingReviews(ratingsReviews)
             .setOffers(offers)
             .build();
@@ -162,88 +163,24 @@ public class NescafedolcegustoCrawler extends Crawler {
 
       ratingReviews.setTotalRating(totalReviews);
       ratingReviews.setTotalWrittenReviews(totalReviews);
-      ratingReviews.setAverageOverallRating(crawlAverageOverallRating(doc, totalReviews));
-      ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(doc));
+      ratingReviews.setAverageOverallRating(crawlAverageOverallRating(doc));
 
       return ratingReviews;
    }
 
    private Integer computeTotalReviewsCount(Document doc) {
-      Integer totalRatings = CrawlerUtils.scrapIntegerFromHtml(doc, ".reviewCount", true, 0);
-      String as = CrawlerUtils.scrapStringSimpleInfo(doc, ".reviewCount", true);
-
-      Integer b = CommonMethods.stringPriceToIntegerPrice(as, ',',0);
-
-      return totalRatings;
+      Integer totalRatings = CrawlerUtils.scrapIntegerFromHtml(doc, "div.product__information--col > div > div.product__reviews--short.reviews__summary > div > a > span", true, 0);
+      if (totalRatings != null) {
+         return totalRatings;
+      }
+      return null;
    }
 
-   private Double crawlAverageOverallRating(Document doc, int totalReviews) {
-      Elements votes = doc.select(".amount-reviews");
-      double totalvalue = 0;
-
-      if (totalReviews == 0) {
-         return 0.0;
+   private Double crawlAverageOverallRating(Document doc) {
+      Double ratingPercent = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[itemprop=\"ratingValue\"]", null, false, '.', session);
+      if (ratingPercent != null) {
+         return ratingPercent * 0.05;
       }
-
-      for (Element e : votes) {
-
-         totalvalue += CrawlerUtils.scrapIntegerFromHtml(e, null, true, 0) * (5 - votes.indexOf(e));
-      }
-
-      return totalvalue / totalReviews;
-   }
-
-
-   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
-      int star1 = 0;
-      int star2 = 0;
-      int star3 = 0;
-      int star4 = 0;
-      int star5 = 0;
-
-      Elements stars = doc.select(".resume-label li span:first-child");
-      Elements votes = doc.select(".amount-reviews");
-
-      if (stars.size() == votes.size()) {
-
-         for (int i = 0; i < stars.size(); i++) {
-
-            Element starElement = stars.get(i);
-            Element voteElement = votes.get(i);
-
-            String starNumber = starElement.attr("class");
-            int star = !starNumber.isEmpty() ? MathUtils.parseInt(starNumber) : 0;
-
-            String voteNumber = CrawlerUtils.scrapStringSimpleInfo(voteElement, null, true);
-            int vote = !voteNumber.isEmpty() ? MathUtils.parseInt(voteNumber) : 0;
-
-            switch (star) {
-               case 50:
-                  star5 = vote;
-                  break;
-               case 40:
-                  star4 = vote;
-                  break;
-               case 30:
-                  star3 = vote;
-                  break;
-               case 20:
-                  star2 = vote;
-                  break;
-               case 10:
-                  star1 = vote;
-                  break;
-               default:
-                  break;
-            }
-         }
-      }
-      return new AdvancedRatingReview.Builder()
-         .totalStar1(star1)
-         .totalStar2(star2)
-         .totalStar3(star3)
-         .totalStar4(star4)
-         .totalStar5(star5)
-         .build();
+      return null;
    }
 }
