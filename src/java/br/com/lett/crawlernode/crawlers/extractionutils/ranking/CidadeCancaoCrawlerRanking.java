@@ -58,24 +58,25 @@ public class CidadeCancaoCrawlerRanking extends CrawlerRankingKeywords {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
-      String url = "https://"+store_id+".cidadecancao.com/catalogsearch/result/?q="+this.keywordEncoded+"&p=" + this.currentPage;
+      String url = "https://www.cidadecancao.com/" + store_id + "/catalogsearch/result/?q="+this.keywordEncoded+"&p=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url, this.cookies);
 
-      Elements products = this.currentDoc.select(".products-grid li");
+      Elements products = this.currentDoc.select(".products.list.items.product-items > li");
       if (!products.isEmpty()) {
          for (Element product : products) {
-            String internalPid = String.valueOf(CrawlerUtils.scrapIntegerFromHtmlAttr(product, ".containerTag > span", "id", null));
-            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-image", "href");
-            String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-name", false);
-            String imgUrl = scrapImage(product);
-            Integer price = scrapPrice(product);
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "form[data-role=\"tocart-form\"]", "data-product-sku");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "input[name=\"product\"]", "value");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "a.product", "href");
+            String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product.name", false);
+            String imgUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-image-photo", "src");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "span[data-price-type=\"finalPrice\"] > .price", null, false, ',', session, null);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(null)
+               .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setImageUrl(imgUrl)
                .setName(name)
@@ -96,24 +97,6 @@ public class CidadeCancaoCrawlerRanking extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
          + this.arrayProducts.size() + " produtos crawleados");
-   }
-
-   private String scrapImage(Element product) {
-      String image = CrawlerUtils.scrapSimplePrimaryImage(product, ".product-image img", Collections.singletonList("src"), "https", store_id + ".cidadecancao.com");
-
-      if(image != null && image.contains("/small_image/265x235/")) {
-         image = image.replace("/small_image/265x235/", "/image/855x635/");
-      }
-
-      return image;
-   }
-
-   private Integer scrapPrice(Element product) {
-      Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".price-box .special-price .price", null, false, ',', session, null);
-      if (price == null) {
-         price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".price-box .regular-price .price", null, false, ',', session, null);
-      }
-      return price;
    }
 
    @Override

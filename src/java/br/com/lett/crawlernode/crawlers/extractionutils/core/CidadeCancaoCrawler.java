@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -16,8 +17,9 @@ import models.Offers;
 import models.pricing.CreditCards;
 import models.pricing.Pricing;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import software.amazon.awssdk.services.glue.model.Crawl;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -49,15 +51,14 @@ public class CidadeCancaoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalPid = scrapInternalPid(doc);
-         String internalId = String.valueOf(CrawlerUtils.scrapIntegerFromHtml(doc, ".sku-align", true, null));
-         String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product > .current", "href");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=\"product\"]", "value");
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".value[itemprop=\"sku\"]", true);
+         String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "meta[property=\"og:url\"]", "content");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title > span", false);
          List<String> secondaryImages = crawlListImages(doc);
          String primaryImage = !secondaryImages.isEmpty() ? secondaryImages.remove(0) : null;
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.product):not(.home)", false);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".linha-descricao, .weight-view-info"));
-         boolean availableToBuy = doc.selectFirst(".preco-prod") != null;
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("#description"));
+         boolean availableToBuy = doc.selectFirst(".title-out-stock") == null;
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -67,7 +68,7 @@ public class CidadeCancaoCrawler extends Crawler {
             .setName(name)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
-            .setCategories(categories)
+            .setCategories(new CategoryCollection())
             .setDescription(description)
             .setOffers(offers)
             .build();
@@ -81,28 +82,10 @@ public class CidadeCancaoCrawler extends Crawler {
    }
 
    private List<String> crawlListImages(Document doc) {
-      List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".more-views img", List.of("src"), "https", store_id + ".cidadecancao.com/", null);
-      for (int i = 0; i < images.size(); i++) {
-         images.set(i, images.get(i).replace("thumbnail/80x", "image/855x635"));
-      }
-      return images;
-   }
+      JSONObject galleryJson = CrawlerUtils.selectJsonFromHtml(doc, "script:containsData(mage/gallery/gallery)", null, " ", false, false);
+      JSONArray imagesJson = JSONUtils.getValueRecursive(galleryJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", ".", JSONArray.class, new JSONArray());
 
-   private String scrapInternalPid(Document doc) {
-      String internalPid = null;
-      String action = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-shop .product-view-form", "action");
-
-      if (action != null && !action.isEmpty()) {
-         String regex = "product/(.*)/form_key";
-         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-         final Matcher matcher = pattern.matcher(action);
-
-         if (matcher.find()) {
-            internalPid = matcher.group(1);
-         }
-      }
-
-      return internalPid;
+      return JSONUtils.jsonArrayToStringList(imagesJson, "full");
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -124,13 +107,9 @@ public class CidadeCancaoCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-box .special-price .price", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id^=product-price] > .price", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id^=old-price] > .price", null, false, ',', session);
 
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-box .regular-price .price", null, false, ',', session);
-      }
-
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-box .old-price .price", null, false, ',', session);
       CreditCards creditCards = CrawlerUtils.scrapCreditCards(spotlightPrice, cards);
 
       return Pricing.PricingBuilder.create()
@@ -141,7 +120,7 @@ public class CidadeCancaoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".product-shop") != null;
+      return doc.selectFirst(".column.main > .product-info-main") != null;
    }
 
 }
