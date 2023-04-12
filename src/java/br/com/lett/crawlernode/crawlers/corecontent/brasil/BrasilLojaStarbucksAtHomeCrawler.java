@@ -1,17 +1,24 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import cdjd.com.google.common.net.HttpHeaders;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.*;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
@@ -37,6 +44,7 @@ public class BrasilLojaStarbucksAtHomeCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".items li", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder__image", Collections.singletonList("src"), "https:", "www.starbucksathome.com");
          List<String> secondaryImage = getSecondaryImages(doc);
+         RatingsReviews rating = crawlRating(internalId);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-info-content .value p"));
          boolean availableToBuy = doc.select(".stock.unavailable").isEmpty();
          Offers offers = availableToBuy ? scrapOffer(doc, internalId) : new Offers();
@@ -51,6 +59,7 @@ public class BrasilLojaStarbucksAtHomeCrawler extends Crawler {
             .setSecondaryImages(secondaryImage)
             .setDescription(description)
             .setOffers(offers)
+            .setRatingReviews(rating)
             .build();
 
          products.add(product);
@@ -148,6 +157,59 @@ public class BrasilLojaStarbucksAtHomeCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+   private Document fetchPage(String url) {
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("content-type", "text/html;charset=UTF-8");
+      headers.put("authority", "www.starbucksathome.com");
+      headers.put(HttpHeaders.ACCEPT, "text/html, */*; q=0.7");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.BUY_HAPROXY))
+         .build();
+
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+
+      return Jsoup.parse(response.getBody());
+   }
+   private RatingsReviews crawlRating(String internalId) {
+
+      String url = "https://www.starbucksathome.com/br/review/product/listAjax/id/" + internalId + "/";
+      Document document = fetchPage(url);
+
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      RatingsReviews ratingReviews = new RatingsReviews();
+
+      if (document.select("amreview-summary-info") != null) {
+         ratingReviews.setDate(session.getDate());
+
+         if (internalId != null) {
+            Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(document,
+               ".amreview-summary-info .amreview-count", true, 0);
+            Double avgRating = getTotalAvgRating(document);
+
+            ratingReviews.setInternalId(internalId);
+            ratingReviews.setTotalRating(totalNumOfEvaluations);
+            ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+            ratingReviews.setAverageOverallRating(avgRating);
+         }
+      }
+
+      return ratingReviews;
+   }
+
+
+   private Double getTotalAvgRating(Document doc) {
+      Integer avgRatingInteger = CrawlerUtils.scrapIntegerFromHtml(doc,
+         ".amstars-rating-container .amstars-stars .hidden", true, 0);
+      Double avgRating = (avgRatingInteger/100)*5.0;
+      return avgRating;
    }
 
 
