@@ -3,19 +3,10 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.*;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.*;
-
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -31,6 +22,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
 
 /**
  * Date: 12/10/2018
@@ -259,8 +254,7 @@ public class LeroymerlinCrawler extends Crawler {
    }
 
    private boolean crawlAvailability(Document doc) {
-      return !doc.select(".product-purchase-buttons .buy-button[data-button=ecommerce]:not(.disabled), "
-         + ".product-purchase-buttons .buy-button[data-button=pickupInStore]:not([disabled])").isEmpty();
+      return doc.select("button.ecommerce-button.purchase-button[disabled]").isEmpty();
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
