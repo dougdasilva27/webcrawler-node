@@ -16,8 +16,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 public class BrasilLojaStarbucksAtHomeCrawler extends Crawler {
 
    private static final String SELLER_FULL_NAME = "starbucksathome";
@@ -35,7 +33,6 @@ public class BrasilLojaStarbucksAtHomeCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-info-price .price-box.price-final_price[data-product-id]", "data-product-id");
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-info-price .price-box.price-final_price[data-product-id]", "data-product-id");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title-wrapper h1 span", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".items li", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder__image", Collections.singletonList("src"), "https:", "www.starbucksathome.com");
@@ -47,7 +44,7 @@ public class BrasilLojaStarbucksAtHomeCrawler extends Crawler {
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalPid)
+            .setInternalPid(internalId)
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
@@ -105,7 +102,7 @@ public class BrasilLojaStarbucksAtHomeCrawler extends Crawler {
 
    }
 
-   private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Boolean isOnSale = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-main .special-price .price", null, false, ',', session) == null;
       Double spotlightPrice = isOnSale ? CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-main .price-container .price", null, false, ',', session) : CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-main .special-price .price", null, false, ',', session);
       Double priceFrom = isOnSale ? null : CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-main .old-price .price", null, false, ',', session);
