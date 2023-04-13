@@ -21,7 +21,7 @@ public class NescafedolcegustoCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      String url = "https://www.nescafe-dolcegusto.com.br/catalogsearch/result/?q=" + this.keywordWithoutAccents;
+      String url = "https://www.nescafe-dolcegusto.com.br/catalogsearch/result/?q=" + this.keywordWithoutAccents.replace(" ","%20");
       this.log("Página " + this.currentPage);
       this.currentDoc = fetchDocument(url);
       this.log("Link onde são feitos os crawlers: " + url);
