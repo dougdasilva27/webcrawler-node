@@ -47,8 +47,9 @@ public class NescafedolcegustoCrawler extends Crawler {
          List<String> secondaryImages = getImageListFromScript(doc);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > ul > li");
          RatingsReviews ratingsReviews = crawlRatingReviews(doc);
-         boolean isAvailable = doc.select("#product-addtocart-button") != null;
-         Offers offers = isAvailable ? scrapOffers(doc, internalId) : new Offers();
+         String outStock = CrawlerUtils.scrapStringSimpleInfo(doc, ".amxnotif__oos-message", true);
+         boolean available = outStock != null && outStock.contains("SEM ESTOQUE") ? false : true;
+         Offers offers = available ? scrapOffers(doc, internalId) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
