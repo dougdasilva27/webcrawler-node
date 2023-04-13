@@ -30,7 +30,9 @@ public class NescafedolcegustoCrawler extends CrawlerRankingKeywords {
       Elements productsRedirect = this.currentDoc.select(".product__section--top");
 
       if (!products.isEmpty()) {
-
+         if (this.totalProducts == 0) {
+            setTotalProducts();
+         }
          for (Element product : products) {
             String internalId = getInternalId(product);
             String productUrl = CrawlerUtils.scrapUrl(product, ".product-card__name--link", "href", "https", "www.nescafe-dolcegusto.com.br");
@@ -85,8 +87,9 @@ public class NescafedolcegustoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected boolean hasNextPage() {
-      return !this.currentDoc.select(".pages .items.pages-items .item.pages-item-next").isEmpty();
+   protected void setTotalProducts(){
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".toolbar-number", true, 0);
+      this.log("Total: " + this.totalProducts);
    }
 
    private String getInternalId(Element element) {
