@@ -45,7 +45,7 @@ public class NescafedolcegustoCrawler extends Crawler {
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product.attribute.overview > div"));
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".gallery-placeholder__image > img", "src");
          List<String> secondaryImages = getImageListFromScript(doc);
-         List<String> categories = CrawlerUtils.crawlCategories(doc,".breadcrumbs > ul > li");
+         List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > ul > li");
          RatingsReviews ratingsReviews = crawlRatingReviews(doc);
          boolean isAvailable = doc.select("#product-addtocart-button") != null;
          Offers offers = isAvailable ? scrapOffers(doc, internalId) : new Offers();
@@ -78,6 +78,9 @@ public class NescafedolcegustoCrawler extends Crawler {
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".price-box.price-final_price", "data-product-id");
       if (internalId == null) {
          internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".amxnotif-container", "data-product-id");
+      }
+      if (internalId == null) {
+         internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "[name=\"product\"]", "value");
       }
       return internalId;
    }
