@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -15,6 +16,7 @@ import br.com.lett.crawlernode.util.Logging;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,6 +45,10 @@ public class BarbosaSupermercadosRanking extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setPayload(payload)
          .mustSendContentEncoding(false)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.LUMINATI_SERVER_BR))
          .build();
 
       int tries = 0;
@@ -50,7 +56,7 @@ public class BarbosaSupermercadosRanking extends CrawlerRankingKeywords {
 
       while (tries < 3) {
          try {
-            response = new FetcherDataFetcher().post(session, request);
+            response = new JsoupDataFetcher().post(session, request);
             String content = response.getBody();
             if (response.isSuccess()) {
                return CrawlerUtils.stringToJson(content);
