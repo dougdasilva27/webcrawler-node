@@ -135,6 +135,14 @@ public class MercadolivreCrawler extends Crawler {
                Logging.printLogError(logger, session, "HTML not have description. Attempt: " + tries);
             }
 
+            Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-review-capability__rating__label", true, 0);
+            success = totalNumOfEvaluations > 0;
+            if (success) {
+               Logging.printLogInfo(logger, session, "HTML has rating and reviews!");
+            } else {
+               Logging.printLogError(logger, session, "HTML not have rating and reviews. Attempt: " + tries);
+            }
+
          } while (!success && tries++ <= 4);
 
       }

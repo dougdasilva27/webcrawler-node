@@ -131,9 +131,9 @@ public class MercadolivreNewCrawler {
          availableToBuy = false;
       }
 
-      String unavailableAddress = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-vip-shipping-message__text",false);
+      String unavailableAddress = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-vip-shipping-message__text", false);
 
-      if(unavailableAddress != null && unavailableAddress.contains("Este anúncio está indisponível para seu endereço.")){
+      if (unavailableAddress != null && unavailableAddress.contains("Este anúncio está indisponível para seu endereço.")) {
          availableToBuy = false;
       }
 
@@ -151,7 +151,7 @@ public class MercadolivreNewCrawler {
 
          for (Element e : variationsElements) {
             String variation = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-pdp-variations__selected-text", true);
-            if (variation != null && !productName.replace(" ","").contains(variation)) {
+            if (variation != null && !productName.replace(" ", "").contains(variation)) {
                name.append(" - ").append(variation);
             }
          }
@@ -196,9 +196,9 @@ public class MercadolivreNewCrawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-review-view__rating__summary__label", true, 0);
-      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ui-review-view__rating__summary__average", null, true, '.', session);
-      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
+      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-review-capability__rating__label", true, 0);
+      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ui-review-capability__rating__average", null, true, '.', session);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc, totalNumOfEvaluations);
 
       ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -210,51 +210,37 @@ public class MercadolivreNewCrawler {
       return ratingReviews;
    }
 
-   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc, Integer totalNumOfEvaluations) {
       Integer star1 = 0;
       Integer star2 = 0;
       Integer star3 = 0;
       Integer star4 = 0;
       Integer star5 = 0;
 
-      Elements reviews = doc.select(".ui-vpp-rating li");
+      if (totalNumOfEvaluations > 0) {
+         for (Element starElement : doc.select(".ui-review-capability-rating > li")) {
+            Integer star = CrawlerUtils.scrapIntegerFromHtml(starElement, ".ui-review-capability-rating__level__value-container > span", true, 0);
+            Double selectorPercentage = CrawlerUtils.scrapDoublePriceFromHtml(starElement, ".ui-review-capability-rating__level__progress-bar__fill-background", "style", false, '.', session);
+            Integer total = Math.toIntExact(selectorPercentage > 0 ? Math.round((totalNumOfEvaluations * (selectorPercentage / 100f))) : 0);
 
-      for (Element review : reviews) {
-
-         Element elementStarNumber = review.selectFirst(".ui-vpp-rating__level__text");
-
-         if (elementStarNumber != null) {
-            String stringStarNumber = elementStarNumber.text().replaceAll("[^0-9]", "").trim();
-            int numberOfStars = !stringStarNumber.isEmpty() ? Integer.parseInt(stringStarNumber) : 0;
-
-            Element elementVoteNumber = review.selectFirst(".ui-vpp-rating__level__value");
-
-            if (elementVoteNumber != null) {
-
-               String vN = elementVoteNumber.text().replaceAll("[^0-9]", "").trim();
-               int numberOfVotes = !vN.isEmpty() ? Integer.parseInt(vN) : 0;
-
-               switch (numberOfStars) {
-                  case 5:
-                     star5 = numberOfVotes;
-                     break;
-                  case 4:
-                     star4 = numberOfVotes;
-                     break;
-                  case 3:
-                     star3 = numberOfVotes;
-                     break;
-                  case 2:
-                     star2 = numberOfVotes;
-                     break;
-                  case 1:
-                     star1 = numberOfVotes;
-                     break;
-                  default:
-                     break;
-               }
+            switch (star) {
+               case 5:
+                  star5 = total;
+                  break;
+               case 4:
+                  star4 = total;
+                  break;
+               case 3:
+                  star3 = total;
+               case 2:
+                  star2 = total;
+               case 1:
+                  star1 = total;
+               default:
+                  break;
             }
          }
+
       }
 
       return new AdvancedRatingReview.Builder()
