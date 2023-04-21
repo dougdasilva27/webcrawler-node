@@ -55,8 +55,8 @@ public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
 
       Document doc = new Document("");
       int attempt = 0;
-      boolean sucess = false;
-      List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.SMART_PROXY_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
+      boolean success = false;
+      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
       do {
          try {
             Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
@@ -66,7 +66,7 @@ public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
                webdriver.waitLoad(1000);
 
                doc = Jsoup.parse(webdriver.getCurrentPageSource());
-               sucess = doc.selectFirst("div.category-products > ul > li") != null;
+               success = doc.selectFirst("div.category-products > ul > li") != null;
                webdriver.terminate();
             }
          } catch (Exception e) {
@@ -74,7 +74,7 @@ public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
             Logging.printLogWarn(logger, "Página não capturada");
          }
 
-      } while (!sucess && attempt++ < (proxies.size() - 1));
+      } while (!success && attempt++ < (proxies.size() - 1));
 
       return doc;
    }
