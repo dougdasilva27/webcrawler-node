@@ -88,7 +88,7 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
 
                if (product != null) {
 
-                  String internalId = JSONUtils.getIntegerValueFromJSON(product, "id", 0).toString();
+                  String internalId = JSONUtils.getIntegerValueFromJSON(product, "product_id", 0).toString();
                   String internalPid = JSONUtils.getIntegerValueFromJSON(product, "id", 0).toString();
 
                   String urlProduct = urlProduct(product, internalPid);
