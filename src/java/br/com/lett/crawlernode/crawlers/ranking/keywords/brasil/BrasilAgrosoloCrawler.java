@@ -24,24 +24,23 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.agrosolo.com.br/busca?busca=" + this.keywordEncoded + "&pagina=" + this.currentPage;
+      String url = "https://www.agrosolo.com.br/busca?busca=" + this.keywordEncoded + "&pagina=" + this.currentPage + "&tamanho=24";
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select("div.produtos div.fbits-item-lista-spot ");
+      Elements products = this.currentDoc.select("div.category__spots div.spots__item");
 
       if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts();
-         }
 
          for (Element e : products) {
-            String internalPid = setPid(e);
-            String productUrl = CrawlerUtils.scrapUrl(e, ".spot div.spotContent > a", "href", "https", HOME_PAGE);
+            String productUrl = CrawlerUtils.scrapUrl(e, ".spots__image > a", "href", "https", HOME_PAGE);
 
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".fbits-spot-conteudo > .spot-parte-dois > .spotTitle", true);
-            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spotImg > img", "src");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".precoPor > .fbits-valor", null, true, ',', session, 0);
+            String[] urlParts = productUrl.split("-");
+            String internalPid = urlParts[urlParts.length -1];
+
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".spots__title", true);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spots__image > a > img", "src");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".spots__price > .product__price--after", null, true, ',', session, 0);
             boolean isAvailable = price != 0;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -70,18 +69,7 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "span.fbits-qtd-produtos-pagina", null, null, false, true, 0);
-      this.log("Total da busca: " + this.totalProducts);
-   }
-
-   private String setPid(Element e) {
-      String verifyPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id");
-      if (verifyPid != null && !verifyPid.isEmpty()) {
-         verifyPid = verifyPid.replace("produto-spot-item-", "");
-      }
-
-      return verifyPid;
-
+   protected boolean hasNextPage() {
+      return !this.currentDoc.select("#next-page").isEmpty();
    }
 }
