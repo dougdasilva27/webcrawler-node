@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -27,7 +28,10 @@ public class BrasilIfoodAppCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private static final String baseImageUrl = "https://static.ifood-static.com.br/image/upload/t_low/pratos";
+   private static final String baseImageUrl = "https://static.ifood-static.com.br/image/upload/t_low/pratos/";
+   private final String latitude = session.getOptions().optString("latitude", "");
+   private final String longitude = session.getOptions().optString("longitude", "");
+   private final String zip_code = session.getOptions().optString("zip_code", "");
 
    @Override
    protected JSONObject fetchJSONObject(String url) {
@@ -45,13 +49,13 @@ public class BrasilIfoodAppCrawler extends CrawlerRankingKeywords {
          ))
          .setFollowRedirects(false)
          .build();
-      Response response = new FetcherDataFetcher().get(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
       return CrawlerUtils.stringToJson(response.getBody());
    }
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      String url = "https://marketplace.ifood.com.br/v2/search/catalog-items?latitude=-23.62143488232774&longitude=-46.683871038258076&zip_code=04555020&channel=IFOOD&term=cerveja&categories=&item_from_merchant_ids=1827a055-b0f2-4f3b-a9eb-c876c456be7d&size=100&page=0";
+      String url = "https://marketplace.ifood.com.br/v2/search/catalog-items?latitude=" + latitude + "&longitude=" + longitude + "&zip_code=" + zip_code + "&channel=IFOOD&term=" + this.keywordEncoded + "&categories=&item_from_merchant_ids=1827a055-b0f2-4f3b-a9eb-c876c456be7d&size=100&page=0";
       JSONObject jsonObject = fetchJSONObject(url);
 
       if (jsonObject != null && jsonObject.has("id")) {
@@ -63,19 +67,28 @@ public class BrasilIfoodAppCrawler extends CrawlerRankingKeywords {
             JSONObject item = (JSONObject) o;
             String id = item.optString("id");
             String name = item.optString("name");
-            String suffixImage = JSONUtils.getValueRecursive(item, "resources.fileName", String.class, "");
+            String image = scrapImage(item);
             double priceDouble = item.optDouble("price", 0.0);
             int price = (int) (priceDouble * 100);
             RankingProduct objProducts = RankingProductBuilder.create()
                .setUrl(id)
-               .setImageUrl(baseImageUrl + suffixImage)
+               .setImageUrl(image)
                .setName(name)
                .setPriceInCents(price)
                .setInternalId(id)
                .setAvailability(price != 0)
                .build();
             saveDataProduct(objProducts);
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
          }
       }
+   }
+
+   private String scrapImage(JSONObject jsonObject) {
+
+      String suffixImage = JSONUtils.getValueRecursive(jsonObject, "resources.0.fileName", String.class, "");
+      return !suffixImage.isEmpty() ? baseImageUrl + suffixImage : null;
    }
 }
