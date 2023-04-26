@@ -189,7 +189,7 @@ public abstract class CrawlerRanking extends Task {
             // mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
             if (session instanceof RankingSession || session instanceof RankingDiscoverSession) {
 
-//               sendMessagesToQueue();
+               sendMessagesToQueue();
             }
 
             // caso cehgue no limite de páginas pré estabelecido, é finalizada a categorie.
