@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -69,16 +68,20 @@ public class BrasilIfoodAppCrawler extends CrawlerRankingKeywords {
             String name = item.optString("name");
             String image = scrapImage(item);
             double priceDouble = item.optDouble("price", 0.0);
-            int price = (int) (priceDouble * 100);
+            boolean availability = priceDouble != 0.0;
+            Integer price = availability ? (int) (priceDouble * 100) : null;
+
             RankingProduct objProducts = RankingProductBuilder.create()
                .setUrl(id)
+               .setInternalId(id)
+               .setAvailability(availability)
                .setImageUrl(image)
                .setName(name)
                .setPriceInCents(price)
-               .setInternalId(id)
-               .setAvailability(price != 0)
                .build();
+
             saveDataProduct(objProducts);
+
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
