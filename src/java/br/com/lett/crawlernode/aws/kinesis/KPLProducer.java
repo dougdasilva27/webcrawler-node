@@ -123,13 +123,13 @@ public class KPLProducer {
 
       ByteBuffer data = ByteBuffer.wrap((rankingModel.serializeToKinesis(session) + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
 
-//      FutureCallback<UserRecordResult> myCallback = getCallback(session);
+      FutureCallback<UserRecordResult> myCallback = getCallback(session);
 
       String kinesisStream = isRediscovery ? GlobalConfigurations.executionParameters.getKinesisStreamRediscovery() : GlobalConfigurations.executionParameters.getKinesisStreamRanking();
 
-//      ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(kinesisStream, rankingModel.getTimestamp().toString(), randomExplicitHashKey(), data);
-//
-//      Futures.addCallback(f, myCallback, callbackThreadPool);
+      ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(kinesisStream, rankingModel.getTimestamp().toString(), randomExplicitHashKey(), data);
+
+      Futures.addCallback(f, myCallback, callbackThreadPool);
    }
 
 
