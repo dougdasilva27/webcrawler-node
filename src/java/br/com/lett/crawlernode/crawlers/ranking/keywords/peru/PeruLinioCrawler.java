@@ -30,23 +30,23 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
    @Override
    protected Document fetchDocument(String url) {
       List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.SMART_PROXY_PE_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
-      int attemp = 0;
-      boolean succes = false;
+      int attempt = 0;
+      boolean success = false;
       Document doc = new Document("");
       do {
          try {
             Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attemp), session);
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempt), session);
             if (webdriver != null) {
                doc = Jsoup.parse(webdriver.getCurrentPageSource());
-               succes = !doc.select(".catalogue-product.row").isEmpty();
+               success = !doc.select(".catalogue-product.row").isEmpty();
                webdriver.terminate();
             }
          } catch (Exception e) {
             Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
             Logging.printLogWarn(logger, "Page not captured");
          }
-      } while (!succes && attemp++ < (proxies.size() - 1));
+      } while (!success && attempt++ < (proxies.size() - 1));
       return doc;
    }
 
@@ -65,7 +65,6 @@ public class PeruLinioCrawler extends CrawlerRankingKeywords {
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".image", List.of("data-lazy"),
                "https", "");
             RankingProduct rankingProduct = RankingProductBuilder.create()
-               .setInternalId(internalPid)
                .setInternalPid(internalPid)
                .setName(name)
                .setImageUrl(imageUrl)
