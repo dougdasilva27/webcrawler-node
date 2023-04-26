@@ -375,8 +375,7 @@ public abstract class CrawlerRanking extends Task {
       Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
       if ((session instanceof RankingKeywordsSession && ((RankingKeywordsSession) session).isSendDiscover()) || session instanceof RankingDiscoverKeywordsSession) {
-//         JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
-         JSONObject resultJson = new JSONObject().put("finished_at", true);
+         JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
 
          if (resultJson.has("finished_at")) {
             //todo add check in internal_id with method isContainsSku
