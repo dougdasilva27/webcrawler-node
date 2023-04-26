@@ -20,6 +20,7 @@ public class EnvironmentVariables {
    public static final String KINESIS_STREAM = "KINESIS_STREAM";
    public static final String KINESIS_STREAM_CATALOG = "KINESIS_STREAM_CATALOG";
    public static final String KINESIS_STREAM_RANKING = "KINESIS_STREAM_RANKING";
+   public static final String KINESIS_STREAM_REDISCOVERY = "KINESIS_STREAM_REDISCOVERY";
    public static final String LOGS_BUCKET_NAME = "LOGS_BUCKET_NAME";
    public static final String QUEUE_URL_FIRST_PART = "QUEUE_URL_FIRST_PART";
    public static final String REPLICATOR_URL = "REPLICATOR_URL";

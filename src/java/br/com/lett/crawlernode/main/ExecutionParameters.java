@@ -37,6 +37,7 @@ public class ExecutionParameters {
    private String kinesisStreamCatalog;
    private boolean sendToKinesisCatalog;
    private String kinesisStreamRanking;
+   private String kinesisStreamRediscovery;
 
    private boolean sendToKinesisRanking;
 
@@ -73,6 +74,7 @@ public class ExecutionParameters {
       kinesisStream = getEnvKinesisStream();
       kinesisStreamCatalog = getEnvKinesisStreamCatalog();
       kinesisStreamRanking = getEnvKinesisStreamRanking();
+      kinesisStreamRediscovery = getEnvKinesisStreamRediscovery();
       sendToKinesis = getEnvSendToKinesis();
       sendToKinesisCatalog = getEnvSendToKinesisCatalog();
       sendToKinesisRanking = getEnvSendToKinesisRanking();
@@ -234,6 +236,10 @@ public class ExecutionParameters {
 
    private String getEnvKinesisStreamRanking() {
       return System.getenv(EnvironmentVariables.KINESIS_STREAM_RANKING);
+   }
+
+   private String getEnvKinesisStreamRediscovery() {
+      return System.getenv(EnvironmentVariables.KINESIS_STREAM_REDISCOVERY);
    }
 
    private String getEnvDynamoTableName() {
@@ -454,6 +460,10 @@ public class ExecutionParameters {
 
    public String getKinesisStreamRanking() {
       return kinesisStreamRanking;
+   }
+
+   public String getKinesisStreamRediscovery() {
+      return kinesisStreamRediscovery;
    }
 
    public boolean isSendToKinesisRanking() {

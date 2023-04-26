@@ -118,17 +118,18 @@ public class KPLProducer {
       Futures.addCallback(f, myCallback, callbackThreadPool);
    }
 
-   public void put(Ranking ranking, Session session) {
+   public void put(Ranking ranking, Session session, boolean isRediscovery) {
       RankingModel rankingModel = new RankingModel(ranking);
 
       ByteBuffer data = ByteBuffer.wrap((rankingModel.serializeToKinesis(session) + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
 
-      FutureCallback<UserRecordResult> myCallback = getCallback(session);
+//      FutureCallback<UserRecordResult> myCallback = getCallback(session);
 
-      ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(GlobalConfigurations.executionParameters.getKinesisStreamRanking(),
-         rankingModel.getTimestamp().toString(), randomExplicitHashKey(), data);
+      String kinesisStream = isRediscovery ? GlobalConfigurations.executionParameters.getKinesisStreamRediscovery() : GlobalConfigurations.executionParameters.getKinesisStreamRanking();
 
-      Futures.addCallback(f, myCallback, callbackThreadPool);
+//      ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(kinesisStream, rankingModel.getTimestamp().toString(), randomExplicitHashKey(), data);
+//
+//      Futures.addCallback(f, myCallback, callbackThreadPool);
    }
 
 

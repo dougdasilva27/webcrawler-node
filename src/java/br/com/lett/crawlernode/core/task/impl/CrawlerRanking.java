@@ -60,6 +60,7 @@ public abstract class CrawlerRanking extends Task {
    private final Logger logger;
 
    protected List<RankingProduct> arrayProducts = new ArrayList<>();
+   protected List<RankingProduct> arrayRediscoveryProducts = new ArrayList<>();
 
    private final Map<String, String> mapUrlMessageId = new HashMap<>();
 
@@ -188,7 +189,7 @@ public abstract class CrawlerRanking extends Task {
             // mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
             if (session instanceof RankingSession || session instanceof RankingDiscoverSession) {
 
-               sendMessagesToQueue();
+//               sendMessagesToQueue();
             }
 
             // caso cehgue no limite de páginas pré estabelecido, é finalizada a categorie.
@@ -218,7 +219,12 @@ public abstract class CrawlerRanking extends Task {
          if (session instanceof RankingSession) {
             persistRankingData();
          }
-      } catch (Exception e) {
+
+         if ((session instanceof RankingKeywordsSession && ((RankingKeywordsSession) session).isSendDiscover()) || session instanceof RankingDiscoverKeywordsSession) {
+            persistRediscoveryRankingData();
+         }
+
+         } catch (Exception e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
          session.registerError(error);
@@ -369,12 +375,14 @@ public abstract class CrawlerRanking extends Task {
       Logging.logDebug(logger, session, metadataJson, "Keyword= " + this.location + "," + product);
 
       if ((session instanceof RankingKeywordsSession && ((RankingKeywordsSession) session).isSendDiscover()) || session instanceof RankingDiscoverKeywordsSession) {
-         JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
+//         JSONObject resultJson = Dynamo.fetchObjectDynamo(product.getUrl(), product.getMarketId());
+         JSONObject resultJson = new JSONObject().put("finished_at", true);
 
          if (resultJson.has("finished_at")) {
             //todo add check in internal_id with method isContainsSku
 
             Logging.printLogDebug(logger, session, "Product already discoverer " + product.getUrl());
+            this.arrayRediscoveryProducts.add(product);
 
          } else if (product.getUrl() != null) {
 
@@ -488,7 +496,7 @@ public abstract class CrawlerRanking extends Task {
 
          long productStartTime = System.currentTimeMillis();
 
-         KPLProducer.getInstance().put(ranking, session);
+         KPLProducer.getInstance().put(ranking, session, false);
 
          JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
             .put("aws_type", "kinesis")
@@ -501,6 +509,42 @@ public abstract class CrawlerRanking extends Task {
       }
    }
 
+   protected void persistRediscoveryRankingData() {
+      if (!this.arrayRediscoveryProducts.isEmpty()) {
+         Ranking ranking = new Ranking();
+
+         String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.mmm");
+         Timestamp ts = Timestamp.valueOf(nowISO);
+
+         ranking.setMarketId(this.marketId);
+         ranking.setDate(ts);
+         ranking.setLmt(nowISO);
+         ranking.setRankType(this.rankType);
+         ranking.setLocation(this.location);
+         ranking.setProducts(this.arrayRediscoveryProducts);
+         ranking.setLocationId(this.locationId);
+
+         RankingStatistics statistics = new RankingStatistics();
+
+         statistics.setPageSize(this.pageSize);
+         statistics.setTotalSearch(this.totalProducts);
+
+         ranking.setStatistics(statistics);
+
+         long productStartTime = System.currentTimeMillis();
+
+         KPLProducer.getInstance().put(ranking, session, true);
+
+         JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
+            .put("aws_type", "kinesis")
+            .put("kinesis_flow_type", "rediscovery");
+
+         Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
+
+      } else {
+         this.log("Nothing to persist, because there are no rediscovery products.");
+      }
+   }
    /**
     * Create message and call function to send messages
     */
