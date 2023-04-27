@@ -61,6 +61,7 @@ public abstract class CrawlerRanking extends Task {
 
    protected List<RankingProduct> arrayProducts = new ArrayList<>();
    protected List<RankingProduct> arrayRediscoveryProducts = new ArrayList<>();
+   protected List<RankingProduct> arrayDiscoveryProducts = new ArrayList<>();
 
    private final Map<String, String> mapUrlMessageId = new HashMap<>();
 
@@ -222,6 +223,7 @@ public abstract class CrawlerRanking extends Task {
 
          if ((session instanceof RankingKeywordsSession && ((RankingKeywordsSession) session).isSendDiscover()) || session instanceof RankingDiscoverKeywordsSession) {
             persistRediscoveryRankingData();
+            persistDiscoveryRankingData();
          }
 
          } catch (Exception e) {
@@ -385,6 +387,7 @@ public abstract class CrawlerRanking extends Task {
 
          } else if (product.getUrl() != null) {
 
+            this.arrayDiscoveryProducts.add(product);
             saveProductUrlToQueue(product, resultJson);
          }
 
@@ -495,7 +498,7 @@ public abstract class CrawlerRanking extends Task {
 
          long productStartTime = System.currentTimeMillis();
 
-         KPLProducer.getInstance().put(ranking, session, false);
+         KPLProducer.getInstance().put(ranking, session, "ranking");
 
          JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
             .put("aws_type", "kinesis")
@@ -532,7 +535,7 @@ public abstract class CrawlerRanking extends Task {
 
          long productStartTime = System.currentTimeMillis();
 
-         KPLProducer.getInstance().put(ranking, session, true);
+         KPLProducer.getInstance().put(ranking, session, "rediscovery");
 
          JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
             .put("aws_type", "kinesis")
@@ -544,6 +547,45 @@ public abstract class CrawlerRanking extends Task {
          this.log("Nothing to persist, because there are no rediscovery products.");
       }
    }
+
+   protected void persistDiscoveryRankingData() {
+      if (!this.arrayDiscoveryProducts.isEmpty()) {
+         Ranking ranking = new Ranking();
+
+         String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.mmm");
+         Timestamp ts = Timestamp.valueOf(nowISO);
+
+         ranking.setMarketId(this.marketId);
+         ranking.setDate(ts);
+         ranking.setLmt(nowISO);
+         ranking.setRankType(this.rankType);
+         ranking.setLocation(this.location);
+         ranking.setProducts(this.arrayDiscoveryProducts);
+         ranking.setLocationId(this.locationId);
+
+         RankingStatistics statistics = new RankingStatistics();
+
+         statistics.setPageSize(this.pageSize);
+         statistics.setTotalSearch(this.totalProducts);
+
+         ranking.setStatistics(statistics);
+
+         long productStartTime = System.currentTimeMillis();
+
+         KPLProducer.getInstance().put(ranking, session, "discovery");
+
+         JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
+            .put("aws_type", "kinesis")
+            .put("kinesis_flow_type", "discovery");
+
+         Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
+
+      } else {
+         this.log("Nothing to persist, because there are no discovery products.");
+      }
+   }
+
+
    /**
     * Create message and call function to send messages
     */
