@@ -32,6 +32,8 @@ public class BrasilIfoodAppCrawler extends CrawlerRankingKeywords {
    private final String longitude = session.getOptions().optString("longitude", "");
    private final String zip_code = session.getOptions().optString("zip_code", "");
 
+   private final String merchant_id = session.getOptions().optString("merchant_id", "");
+
    @Override
    protected JSONObject fetchJSONObject(String url) {
       Map<String, String> headers = new HashMap<>();
@@ -54,7 +56,7 @@ public class BrasilIfoodAppCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      String url = "https://marketplace.ifood.com.br/v2/search/catalog-items?latitude=" + latitude + "&longitude=" + longitude + "&zip_code=" + zip_code + "&channel=IFOOD&term=" + this.keywordEncoded + "&categories=&item_from_merchant_ids=1827a055-b0f2-4f3b-a9eb-c876c456be7d&size=100&page=0";
+      String url = "https://marketplace.ifood.com.br/v2/search/catalog-items?latitude=" + latitude + "&longitude=" + longitude + "&zip_code=" + zip_code + "&channel=IFOOD&term=" + this.keywordEncoded + "&categories=&item_from_merchant_ids=" + merchant_id + "&size=100&page=0";
       JSONObject jsonObject = fetchJSONObject(url);
 
       if (jsonObject != null && jsonObject.has("id")) {
