@@ -50,6 +50,8 @@ public class BrasilIfoodAppCrawler extends Crawler {
          .setUrl(url)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR
          ))
