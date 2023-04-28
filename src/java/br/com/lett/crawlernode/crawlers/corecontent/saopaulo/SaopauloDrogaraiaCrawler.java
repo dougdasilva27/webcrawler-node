@@ -1,11 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -28,6 +22,12 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -102,27 +102,25 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
    private Boolean crawlAvailability(String internalId, JSONObject data) {
       String payload = "{\"operationName\":\"liveComposition\",\"variables\":{\"skuList\":[\"" + internalId + "\"],\"origin\":\"\"},\"query\":\"query liveComposition($skuList: [String!]!, $origin: String!) {\\n  liveComposition(input: {skuList: $skuList, origin: $origin}) {\\n    sku\\n    livePrice {\\n      bestPrice {\\n        valueFrom\\n        valueTo\\n        updateAt\\n        type\\n        discountPercentage\\n        lmpmValueTo\\n        lmpmQty\\n        __typename\\n      }\\n      calcule {\\n        valueFrom\\n        valueTo\\n        lmpmValueTo\\n        lmpmQty\\n        updateAt\\n        type\\n        __typename\\n      }\\n      discountPercentage\\n      sku\\n      type\\n      updateAt\\n      valueFrom\\n      valueTo\\n      lmpmValueTo\\n      lmpmQty\\n      __typename\\n    }\\n    liveStock {\\n      sku\\n      qty\\n      dt\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\"}";
+      String url = "https://bff.drogaraia.com.br/graphql";
+      String object;
+      try {
+         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
-      HashMap<String, String> headers = new HashMap<>();
-      headers.put("Content-type", "application/json");
-      headers.put("x-session-token-cart", "icUprn4asLubxc3Gpl9jlLoxm2fxv9cT");
-      headers.put("authority", "bff.drogaraia.com.br");
-      headers.put("Connection", "keep-alive");
+         HttpRequest request = HttpRequest.newBuilder()
+            .POST(HttpRequest.BodyPublishers.ofString(payload))
+            .uri(URI.create(url))
+            .headers("Content-type", "application/json", "x-session-token-cart", "icUprn4asLubxc3Gpl9jlLoxm2fxv9cT", "authority", "bff.drogaraia.com.br")
+            .build();
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl("https://bff.drogaraia.com.br/graphql")
-         .setHeaders(headers)
-         .setPayload(payload)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BUY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-            ))
-         .setSendUserAgent(true)
-         .build();
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
-      JSONObject jsonStock = JSONUtils.stringToJson(response.getBody());
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         object = response.body();
+      } catch (IOException | InterruptedException e) {
+         throw new RuntimeException("Failed to scrape API: " + url, e);
+      }
+      JSONObject jsonStock = JSONUtils.stringToJson(object);
       Integer stock = JSONUtils.getValueRecursive(jsonStock, "data.liveComposition.0.liveStock.qty", Integer.class);
+
       if (stock == null) {
          return JSONUtils.getValueRecursive(data, "extension_attributes.stock_item.is_in_stock", Boolean.class);
       }
@@ -242,19 +240,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return sales;
    }
 
-   private String scrapPromotion(Document doc) {
-      StringBuilder stringBuilder = new StringBuilder();
-      String qty = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_label .qty", true);
-      String price = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_label .price span", false);
-
-      if (qty != null && price != null) {
-         stringBuilder.append(qty + " ");
-         stringBuilder.append(price);
-      }
-
-      return stringBuilder.toString();
-   }
-
    private String isMainSeller(Document doc) {
       String isMarketPlace = CrawlerUtils.scrapStringSimpleInfo(doc, "div[class*='SoldAndDelivered'] a", true);
 
@@ -306,15 +291,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
-   }
-
-   private Double getPrice(Document doc) {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .special-price .price span:nth-child(2)", null, false, ',', session);
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .regular-price span:nth-child(2) ", null, true, ',', session);
-      }
-
-      return spotlightPrice;
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
