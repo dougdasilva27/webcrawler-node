@@ -27,7 +27,7 @@ public class BrasilIfoodAppCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private static final String baseImageUrl = "https://static.ifood-static.com.br/image/upload/t_low/pratos/";
+   private static final String baseImageUrl = "https://static.ifood-static.com.br/image/upload/t_medium/pratos/";
    private final String latitude = session.getOptions().optString("latitude", "");
    private final String longitude = session.getOptions().optString("longitude", "");
    private final String zip_code = session.getOptions().optString("zip_code", "");
