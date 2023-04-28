@@ -34,6 +34,8 @@ public class BrasilIfoodAppCrawler extends Crawler {
    private final String access_key = session.getOptions().optString("access_key");
    private final String secret_key = session.getOptions().optString("secret_key");
 
+   private final String state = session.getOptions().optString("state");
+
    private static final String sellerFullName = "ifood app";
 
    @Override
@@ -41,6 +43,12 @@ public class BrasilIfoodAppCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("host", "wsloja.ifood.com.br");
       headers.put("channel", "IFOOD");
+      headers.put("user-agent","okhttp/4.10.0");
+      headers.put("app_package_name","br.com.brainweb.ifood");
+      headers.put("authority","marketplace.ifood.com.br");
+      headers.put("sec-fetch-dest","empty");
+      headers.put("sec-fetch-mode","cors");
+      headers.put("state",state);
       headers.put("access_key", access_key);
       headers.put("secret_key", secret_key);
       String url = "https://wsloja.ifood.com.br/ifood-ws-v3/restaurants/" + merchant_id + "/menuitem/" + session.getOriginalURL();
@@ -48,11 +56,11 @@ public class BrasilIfoodAppCrawler extends Crawler {
          .setHeaders(headers)
          .setUrl(url)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.SMART_PROXY_BR,
+            ProxyCollection.SMART_PROXY_BR_HAPROXY
          ))
          .build();
       return CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
