@@ -55,7 +55,7 @@ public class MexicoBodegaaurreraCrawler extends Crawler {
          .setHeaders(headers)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), true);
       return JSONUtils.stringToJson(response.getBody());
    }
 
