@@ -29,8 +29,9 @@ public class MexicoBodegaaurreraCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create()
          .setCookies(cookies)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.BUY,
             ProxyCollection.SMART_PROXY_MX_HAPROXY))
          .setUrl(url)
          .build();
