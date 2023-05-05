@@ -39,11 +39,11 @@ public class BrasilIfoodAppCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("host", "wsloja.ifood.com.br");
       headers.put("channel", "IFOOD");
-      headers.put("user-agent","okhttp/4.10.0");
-      headers.put("app_package_name","br.com.brainweb.ifood");
-      headers.put("authority","marketplace.ifood.com.br");
-      headers.put("sec-fetch-dest","empty");
-      headers.put("sec-fetch-mode","cors");
+      headers.put("user-agent", "okhttp/4.10.0");
+      headers.put("app_package_name", "br.com.brainweb.ifood");
+      headers.put("authority", "marketplace.ifood.com.br");
+      headers.put("sec-fetch-dest", "empty");
+      headers.put("sec-fetch-mode", "cors");
       headers.put("item_experiment_details", "{\"default_internal\":{\"recommendation_filter\":\"internal_search\",\"model_id\":\"ifood-ml-discovery-default-sort-items\",\"engine\":\"sagemaker\",\"backend_experiment_id\":\"rank_exact\",\"force_recommendation_disabled\":true},\"market_internal\":{\"recommendation_filter\":\"internal_search\",\"model_id\":\"search-bumblebee-endpoint\",\"engine\":\"sagemaker\",\"query_rewriter_model_id\":\"search-r5d4-serve-endpoint\",\"backend_experiment_id\":\"v5\",\"query_rewriter_rule\":\"groceries-context\",\"force_recommendation_disabled\":false,\"similar_search\":{\"backend_experiment_id\":\"v5\",\"query_rewriter_model_id\":\"search-marvin-curated-endpoint\",\"force_recommendation_disabled\":false, \"model_id\": \"search-marvin-filter-endpoint\"}}}");
       headers.put("item_experiment_enabled", "true");
       headers.put("item_experiment_variant", "market_internal");

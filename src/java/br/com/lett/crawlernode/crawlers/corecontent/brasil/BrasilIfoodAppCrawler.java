@@ -43,12 +43,12 @@ public class BrasilIfoodAppCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("host", "wsloja.ifood.com.br");
       headers.put("channel", "IFOOD");
-      headers.put("user-agent","okhttp/4.10.0");
-      headers.put("app_package_name","br.com.brainweb.ifood");
-      headers.put("authority","marketplace.ifood.com.br");
-      headers.put("sec-fetch-dest","empty");
-      headers.put("sec-fetch-mode","cors");
-      headers.put("state",state);
+      headers.put("user-agent", "okhttp/4.10.0");
+      headers.put("app_package_name", "br.com.brainweb.ifood");
+      headers.put("authority", "marketplace.ifood.com.br");
+      headers.put("sec-fetch-dest", "empty");
+      headers.put("sec-fetch-mode", "cors");
+      headers.put("state", state);
       headers.put("access_key", access_key);
       headers.put("secret_key", secret_key);
       String url = "https://wsloja.ifood.com.br/ifood-ws-v3/restaurants/" + merchant_id + "/menuitem/" + session.getOriginalURL();
