@@ -87,7 +87,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
                JSONObject jsonObj = (JSONObject) variation;
                String voltsOrModel = jsonObj.optString("label");
                String nameVariation = scrapName(name, voltsOrModel);
-               String internalIdVariation = internalId != null ? internalId + voltsOrModel : null;
+               String internalIdVariation = (internalId != null) ? (internalId + voltsOrModel) : null;
 
                product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
@@ -210,7 +210,6 @@ public class BrasilPalacioDasFerramentas extends Crawler {
          spotlightPrice = priceFrom;
          priceFrom = null;
       }
-
 
       Double priceBankSlip = spotlightPrice;
 
@@ -336,7 +335,6 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       if (saleDiscount != null) {
          sales.add(saleDiscount);
       }
-
       return sales;
    }
 }

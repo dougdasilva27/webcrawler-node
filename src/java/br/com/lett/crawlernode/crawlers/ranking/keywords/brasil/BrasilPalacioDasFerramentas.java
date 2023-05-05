@@ -1,31 +1,19 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
-   protected Integer PRODUCTS_PER_PAGE = 24;
-   private static final String HOME_PAGE = "https://palaciodasferramentas.com.br";
 
    public BrasilPalacioDasFerramentas(Session session) {
       super(session);
@@ -38,22 +26,22 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
 
       String url = "https://palaciodasferramentas.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
       this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = fetchDocument(url);
+      Document doc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".item.product.product-item");
+      Elements products = doc.select(".item.product.product-item");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
-            this.totalProducts = products.size();
+            this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(doc, "#toolbar-amount .toolbar-number:nth-of-type(3)", true, 0);
          }
 
          for (Element e : products) {
-            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "product-item-photo a", "href");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item-photo a", "href");
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".price-box.price-final_price", "data-product-id");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-link", false);
-            String imgUrl = scrapImgUrl(e);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "img.product-image-photo", Arrays.asList("srcset"), "https", "palaciodasferramentas.com.br");
             Integer price = scrapPrice(e);
-            boolean isAvailable = price != null;
+            boolean isAvailable = e.selectFirst(".stock.unavailable") == null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -76,15 +64,8 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
          this.log("Keyword sem resultado!");
       }
 
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-         + this.arrayProducts.size() + " produtos crawleados");
-
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
-
-   private String scrapImgUrl(Element e) {
-      return CrawlerUtils.scrapUrl(e, ".product.photo.product-item-photo a img", "data-src", "", "");
-   }
-
 
    private Integer scrapPrice(Element e) {
       String priceDescription = CrawlerUtils.scrapStringSimpleInfo(e, "span .price", false);
@@ -102,7 +83,6 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return true;
+      return this.totalProducts > this.arrayProducts.size();
    }
-
 }
