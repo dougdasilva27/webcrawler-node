@@ -1,10 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -49,13 +46,14 @@ public class MexicoBodegaaurreraCrawler extends Crawler {
          .setUrl(url)
          .setFollowRedirects(false)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.BUY,
             ProxyCollection.SMART_PROXY_MX_HAPROXY))
          .setHeaders(headers)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), true);
       return JSONUtils.stringToJson(response.getBody());
    }
 

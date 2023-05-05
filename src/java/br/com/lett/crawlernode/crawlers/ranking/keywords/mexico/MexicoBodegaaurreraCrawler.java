@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -28,13 +29,14 @@ public class MexicoBodegaaurreraCrawler extends CrawlerRankingKeywords {
       Request request = Request.RequestBuilder.create()
          .setCookies(cookies)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.BUY,
             ProxyCollection.SMART_PROXY_MX_HAPROXY))
          .setUrl(url)
          .build();
 
-      Response response = dataFetcher.get(session, request);
+      Response response = CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), true);
 
       return CrawlerUtils.stringToJson(response.getBody());
    }
