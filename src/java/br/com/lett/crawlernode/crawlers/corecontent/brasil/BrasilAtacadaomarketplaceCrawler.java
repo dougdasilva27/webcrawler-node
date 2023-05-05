@@ -88,10 +88,7 @@ public class BrasilAtacadaomarketplaceCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".container > h1.h1", false);
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".card div[data-pk]", "data-pk");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".card > div > div.row:not(:first-child)"));
-//         List<String> categoriesArray = Arrays.asList(CrawlerUtils.scrapStringSimpleInfo(doc, ".breadcrumb-item:not(:first-child) a", false).split("/"));
-//         if (categoriesArray.size() > 3) {
-//            categoriesArray = categoriesArray.subList(0, 3);
-//         }
+         List<String> categories = CrawlerUtils.crawlCategories(doc,".js-sku-category");
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".card .product-image-box > img[src]", "src");
          JSONObject skuInfo = requestFromApi(internalId);
          JSONArray price = JSONUtils.getValueRecursive(skuInfo, "offers", JSONArray.class);
@@ -105,7 +102,7 @@ public class BrasilAtacadaomarketplaceCrawler extends Crawler {
             .setName(name)
             .setPrimaryImage(primaryImage)
             .setDescription(description)
-            //.setCategories(categoriesArray)
+            .setCategories(categories)
             .setOffers(offers)
             .build();
 
