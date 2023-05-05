@@ -46,8 +46,9 @@ public class MexicoBodegaaurreraCrawler extends Crawler {
          .setUrl(url)
          .setFollowRedirects(false)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.BUY,
             ProxyCollection.SMART_PROXY_MX_HAPROXY))
          .setHeaders(headers)
          .build();
