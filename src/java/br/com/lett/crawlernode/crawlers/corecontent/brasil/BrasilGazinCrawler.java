@@ -60,17 +60,13 @@ public class BrasilGazinCrawler extends Crawler {
             List<String> images = getImages(variation);
             String primaryImage = images.size() > 0 ? images.remove(0) : null;
             Pair<String, String> variationsLabel = scrapVariationsLabels(variation);
-            String name = baseName;
-            String url = session.getOriginalURL();
-            if (!variationsLabel.isAnyValueNull()) {
-               String color = variationsLabel.getFirst();
-               String voltage = variationsLabel.getSecond();
-               name += " - " + variationsLabel.getFirst() + " - " + variationsLabel.getSecond();
-               url += "?cor=" + color + "&voltagem=" + voltage.replace(" ", "-") + "&seller_id=" + id_seller;
-            }
-
+            String color = variationsLabel.getFirst();
+            String voltage = variationsLabel.getSecond();
+            String name = scrapName(baseName, color, voltage);
+            String url = scrapUrl(session.getOriginalURL(), color, voltage);
             JSONObject objectForOffers = getObjectPrice(variation);
-            Offers offers = scrapOffers(objectForOffers);
+            int stock = objectForOffers.optInt("estoque", 0);
+            Offers offers = stock > 0 ? scrapOffers(objectForOffers) : new Offers();
             Product product = ProductBuilder.create()
                .setInternalId(internalId)
                .setInternalPid(internalPid)
@@ -100,6 +96,26 @@ public class BrasilGazinCrawler extends Crawler {
 
       }
       return new JSONObject();
+   }
+
+   private boolean validString(String value, String attribute) {
+      return value != null && !value.isEmpty() && !value.equals("sem-" + attribute);
+   }
+
+   private String scrapName(String baseName, String color, String voltage) {
+      if (validString(color, "cor")) {
+         baseName += " - " + color;
+      }
+      if (validString(voltage, "voltagem")) {
+         baseName += " - " + voltage;
+      }
+      return baseName;
+   }
+
+   private String scrapUrl(String baseUrl, String color, String voltage) {
+      baseUrl += validString(color, "cor") ? "?cor=" + color : "?cor=sem-cor";
+      baseUrl += validString(voltage, "voltage") ? "&voltage=" + voltage.replace(" ", "-") : "&voltage=sem-voltage";
+      return baseUrl + "&seller_id" + id_seller;
    }
 
    private Pair<String, String> scrapVariationsLabels(JSONObject variationJson) {
@@ -146,7 +162,7 @@ public class BrasilGazinCrawler extends Crawler {
             JSONObject advertisement = (JSONObject) a;
             Integer seller = JSONUtils.getValueRecursive(advertisement, "seller.id", Integer.class, null);
             if (seller != null && seller == id_seller) {
-               return advertisement.optJSONObject("preco");
+               return advertisement;
             }
          }
       }
@@ -171,8 +187,9 @@ public class BrasilGazinCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
-      Double priceFrom = json.optDouble("de");
-      Double price = json.optDouble("por");
+      JSONObject priceObject = json.optJSONObject("preco");
+      Double priceFrom = priceObject.optDouble("de");
+      Double price = priceObject.optDouble("por");
       if (priceFrom.equals(price)) {
          priceFrom = null;
       }
