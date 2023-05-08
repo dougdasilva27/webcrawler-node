@@ -9,7 +9,10 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import models.AdvancedRatingReview;
@@ -24,6 +27,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 
 public class BrasilPalacioDasFerramentas extends Crawler {
@@ -41,19 +46,19 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       super(session);
       super.config.setParser(Parser.HTML);
    }
+
    @Override
    protected Response fetchResponse() {
-      Request request =Request.RequestBuilder.create()
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setSendUserAgent(false)
          .setProxyservice(Arrays.asList(
-
             ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR))
-         .setSendUserAgent(false)
-         .setUrl(session.getOriginalURL())
          .build();
-     return CrawlerUtils.retryRequestWithListDataFetcher(request,List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()),session);
+      return CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
    }
 
    @Override
@@ -61,17 +66,22 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
       Product product = null;
+
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#maincontent > div.columns > div > div.product-info-main > div.page-title-wrapper.product > h1 > span", false);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "#maincontent > div.columns > div > div.product-info-main > div.product-info-stock-sku > div.product.attribute.sku > div", false);
-         String internalId = getInternaId(doc);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#maincontent > div.columns > div > div.product.media > div.gallery-placeholder._block-content-loading > img", Arrays.asList("src"), "https", HOST);
-         List<String> images = scrapImages(doc, primaryImage);
-         CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, "#html-body > div.page-wrapper > div.breadcrumbs > ul li a", true);
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#description > div > div", false);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title span", true);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-add-form input[name='product']", "value");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute.sku div.value", true);
+
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product.media img.gallery-placeholder__image", Arrays.asList("src"), "https", HOST);
+         primaryImage = cleanUrlImage(primaryImage);
+         List<String> images = scrapImages(doc);
+
+         CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, "div.breadcrumbs ul.items li a", true);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product.attribute.description div"));
          Boolean available = isAvailable(doc);
-         Offers offers = available != null && available ? scrapOffers(doc) : new Offers(); // I did not found any product having price or avaibility differente because volts or model
+
+         Offers offers = available ? scrapOffers(doc) : new Offers(); // I did not found any product having price or avaibility differente because volts or model
          RatingsReviews ratings = crawlRating(doc, internalPid);
 
          JSONArray variations = getVariations(doc);
@@ -80,12 +90,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
                JSONObject jsonObj = (JSONObject) variation;
                String voltsOrModel = jsonObj.optString("label");
                String nameVariation = scrapName(name, voltsOrModel);
-               String internalIdVariation;
-               if(internalId != null){
-                  internalIdVariation = internalId + voltsOrModel;
-               }else{
-                  internalIdVariation = internalId;
-               }
+               String internalIdVariation = (internalId != null) ? (internalId + voltsOrModel) : null;
 
                product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
@@ -116,7 +121,6 @@ public class BrasilPalacioDasFerramentas extends Crawler {
                .build();
 
             products.add(product);
-
          }
 
       } else {
@@ -125,40 +129,36 @@ public class BrasilPalacioDasFerramentas extends Crawler {
 
       return products;
    }
-   private String getInternaId(Document doc){
-      String script = CrawlerUtils.scrapScriptFromHtml(doc, "[type=\"text/x-magento-init\"]");
-      JSONArray arr = JSONUtils.stringToJsonArray(script);
-      return JSONUtils.getValueRecursive(arr, "0.*.magepalGtmDatalayer.data.1.product.id", String.class);
-   }
 
-   private List<String> scrapImages(Document doc, String primaryImage) {
-      Elements scripts = doc.select("[type=\"text/x-magento-init\"]");
-      String objString;
-      JSONArray arr = new JSONArray();
-      for(Element e : scripts){
-         String script = CrawlerUtils.scrapScriptFromHtml(e, "[type=\"text/x-magento-init\"]");
-         JSONArray arrAux = JSONUtils.stringToJsonArray(script);
-         if (JSONUtils.getValueRecursive(arrAux, "0.[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class) != null){
-            arr = arrAux;
-            break;
-         }
-      }
-      if(!arr.isEmpty()){
-         List<String> list = new ArrayList<>();
-         JSONArray imagesArr = JSONUtils.getValueRecursive(arr, "0.[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class);
-         for (Object o : imagesArr) {
-            JSONObject img = (JSONObject) o;
-            String image = img.optString("img");
-            if (!image.equals(primaryImage)) {
-               list.add(image);
+   private List<String> scrapImages(Document doc) {
+      Element imageScript = doc.selectFirst("script:containsData(mage/gallery/gallery)");
+      if (imageScript != null) {
+         JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
+         JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class, new JSONArray());
+         List<String> imagesList = new ArrayList<>();
+         for (int i = 1; i < imageArray.length(); i++) {
+            String imageUrl = JSONUtils.getValueRecursive(imageArray, i + ".img", String.class);
+            imageUrl = cleanUrlImage(imageUrl);
+            if (imageUrl != null) {
+               imagesList.add(imageUrl);
             }
          }
-
-         return list;
+         return imagesList;
       }
-      return  new ArrayList<>();
-
+      return null;
    }
+
+   private String cleanUrlImage(String imageUrl) {
+      try {
+         URL url = new URL(imageUrl);
+         String path = url.getPath();
+         return url.getProtocol() + "://" + url.getHost() + path;
+      } catch (MalformedURLException e) {
+         e.printStackTrace();
+      }
+      return null;
+   }
+
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".loading-mask") != null;
@@ -175,21 +175,7 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       }
 
       return stringBuilder.toString();
-
    }
-
-   private String scrapInternalId(Document doc) {
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "button#Buy", "data-item");
-
-      if (internalId == null) {
-         internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".comentar button", "data-url");
-
-         internalId = internalId != null ? internalId.replaceAll("[^0-9]", "") : null;
-
-      }
-      return internalId;
-   }
-
 
    private Boolean isAvailable(Document doc) {
       return doc.select(".stock.unavailable").isEmpty();
@@ -200,12 +186,12 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       String variationsString = CrawlerUtils.scrapScriptFromHtml(doc, ".fieldset script");
       if (variationsString != null && JSONUtils.stringToJsonArray(variationsString) != null) {
          JSONArray variationsArr = JSONUtils.stringToJsonArray(variationsString);
-         JSONObject vatiationObj = JSONUtils.getValueRecursive(variationsArr, "0.#product_addtocart_form.configurable.spConfig.attributes", JSONObject.class);
-         if(vatiationObj != null){
-            Iterator<String> it = vatiationObj.keys();
+         JSONObject variationObj = JSONUtils.getValueRecursive(variationsArr, "0.#product_addtocart_form.configurable.spConfig.attributes", JSONObject.class);
+         if (variationObj != null) {
+            Iterator<String> it = variationObj.keys();
             String key = it.next();
-            vatiationObj = vatiationObj.optJSONObject(key);
-            return vatiationObj.optJSONArray("options");
+            variationObj = variationObj.optJSONObject(key);
+            return variationObj.optJSONArray("options");
          }
          return null;
       } else {
@@ -233,17 +219,15 @@ public class BrasilPalacioDasFerramentas extends Crawler {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
       return offers;
-
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".pricewithdiscount.final_price .price", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price", null, false, ',', session);
-      if(spotlightPrice == null){
+      if (spotlightPrice == null) {
          spotlightPrice = priceFrom;
          priceFrom = null;
       }
-
 
       Double priceBankSlip = spotlightPrice;
 
@@ -369,9 +353,6 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       if (saleDiscount != null) {
          sales.add(saleDiscount);
       }
-
       return sales;
    }
-
 }
-
