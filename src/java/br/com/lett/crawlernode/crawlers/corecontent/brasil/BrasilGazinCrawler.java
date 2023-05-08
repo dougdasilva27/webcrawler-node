@@ -53,6 +53,7 @@ public class BrasilGazinCrawler extends Crawler {
          String internalPid = dataJson.optString("id", null);
          String baseName = dataJson.optString("titulo");
          String description = dataJson.optString("seo_descricao");
+         List<String> categories = scrapCategories(dataJson);
          JSONArray variations = dataJson.optJSONArray("variacoes");
          for (Object v : variations) {
             JSONObject variation = (JSONObject) v;
@@ -73,6 +74,7 @@ public class BrasilGazinCrawler extends Crawler {
                .setInternalPid(internalPid)
                .setUrl(url)
                .setName(name)
+               .setCategories(categories)
                .setOffers(offers)
                .setEans(eans)
                .setPrimaryImage(primaryImage)
@@ -98,6 +100,26 @@ public class BrasilGazinCrawler extends Crawler {
 
       }
       return new JSONObject();
+   }
+
+   List<String> scrapCategories(JSONObject json) {
+      List<String> categories = new ArrayList<>();
+      JSONObject categoriesJson = json.getJSONObject("categoria");
+      if (categoriesJson != null && !categoriesJson.isEmpty()) {
+         String nameOfCategory = categoriesJson.optString("nome", "");
+         if (!nameOfCategory.isEmpty()) {
+            categories.add(nameOfCategory);
+         }
+         JSONObject category_father = JSONUtils.getValueRecursive(categoriesJson, "categoria_pai.0", JSONObject.class, new JSONObject());
+         while (!category_father.isEmpty()) {
+            nameOfCategory = category_father.optString("nome");
+            if (!nameOfCategory.isEmpty()) {
+               categories.add(nameOfCategory);
+            }
+            category_father = JSONUtils.getValueRecursive(category_father, "categoria_pai.0", JSONObject.class, new JSONObject());
+         }
+      }
+      return categories;
    }
 
    private boolean validString(String value, String attribute) {
