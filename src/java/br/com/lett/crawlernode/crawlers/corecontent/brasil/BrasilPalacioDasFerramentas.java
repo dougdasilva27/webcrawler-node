@@ -27,6 +27,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 
 public class BrasilPalacioDasFerramentas extends Crawler {
@@ -72,13 +74,14 @@ public class BrasilPalacioDasFerramentas extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute.sku div.value", true);
 
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product.media img.gallery-placeholder__image", Arrays.asList("src"), "https", HOST);
+         primaryImage = cleanUrlImage(primaryImage);
          List<String> images = scrapImages(doc);
 
          CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, "div.breadcrumbs ul.items li a", true);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product.attribute.description div"));
          Boolean available = isAvailable(doc);
 
-         Offers offers = available != null && available ? scrapOffers(doc) : new Offers(); // I did not found any product having price or avaibility differente because volts or model
+         Offers offers = available ? scrapOffers(doc) : new Offers(); // I did not found any product having price or avaibility differente because volts or model
          RatingsReviews ratings = crawlRating(doc, internalPid);
 
          JSONArray variations = getVariations(doc);
@@ -134,13 +137,28 @@ public class BrasilPalacioDasFerramentas extends Crawler {
          JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class, new JSONArray());
          List<String> imagesList = new ArrayList<>();
          for (int i = 1; i < imageArray.length(); i++) {
-            String imageList = JSONUtils.getValueRecursive(imageArray, i + ".img", String.class);
-            imagesList.add(imageList);
+            String imageUrl = JSONUtils.getValueRecursive(imageArray, i + ".img", String.class);
+            imageUrl = cleanUrlImage(imageUrl);
+            if (imageUrl != null) {
+               imagesList.add(imageUrl);
+            }
          }
          return imagesList;
       }
       return null;
    }
+
+   private String cleanUrlImage(String imageUrl) {
+      try {
+         URL url = new URL(imageUrl);
+         String path = url.getPath();
+         return url.getProtocol() + "://" + url.getHost() + path;
+      } catch (MalformedURLException e) {
+         e.printStackTrace();
+      }
+      return null;
+   }
+
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".loading-mask") != null;
@@ -168,12 +186,12 @@ public class BrasilPalacioDasFerramentas extends Crawler {
       String variationsString = CrawlerUtils.scrapScriptFromHtml(doc, ".fieldset script");
       if (variationsString != null && JSONUtils.stringToJsonArray(variationsString) != null) {
          JSONArray variationsArr = JSONUtils.stringToJsonArray(variationsString);
-         JSONObject vatiationObj = JSONUtils.getValueRecursive(variationsArr, "0.#product_addtocart_form.configurable.spConfig.attributes", JSONObject.class);
-         if (vatiationObj != null) {
-            Iterator<String> it = vatiationObj.keys();
+         JSONObject variationObj = JSONUtils.getValueRecursive(variationsArr, "0.#product_addtocart_form.configurable.spConfig.attributes", JSONObject.class);
+         if (variationObj != null) {
+            Iterator<String> it = variationObj.keys();
             String key = it.next();
-            vatiationObj = vatiationObj.optJSONObject(key);
-            return vatiationObj.optJSONArray("options");
+            variationObj = variationObj.optJSONObject(key);
+            return variationObj.optJSONArray("options");
          }
          return null;
       } else {
