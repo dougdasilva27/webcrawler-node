@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -12,11 +13,12 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
-import models.pricing.Pricing;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -37,6 +39,9 @@ public class BrasilIfoodAppCrawler extends Crawler {
    private final String state = session.getOptions().optString("state");
 
    private static final String sellerFullName = "ifood app";
+
+   private static final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    @Override
    protected Response fetchResponse() {
@@ -110,7 +115,9 @@ public class BrasilIfoodAppCrawler extends Crawler {
       if (suffixesImages != null && !suffixesImages.isEmpty()) {
          for (Object s : suffixesImages) {
             String suffixImage = (String) s;
-            images.add(baseImageUrl + suffixImage);
+            if (suffixImage != null && !suffixImage.isEmpty()) {
+               images.add(baseImageUrl + suffixImage);
+            }
          }
       }
       return images;
@@ -145,9 +152,34 @@ public class BrasilIfoodAppCrawler extends Crawler {
       if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
          priceFrom = null;
       }
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
          .build();
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
    }
 }
