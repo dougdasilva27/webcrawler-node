@@ -65,6 +65,7 @@ public class BrasilGazinCrawler extends Crawler {
             String name = scrapName(baseName, color, voltage);
             String url = scrapUrl(session.getOriginalURL(), color, voltage);
             JSONObject objectForOffers = getObjectPrice(variation);
+            List<String> eans = List.of(variation.optString("ean"));
             int stock = objectForOffers.optInt("estoque", 0);
             Offers offers = stock > 0 ? scrapOffers(objectForOffers) : new Offers();
             Product product = ProductBuilder.create()
@@ -73,6 +74,7 @@ public class BrasilGazinCrawler extends Crawler {
                .setUrl(url)
                .setName(name)
                .setOffers(offers)
+               .setEans(eans)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(images)
                .setDescription(description)
@@ -142,7 +144,7 @@ public class BrasilGazinCrawler extends Crawler {
 
    private List<String> getImages(JSONObject json) {
       List<String> images = new ArrayList<String>();
-      JSONArray arrayImages = JSONUtils.getValueRecursive(json, "images", JSONArray.class, new JSONArray());
+      JSONArray arrayImages = JSONUtils.getValueRecursive(json, "imagens", JSONArray.class, new JSONArray());
       if (!arrayImages.isEmpty()) {
          for (Object o : arrayImages) {
             JSONObject imgJson = (JSONObject) o;
