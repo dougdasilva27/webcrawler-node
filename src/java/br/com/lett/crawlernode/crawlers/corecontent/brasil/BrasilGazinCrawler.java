@@ -2,12 +2,16 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.*;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.Pair;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -18,7 +22,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilGazinCrawler extends Crawler {
    public BrasilGazinCrawler(Session session) {
@@ -27,6 +33,7 @@ public class BrasilGazinCrawler extends Crawler {
    }
 
    private final static String SELLER_NAME = "gazin";
+   private final static String baseUrl = "https://www.gazin.com.br/produto/";
    private final int id_seller = session.getOptions().optInt("id_seller");
 
    @Override
@@ -35,8 +42,7 @@ public class BrasilGazinCrawler extends Crawler {
          .setUrl(session.getOriginalURL())
          .setFollowRedirects(true)
          .build();
-      Response response =  this.dataFetcher.get(session, request);
-      return response;
+      return this.dataFetcher.get(session, request);
    }
 
    @Override
@@ -50,16 +56,26 @@ public class BrasilGazinCrawler extends Crawler {
          JSONArray variations = dataJson.optJSONArray("variacoes");
          for (Object v : variations) {
             JSONObject variation = (JSONObject) v;
-            String internalId = variation.optString("variacao_id");
+            String internalId = variation.optString("id");
             List<String> images = getImages(variation);
             String primaryImage = images.size() > 0 ? images.remove(0) : null;
+            Pair<String, String> variationsLabel = scrapVariationsLabels(variation);
+            String name = baseName;
+            String url = session.getOriginalURL();
+            if (!variationsLabel.isAnyValueNull()) {
+               String color = variationsLabel.getFirst();
+               String voltage = variationsLabel.getSecond();
+               name += " - " + variationsLabel.getFirst() + " - " + variationsLabel.getSecond();
+               url += "?cor=" + color + "&voltagem=" + voltage.replace(" ", "-") + "&seller_id=" + id_seller;
+            }
+
             JSONObject objectForOffers = getObjectPrice(variation);
             Offers offers = scrapOffers(objectForOffers);
             Product product = ProductBuilder.create()
                .setInternalId(internalId)
                .setInternalPid(internalPid)
-               .setUrl(session.getOriginalURL())
-               //.setName(name)
+               .setUrl(url)
+               .setName(name)
                .setOffers(offers)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(images)
@@ -84,6 +100,28 @@ public class BrasilGazinCrawler extends Crawler {
 
       }
       return new JSONObject();
+   }
+
+   private Pair<String, String> scrapVariationsLabels(JSONObject variationJson) {
+      String color = null;
+      String voltage = null;
+      JSONArray combinations = variationJson.optJSONArray("combinacoes");
+      if (combinations != null) {
+         for (Object c : combinations) {
+            JSONObject combination = (JSONObject) c;
+            String slug = combination.optString("atributo_slug", null);
+            String value = combination.optString("valor_slug");
+            if (slug != null) {
+               if (slug.equals("cor")) {
+                  color = value;
+               } else if (slug.equals("voltagem")) {
+                  voltage = value.replace(" ", "-");
+               }
+            }
+         }
+         return new Pair<>(color, voltage);
+      }
+      return new Pair<>();
    }
 
    private List<String> getImages(JSONObject json) {
