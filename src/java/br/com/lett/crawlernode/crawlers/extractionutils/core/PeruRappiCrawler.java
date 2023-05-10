@@ -16,10 +16,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PeruRappiCrawler extends RappiCrawler {
    private static final String HOME_PAGE = "https://www.rappi.com";
@@ -29,9 +26,11 @@ public class PeruRappiCrawler extends RappiCrawler {
       super.config.setFetcher(FetchMode.JSOUP);
    }
 
+   protected String DEVICE_ID = UUID.randomUUID().toString();
+
    @Override
    protected String getHomeDomain() {
-      return "rappi.pe";
+      return "rappi.com.pe";
    }
 
    @Override
@@ -78,13 +77,13 @@ public class PeruRappiCrawler extends RappiCrawler {
 
    @Override
    protected String fetchPassportToken() {
-      String url = "https://services." + getHomeDomain() + "/api/rocket/v2/guest/passport/";
+      String url = "https://services.rappi.pe/api/rocket/v2/guest/passport/";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
       headers.put("content-type", "application/json");
-      headers.put("deviceid", "4d848bd9-903e-411d-a3f2-86906184dd84");
+      headers.put("deviceid", DEVICE_ID);
       headers.put("needAppsFlyerId", "false");
 
       Request request = Request.RequestBuilder.create()
@@ -105,14 +104,14 @@ public class PeruRappiCrawler extends RappiCrawler {
 
    @Override
    protected String fetchToken() {
-      String url = "https://services." + getHomeDomain() + "/api/rocket/v2/guest";
+      String url = "https://services.rappi.pe/api/rocket/v2/guest";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
       headers.put("content-type", "application/json");
       headers.put("x-guest-api-key", fetchPassportToken());
-      headers.put("deviceid", "4d848bd9-903e-411d-a3f2-86906184dd84");
+      headers.put("deviceid", DEVICE_ID);
       headers.put("needAppsFlyerId", "false");
 
       String payload = "{}";
@@ -142,23 +141,23 @@ public class PeruRappiCrawler extends RappiCrawler {
 
    @Override
    protected JSONObject fetchProductApi(String productId, String token) {
-      String url = "https://services." + getHomeDomain() + "/api/ms/web-proxy/dynamic-list/cpgs";
+      String url = "https://services.rappi.pe/api/web-gateway/web/dynamic/context/content/";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("language", "es");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
       headers.put("content-type", "application/json");
-      headers.put("deviceid", "4d848bd9-903e-411d-a3f2-86906184dd84");
+      headers.put("deviceid", DEVICE_ID);
       headers.put("needAppsFlyerId", "false");
       headers.put("include_context_info", "true");
+      headers.put("app-version", "web_v1.170.0");
 
       headers.put("authorization", token);
 
       String productFriendlyUrl = getStoreId() + "_" + productId;
 
-      String payload = "{\"dynamic_list_request\":{\"context\":\"product_detail\",\"state\":{\"lat\":\"1\",\"lng\":\"1\"},\"limit\":100,\"offset\":0},\"dynamic_list_endpoint\":\"context/content\",\"proxy_input\":{\"product_friendly_url\":\"" + productFriendlyUrl + "\"}}";
-
+      String payload = "{\"limit\":10,\"offset\":0,\"state\":{\"product_id\":\"" + productId + "\",\"lat\":\"1\",\"lng\":\"1\"},\"stores\":[" + getStoreId() + "],\"context\":\"product_detail\"}";
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -170,7 +169,7 @@ public class PeruRappiCrawler extends RappiCrawler {
 
       JSONObject jsonObject = CrawlerUtils.stringToJSONObject(body);
 
-      return JSONUtils.getValueRecursive(jsonObject, "dynamic_list_response.data.components.0.resource.product", ".", JSONObject.class, new JSONObject());
+      return JSONUtils.getValueRecursive(jsonObject, "data.components.0.resource.product", ".", JSONObject.class, new JSONObject());
    }
 
    @Override
