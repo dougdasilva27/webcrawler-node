@@ -44,18 +44,29 @@ public class BrasilAgrosoloCrawler extends Crawler {
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-         String internalId = getInternalId(doc);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product-id", "value");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__title", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE);
-         List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product__information .container", "std"));
          Elements variations = doc.select(".product__infos--unique--wrapper .product__variants--item:not(.disabled)");
 
-         if (variations.isEmpty() || variations.toArray().length == 1) {
+         for (Element element : variations) {
+            String internalId = getInternalId(doc);
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product-id", "value");
+            String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__title", true);
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE);
+            List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
+            String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product__information .container", "std"));
+
             boolean isAvailable = checkIfIsAvailable(doc);
             Offers offers = isAvailable ? scrapOffers(doc) : new Offers();
+
+            if (variations.size() > 1) {
+               String variationName = element.select("label").text();
+               Document document = requestFromVariations(internalPid, variationName);
+               name = name + " - " + variationName;
+
+               primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE);
+               images = CrawlerUtils.scrapSecondaryImages(document, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
+               isAvailable = checkIfIsAvailable(doc);
+               offers = isAvailable ? scrapOffers(document) : new Offers();
+            }
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -68,36 +79,10 @@ public class BrasilAgrosoloCrawler extends Crawler {
                .setDescription(description)
                .build();
             products.add(product);
-         } else {
-            for (Element element : variations) {
-               String variationName = element.select("label").text();
-               Document document = requestFromVariations(internalPid, variationName);
-
-               internalId = getInternalId(document);
-               String nameVariation = CrawlerUtils.scrapStringSimpleInfo(document, ".product__title", true);
-               String primaryImageVariation = CrawlerUtils.scrapSimplePrimaryImage(document, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE);
-               List<String> imagesVariation = CrawlerUtils.scrapSecondaryImages(document, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
-
-               boolean isAvailable = checkIfIsAvailable(doc);
-               Offers offers = isAvailable ? scrapOffers(document) : new Offers();
-
-               Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(nameVariation + " " + variationName)
-                  .setPrimaryImage(primaryImageVariation)
-                  .setOffers(offers)
-                  .setSecondaryImages(imagesVariation)
-                  .setDescription(description)
-                  .build();
-               products.add(product);
-            }
          }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
-
       return products;
    }
 
