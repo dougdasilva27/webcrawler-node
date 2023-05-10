@@ -43,4 +43,25 @@ public class BrasilBoschMarketplaceCrawler extends VTEXNewScraper {
 
       return description;
    }
+
+   protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
+      String name = JSONUtils.getValueRecursive(productJson, "items.0.nameComplete", ".", String.class, null);
+
+      if (name == null && jsonSku.has("productName") && jsonSku.opt("productName") != null) {
+         name = jsonSku.optString("productName");
+
+      } else if (name == null && jsonSku.has("name")) {
+         name = jsonSku.optString("name");
+      }
+
+      if (name != null && !name.isEmpty() && productJson.has("brand")) {
+         String brand = productJson.optString("brand");
+         if (brand != null && !brand.isEmpty() && !checkIfNameHasBrand(brand, name)) {
+            name = name + " " + brand;
+         }
+      }
+
+
+      return name;
+   }
 }
