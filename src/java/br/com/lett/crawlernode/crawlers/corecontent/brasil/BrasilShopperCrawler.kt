@@ -51,40 +51,45 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
    }
 
    private fun uptadeToken() {
-      try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.BUY_HAPROXY, session)
+      var tokenSession =  session.options.optString("tokenShopper", null);
+      if(tokenSession != null){
+         token = tokenSession;
+      }else{
+         try {
+            webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.BUY_HAPROXY, session)
 
-         log("waiting home page")
-         webdriver.waitForElement(".login", 30)
+            log("waiting home page")
+            webdriver.waitForElement(".login", 30)
 
-         log("clicking on login button")
-         webdriver.clickOnElementViaJavascript(".login", 5000)
+            log("clicking on login button")
+            webdriver.clickOnElementViaJavascript(".login", 5000)
 
-         webdriver.waitForElement(".access-login input[name=email]", 30)
+            webdriver.waitForElement(".access-login input[name=email]", 30)
 
-         log("inserting credentials")
-         webdriver.sendToInput(".access-login input[name=email]", login, 2000)
+            log("inserting credentials")
+            webdriver.sendToInput(".access-login input[name=email]", login, 2000)
 
-         webdriver.sendToInput(".access-login input[name=senha]", password, 2000)
+            webdriver.sendToInput(".access-login input[name=senha]", password, 2000)
 
-         log("submit login")
-         webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 20000)
+            log("submit login")
+            webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 20000)
 
 
-         webdriver.waitForElement("div h1", 240)
+            webdriver.waitForElement("div h1", 240)
 
-         cookies = webdriver.driver.manage().cookies.map {
-            BasicClientCookie(it.name, it.value)
+            cookies = webdriver.driver.manage().cookies.map {
+               BasicClientCookie(it.name, it.value)
+            }
+
+            var tokenShopper = this.cookies.first { it.name == "shopper_token" }.value
+
+            if (tokenShopper.isEmpty()) {
+               token = tokenShopper
+            }
+         } catch (e: Exception) {
+            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e))
+            Logging.printLogWarn(logger, "login não realizado")
          }
-
-         var tokenShopper = this.cookies.first { it.name == "shopper_token" }.value
-
-         if (tokenShopper.isEmpty()) {
-            token = tokenShopper
-         }
-      } catch (e: Exception) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e))
-         Logging.printLogWarn(logger, "login não realizado")
       }
    }
 
@@ -110,7 +115,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
    override fun extractInformation(json: JSONObject?): MutableList<Product> {
 
-      if (json == null) {
+      if (json == null ||  json.optString("title") == null || json.length() <=3) {
          log("Not a product page " + session.originalURL)
          return mutableListOf()
       }
