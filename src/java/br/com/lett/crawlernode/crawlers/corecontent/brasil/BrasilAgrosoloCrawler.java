@@ -1,15 +1,16 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.*;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -18,14 +19,14 @@ import models.Offers;
 import models.pricing.*;
 import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.Pricing.PricingBuilder;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilAgrosoloCrawler extends Crawler {
 
@@ -43,6 +44,8 @@ public class BrasilAgrosoloCrawler extends Crawler {
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+         String internalId = getInternalId(doc);
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product-id", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__title", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE);
@@ -56,7 +59,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
-               .setInternalId(getInternalId(variations.first()))
+               .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
                .setPrimaryImage(primaryImage)
@@ -68,18 +71,19 @@ public class BrasilAgrosoloCrawler extends Crawler {
          } else {
             for (Element element : variations) {
                String variationName = element.select("label").text();
-
                Document document = requestFromVariations(internalPid, variationName);
-               boolean isAvailable = checkIfIsAvailable(doc);
-               Offers offers = isAvailable ? scrapOffers(document) : new Offers();
 
+               internalId = getInternalId(document);
                String nameVariation = CrawlerUtils.scrapStringSimpleInfo(document, ".product__title", true);
                String primaryImageVariation = CrawlerUtils.scrapSimplePrimaryImage(document, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE);
                List<String> imagesVariation = CrawlerUtils.scrapSecondaryImages(document, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
 
+               boolean isAvailable = checkIfIsAvailable(doc);
+               Offers offers = isAvailable ? scrapOffers(document) : new Offers();
+
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
-                  .setInternalId(getInternalId(element))
+                  .setInternalId(internalId)
                   .setInternalPid(internalPid)
                   .setName(nameVariation + " " + variationName)
                   .setPrimaryImage(primaryImageVariation)
@@ -97,14 +101,21 @@ public class BrasilAgrosoloCrawler extends Crawler {
       return products;
    }
 
-   private String getInternalId(Element element) {
-      String uuidProduct = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "label", "for");
-      String[] uuidParts = uuidProduct.split("__");
+   private String getInternalId(Document doc) {
+      String skuProduct = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__sku", true);
+      String regex = "SKU ([0-9]*)";
 
-      return uuidParts[uuidParts.length -1];
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(skuProduct);
+
+      if (matcher.find()) {
+         return matcher.group(1);
+      }
+
+      return null;
    }
 
-   private Document requestFromVariations(String internalPid, String variationName){
+   private Document requestFromVariations(String internalPid, String variationName) {
       Map<String, String> headers = new HashMap<>();
       headers.put("authority", "www.agrosolo.com.br");
       headers.put("accept", "*/*");
@@ -113,7 +124,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.agrosolo.com.br/snippet")
          .setHeaders(headers)
-         .setPayload("{\"fileName\":\"product_view_snippet.html\",\"queryName\":\"product.graphql\",\"variables\":{\"productId\":" + internalPid +",\"selections\":[{\"attributeId\":258,\"value\":\"" + variationName + "\"}]}}")
+         .setPayload("{\"fileName\":\"product_view_snippet.html\",\"queryName\":\"product.graphql\",\"variables\":{\"productId\":" + internalPid + ",\"selections\":[{\"attributeId\":258,\"value\":\"" + variationName + "\"}]}}")
          .build();
 
       Response response = dataFetcher.post(session, request);
@@ -216,6 +227,4 @@ public class BrasilAgrosoloCrawler extends Crawler {
 
       return installments;
    }
-
-
 }
