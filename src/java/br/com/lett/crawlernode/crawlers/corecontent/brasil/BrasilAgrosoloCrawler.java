@@ -44,7 +44,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         Elements variations = doc.select(".product__infos--unique--wrapper .product__variants--item:not(.disabled)");
+         Elements variations = doc.select(".product__infos--unique--wrapper .product__variants--item");
 
          for (Element element : variations) {
             String internalId = getInternalId(doc);
