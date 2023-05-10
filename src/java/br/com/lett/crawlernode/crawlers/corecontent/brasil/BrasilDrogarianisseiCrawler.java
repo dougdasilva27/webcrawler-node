@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -50,13 +51,13 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
-         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.BUY))
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.SMART_PROXY_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.BUY))
          .setSendUserAgent(false)
          .setCookies(cookies)
          .setHeaders(headers)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new JsoupDataFetcher(),new FetcherDataFetcher()), session, "get");
 
       this.cookies = response.getCookies();
 
