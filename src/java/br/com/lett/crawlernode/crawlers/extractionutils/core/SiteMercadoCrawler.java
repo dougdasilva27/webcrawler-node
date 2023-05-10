@@ -28,12 +28,9 @@ public class SiteMercadoCrawler extends Crawler {
 
    private static final Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
       Card.MASTERCARD.toString(), Card.ELO.toString());
-
-   private final String LOAD_API_URL = getLoadApiUrl();
    private final String API_URL = getApiUrl();
    private static final String MAIN_SELLER_NAME = "Sitemercado";
    private String homePage = getHomePage();
-   private String loadPayload = getLoadPayload();
    private Map<String, Integer> lojaInfo = getLojaInfo();
 
    protected String getHomePage() {
@@ -41,11 +38,11 @@ public class SiteMercadoCrawler extends Crawler {
    }
 
    protected String getApiUrl() {
-      return "https://www.sitemercado.com.br/api/b2c/";
+      return "https://ecommerce-backend-wl.sitemercado.com.br/api/b2c/";
    }
 
    protected String getLoadApiUrl() {
-      return "https://www.sitemercado.com.br/api/v1/b2c/";
+      return "https://ecommerce-backend-wl.sitemercado.com.br/api/b2c/";
    }
 
    protected Map<String, Integer> getLojaInfo() {
@@ -285,38 +282,19 @@ public class SiteMercadoCrawler extends Crawler {
     * @return
     */
    protected Response crawlProductInformatioFromApi(String productUrl) {
-      String lojaUrl = CommonMethods.getLast(getHomePage().split("sitemercado.com.br"));
-      String loadUrl = LOAD_API_URL + "page/store" + lojaUrl;
       String productName = CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
       String url = API_URL + "product/" + productName + "?store_id=" + lojaInfo.get("IdLoja");
 
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.REFERER, productUrl);
+      headers.put("hosturl", "www.sitemercado.com.br");
       headers.put(HttpHeaders.ACCEPT, "application/json, text/plain, */*");
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-      headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36");
+      headers.put("sm-token", "{\"Location\":{\"Latitude\":-25.4506375213913,\"Longitude\":-49.0694533776945},\"IdLoja\":" + lojaInfo.get("IdLoja") + ",\"IdRede\":" + lojaInfo.get("IdRede") + "}");
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(loadUrl)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .setPayload(loadPayload)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.LUMINATI_RESIDENTIAL_BR))
-         .build();
-
-
-      Map<String, String> responseHeaders = dataFetcher.get(session, request).getHeaders();
-
-      JSONObject jsonObject = responseHeaders != null ? JSONUtils.stringToJson(responseHeaders.get("sm-token")) : new JSONObject();
-      jsonObject.put("IdLoja", lojaInfo.get("IdLoja"));
-      jsonObject.put("IdRede", lojaInfo.get("IdRede"));
-      headers.put("sm-token", jsonObject.toString());
-      headers.put(HttpHeaders.ACCEPT_LANGUAGE, "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7");
       Request requestApi = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.LUMINATI_RESIDENTIAL_BR))
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.LUMINATI_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY))
          .build();
 
       return this.dataFetcher.get(session, requestApi);
