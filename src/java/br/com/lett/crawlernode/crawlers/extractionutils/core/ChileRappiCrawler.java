@@ -51,7 +51,7 @@ public class ChileRappiCrawler extends RappiCrawler {
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
       headers.put("content-type", "application/json");
-      headers.put("deviceid", DEVICE_ID);
+      headers.put("deviceid", RANDOM_DEVICE_ID);
       headers.put("needAppsFlyerId", "false");
 
       Request request = Request.RequestBuilder.create()
@@ -72,7 +72,7 @@ public class ChileRappiCrawler extends RappiCrawler {
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
       headers.put("content-type", "application/json");
-      headers.put("deviceId", DEVICE_ID);
+      headers.put("deviceId", RANDOM_DEVICE_ID);
       headers.put("x-guest-api-key", fetchPassportToken());
 
       String payload = "";
