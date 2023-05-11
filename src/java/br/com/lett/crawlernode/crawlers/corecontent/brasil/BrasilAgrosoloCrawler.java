@@ -55,7 +55,6 @@ public class BrasilAgrosoloCrawler extends Crawler {
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE);
             List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
             String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product__information .container", "std"));
-            List<String> eans = crawlEans(doc);
 
             boolean isAvailable = checkIfIsAvailable(doc);
             Offers offers = isAvailable ? scrapOffers(doc) : new Offers();
@@ -79,7 +78,6 @@ public class BrasilAgrosoloCrawler extends Crawler {
                .setName(name)
                .setPrimaryImage(primaryImage)
                .setOffers(offers)
-               .setEans(eans)
                .setSecondaryImages(images)
                .setDescription(description)
                .build();
@@ -104,22 +102,6 @@ public class BrasilAgrosoloCrawler extends Crawler {
          }
       }
       return null;
-   }
-
-   private List<String> crawlEans(Document doc) {
-      List<String> eans = new ArrayList<String>();
-      Element techSpecs = doc.selectFirst(".tech-specs > table > tbody");
-      String regex = " ([0-9]*) - ";
-      
-      if (techSpecs != null) {
-         Pattern pattern = Pattern.compile("<td>Código de Barras:</td>[ \n]*<td>([^</td>]*)</td>");
-         Matcher matcher = pattern.matcher(techSpecs.toString());
-         while (matcher.find()) {
-            eans.add(matcher.group(1));
-         }
-      }
-
-      return eans;
    }
 
    private Document requestFromVariations(String internalPid, String variationName) {
