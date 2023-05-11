@@ -30,6 +30,8 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
       config.parser = Parser.JSON
    }
 
+   private val uf: String = session.options.optString("uf")
+
    override fun fetchResponse(): Response {
 
       val headers: MutableMap<String, String> = HashMap()
@@ -39,7 +41,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
 
       val internalId = URL(session.originalURL).path.substringAfterLast("-")
 
-      val url = "https://www.panvel.com/api/v2/catalog/$internalId"
+      val url = "https://www.panvel.com/api/v2/catalog/$internalId?uf=$uf"
 
       val request = Request.RequestBuilder
          .create()
