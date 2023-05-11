@@ -61,10 +61,11 @@ public class BrasilAgrosoloCrawler extends Crawler {
                String variationName = element.select("label").text();
                Document document = requestFromVariations(internalPid, variationName);
                name = name + " - " + variationName;
+               internalId = getInternalId(document);
 
                primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE);
                images = CrawlerUtils.scrapSecondaryImages(document, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
-               isAvailable = checkIfIsAvailable(doc);
+               isAvailable = checkIfIsAvailable(document);
                offers = isAvailable ? scrapOffers(document) : new Offers();
             }
 
