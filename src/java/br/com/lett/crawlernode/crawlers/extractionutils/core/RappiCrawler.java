@@ -54,7 +54,7 @@ public abstract class RappiCrawler extends Crawler {
    private final String grammatureRegex = "(\\d+[.,]?\\d*\\s?)(ml|l|g|gr|mg|kg)";
    private final String quantityRegex = "(\\d+[.,]?\\d*\\s?)(und)";
 
-   protected String DEVICE_ID = UUID.randomUUID().toString();
+   protected final String RANDOM_DEVICE_ID = UUID.randomUUID().toString();
 
    protected String getStoreId() {
       return session.getOptions().optString("storeId");
@@ -100,6 +100,10 @@ public abstract class RappiCrawler extends Crawler {
                String key = keys.next();
                if (fallback.get(key) instanceof JSONObject) {
                   productJson = JSONUtils.getValueRecursive(fallback.get(key), "master_product_detail_response.data.components.0.resource.product", JSONObject.class, new JSONObject());
+               }
+
+               if (productJson.isEmpty()) {
+                  productJson = JSONUtils.getValueRecursive(fallback.get(key), "primaryStore.product", JSONObject.class, new JSONObject());
                }
             }
          }
@@ -188,7 +192,7 @@ public abstract class RappiCrawler extends Crawler {
       return productFoundInternalId;
    }
 
-   private boolean checkProductEquals(JSONObject productJson, JSONObject searchProduct) {
+   protected boolean checkProductEquals(JSONObject productJson, JSONObject searchProduct) {
       String productId = productJson.optString("product_id");
       String productName = productJson.optString("name");
       String productDescription = crawlDescription(productJson);
@@ -251,7 +255,7 @@ public abstract class RappiCrawler extends Crawler {
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
       headers.put("content-type", "application/json");
-      headers.put("deviceid", DEVICE_ID);
+      headers.put("deviceid", RANDOM_DEVICE_ID);
       headers.put("needAppsFlyerId", "false");
 
       Request request = Request.RequestBuilder.create()
@@ -275,7 +279,7 @@ public abstract class RappiCrawler extends Crawler {
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
       headers.put("content-type", "application/json");
-      headers.put("deviceId", DEVICE_ID);
+      headers.put("deviceId", RANDOM_DEVICE_ID);
       headers.put("x-guest-api-key", fetchPassportToken());
 
       String payload = "";
@@ -311,7 +315,7 @@ public abstract class RappiCrawler extends Crawler {
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
       headers.put("content-type", "application/json");
       headers.put("authorization", token);
-      headers.put("deviceid", DEVICE_ID);
+      headers.put("deviceid", RANDOM_DEVICE_ID);
       headers.put("app-version", "web_v1.140.9");
 
       String payload = "{\"state\":{\"product_id\":\"" + productId + "\",\"lat\":\"1\",\"lng\":\"1\"},\"stores\":[" + getStoreId() + "],\"context\":\"product_detail\",\"limit\":10,\"offset\":0}";
