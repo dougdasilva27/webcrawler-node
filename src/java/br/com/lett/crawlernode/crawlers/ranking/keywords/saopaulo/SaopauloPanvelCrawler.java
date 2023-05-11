@@ -46,7 +46,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
          .setUrl("https://www.panvel.com/api/v2/search/?uf=" + uf)
          .setPayload(payload)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.LUMINATI_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(false).mustRetrieveStatistics(true).build())
          .build();
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(dataFetcher, new FetcherDataFetcher(), new ApacheDataFetcher()), session, "post");
