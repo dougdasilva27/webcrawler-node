@@ -31,6 +31,8 @@ import java.util.regex.Pattern;
 public class BrasilAgrosoloCrawler extends Crawler {
 
    private static final String HOME_PAGE = "www.agrosolo.com.br/";
+   private final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilAgrosoloCrawler(Session session) {
       super(session);
@@ -53,6 +55,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE);
             List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
             String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product__information .container", "std"));
+            List<String> eans = crawlEans(doc);
 
             boolean isAvailable = checkIfIsAvailable(doc);
             Offers offers = isAvailable ? scrapOffers(doc) : new Offers();
@@ -76,6 +79,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
                .setName(name)
                .setPrimaryImage(primaryImage)
                .setOffers(offers)
+               .setEans(eans)
                .setSecondaryImages(images)
                .setDescription(description)
                .build();
@@ -91,14 +95,31 @@ public class BrasilAgrosoloCrawler extends Crawler {
       String skuProduct = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__sku", true);
       String regex = "SKU ([0-9]*)";
 
-      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-      Matcher matcher = pattern.matcher(skuProduct);
+      if (skuProduct != null) {
+         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+         Matcher matcher = pattern.matcher(skuProduct);
 
-      if (matcher.find()) {
-         return matcher.group(1);
+         if (matcher.find()) {
+            return matcher.group(1);
+         }
+      }
+      return null;
+   }
+
+   private List<String> crawlEans(Document doc) {
+      List<String> eans = new ArrayList<String>();
+      Element techSpecs = doc.selectFirst(".tech-specs > table > tbody");
+      String regex = " ([0-9]*) - ";
+      
+      if (techSpecs != null) {
+         Pattern pattern = Pattern.compile("<td>Código de Barras:</td>[ \n]*<td>([^</td>]*)</td>");
+         Matcher matcher = pattern.matcher(techSpecs.toString());
+         while (matcher.find()) {
+            eans.add(matcher.group(1));
+         }
       }
 
-      return null;
+      return eans;
    }
 
    private Document requestFromVariations(String internalPid, String variationName) {
@@ -114,7 +135,6 @@ public class BrasilAgrosoloCrawler extends Crawler {
          .build();
 
       Response response = dataFetcher.post(session, request);
-
       Document document = Jsoup.parse(response.getBody());
 
       return document;
@@ -133,9 +153,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
       Pricing pricing = scrapPricing(doc);
       List<String> sales = new ArrayList<>();
       String calculateSales = CrawlerUtils.calculateSales(pricing);
-      if (calculateSales != null) {
-         sales.add(calculateSales);
-      }
+      sales.add(calculateSales);
 
       offers.add(Offer.OfferBuilder.create()
          .setMainPagePosition(1)
@@ -171,8 +189,6 @@ public class BrasilAgrosoloCrawler extends Crawler {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = scrapInstallments(doc, spotlightPrice);
-
-      Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
