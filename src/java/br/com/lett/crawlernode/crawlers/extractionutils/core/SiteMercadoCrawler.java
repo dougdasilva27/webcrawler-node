@@ -25,23 +25,20 @@ public class SiteMercadoCrawler extends Crawler {
       super(session);
       this.config.setParser(Parser.JSON);
    }
-
    private static final Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
       Card.MASTERCARD.toString(), Card.ELO.toString());
-   private final String API_URL = getApiUrl();
+   private final String API_URL = session.getOptions().optString("api_url", "https://ecommerce-backend-wl.sitemercado.com.br/api/b2c/");
+
+   private final String HOST_URL = session.getOptions().optString("host_url", "www.sitemercado.com.br");
    private static final String MAIN_SELLER_NAME = "Sitemercado";
-   private String homePage = getHomePage();
+   private final String homePage = getHomePage();
    private Map<String, Integer> lojaInfo = getLojaInfo();
 
-   private Double latitude = session.getOptions().optDouble("latitude");
-   private Double longitude = session.getOptions().optDouble("longitude");
+   private final Double latitude = session.getOptions().optDouble("latitude");
+   private final Double longitude = session.getOptions().optDouble("longitude");
 
    protected String getHomePage() {
       return session.getOptions().optString("url");
-   }
-
-   protected String getApiUrl() {
-      return "https://ecommerce-backend-wl.sitemercado.com.br/api/b2c/";
    }
 
    protected Map<String, Integer> getLojaInfo() {
@@ -80,15 +77,15 @@ public class SiteMercadoCrawler extends Crawler {
       if (jsonSku.has("idLojaProduto")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String pruductUrl = session.getOriginalURL().replace("//produto", "/produto");
+         String productUrl = session.getOriginalURL().replace("//produto", "/produto");
          String internalId = jsonSku.optString("idProduct");
          String name = jsonSku.optString("excerpt");
          String description = crawlDescription(jsonSku);
          CategoryCollection categories = crawlCategories(jsonSku);
 
-         JSONArray imagensFromArray = JSONUtils.getValueRecursive(jsonSku, "images", JSONArray.class);
-         List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(imagensFromArray, "img", null, "https", "img.sitemercado.com.br", session);
-         String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
+         JSONArray imagesFromArray = JSONUtils.getValueRecursive(jsonSku, "images", JSONArray.class);
+         List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(imagesFromArray, "img", null, "https", "img.sitemercado.com.br", session);
+         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
 
          Integer stock = jsonSku.has("quantityStock") && jsonSku.opt("quantitytock") instanceof Integer ? jsonSku.optInt("quantityStock") : null;
          boolean available = jsonSku.has("isSale") && !jsonSku.isNull("isSale") && jsonSku.optBoolean("isSale");
@@ -96,7 +93,7 @@ public class SiteMercadoCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(pruductUrl)
+            .setUrl(productUrl)
             .setInternalId(internalId)
             .setInternalPid(internalId)
             .setName(name)
@@ -138,8 +135,6 @@ public class SiteMercadoCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject jsonSku) throws MalformedPricingException {
       Double spotlightPrice = crawlPrice(jsonSku);
-      Double spPrice = JSONUtils.getValueRecursive(jsonSku, "prices.0.price", Double.class);
-      Double fPrice = JSONUtils.getDoubleValueFromJSON(jsonSku, "price_old", true);
 
       if (spotlightPrice != null) {
          Double priceFrom = crawlPriceFrom(jsonSku);
@@ -285,7 +280,7 @@ public class SiteMercadoCrawler extends Crawler {
       String url = API_URL + "product/" + productName + "?store_id=" + lojaInfo.get("IdLoja");
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("hosturl", "www.sitemercado.com.br");
+      headers.put("hosturl", HOST_URL);
       headers.put(HttpHeaders.ACCEPT, "application/json, text/plain, */*");
       headers.put("sm-token", "{\"Location\":{\"Latitude\":" + latitude + ",\"Longitude\":" + longitude + "},\"IdLoja\":" + lojaInfo.get("IdLoja") + ",\"IdRede\":" + lojaInfo.get("IdRede") + "}");
 

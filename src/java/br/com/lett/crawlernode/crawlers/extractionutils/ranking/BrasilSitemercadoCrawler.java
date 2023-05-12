@@ -27,13 +27,12 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       return session.getOptions().optString("url");
    }
 
-   protected String getApiUrl() {
-      return "https://ecommerce-backend-wl.sitemercado.com.br/api/b2c/";
-   }
-
-   private Double latitude = session.getOptions().optDouble("latitude");
-   private Double longitude = session.getOptions().optDouble("longitude");
+   private final String API_URL = session.getOptions().optString("api_url", "https://ecommerce-backend-wl.sitemercado.com.br/api/b2c/product?store_id=");
+   private final String HOST_URL = session.getOptions().optString("host_url", "www.sitemercado.com.br");
    private Map<String, Integer> lojaInfo = getLojaInfo();
+
+   private final Double latitude = session.getOptions().optDouble("latitude");
+   private final Double longitude = session.getOptions().optDouble("longitude");
 
    public BrasilSitemercadoCrawler(Session session) {
       super(session);
@@ -57,9 +56,8 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       return payload.toString();
    }
 
-
    protected String apiSearchUrl(String lojaId) {
-      return "https://ecommerce-backend-wl.sitemercado.com.br/api/b2c/product?store_id=" + lojaId + "&text=";
+      return API_URL + lojaId + "&text=";
    }
 
    @Override
@@ -147,7 +145,7 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       String apiUrl = apiSearchUrl(lojaInfo.get("IdLoja").toString()) + this.keywordEncoded.replace("+", "%20");
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("hosturl", "https://www.sitemercado.com.br/");
+      headers.put("hosturl", HOST_URL);
       headers.put("Accept", "application/json, text/plain, */*");
       headers.put("sm-token", "{\"Location\":{\"Latitude\":" + latitude + ",\"Longitude\":" + longitude + "},\"IdLoja\":" + lojaInfo.get("IdLoja") + ",\"IdRede\":" + lojaInfo.get("IdRede") + "}");
 
