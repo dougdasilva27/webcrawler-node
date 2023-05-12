@@ -317,6 +317,9 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject jsonInfo) throws MalformedPricingException {
       Double priceFrom = !scrapSales(jsonInfo).isEmpty() ? jsonInfo.optDouble("valor_ini") : null;
       Double spotlightPrice = jsonInfo.optDouble("valor_fim");
+      if (spotlightPrice.equals(0.0)){
+         spotlightPrice = jsonInfo.optDouble("valor_ini");
+      }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
