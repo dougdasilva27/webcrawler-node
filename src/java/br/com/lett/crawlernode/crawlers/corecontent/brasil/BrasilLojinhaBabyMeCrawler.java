@@ -1,9 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -21,6 +19,10 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,10 +31,29 @@ import java.util.Set;
 public class BrasilLojinhaBabyMeCrawler extends Crawler {
    public BrasilLojinhaBabyMeCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.HTML);
+   }
+
+   @Override
+   protected Response fetchResponse() {
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(session.getOriginalURL()))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
    }
 
    private static final String SELLER_FULL_NAME = "Lojinha Baby e Me";
-   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.ELO.toString(),
+   private static final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.ELO.toString(),
       Card.DINERS.toString(), Card.DISCOVER.toString(), Card.AMEX.toString(), Card.JCB.toString(), Card.AURA.toString(), Card.HIPERCARD.toString());
 
    @Override
@@ -48,7 +69,7 @@ public class BrasilLojinhaBabyMeCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.items li.item a");
          List<String> secondaryImages = crawImagesArray(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder__image", Arrays.asList("src"), "https", "www.lojinhababyandme.com.br");
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".product.description p"));
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".product.attribute.overview .value", ".product.description p"));
          boolean availableToBuy = doc.selectFirst(".product-info-stock-sku .available") != null;
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
 
@@ -116,10 +137,13 @@ public class BrasilLojinhaBabyMeCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-price [id*=product-price] .price", null, true, ',', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[data-price-type=\"minPrice\"] span", null, true, ',', session);
+      }
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-price .old-price .price", null, true, ',', session);
 
-      if (spotlightPrice == null && priceFrom == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[data-price-type=\"maxPrice\"] span", null, true, ',', session);
+      if (spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
+         priceFrom = null;
       }
 
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);

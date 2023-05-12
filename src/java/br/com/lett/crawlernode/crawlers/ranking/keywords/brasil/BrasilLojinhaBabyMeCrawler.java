@@ -6,16 +6,37 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.Objects;
 
 public class BrasilLojinhaBabyMeCrawler extends CrawlerRankingKeywords {
    public BrasilLojinhaBabyMeCrawler(Session session) {
       super(session);
+   }
+
+   @Override
+   protected Document fetchDocument(String url) {
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(url))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return Jsoup.parse(response.body());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load page: " + url , e);
+      }
    }
 
    @Override
@@ -47,6 +68,9 @@ public class BrasilLojinhaBabyMeCrawler extends CrawlerRankingKeywords {
                .build();
 
             saveDataProduct(productRanking);
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
          }
       }
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
