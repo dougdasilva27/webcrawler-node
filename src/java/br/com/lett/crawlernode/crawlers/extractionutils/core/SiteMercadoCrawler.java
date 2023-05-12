@@ -25,27 +25,20 @@ public class SiteMercadoCrawler extends Crawler {
       super(session);
       this.config.setParser(Parser.JSON);
    }
-
    private static final Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
       Card.MASTERCARD.toString(), Card.ELO.toString());
+   private final String API_URL = session.getOptions().optString("api_url", "https://ecommerce-backend-wl.sitemercado.com.br/api/b2c/");
 
-   private final String LOAD_API_URL = getLoadApiUrl();
-   private final String API_URL = getApiUrl();
+   private final String HOST_URL = session.getOptions().optString("host_url", "www.sitemercado.com.br");
    private static final String MAIN_SELLER_NAME = "Sitemercado";
-   private String homePage = getHomePage();
-   private String loadPayload = getLoadPayload();
+   private final String homePage = getHomePage();
    private Map<String, Integer> lojaInfo = getLojaInfo();
+
+   private final Double latitude = session.getOptions().optDouble("latitude");
+   private final Double longitude = session.getOptions().optDouble("longitude");
 
    protected String getHomePage() {
       return session.getOptions().optString("url");
-   }
-
-   protected String getApiUrl() {
-      return "https://www.sitemercado.com.br/api/b2c/";
-   }
-
-   protected String getLoadApiUrl() {
-      return "https://www.sitemercado.com.br/api/v1/b2c/";
    }
 
    protected Map<String, Integer> getLojaInfo() {
@@ -84,15 +77,15 @@ public class SiteMercadoCrawler extends Crawler {
       if (jsonSku.has("idLojaProduto")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String pruductUrl = session.getOriginalURL().replace("//produto", "/produto");
+         String productUrl = session.getOriginalURL().replace("//produto", "/produto");
          String internalId = jsonSku.optString("idProduct");
          String name = jsonSku.optString("excerpt");
          String description = crawlDescription(jsonSku);
          CategoryCollection categories = crawlCategories(jsonSku);
 
-         JSONArray imagensFromArray = JSONUtils.getValueRecursive(jsonSku, "images", JSONArray.class);
-         List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(imagensFromArray, "img", null, "https", "img.sitemercado.com.br", session);
-         String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
+         JSONArray imagesFromArray = JSONUtils.getValueRecursive(jsonSku, "images", JSONArray.class);
+         List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(imagesFromArray, "img", null, "https", "img.sitemercado.com.br", session);
+         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
 
          Integer stock = jsonSku.has("quantityStock") && jsonSku.opt("quantitytock") instanceof Integer ? jsonSku.optInt("quantityStock") : null;
          boolean available = jsonSku.has("isSale") && !jsonSku.isNull("isSale") && jsonSku.optBoolean("isSale");
@@ -100,7 +93,7 @@ public class SiteMercadoCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(pruductUrl)
+            .setUrl(productUrl)
             .setInternalId(internalId)
             .setInternalPid(internalId)
             .setName(name)
@@ -142,8 +135,6 @@ public class SiteMercadoCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject jsonSku) throws MalformedPricingException {
       Double spotlightPrice = crawlPrice(jsonSku);
-      Double spPrice = JSONUtils.getValueRecursive(jsonSku, "prices.0.price", Double.class);
-      Double fPrice = JSONUtils.getDoubleValueFromJSON(jsonSku, "price_old", true);
 
       if (spotlightPrice != null) {
          Double priceFrom = crawlPriceFrom(jsonSku);
@@ -285,38 +276,19 @@ public class SiteMercadoCrawler extends Crawler {
     * @return
     */
    protected Response crawlProductInformatioFromApi(String productUrl) {
-      String lojaUrl = CommonMethods.getLast(getHomePage().split("sitemercado.com.br"));
-      String loadUrl = LOAD_API_URL + "page/store" + lojaUrl;
       String productName = CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
       String url = API_URL + "product/" + productName + "?store_id=" + lojaInfo.get("IdLoja");
 
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.REFERER, productUrl);
+      headers.put("hosturl", HOST_URL);
       headers.put(HttpHeaders.ACCEPT, "application/json, text/plain, */*");
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-      headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36");
+      headers.put("sm-token", "{\"Location\":{\"Latitude\":" + latitude + ",\"Longitude\":" + longitude + "},\"IdLoja\":" + lojaInfo.get("IdLoja") + ",\"IdRede\":" + lojaInfo.get("IdRede") + "}");
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(loadUrl)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .setPayload(loadPayload)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.LUMINATI_RESIDENTIAL_BR))
-         .build();
-
-
-      Map<String, String> responseHeaders = dataFetcher.get(session, request).getHeaders();
-
-      JSONObject jsonObject = responseHeaders != null ? JSONUtils.stringToJson(responseHeaders.get("sm-token")) : new JSONObject();
-      jsonObject.put("IdLoja", lojaInfo.get("IdLoja"));
-      jsonObject.put("IdRede", lojaInfo.get("IdRede"));
-      headers.put("sm-token", jsonObject.toString());
-      headers.put(HttpHeaders.ACCEPT_LANGUAGE, "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7");
       Request requestApi = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY, ProxyCollection.LUMINATI_RESIDENTIAL_BR))
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.LUMINATI_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY))
          .build();
 
       return this.dataFetcher.get(session, requestApi);
