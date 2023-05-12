@@ -130,7 +130,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       headers.put("referer", session.getOriginalURL());
       headers.put("authority", "www.farmaciasnissei.com.br");
       headers.put("origin", "https://www.farmaciasnissei.com.br");
-      //headers.put("x-requested-with", "XMLHttpRequest");
 
       String payload = "csrfmiddlewaretoken=" + token + "&produto_id="+id;
 
