@@ -35,7 +35,7 @@ public class BrasilLojinhaBabyMeCrawler extends CrawlerRankingKeywords {
          HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
          return Jsoup.parse(response.body());
       } catch (Exception e) {
-         throw new RuntimeException("Faleid In load page: " + url , e);
+         throw new RuntimeException("Failed In load page: " + url , e);
       }
    }
 

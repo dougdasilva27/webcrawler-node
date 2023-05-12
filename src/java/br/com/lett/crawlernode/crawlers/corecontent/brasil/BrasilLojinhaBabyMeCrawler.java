@@ -48,7 +48,7 @@ public class BrasilLojinhaBabyMeCrawler extends Crawler {
             .setLastStatusCode(response.statusCode())
             .build();
       } catch (Exception e) {
-         throw new RuntimeException("Faleid In load document: " + session.getOriginalURL(), e);
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
       }
    }
 
