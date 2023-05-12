@@ -60,7 +60,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          .setHeaders(headers)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new JsoupDataFetcher(),new FetcherDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
 
       this.cookies = response.getCookies();
 
@@ -116,7 +116,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       return products;
    }
 
-   private Boolean isAvailable(String id){
+   private Boolean isAvailable(String id) {
       String token = "";
       String url = "https://www.farmaciasnissei.com.br/buscar/estoque";
 
@@ -131,7 +131,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       headers.put("authority", "www.farmaciasnissei.com.br");
       headers.put("origin", "https://www.farmaciasnissei.com.br");
 
-      String payload = "csrfmiddlewaretoken=" + token + "&produto_id="+id;
+      String payload = "csrfmiddlewaretoken=" + token + "&produto_id=" + id;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -145,13 +145,13 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       JSONObject json = CrawlerUtils.stringToJson(response.getBody());
       JSONArray availableStores = JSONUtils.getJSONArrayValue(json, "lista_estoque");
-      for (Object product : availableStores){
+      for (Object product : availableStores) {
          JSONObject currentStore = (JSONObject) product;
-         if (JSONUtils.getIntegerValueFromJSON(currentStore, "cd_filial", 000)==Integer.parseInt(storeId)){
+         if (JSONUtils.getIntegerValueFromJSON(currentStore, "cd_filial", 000) == Integer.parseInt(storeId)) {
             return true;
          }
       }
-      return  false;
+      return false;
    }
 
    private JSONObject accesAPIOffers(String internalId) {
@@ -185,10 +185,10 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       JSONObject json = CrawlerUtils.stringToJson(response.getBody());
 
-      JSONObject precos = json != null ? json.optJSONObject("precos") : null;
+      JSONObject prices = json != null ? json.optJSONObject("precos") : null;
 
-      if (precos != null && !precos.isEmpty()) {
-         JSONObject dataProduct = precos.optJSONObject(internalId);
+      if (prices != null && !prices.isEmpty()) {
+         JSONObject dataProduct = prices.optJSONObject(internalId);
          return dataProduct != null ? dataProduct.optJSONObject("publico") : jsonObject;
 
       }
