@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -21,6 +22,7 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -34,6 +36,7 @@ import java.util.*;
 
 public class BrasilDrogarianisseiCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.farmaciasnissei.com.br/";
+   private final String storeId = session.getOptions().optString("storeId", null);
 
    public BrasilDrogarianisseiCrawler(Session session) {
       super(session);
@@ -85,7 +88,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".dots-preview .swiper-slide img", Collections.singletonList("src"), "https", "www.farmaciasnissei.com.br", primaryImage);
          String description = CrawlerUtils.scrapElementsDescription(doc, List.of(".card #tabCollapse-descricao"));
          JSONObject json = accesAPIOffers(internalId);
-         boolean available = json.optBoolean("is_disponivel");
+         boolean available = storeId == null ? json.optBoolean("is_disponivel") : isAvailable(internalId);
          Offers offers = available ? scrapOffers(json) : new Offers();
          RatingsReviews ratingsReviews = getRatingsReviews(doc);
          List<String> eans = scrapEan(doc);
@@ -111,6 +114,45 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private Boolean isAvailable(String id){
+      String token = "";
+      String url = "https://www.farmaciasnissei.com.br/buscar/estoque";
+
+      String cookies = CommonMethods.cookiesToString(this.cookies);
+
+      token = CommonMethods.substring(cookies, "=", ";", true);
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("cookie", cookies);
+      headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("referer", session.getOriginalURL());
+      headers.put("authority", "www.farmaciasnissei.com.br");
+      headers.put("origin", "https://www.farmaciasnissei.com.br");
+      //headers.put("x-requested-with", "XMLHttpRequest");
+
+      String payload = "csrfmiddlewaretoken=" + token + "&produto_id="+id;
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.BUY))
+         .setSendUserAgent(false)
+         .setPayload(payload)
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
+
+      JSONObject json = CrawlerUtils.stringToJson(response.getBody());
+      JSONArray availableStores = JSONUtils.getJSONArrayValue(json, "lista_estoque");
+      for (Object product : availableStores){
+         JSONObject currentStore = (JSONObject) product;
+         if (JSONUtils.getIntegerValueFromJSON(currentStore, "cd_filial", 000)==Integer.parseInt(storeId)){
+            return true;
+         }
+      }
+      return  false;
    }
 
    private JSONObject accesAPIOffers(String internalId) {
