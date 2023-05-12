@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -14,13 +16,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
-
-   public BrasilSitemercadoCrawler(Session session) {
-      super(session);
-   }
 
    private String homePage = getHomePage();
 
@@ -32,7 +31,14 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       return "https://ecommerce-backend-wl.sitemercado.com.br/api/b2c/";
    }
 
+   private Double latitude = session.getOptions().optDouble("latitude");
+   private Double longitude = session.getOptions().optDouble("longitude");
    private Map<String, Integer> lojaInfo = getLojaInfo();
+
+   public BrasilSitemercadoCrawler(Session session) {
+      super(session);
+      super.fetchMode = FetchMode.JSOUP;
+   }
 
    protected Map<String, Integer> getLojaInfo() {
       Map<String, Integer> storeMap = new HashMap<>();
@@ -40,7 +46,6 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       storeMap.put("IdRede", session.getOptions().optInt("idRede"));
       return storeMap;
    }
-
 
    protected String getLoadPayload() {
       JSONObject payload = new JSONObject();
@@ -139,15 +144,16 @@ public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
    }
 
    protected JSONObject crawlProductInfo() {
-      String apiUrl = apiSearchUrl(String.valueOf(lojaInfo.get("idLoja"))) + this.keywordEncoded.replace("+", "%20");
+      String apiUrl = apiSearchUrl(lojaInfo.get("IdLoja").toString()) + this.keywordEncoded.replace("+", "%20");
 
       Map<String, String> headers = new HashMap<>();
       headers.put("hosturl", "https://www.sitemercado.com.br/");
       headers.put("Accept", "application/json, text/plain, */*");
-      headers.put("sm-token", "{\"Location\":{\"Latitude\":-25.4506375213913,\"Longitude\":-49.0694533776945},\"IdLoja\":" + lojaInfo.get("idLoja") + ",\"IdRede\":" + lojaInfo.get("IdRede") + "}");
+      headers.put("sm-token", "{\"Location\":{\"Latitude\":" + latitude + ",\"Longitude\":" + longitude + "},\"IdLoja\":" + lojaInfo.get("IdLoja") + ",\"IdRede\":" + lojaInfo.get("IdRede") + "}");
 
       Request requestApi = RequestBuilder.create()
          .setUrl(apiUrl)
+         .setProxyservice(List.of(ProxyCollection.BUY, ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.LUMINATI_RESIDENTIAL_BR))
          .setCookies(cookies)
          .setHeaders(headers)
          .build();

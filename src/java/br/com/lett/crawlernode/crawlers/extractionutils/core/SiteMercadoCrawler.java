@@ -33,15 +33,14 @@ public class SiteMercadoCrawler extends Crawler {
    private String homePage = getHomePage();
    private Map<String, Integer> lojaInfo = getLojaInfo();
 
+   private Double latitude = session.getOptions().optDouble("latitude");
+   private Double longitude = session.getOptions().optDouble("longitude");
+
    protected String getHomePage() {
       return session.getOptions().optString("url");
    }
 
    protected String getApiUrl() {
-      return "https://ecommerce-backend-wl.sitemercado.com.br/api/b2c/";
-   }
-
-   protected String getLoadApiUrl() {
       return "https://ecommerce-backend-wl.sitemercado.com.br/api/b2c/";
    }
 
@@ -288,7 +287,7 @@ public class SiteMercadoCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("hosturl", "www.sitemercado.com.br");
       headers.put(HttpHeaders.ACCEPT, "application/json, text/plain, */*");
-      headers.put("sm-token", "{\"Location\":{\"Latitude\":-25.4506375213913,\"Longitude\":-49.0694533776945},\"IdLoja\":" + lojaInfo.get("IdLoja") + ",\"IdRede\":" + lojaInfo.get("IdRede") + "}");
+      headers.put("sm-token", "{\"Location\":{\"Latitude\":" + latitude + ",\"Longitude\":" + longitude + "},\"IdLoja\":" + lojaInfo.get("IdLoja") + ",\"IdRede\":" + lojaInfo.get("IdRede") + "}");
 
       Request requestApi = Request.RequestBuilder.create()
          .setUrl(url)
