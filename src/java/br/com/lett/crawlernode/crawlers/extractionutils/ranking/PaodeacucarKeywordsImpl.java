@@ -3,11 +3,8 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.models.GPAKeywordsCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import org.apache.http.client.utils.URIBuilder;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.HashMap;
@@ -24,7 +21,8 @@ public class PaodeacucarKeywordsImpl extends LinxImpulseRanking {
    }
 
    @Override
-   protected String crawlInternalId(JSONObject product, String internalPid) {String internalId = internalPid;
+   protected String crawlInternalId(JSONObject product, String internalPid) {
+      String internalId = internalPid;
       String url = product.optString("url");
       Pattern pattern = Pattern.compile("/([0-9]+)");
       Matcher matcher = pattern.matcher(url);
@@ -33,6 +31,7 @@ public class PaodeacucarKeywordsImpl extends LinxImpulseRanking {
       }
       return internalId;
    }
+
    @Override
    protected JSONObject fetchPage(String url) {
       Map<String, String> headers = new HashMap<>();
@@ -50,8 +49,9 @@ public class PaodeacucarKeywordsImpl extends LinxImpulseRanking {
       if (jsonObject.optString("queryType").equals("redirect")) {
          isRedirection = true;
          String linkRedirection = jsonObject.optString("link");
-         this.keywordEncoded = getRedirectionKeyword(linkRedirection);
-
+         if (linkRedirection != null && !linkRedirection.isEmpty()) {
+            this.keywordEncoded = getRedirectionKeyword(linkRedirection);
+         }
          jsonObject = fetchJSONObject(mountURL());
 
       }
@@ -87,7 +87,6 @@ public class PaodeacucarKeywordsImpl extends LinxImpulseRanking {
    }
 
    private String getRedirectionKeyword(String link) {
-      if (link == null) return null;
       Pattern pattern = Pattern.compile("especial\\/(.*)\\\\?");
       Matcher matcher = pattern.matcher(link);
       if (matcher.find()) {
