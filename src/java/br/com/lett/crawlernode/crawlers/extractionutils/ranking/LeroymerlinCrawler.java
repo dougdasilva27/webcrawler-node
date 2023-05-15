@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -12,10 +14,15 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.List;
 
 public class LeroymerlinCrawler extends CrawlerRankingKeywords {
 
@@ -24,6 +31,7 @@ public class LeroymerlinCrawler extends CrawlerRankingKeywords {
    public LeroymerlinCrawler(Session session) {
       super(session);
       this.region = getRegion();
+      super.fetchMode = FetchMode.JSOUP;
    }
 
    protected String getRegion() {
@@ -86,16 +94,12 @@ public class LeroymerlinCrawler extends CrawlerRankingKeywords {
    }
 
    protected JSONObject fetchPage() {
-      String url = "https://www.leroymerlin.com.br/api/boitata/v1/categories/4233b695c67dab3aee032c03/products?perPage=36&term=" + this.keywordWithoutAccents + "&searchTerm=" + this.keywordWithoutAccents + "&searchType=Shortcut&page=" + this.currentPage;
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("authority", "www.leroymerlin.com.br");
-      headers.put("referer", "www.leroymerlin.com.br");
+      String hash = getHashCategory();
+      String url = "https://www.leroymerlin.com.br/api/boitata/v1/categories/" + hash + "/products?perPage=36&term=" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "&searchTerm=" + this.keywordWithoutAccents + "&searchType=Shortcut&page=" + this.currentPage;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
-         .setHeaders(headers)
-         .setFollowRedirects(false)
+         .setProxyservice(List.of(ProxyCollection.BUY, ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
          .build();
 
       Response response = dataFetcher.get(session, request);
@@ -119,5 +123,23 @@ public class LeroymerlinCrawler extends CrawlerRankingKeywords {
       }
 
       return price;
+   }
+
+   private String getHashCategory() {
+      Document document;
+      String url = "https://www.leroymerlin.com.br/search?term=" + this.keywordEncoded.replace(" ", "%20") + "&searchTerm=" + this.keywordEncoded.replace(" ", "%20") + "&searchType=default";
+      try {
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(url))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         document = Jsoup.parse(response.body());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in scrape document: " + session.getOriginalURL(), e);
+      }
+
+      return CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "body > span[data-component=\"rich-relevance/category-tracking\"]", "data-category-id");
    }
 }
