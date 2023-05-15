@@ -88,16 +88,13 @@ public class PaodeacucarKeywordsImpl extends LinxImpulseRanking {
 
    private String getRedirectionKeyword(String link) {
       if (link == null) return null;
-      String kw = "";
-      Pattern pattern = Pattern.compile("especial\\/(.*)\\?");
+      Pattern pattern = Pattern.compile("especial\\/(.*)\\\\?");
       Matcher matcher = pattern.matcher(link);
       if (matcher.find()) {
-         kw = matcher.group(1);
+         return matcher.group(1);
       }
 
-      return kw;
+      return null;
    }
-
-
 
 }
