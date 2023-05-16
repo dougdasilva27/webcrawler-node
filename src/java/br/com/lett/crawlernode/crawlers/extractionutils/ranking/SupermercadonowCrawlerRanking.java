@@ -76,8 +76,8 @@ public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
             String internalId = crawlInternalId(product);
             String name = product.optString("name");
             String image = product.optString("image_thumbnail");
-            int price = crawlPrice(product);
             boolean available = product.optBoolean("in_stock");
+            Integer price = available ? crawlPrice(product) : null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
