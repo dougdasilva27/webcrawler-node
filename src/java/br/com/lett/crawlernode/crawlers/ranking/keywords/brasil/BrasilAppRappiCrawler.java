@@ -23,21 +23,22 @@ public class BrasilAppRappiCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   protected JSONObject fetchDocument() {
+   protected JSONObject fetchJSONObject() {
+      String payload = "{\"query\":\"" + this.keywordWithoutAccents + "\",\"lat\":" + session.getOptions().optString("lat") + ",\"lng\":" + session.getOptions().optString("lng") + ",\"options\":{\"sort\":{}},\"tiered_stores\":[]}";
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
-      headers.put("authorization", "Bearer ft.gAAAAABkXTUqW4WZs3GQ4TwL7iXdRd_6_So4YqGDeJTbK_pLq25-mj1SYmoVpEcqC2FiRufXyE8VA265rUbYNUTK_hn7TV6Su13OyZEXjobm9Dxs1VshF1tbUPEFW_H0qhre7e4YnnZ5j1wamsRb228mzuAz2PCdjit0576uNDTGDJd-vXET3g0Qe1h_d86gIk6fFCmiHRA0fdHQ-jjS3DndmVFBo36_H4-HKISZ9Pohe1NcOPgr-CvO6cqJWj2zp6qqpENxwA2rbFpfzx2L4ESo-kVOk8Adpgr2sAM5WKW8etCVrhBMcbZVE75pSZHifxXIyMDITaxhdgDzWtRMlmlHvo5KVAZcrH_CoCeTTGHZ0Bo7NHzk9GI=");
-
-      String payload = "{\"query\":" +this.keywordWithoutAccents+ ",\"lat\":-27.57929014867,\"lng\":-48.588943853974,\"options\":{\"sort\":{}},\"tiered_stores\":[\"default\",\"standard\",\"premium\"]}";
+      headers.put("content-length", payload.length() + "");
+      headers.put("host", "services.rappi.com.br");
+      headers.put("authorization", session.getOptions().optString("authorization"));
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://services.rappi.com.br/api/pns-global-search-api/v1/unified-search?is_prime=false&unlimited_shipping=false")
          .setHeaders(headers)
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+            ProxyCollection.BUY_HAPROXY))
          .build();
 
       Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
@@ -50,36 +51,43 @@ public class BrasilAppRappiCrawler extends CrawlerRankingKeywords {
       this.pageSize = 12;
       this.log("Página " + this.currentPage);
 
-      JSONObject json = fetchDocument();
+      JSONObject json = fetchJSONObject();
 
       if (json != null && !json.isEmpty()) {
-         JSONArray productsArray = JSONUtils.getJSONArrayValue(json, "products");
-         this.totalProducts = productsArray.length();
+         JSONArray storesArray = JSONUtils.getJSONArrayValue(json, "stores");
+         for (Object store : storesArray) {
+            JSONObject storeJson = (JSONObject) store;
 
-         for (Object product : productsArray) {
-            JSONObject productJson = (JSONObject) product;
+            if (storeJson != null && !storeJson.isEmpty()) {
 
-            if(productJson != null) {
-               String internalId = Integer.toString(JSONUtils.getIntegerValueFromJSON(productJson, "master_product_id", 0));
-               //String productUrl = JSONUtils.getStringValue(productJson, "url");
-               String name = JSONUtils.getStringValue(productJson, "name");
-               String imageUrl = JSONUtils.getStringValue(productJson, "image");
-               Integer price = JSONUtils.getPriceInCents(productJson, "price");
-               boolean isAvailable = price != null;
+               JSONArray productsArray = JSONUtils.getJSONArrayValue(storeJson, "products");
+               this.totalProducts += productsArray.length();
 
-               RankingProduct productRanking = RankingProductBuilder.create()
-                  //.setUrl(productUrl)
-                  .setInternalId(internalId)
-                  .setName(name)
-                  .setPriceInCents(price)
-                  .setAvailability(isAvailable)
-                  .setImageUrl(imageUrl)
-                  .build();
+               for (Object product : productsArray) {
+                  JSONObject productJson = (JSONObject) product;
 
-               saveDataProduct(productRanking);
-            }
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
+                  if (productJson != null) {
+                     String url = JSONUtils.getStringValue(productJson, "id");
+                     String name = JSONUtils.getStringValue(productJson, "name");
+                     String imageUrl = JSONUtils.getStringValue(productJson, "image");
+                     Integer price = JSONUtils.getPriceInCents(productJson, "price");
+                     boolean isAvailable = productJson.optBoolean("in_stock");
+
+                     RankingProduct productRanking = RankingProductBuilder.create()
+                        .setUrl(url)
+                        .setInternalId(url)
+                        .setName(name)
+                        .setPriceInCents(price)
+                        .setAvailability(isAvailable)
+                        .setImageUrl(imageUrl)
+                        .build();
+
+                     saveDataProduct(productRanking);
+                  }
+                  if (this.arrayProducts.size() == productsLimit) {
+                     break;
+                  }
+               }
             }
          }
       } else {
