@@ -1,22 +1,22 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.models.RankingProduct;
-import br.com.lett.crawlernode.core.models.RankingProductBuilder;
-import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
 
@@ -33,6 +33,11 @@ public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
 
    protected String host = getHost();
    private final String homePage = "https://" + host + "/produtos/" + loadUrl + "/";
+
+   protected String getHost() {
+      return session.getOptions().optString("host", "delivery.bergamini.com.br");
+   }
+
    private Map<String, String> headers = new HashMap<>();
 
    @Override
@@ -45,10 +50,6 @@ public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
       headers.put("X-SNW-Token", "XLBhhbP1YEkB2tL61wkX163Dqm9iIDpx");
 
       this.cookies = response.getCookies();
-   }
-
-   protected String getHost() {
-      return "supermercadonow.com";
    }
 
 
@@ -75,8 +76,8 @@ public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
             String internalId = crawlInternalId(product);
             String name = product.optString("name");
             String image = product.optString("image_thumbnail");
-            int price = crawlPrice(product);
             boolean available = product.optBoolean("in_stock");
+            Integer price = available ? crawlPrice(product) : null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
