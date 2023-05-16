@@ -29,7 +29,7 @@ public class BrasilAppRappiCrawler extends Crawler {
    }
 
    private static final String sellerFullName = "rappiapp";
-   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.ELO.toString());
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.ELO.toString(), Card.AMEX.toString());
    private static final String imgUrl = "https://images.rappi.com.br/products/";
 
 
