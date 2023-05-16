@@ -297,7 +297,6 @@ public abstract class RappiCrawler extends Crawler {
          ))
          .build();
 
-//      JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "post").getBody());
       JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false).getBody());
 
       String token = json.optString("access_token");
