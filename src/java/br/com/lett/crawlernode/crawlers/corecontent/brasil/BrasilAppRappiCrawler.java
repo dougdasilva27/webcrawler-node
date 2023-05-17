@@ -58,9 +58,9 @@ public class BrasilAppRappiCrawler extends Crawler {
          .setHeaders(headers)
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.BUY_HAPROXY))
+            ProxyCollection.LUMINATI_SERVER_BR))
          .build();
 
       return CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
@@ -72,9 +72,10 @@ public class BrasilAppRappiCrawler extends Crawler {
          .setUrl(url)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.BUY_HAPROXY))
+            ProxyCollection.LUMINATI_SERVER_BR
+            ))
          .build();
 
       Response response = dataFetcher.get(session, request);
@@ -83,7 +84,7 @@ public class BrasilAppRappiCrawler extends Crawler {
       JSONArray storesArray = JSONUtils.getJSONArrayValue(body, "favorite_stores");
       for (Object store : storesArray) {
          JSONObject storeJson = (JSONObject) store;
-         Integer currentStoreId = JSONUtils.getIntegerValueFromJSON(storeJson, "store_id", 0);
+         Integer currentStoreId = storeJson.optInt( "store_id");
          if (currentStoreId.equals(storeId)) {
             return true;
          }
@@ -96,7 +97,7 @@ public class BrasilAppRappiCrawler extends Crawler {
       List<String> secondaryImages = new ArrayList<>();
       JSONArray images = JSONUtils.getJSONArrayValue(product, "images");
       for (Integer i = 0; i < JSONUtils.getJSONArrayValue(product, "images").length(); i++) {
-         secondaryImages.add(imgUrl + images.getString(i));
+         secondaryImages.add(imgUrl + images.optString(i));
       }
       return secondaryImages;
    }
@@ -106,12 +107,12 @@ public class BrasilAppRappiCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
       if (json != null && !json.isEmpty()) {
          JSONObject jsonProduct = restaurante ? json : JSONUtils.getValueRecursive(json, "data.components.0.resource.product", JSONObject.class, new JSONObject());
-         String internalId = JSONUtils.getStringValue(jsonProduct, "id");
-         String name = JSONUtils.getStringValue(jsonProduct, "name");
-         String category = JSONUtils.getStringValue(jsonProduct, "category_name");
-         String primaryImage = imgUrl + JSONUtils.getStringValue(jsonProduct, "image");
+         String internalId = jsonProduct.optString("id");
+         String name = jsonProduct.optString("name");
+         String category = jsonProduct.optString("category_name");
+         String primaryImage = imgUrl + jsonProduct.optString("image");
          List<String> secondaryImage = getSecondaryImages(jsonProduct);
-         String description = JSONUtils.getStringValue(jsonProduct, "description");
+         String description = jsonProduct.optString("description");
          Object price = JSONUtils.getValue(jsonProduct, "real_price");
          boolean availableToBuy = restaurante ? price != null : jsonProduct.optBoolean("in_stock");
          Offers offers = availableToBuy ? scrapOffers(jsonProduct) : new Offers();
@@ -163,14 +164,14 @@ public class BrasilAppRappiCrawler extends Crawler {
       Double spotlightPrice = null;
       Double priceFrom = null;
       if (!restaurante) {
-         spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonProduct, "price", true);
-         priceFrom = JSONUtils.getDoubleValueFromJSON(jsonProduct, "real_price", true);
+         spotlightPrice = jsonProduct.optDouble("price");
+         priceFrom = jsonProduct.optDouble("real_price");
       } else {
          JSONArray discount = JSONUtils.getJSONArrayValue(jsonProduct, "discounts");
          for (Object item : discount) {
             JSONObject itemJson = (JSONObject) item;
             spotlightPrice = !itemJson.isEmpty() ? Double.valueOf(JSONUtils.getValue(itemJson, "price").toString()) : Double.valueOf(JSONUtils.getValue(jsonProduct, "reaL_price").toString());
-            priceFrom = JSONUtils.getDoubleValueFromJSON(jsonProduct, "real_price", true);
+            priceFrom = jsonProduct.optDouble("real_price");
          }
       }
 

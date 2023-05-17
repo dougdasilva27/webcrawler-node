@@ -36,9 +36,9 @@ public class BrasilAppRappiCrawler extends CrawlerRankingKeywords {
          .setHeaders(headers)
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.BUY_HAPROXY))
+            ProxyCollection.LUMINATI_SERVER_BR))
          .build();
 
       Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
@@ -67,10 +67,10 @@ public class BrasilAppRappiCrawler extends CrawlerRankingKeywords {
                   JSONObject productJson = (JSONObject) product;
 
                   if (productJson != null) {
-                     String url = JSONUtils.getStringValue(productJson, "id");
-                     String name = JSONUtils.getStringValue(productJson, "name");
-                     String imageUrl = JSONUtils.getStringValue(productJson, "image");
-                     Integer price = JSONUtils.getPriceInCents(productJson, "price");
+                     String url = productJson.optString("id");
+                     String name = productJson.optString("name");
+                     String imageUrl = productJson.optString("image");
+                     Integer price = productJson.optInt("price");
                      boolean isAvailable = productJson.optBoolean("in_stock");
 
                      RankingProduct productRanking = RankingProductBuilder.create()
