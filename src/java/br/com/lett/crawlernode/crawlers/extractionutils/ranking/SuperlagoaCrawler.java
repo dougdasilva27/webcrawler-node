@@ -30,6 +30,27 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.FETCHER;
    }
 
+   protected JSONObject fetch() {
+      String url = "https://www.merconnect.com.br/mapp/v2/markets/" + storeId + "/items/search?query=" + this.keywordEncoded + "&page=" + this.currentPage + "&";
+
+      String token = getToken();
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Content-Type", "application/json");
+      headers.put("origin", "https://loja.centerbox.com.br");
+
+      headers.put("Authorization", "Bearer " + token);
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .build();
+      Response content = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get");
+
+      return CrawlerUtils.stringToJson(content.getBody());
+   }
+
    protected String getToken() {
       String url = "https://www.merconnect.com.br/oauth/token";
 
@@ -50,49 +71,24 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
    }
 
 
-   protected JSONObject fetch() {
-      String url = "https://www.merconnect.com.br/mapp/v2/markets/" + storeId + "/items/search?query=" + this.keywordEncoded + "&page=" + this.currentPage + "&";
-
-      String token = getToken();
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Authorization", "Bearer " + token);
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .build();
-      Response content = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get");
-
-      return CrawlerUtils.stringToJson(content.getBody());
-   }
-
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-
       this.log("Página " + this.currentPage);
-
       JSONObject json = fetch();
-
       JSONArray jsonArray = JSONUtils.getValueRecursive(json, "mixes", JSONArray.class);
 
       if (jsonArray != null && !jsonArray.isEmpty()) {
-
          for (Object e : jsonArray) {
-
             JSONObject item = (JSONObject) e;
             JSONArray productsArray = JSONUtils.getValueRecursive(item, "items", JSONArray.class);
 
             for (Object o : productsArray) {
                JSONObject product = (JSONObject) o;
-
                if (product != null) {
 
                   String internalId = JSONUtils.getIntegerValueFromJSON(product, "product_id", 0).toString();
                   String internalPid = JSONUtils.getIntegerValueFromJSON(product, "id", 0).toString();
-
                   String urlProduct = urlProduct(product, internalPid);
-
                   String imgUrl = product.optString("image");
                   Double priceDouble = product.optDouble("price");
                   Integer priceInCents = (int) Math.round(100 * priceDouble);
@@ -120,11 +116,9 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
 
       } else {
          if (this.arrayProducts.isEmpty()) {
-
             this.result = false;
             this.log("Keyword sem resultado!");
          }
-
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
@@ -139,6 +133,5 @@ public class SuperlagoaCrawler extends CrawlerRankingKeywords {
       String sessionId = JSONUtils.getIntegerValueFromJSON(product, "section_id", 0).toString();
 
       return "https://comprasonline.superlagoa.com.br/loja/" + storeId + "/categoria/" + sessionId + "/produto/" + internalPid;
-
    }
 }
