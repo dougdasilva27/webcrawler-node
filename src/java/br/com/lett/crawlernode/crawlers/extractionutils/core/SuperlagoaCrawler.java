@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -34,25 +35,30 @@ public class SuperlagoaCrawler extends Crawler {
    public SuperlagoaCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.JSOUP);
+      config.setParser(Parser.JSON);
    }
 
    @Override
-   protected JSONObject fetch() {
+   protected Response fetchResponse() {
       String id = CrawlerUtils.getStringBetween(session.getOriginalURL(), "produto/", "origin").replace("?", "");
       String url = "https://www.merconnect.com.br/mapp/v2/markets/" + storeId + "/items/" + id;
 
       String token = getToken();
 
       Map<String, String> headers = new HashMap<>();
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+      headers.put("Content-Type", "application/json");
+      headers.put("Connection", "keep-alive");
+      headers.put("origin", "https://loja.centerbox.com.br");
       headers.put("Authorization", "Bearer " + token);
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
          .build();
-      Response content = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get");
 
-      return CrawlerUtils.stringToJson(content.getBody());
+      return response;
    }
 
    protected String getToken() {
@@ -69,12 +75,10 @@ public class SuperlagoaCrawler extends Crawler {
          .build();
       Response content = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post");
 
-
       JSONObject json = CrawlerUtils.stringToJson(content.getBody());
 
       return json.optString("access_token");
    }
-
 
    @Override
    public List<Product> extractInformation(JSONObject json) throws Exception {
@@ -112,15 +116,12 @@ public class SuperlagoaCrawler extends Crawler {
 
          products.add(product);
 
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
       return products;
-
    }
-
 
    private Offers scrapOffer(JSONObject jsonObject) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
@@ -137,23 +138,18 @@ public class SuperlagoaCrawler extends Crawler {
          .setPricing(pricing)
          .build());
 
-
       return offers;
-
    }
 
    private List<String> scrapSales(Pricing pricing) {
       List<String> sales = new ArrayList<>();
       sales.add(CrawlerUtils.calculateSales(pricing));
-
       return sales;
    }
 
 
    private Pricing scrapPricing(JSONObject jsonObject) throws MalformedPricingException {
-
       Double spotlightPrice = JSONUtils.getValueRecursive(jsonObject, "price", Double.class);
-
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
@@ -184,6 +180,5 @@ public class SuperlagoaCrawler extends Crawler {
       }
 
       return creditCards;
-
    }
 }
