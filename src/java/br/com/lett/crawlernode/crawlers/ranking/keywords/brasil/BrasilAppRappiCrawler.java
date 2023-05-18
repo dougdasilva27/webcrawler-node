@@ -27,7 +27,7 @@ public class BrasilAppRappiCrawler extends CrawlerRankingKeywords {
    private final String sizeLimit = session.getOptions().optString("sizeLimit");
 
    protected JSONObject fetchJSONObject() {
-      String payload = "{\"query\":\"" + this.keywordWithoutAccents + "\",\"size\":"+sizeLimit+",\"from\":0,\"vertical_group\":\"cpgs\",\"object_id\":\"\"}";
+      String payload = "{\"query\":\"" + this.keywordWithoutAccents + "\",\"size\":" + sizeLimit + ",\"from\":0,\"vertical_group\":\"cpgs\",\"object_id\":\"\"}";
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
       headers.put("content-length", payload.length() + "");
@@ -62,7 +62,7 @@ public class BrasilAppRappiCrawler extends CrawlerRankingKeywords {
          for (Object product : productsArray) {
             JSONObject productJson = (JSONObject) product;
 
-            if (productJson != null && productJson.optBoolean("in_stock") ) {
+            if (productJson != null && productJson.optBoolean("in_stock")) {
                String url = productJson.optString("id");
                String name = productJson.optString("name");
                String imageUrl = productJson.optString("image");
