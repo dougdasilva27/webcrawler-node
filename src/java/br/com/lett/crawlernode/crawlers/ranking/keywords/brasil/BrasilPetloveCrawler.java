@@ -1,16 +1,22 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
-import java.util.Collections;
+import java.util.List;
 
 public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
 
@@ -21,6 +27,28 @@ public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
    private static final String HOME_PAGE = "https://www.petlove.com.br/";
 
    @Override
+   protected Document fetchDocument(String url) {
+      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
+      int attemp = 0;
+      boolean succes = false;
+      Document doc = new Document("");
+      do {
+         try {
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attemp), session);
+            if (webdriver != null) {
+               doc = Jsoup.parse(webdriver.getCurrentPageSource());
+               succes = !doc.select("ul.catalog-items").isEmpty();
+               webdriver.terminate();
+            }
+         } catch (Exception e) {
+            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, "Page not captured");
+         }
+      } while (!succes && attemp++ < (proxies.size() - 1));
+      return doc;
+   }
+
+   @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 20;
 
@@ -29,22 +57,29 @@ public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
       String url = "https://www.petlove.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
-      this.currentDoc = fetchDocument(url);
+      Document doc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select("#shelf-loop .catalog-list-item");
+      Element catalogJSON = doc.selectFirst("script:containsData(window.catalogJSON)");
+      String aux = catalogJSON.html().replace(" ", "").replace("\n", "");
+      String jsonString = CommonMethods.substring(aux, "window.catalogJSON=", ";window.catalogJSON.pageType=null;", true);
+      JSONObject productJson = CrawlerUtils.stringToJSONObject(jsonString);
 
-      if (!products.isEmpty()) {
+
+      if (!productJson.isEmpty()) {
          if (this.totalProducts == 0) {
-            setTotalProducts();
+            this.totalProducts = productJson.optInt("max_produtos");
          }
 
-         for (Element e : products) {
-            String internalId = scrapInternalId(e);
-            String productUrl = crawlProductUrl(e);
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-name", true);
-            String imgUrl = scrapImage(e);
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".catalog-list-price:not(.catalog-list-price-subscription)", null, true, ',', session, null);
-            boolean isAvailable = price != null;
+         JSONArray products = productJson.optJSONArray("produtos");
+         for (Object productObj : products) {
+            JSONObject product = (JSONObject) productObj;
+
+            String internalId = product.optString("sku");
+            String productUrl = product.optString("link");
+            String name = scrapName(product);
+            String imgUrl = product.optString("figura");
+            boolean isAvailable = product.optInt("disponivel") != 0;
+            Integer price = isAvailable ? scrapPrice(product) : null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -70,63 +105,23 @@ public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private String scrapImage(Element e) {
-      String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".catalog-list-image img", Collections.singletonList("src"), "https", "petlove.com.br");
-
-      if(image != null && !image.isEmpty()) {
-         image = image.replace("/small/", "/large/");
+   private Integer scrapPrice(JSONObject product) {
+      Integer pricePor = CommonMethods.stringPriceToIntegerPrice(product.optString("por"), '.', null);
+      if (pricePor == null) {
+         Integer priceDe = CommonMethods.stringPriceToIntegerPrice(product.optString("de"), '.', null);
+         return priceDe;
       }
 
-      return image;
+      return pricePor;
    }
 
-   @Override
-   protected void setTotalProducts() {
-      Element totalElement = this.currentDoc.select(".sort-results").first();
-
-      if (totalElement != null) {
-         String total = totalElement.ownText().replaceAll("[^0-9]", "").trim();
-
-         if (!total.isEmpty()) {
-            this.totalProducts = Integer.parseInt(total);
-         }
-
-         this.log("Total da busca: " + this.totalProducts);
-      }
-   }
-
-   private String crawlInternalPid(Element e) {
-      String internalPid = null;
-
-      Element sku = e.select("span[itemprop=sku]").first();
-      if (sku != null) {
-         internalPid = sku.ownText();
+   private String scrapName(JSONObject product) {
+      String name = product.optString("nome");
+      if (name != null) {
+         String corrected = name.replaceAll("([a-z])([A-Z])", "$1 $2");
+         return corrected.replaceAll("-", " - ");
       }
 
-      return internalPid;
-   }
-
-   private String crawlProductUrl(Element e) {
-      Element url = e.selectFirst(".catalog-info-product > a");
-      if (url != null) {
-         String productUrl = url.attr("href");
-
-         if (!productUrl.contains("petlove.com")) {
-            productUrl = (HOME_PAGE + productUrl).replace("br//", "br/");
-         }
-
-         return productUrl;
-      }
-      return null;
-   }
-
-
-   private String scrapInternalId(Element e) {
-      Element url = e.selectFirst(".catalog-info-product > a");
-      if (url != null) {
-         String productURL = url.attr("href");
-         return CommonMethods.getLast(productURL.split("sku="));
-      }
       return null;
    }
 }
