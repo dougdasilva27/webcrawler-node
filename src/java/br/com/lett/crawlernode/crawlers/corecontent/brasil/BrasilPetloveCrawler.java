@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -45,9 +47,8 @@ import java.util.stream.IntStream;
 
 /**
  * date: 27/03/2018
- * 
- * @author gabriel
  *
+ * @author gabriel
  */
 
 public class BrasilPetloveCrawler extends Crawler {
@@ -55,16 +56,32 @@ public class BrasilPetloveCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.petlove.com.br";
    private static final String SELLER_FULL_NAME = "petlove";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilPetloveCrawler(Session session) {
       super(session);
    }
 
    @Override
-   public boolean shouldVisit() {
-      String href = this.session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   protected Object fetch() {
+      List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
+      int attemp = 0;
+      boolean succes = false;
+      Document doc = new Document("");
+      do {
+         try {
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attemp), session);
+            if (webdriver != null) {
+               doc = Jsoup.parse(webdriver.getCurrentPageSource());
+               succes = !doc.select("section.product.flex").isEmpty();
+               webdriver.terminate();
+            }
+         } catch (Exception e) {
+            Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, "Page not captured");
+         }
+      } while (!succes && attemp++ < (proxies.size() - 1));
+      return doc;
    }
 
    @Override
@@ -103,19 +120,19 @@ public class BrasilPetloveCrawler extends Crawler {
 
                // Creating the product
                Product product = ProductBuilder.create()
-                     .setUrl(url)
-                     .setRatingReviews(ratingReviews)
-                     .setInternalId(internalId)
-                     .setInternalPid(internalPid)
-                     .setName(name)
-                     .setCategory1(categories.getCategory(0))
-                     .setCategory2(categories.getCategory(1))
-                     .setCategory3(categories.getCategory(2))
-                     .setPrimaryImage(primaryImage)
-                     .setSecondaryImages(secondaryImages)
-                     .setDescription(description)
-                     .setOffers(offers)
-                     .build();
+                  .setUrl(url)
+                  .setRatingReviews(ratingReviews)
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setCategory1(categories.getCategory(0))
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setOffers(offers)
+                  .build();
 
                products.add(product);
             }
@@ -153,7 +170,7 @@ public class BrasilPetloveCrawler extends Crawler {
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
       Matcher matcher = pattern.matcher(nuxtDataSanitized);
 
-      if (matcher.find()){
+      if (matcher.find()) {
          return matcher.group(1).replace("\\u002F", "/");
       }
 
@@ -234,14 +251,14 @@ public class BrasilPetloveCrawler extends Crawler {
       Pricing pricing = scrapPricing(skuJson, urlVariant);
 
       offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       return offers;
 
@@ -285,15 +302,15 @@ public class BrasilPetloveCrawler extends Crawler {
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
-            .setFinalPrice(spotlightPrice)
-            .build();
+         .setFinalPrice(spotlightPrice)
+         .build();
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setBankSlip(bankSlip)
-            .build();
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
@@ -301,16 +318,16 @@ public class BrasilPetloveCrawler extends Crawler {
 
       Installments installments = new Installments();
       installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;
