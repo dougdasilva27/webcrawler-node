@@ -32,10 +32,10 @@ public class BrasilAppRappiCrawler extends Crawler {
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.ELO.toString(), Card.AMEX.toString());
    private final String lat = session.getOptions().optString("lat");
    private final String lng = session.getOptions().optString("lng");
+   private final String storeId = session.getOptions().optString("storeId");
    private final String authorization = session.getOptions().optString("authorization");
    private static final String imgUrl = "https://images.rappi.com.br/products/";
 
-   private Boolean restaurante = false;
    Map<String, String> headers = new HashMap<>();
 
    @Override
@@ -46,50 +46,22 @@ public class BrasilAppRappiCrawler extends Crawler {
       headers.put("Host", "services.rappi.com.br");
       headers.put("app-version-name", "7.48.20230420-72418");
       headers.put(HttpHeaders.ACCEPT, "*/*");
-      String storeId = session.getOriginalURL().split("_")[0];
       String productId = session.getOriginalURL().split("_")[1];
-      this.restaurante = isRestaurant(Integer.parseInt(storeId));
 
-      String payload = restaurante ? "{\"is_prime\":false,\"lat\":" + lat + ",\"lng\":" + lng + ",\"store_type\":\"restaurant\"}" : "{\"context\":\"product_detail\",\"stores\":[" + storeId + "],\"offset\":0,\"limit\":1,\"state\":{\"parent_store_type\":\"market\",\"product_id\":\"" + productId + "\",\"sessions\":\"0\",\"is_prime\":\"false\",\"zone_ids\":\"[]\",\"unlimited_shipping\":\"false\",\"lat\":\"" + lat + "\",\"lng\":\"" + lng + "\"}}";
+      String payload = "{\"context\":\"product_detail\",\"stores\":[" + storeId + "],\"offset\":0,\"limit\":1,\"state\":{\"parent_store_type\":\"market\",\"product_id\":\"" + productId + "\",\"sessions\":\"0\",\"is_prime\":\"false\",\"zone_ids\":\"[]\",\"unlimited_shipping\":\"false\",\"lat\":\"" + lat + "\",\"lng\":\"" + lng + "\"}}";
 
-      String url = restaurante ? "https://v2.rappi.com.br/api/restaurant-bus/product-detail/store/" + storeId + "/product/" + productId : "https://services.rappi.com.br/api/dynamic/context/content";
+      String url = "https://services.rappi.com.br/api/dynamic/context/content";
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR))
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.BUY_HAPROXY))
          .build();
 
       return CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
-   }
-
-   private Boolean isRestaurant(Integer storeId) {
-      String url = "https://services.rappi.com.br/api/pns-global-search-api/v1/favorite-stores?lat=" + lat + "&lng=" + lng;
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR
-            ))
-         .build();
-
-      Response response = dataFetcher.get(session, request);
-
-      JSONObject body = JSONUtils.stringToJson(response.getBody());
-      JSONArray storesArray = JSONUtils.getJSONArrayValue(body, "favorite_stores");
-      for (Object store : storesArray) {
-         JSONObject storeJson = (JSONObject) store;
-         Integer currentStoreId = storeJson.optInt( "store_id");
-         if (currentStoreId.equals(storeId)) {
-            return true;
-         }
-      }
-      return false;
    }
 
 
@@ -106,15 +78,14 @@ public class BrasilAppRappiCrawler extends Crawler {
    public List<Product> extractInformation(JSONObject json) throws Exception {
       List<Product> products = new ArrayList<>();
       if (json != null && !json.isEmpty()) {
-         JSONObject jsonProduct = restaurante ? json : JSONUtils.getValueRecursive(json, "data.components.0.resource.product", JSONObject.class, new JSONObject());
+         JSONObject jsonProduct = JSONUtils.getValueRecursive(json, "data.components.0.resource.product", JSONObject.class, new JSONObject());
          String internalId = jsonProduct.optString("id");
          String name = jsonProduct.optString("name");
          String category = jsonProduct.optString("category_name");
          String primaryImage = imgUrl + jsonProduct.optString("image");
          List<String> secondaryImage = getSecondaryImages(jsonProduct);
          String description = jsonProduct.optString("description");
-         Object price = JSONUtils.getValue(jsonProduct, "real_price");
-         boolean availableToBuy = restaurante ? price != null : jsonProduct.optBoolean("in_stock");
+         boolean availableToBuy = jsonProduct.optBoolean("in_stock");
          Offers offers = availableToBuy ? scrapOffers(jsonProduct) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -161,19 +132,8 @@ public class BrasilAppRappiCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject jsonProduct) throws MalformedPricingException {
-      Double spotlightPrice = null;
-      Double priceFrom = null;
-      if (!restaurante) {
-         spotlightPrice = jsonProduct.optDouble("price");
-         priceFrom = jsonProduct.optDouble("real_price");
-      } else {
-         JSONArray discount = JSONUtils.getJSONArrayValue(jsonProduct, "discounts");
-         for (Object item : discount) {
-            JSONObject itemJson = (JSONObject) item;
-            spotlightPrice = !itemJson.isEmpty() ? Double.valueOf(JSONUtils.getValue(itemJson, "price").toString()) : Double.valueOf(JSONUtils.getValue(jsonProduct, "reaL_price").toString());
-            priceFrom = jsonProduct.optDouble("real_price");
-         }
-      }
+      Double spotlightPrice = jsonProduct.optDouble("price");
+      Double priceFrom = jsonProduct.optDouble("real_price");
 
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);

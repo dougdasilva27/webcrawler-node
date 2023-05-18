@@ -23,8 +23,11 @@ public class BrasilAppRappiCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
+   private final String storeId = session.getOptions().optString("storeId");
+   private final String sizeLimit = session.getOptions().optString("sizeLimit");
+
    protected JSONObject fetchJSONObject() {
-      String payload = "{\"query\":\"" + this.keywordWithoutAccents + "\",\"lat\":" + session.getOptions().optString("lat") + ",\"lng\":" + session.getOptions().optString("lng") + ",\"options\":{\"sort\":{}},\"tiered_stores\":[]}";
+      String payload = "{\"query\":\"" + this.keywordWithoutAccents + "\",\"size\":"+sizeLimit+",\"from\":0,\"vertical_group\":\"cpgs\",\"object_id\":\"\"}";
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
       headers.put("content-length", payload.length() + "");
@@ -32,13 +35,13 @@ public class BrasilAppRappiCrawler extends CrawlerRankingKeywords {
       headers.put("authorization", session.getOptions().optString("authorization"));
 
       Request request = Request.RequestBuilder.create()
-         .setUrl("https://services.rappi.com.br/api/pns-global-search-api/v1/unified-search?is_prime=false&unlimited_shipping=false")
+         .setUrl("https://services.rappi.com.br/api/cpgs/search/v2/store/" + storeId + "/products")
          .setHeaders(headers)
          .setPayload(payload)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR))
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.BUY_HAPROXY))
          .build();
 
       Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
@@ -54,42 +57,35 @@ public class BrasilAppRappiCrawler extends CrawlerRankingKeywords {
       JSONObject json = fetchJSONObject();
 
       if (json != null && !json.isEmpty()) {
-         JSONArray storesArray = JSONUtils.getJSONArrayValue(json, "stores");
-         for (Object store : storesArray) {
-            JSONObject storeJson = (JSONObject) store;
+         JSONArray productsArray = JSONUtils.getJSONArrayValue(json, "products");
+         this.totalProducts = productsArray.length();
+         for (Object product : productsArray) {
+            JSONObject productJson = (JSONObject) product;
 
-            if (storeJson != null && !storeJson.isEmpty()) {
+            if (productJson != null && productJson.optBoolean("in_stock") ) {
+               String url = productJson.optString("id");
+               String name = productJson.optString("name");
+               String imageUrl = productJson.optString("image");
+               Integer price = productJson.optInt("price");
+               boolean isAvailable = productJson.optBoolean("in_stock");
 
-               JSONArray productsArray = JSONUtils.getJSONArrayValue(storeJson, "products");
-               this.totalProducts += productsArray.length();
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(url)
+                  .setInternalId(url)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setImageUrl(imageUrl)
+                  .build();
 
-               for (Object product : productsArray) {
-                  JSONObject productJson = (JSONObject) product;
-
-                  if (productJson != null) {
-                     String url = productJson.optString("id");
-                     String name = productJson.optString("name");
-                     String imageUrl = productJson.optString("image");
-                     Integer price = productJson.optInt("price");
-                     boolean isAvailable = productJson.optBoolean("in_stock");
-
-                     RankingProduct productRanking = RankingProductBuilder.create()
-                        .setUrl(url)
-                        .setInternalId(url)
-                        .setName(name)
-                        .setPriceInCents(price)
-                        .setAvailability(isAvailable)
-                        .setImageUrl(imageUrl)
-                        .build();
-
-                     saveDataProduct(productRanking);
-                  }
-                  if (this.arrayProducts.size() == productsLimit) {
-                     break;
-                  }
-               }
+               saveDataProduct(productRanking);
+            }
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
             }
          }
+
+
       } else {
          this.result = false;
          this.log("Keyword sem resultado!");
