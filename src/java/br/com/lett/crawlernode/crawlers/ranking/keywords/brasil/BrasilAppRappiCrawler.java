@@ -62,7 +62,7 @@ public class BrasilAppRappiCrawler extends CrawlerRankingKeywords {
          for (Object product : productsArray) {
             JSONObject productJson = (JSONObject) product;
 
-            if (productJson != null && productJson.optBoolean("in_stock")) {
+            if (productJson != null) {
                String url = productJson.optString("id");
                String name = productJson.optString("name");
                String imageUrl = productJson.optString("image");
