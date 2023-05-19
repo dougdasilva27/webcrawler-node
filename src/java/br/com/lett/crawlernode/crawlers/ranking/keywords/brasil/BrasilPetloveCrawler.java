@@ -24,17 +24,15 @@ public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private static final String HOME_PAGE = "https://www.petlove.com.br/";
-
    @Override
    protected Document fetchDocument(String url) {
       List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
-      int attemp = 0;
+      int attempt = 0;
       boolean succes = false;
       Document doc = new Document("");
       do {
          try {
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attemp), session);
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempt), session);
             if (webdriver != null) {
                doc = Jsoup.parse(webdriver.getCurrentPageSource());
                succes = !doc.select("ul.catalog-items").isEmpty();
@@ -44,7 +42,7 @@ public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
             Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
             Logging.printLogWarn(logger, "Page not captured");
          }
-      } while (!succes && attemp++ < (proxies.size() - 1));
+      } while (!succes && attempt++ <= (proxies.size() - 1));
       return doc;
    }
 

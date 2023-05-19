@@ -65,12 +65,12 @@ public class BrasilPetloveCrawler extends Crawler {
    @Override
    protected Object fetch() {
       List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
-      int attemp = 0;
+      int attempt = 0;
       boolean succes = false;
       Document doc = new Document("");
       do {
          try {
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attemp), session);
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempt), session);
             if (webdriver != null) {
                doc = Jsoup.parse(webdriver.getCurrentPageSource());
                succes = !doc.select("section.product.flex").isEmpty();
@@ -80,7 +80,8 @@ public class BrasilPetloveCrawler extends Crawler {
             Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
             Logging.printLogWarn(logger, "Page not captured");
          }
-      } while (!succes && attemp++ < (proxies.size() - 1));
+      } while (!succes && attempt++ <= (proxies.size() - 1));
+
       return doc;
    }
 
