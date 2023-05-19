@@ -64,30 +64,33 @@ public class BrasilDavoSupermercadosCrawler extends CrawlerRankingKeywords {
    }
 
    private HashMap<String, Boolean> getProductAvailabilities(List<RankingProduct> rankingProducts) {
-      StringBuilder queryParam = new StringBuilder(rankingProducts.get(0).getInternalId());
-      for (int i = 1; i < rankingProducts.size(); i++) {
-         queryParam.append("%2C").append(rankingProducts.get(i).getInternalId());
-      }
-      try {
-         HttpResponse<String> response = getResponseFromApi(baseUrlApi + "stockStatus?products=" + queryParam + "locationIds=" + locationId);
-         JSONObject returnObject = JSONUtils.stringToJson(response.body());
-         if (returnObject.has("items")) {
-            HashMap<String, Boolean> results = new HashMap<>();
-            JSONArray items = returnObject.optJSONArray("items");
-            for (Object o : items) {
-               JSONObject item = (JSONObject) o;
-               if (!item.isEmpty()) {
-                  boolean availability = item.optString("stockStatus", "").equals("IN_STOCK");
-                  String internalId = JSONUtils.getValueRecursive(item, "productSkuInventoryDetails.0.productId", String.class, "");
-                  if (!internalId.isEmpty()) {
-                     results.put(internalId, availability);
+      if(rankingProducts!=null && !rankingProducts.isEmpty()) {
+         StringBuilder queryParam = new StringBuilder(rankingProducts.get(0).getInternalId());
+         for (int i = 1; i < rankingProducts.size(); i++) {
+            queryParam.append("%2C").append(rankingProducts.get(i).getInternalId());
+         }
+         try {
+            HttpResponse<String> response = getResponseFromApi(baseUrlApi + "stockStatus?products=" + queryParam + "locationIds=" + locationId);
+            JSONObject returnObject = JSONUtils.stringToJson(response.body());
+            if (returnObject.has("items")) {
+               HashMap<String, Boolean> results = new HashMap<>();
+               JSONArray items = returnObject.optJSONArray("items");
+               for (Object o : items) {
+                  JSONObject item = (JSONObject) o;
+                  if (!item.isEmpty()) {
+                     boolean availability = item.optString("stockStatus", "").equals("IN_STOCK");
+                     String internalId = JSONUtils.getValueRecursive(item, "productSkuInventoryDetails.0.productId", String.class, "");
+                     if (!internalId.isEmpty()) {
+                        results.put(internalId, availability);
+                     }
                   }
                }
+               return results;
             }
-            return results;
+         } catch (Exception e) {
+            throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
          }
-      } catch (Exception e) {
-         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+
       }
       return new HashMap<>();
    }
@@ -128,7 +131,7 @@ public class BrasilDavoSupermercadosCrawler extends CrawlerRankingKeywords {
       String name = getFirstElement(json, "sku.displayName");
       String productUrl = getUrl(name, internalId);
       String imageUrl = hostUrl + getFirstElement(json, "product.primaryFullImageURL");
-      int priceInCents = getPrice(json);
+      Integer priceInCents = getPrice(json);
       return RankingProductBuilder.create()
          .setUrl(productUrl)
          .setInternalId(internalId)
@@ -136,13 +139,15 @@ public class BrasilDavoSupermercadosCrawler extends CrawlerRankingKeywords {
          .setImageUrl(imageUrl)
          .setName(name)
          .setPriceInCents(priceInCents)
-         .setAvailability(true)
+         .setAvailability(priceInCents != null)
          .build();
    }
 
-   private int getPrice(JSONObject object) {
+   private Integer getPrice(JSONObject object) {
+      if (object ==null || object.isEmpty()) return null;
       String priceString = getFirstElement(object, "sku.activePrice");
-      return CommonMethods.stringPriceToIntegerPrice(priceString, '.', 0);
+
+      return priceString!=null && !priceString.isEmpty() ? CommonMethods.stringPriceToIntegerPrice(priceString, '.', 0) : null;
    }
 
    private String getUrl(String name, String internalId) {
@@ -152,7 +157,11 @@ public class BrasilDavoSupermercadosCrawler extends CrawlerRankingKeywords {
    }
 
    private String getFirstElement(JSONObject json, String path) {
-      JSONArray element = json.optJSONArray(path);
-      return element.optString(0);
+      if (!json.isEmpty()) {
+         JSONArray element = json.optJSONArray(path);
+
+         return !element.isEmpty() ? element.optString(0, "") : "";
+      }
+      return "";
    }
 }
