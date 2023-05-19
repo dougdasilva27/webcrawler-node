@@ -30,6 +30,7 @@ public class BrasilDavoSupermercadosCrawler extends CrawlerRankingKeywords {
 
    private static final String baseUrlApi = "https://www.davo.com.br/ccstore/v1/";
    private static final String hostUrl = "https://www.davo.com.br/";
+   private final String locationId = session.getOptions().optString("location_id", "");
 
    private static final String[] headers = {"authority", "www.davo.com.br", "accept", "application/json", "user-agent", "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36"};
 
@@ -68,7 +69,7 @@ public class BrasilDavoSupermercadosCrawler extends CrawlerRankingKeywords {
          queryParam.append("%2C").append(rankingProducts.get(i).getInternalId());
       }
       try {
-         HttpResponse<String> response = getResponseFromApi(baseUrlApi + "stockStatus?products=" + queryParam + "locationIds=2_2");
+         HttpResponse<String> response = getResponseFromApi(baseUrlApi + "stockStatus?products=" + queryParam + "locationIds=" + locationId);
          JSONObject returnObject = JSONUtils.stringToJson(response.body());
          if (returnObject.has("items")) {
             HashMap<String, Boolean> results = new HashMap<>();
