@@ -96,7 +96,7 @@ public class ChileLidersuperCrawler extends Crawler {
    }
 
    private String crawlPrimaryImage(Document doc) {
-      Element figure = doc.selectFirst("div[class*=FigureContainer] > figure");
+      Element figure = doc.selectFirst("div.image-preview__figure-wrapper > figure");
       String styleValue = figure != null ? figure.attr("style") : "";
       String regex = "background-image: url\\(\"(.+)\"\\).";
 
