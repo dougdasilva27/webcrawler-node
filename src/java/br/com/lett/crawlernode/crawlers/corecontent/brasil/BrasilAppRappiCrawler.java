@@ -80,7 +80,7 @@ public class BrasilAppRappiCrawler extends Crawler {
       if (json != null && !json.isEmpty()) {
          JSONObject jsonProduct = JSONUtils.getValueRecursive(json, "data.components.0.resource.product", JSONObject.class, new JSONObject());
          String internalId = jsonProduct.optString("id");
-         String name = jsonProduct.optString("name");
+         String name = jsonProduct.optString("name")+" "+jsonProduct.optString("quantity")+jsonProduct.optString("unit_type");
          String category = jsonProduct.optString("category_name");
          String primaryImage = imgUrl + jsonProduct.optString("image");
          List<String> secondaryImage = getSecondaryImages(jsonProduct);
