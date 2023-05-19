@@ -64,7 +64,7 @@ public class BrasilDavoSupermercadosCrawler extends CrawlerRankingKeywords {
    }
 
    private HashMap<String, Boolean> getProductAvailabilities(List<RankingProduct> rankingProducts) {
-      if(rankingProducts!=null && !rankingProducts.isEmpty()) {
+      if (rankingProducts != null && !rankingProducts.isEmpty()) {
          StringBuilder queryParam = new StringBuilder(rankingProducts.get(0).getInternalId());
          for (int i = 1; i < rankingProducts.size(); i++) {
             queryParam.append("%2C").append(rankingProducts.get(i).getInternalId());
@@ -144,10 +144,10 @@ public class BrasilDavoSupermercadosCrawler extends CrawlerRankingKeywords {
    }
 
    private Integer getPrice(JSONObject object) {
-      if (object ==null || object.isEmpty()) return null;
+      if (object == null || object.isEmpty()) return null;
       String priceString = getFirstElement(object, "sku.activePrice");
 
-      return priceString!=null && !priceString.isEmpty() ? CommonMethods.stringPriceToIntegerPrice(priceString, '.', 0) : null;
+      return priceString != null && !priceString.isEmpty() ? CommonMethods.stringPriceToIntegerPrice(priceString, '.', 0) : null;
    }
 
    private String getUrl(String name, String internalId) {
@@ -157,10 +157,9 @@ public class BrasilDavoSupermercadosCrawler extends CrawlerRankingKeywords {
    }
 
    private String getFirstElement(JSONObject json, String path) {
-      if (!json.isEmpty()) {
+      if (json != null && !json.isEmpty()) {
          JSONArray element = json.optJSONArray(path);
-
-         return !element.isEmpty() ? element.optString(0, "") : "";
+         return element != null && !element.isEmpty() ? element.optString(0, "") : "";
       }
       return "";
    }
