@@ -73,7 +73,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
          }
          for (Object e : products) {
             JSONObject productJson = (JSONObject) e;
-            String urlProduct = productJson.optString("link");
+            String urlProduct = getProductUrl(productJson.optString("link"));
             String internalId = productJson.optString("panvelCode");
             String name = productJson.optString("name");
             String image = productJson.optString("image");
@@ -106,5 +106,17 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
    @Override
    protected boolean hasNextPage() {
       return (arrayProducts.size() % pageSize - currentPage) < 0;
+   }
+
+   private String getProductUrl(String url) {
+      if (countOccurrences(url) > 1) {
+         return url.replaceFirst("https://www.panvel.com", "");
+      }
+      return url;
+   }
+
+   public static int countOccurrences(String url) {
+      String[] parts = url.split("https://www.panvel.com");
+      return parts.length - 1;
    }
 }
