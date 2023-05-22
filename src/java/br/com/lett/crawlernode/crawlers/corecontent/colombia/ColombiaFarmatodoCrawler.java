@@ -96,7 +96,7 @@ public class ColombiaFarmatodoCrawler extends Crawler {
          List<String> secundaryImages = scrapImages(json);
          CategoryCollection categories = scrapCategories(json);
          RatingsReviews ratingsReviews = scrapRatingsReviews(internalPid);
-         boolean available = !json.optBoolean("outofstore", false);
+         boolean available = !json.optBoolean("without_stock", false);
          Offers offers = available ? scrapOffers(seo) : new Offers();
 
          // Creating the product
