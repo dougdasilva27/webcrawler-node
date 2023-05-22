@@ -23,6 +23,8 @@ import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import java.util.*;
 
@@ -88,7 +90,7 @@ public class ColombiaFarmatodoCrawler extends Crawler {
          String internalId = JSONUtils.getStringValue(seo, "sku");
          String internalPid = JSONUtils.getStringValue(json, "id");
          String name = scrapName(seo);
-         String description = json.optString("mediaDescription");
+         String description = scrapDescription(json);
          String primaryImage = JSONUtils.getStringValue(seo, "image");
 
          List<String> secundaryImages = scrapImages(json);
@@ -118,6 +120,26 @@ public class ColombiaFarmatodoCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapDescription(JSONObject json) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setProxyservice(List.of(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+         ))
+         .build();
+
+      Response response = dataFetcher.get(session, request);
+      Document htmlProduct = Jsoup.parse(response.getBody());
+
+      String htmlDescription = CrawlerUtils.scrapElementsDescription(htmlProduct, Arrays.asList("div.info h2", "div.info p", "div.info ol li"));
+      String htmlInformation = CrawlerUtils.scrapSimpleDescription(htmlProduct, Arrays.asList("div.module-simple li"));
+      String htmlTechnique = CrawlerUtils.scrapElementsDescription(htmlProduct, Arrays.asList("div.container-data-sheet .item .description"));
+      String jsonDescription = json.optString("largeDescription");
+
+      return jsonDescription + htmlDescription + htmlInformation + htmlTechnique;
    }
 
    private CategoryCollection scrapCategories(JSONObject product) {
