@@ -514,7 +514,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
       String internalId = crawlInternalIdNewLayout(json);
       String reference = json.optString("reference");
-      String name = json.optString("title") + (reference != null && !reference.equals("") ? " - " + reference : "");
+      String name = json.optString("title") + (reference != null && !reference.equals("") ? " - " + reference : "")  + crawVariationName(json);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
       List<String> images = crawlImagesNewLayout(skuJsonInfo, json);
@@ -536,6 +536,11 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          .setRatingReviews(ratingsReviews)
          .setOffers(offers)
          .build();
+   }
+
+   private String crawVariationName(JSONObject json) {
+     String name =  JSONUtils.getValueRecursive(json, "attributes.0.current", String.class);
+     return name!= null? " "+ name:"";
    }
 
    private List<String> crawlImagesNewLayout(JSONObject skuJsonInfo, JSONObject json) {
