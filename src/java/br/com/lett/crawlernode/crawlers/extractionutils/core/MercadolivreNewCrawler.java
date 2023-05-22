@@ -258,6 +258,10 @@ public class MercadolivreNewCrawler {
       if (sellerFullName == null || sellerFullName.equalsIgnoreCase("Vendido por") || sellerFullName.equalsIgnoreCase("Loja oficial")) {
          sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, "a.ui-pdp-action-modal__link span", false);
 
+         if (sellerFullName == null) {
+            sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-reputation-title-link", false);
+         }
+
          if (sellerFullName == null || sellerFullName.contains("sem juros")) {
             String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".ui-pdp-container__row--seller-info a", "href");
 
