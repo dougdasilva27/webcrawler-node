@@ -63,12 +63,13 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          val primaryImage = (jsonImages.removeFirst() as JSONObject).optString("url")
          val secondaryImages = jsonImages.map { (it as JSONObject).optString("url") }
          val name = json.optString("name")
+         val productUrl = getProductUrl(session.originalURL.replace("'", "&apos;"))
          val isAvailable = json.optString("stockStatus", "").contains("InStock")
          val offers = if (isAvailable) scrapOffers(json) else Offers()
          val rating = crawlRating(json)
 
          val product = ProductBuilder.create()
-            .setUrl(session.originalURL.replace("'", "&apos;"))
+            .setUrl(productUrl)
             .setInternalId(internalId)
             .setName(name)
             .setOffers(offers)
@@ -139,6 +140,17 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          .totalStar4(star4)
          .totalStar5(star5)
          .build()
+   }
+
+   private fun getProductUrl(url: String): String? {
+      return if (countOccurrences(url) > 1) {
+         url.replaceFirst("https://www.panvel.com".toRegex(), "")
+      } else url
+   }
+
+   private fun countOccurrences(url: String): Int {
+      val parts = url.split("https://www.panvel.com".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+      return parts.size - 1
    }
 
 
