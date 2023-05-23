@@ -48,7 +48,7 @@ public class ChileUnimarcCrawler extends Crawler {
             String internalId = JSONUtils.getValueRecursive(data, "item.itemId", String.class);
             String internalPid = JSONUtils.getValueRecursive(data, "item.productId", String.class);
             String name = JSONUtils.getValueRecursive(data, "item.nameComplete", String.class);
-            JSONArray images = JSONUtils.getValueRecursive(data, "item.images", JSONArray.class);
+            JSONArray images = JSONUtils.getValueRecursive(data, "item.images", JSONArray.class, null);
             String primaryImage = !images.isEmpty() ? (String) images.get(0) : "";
             String description = JSONUtils.getValueRecursive(data, "item.description", String.class);
             CategoryCollection categories = scrapCategories(data);
@@ -89,15 +89,10 @@ public class ChileUnimarcCrawler extends Crawler {
    }
 
    private CategoryCollection scrapCategories(JSONObject dataJson) {
-      JSONArray arr = JSONUtils.getValueRecursive(dataJson, "item.categories", JSONArray.class);
+      JSONArray arr = JSONUtils.getValueRecursive(dataJson, "item.categories", JSONArray.class, null);
       CategoryCollection categories = new CategoryCollection();
-      int cont = 0;
-      for (Integer i = 0; i < arr.length(); i++) {
+      for (int i = 0; i < Math.min(3, arr.length()); i++) {
          categories.add((String) arr.get(i));
-         cont++;
-         if (cont == 3) {
-            return categories;
-         }
       }
       return categories;
    }
