@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -33,7 +32,6 @@ public class ChileUnimarcCrawler extends Crawler {
 
    public ChileUnimarcCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
@@ -87,8 +85,6 @@ public class ChileUnimarcCrawler extends Crawler {
             list.add(image);
          }
       }
-
-
       return list;
    }
 
@@ -173,10 +169,8 @@ public class ChileUnimarcCrawler extends Crawler {
             .setIsShopCard(false)
             .build());
       }
-
       return creditCards;
    }
-
 
    @Override
    protected Response fetchResponse() {
@@ -194,6 +188,5 @@ public class ChileUnimarcCrawler extends Crawler {
       } catch (Exception e) {
          throw new RuntimeException("Failed scrape in API: " + session.getOriginalURL(), e);
       }
-
    }
 }
