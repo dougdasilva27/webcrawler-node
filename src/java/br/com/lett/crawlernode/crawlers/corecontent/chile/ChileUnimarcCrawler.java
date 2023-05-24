@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -20,9 +19,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -38,7 +34,6 @@ public class ChileUnimarcCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
 
       List<Product> products = new ArrayList<>();
-
       Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
       JSONObject dataJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
       JSONArray productsArray = JSONUtils.getValueRecursive(dataJson, "props.pageProps.product.data.products", JSONArray.class);
@@ -48,7 +43,7 @@ public class ChileUnimarcCrawler extends Crawler {
             String internalId = JSONUtils.getValueRecursive(data, "item.itemId", String.class);
             String internalPid = JSONUtils.getValueRecursive(data, "item.productId", String.class);
             String name = JSONUtils.getValueRecursive(data, "item.nameComplete", String.class);
-            JSONArray images = JSONUtils.getValueRecursive(data, "item.images", JSONArray.class, null);
+            JSONArray images = JSONUtils.getValueRecursive(data, "item.images", JSONArray.class, new JSONArray());
             String primaryImage = !images.isEmpty() ? (String) images.get(0) : "";
             String description = JSONUtils.getValueRecursive(data, "item.description", String.class);
             CategoryCollection categories = scrapCategories(data);
@@ -89,7 +84,7 @@ public class ChileUnimarcCrawler extends Crawler {
    }
 
    private CategoryCollection scrapCategories(JSONObject dataJson) {
-      JSONArray arr = JSONUtils.getValueRecursive(dataJson, "item.categories", JSONArray.class, null);
+      JSONArray arr = JSONUtils.getValueRecursive(dataJson, "item.categories", JSONArray.class, new JSONArray());
       CategoryCollection categories = new CategoryCollection();
       for (int i = 0; i < Math.min(3, arr.length()); i++) {
          categories.add((String) arr.get(i));
@@ -123,16 +118,13 @@ public class ChileUnimarcCrawler extends Crawler {
          Double priceDouble = JSONUtils.getValueRecursive(data, "price.price", Double.class);
          spotlightPriceInt = priceDouble.intValue();
       }
-      spotlightPriceInt = spotlightPriceInt * 100;
       Integer priceFromInt = JSONUtils.getValueRecursive(data, "price.priceWithoutDiscount", Integer.class);
       if (priceFromInt == null) {
          Double priceDouble = JSONUtils.getValueRecursive(data, "price.priceWithoutDiscount", Double.class);
          priceFromInt = priceDouble.intValue();
       }
-      priceFromInt = priceFromInt * 100;
-      Double spotlightPrice = spotlightPriceInt / 100.0;
-      Double priceFrom = priceFromInt / 100.0;
-
+      Double spotlightPrice = spotlightPriceInt * 1.0;
+      Double priceFrom = priceFromInt * 1.0;
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
@@ -165,23 +157,5 @@ public class ChileUnimarcCrawler extends Crawler {
             .build());
       }
       return creditCards;
-   }
-
-   @Override
-   protected Response fetchResponse() {
-      try {
-         HttpClient client = HttpClient.newBuilder().build();
-         HttpRequest request = HttpRequest.newBuilder()
-            .GET()
-            .headers("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9", "accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7", "accept-encoding", "gzip, deflate, br", "authority", "www.unimarc.cl")
-            .build();
-         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-         return new Response.ResponseBuilder()
-            .setBody(response.body())
-            .setLastStatusCode(response.statusCode())
-            .build();
-      } catch (Exception e) {
-         throw new RuntimeException("Failed scrape in API: " + session.getOriginalURL(), e);
-      }
    }
 }
