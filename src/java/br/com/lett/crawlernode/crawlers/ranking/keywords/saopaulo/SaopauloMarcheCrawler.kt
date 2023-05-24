@@ -11,10 +11,13 @@ import kotlin.math.roundToInt
 
 class SaopauloMarcheCrawler(session: Session) : CrawlerRankingKeywords(session) {
    val home = "https://www.marche.com.br"
-   val cep = "05303000"
+
+   private fun getZipCode(): String? {
+      return session.options.optString("user_zip_code")
+   }
 
    override fun processBeforeFetch() {
-      cookies.add(BasicClientCookie("user_zip_code", cep))
+      cookies.add(BasicClientCookie("user_zip_code", getZipCode()))
    }
 
    override fun extractProductsFromCurrentPage() {
@@ -51,8 +54,6 @@ class SaopauloMarcheCrawler(session: Session) : CrawlerRankingKeywords(session) 
                   .build()
 
                saveDataProduct(productRanking)
-
-
             }
       }
       log("Finalizando Crawler de produtos da página $currentPage - até agora ${arrayProducts.size} produtos crawleados")
@@ -63,7 +64,7 @@ class SaopauloMarcheCrawler(session: Session) : CrawlerRankingKeywords(session) 
       if (image != null) {
          return image.replace("mini_", "")
       }
-      return image
+      return null
    }
 
    override fun hasNextPage(): Boolean {
