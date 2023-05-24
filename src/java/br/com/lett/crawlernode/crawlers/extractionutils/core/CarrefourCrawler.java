@@ -29,6 +29,7 @@ import org.eclipse.jetty.util.ajax.JSON;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.util.*;
 
@@ -155,11 +156,23 @@ public class CarrefourCrawler extends Crawler {
    }
 
    private JSONObject scrapContextJson(Document doc) {
-      String contextJSONString = doc.selectFirst("#__NEXT_DATA__").data();
-     JSONObject json = CrawlerUtils.stringToJSONObject(contextJSONString);
-     if(json != null){
-        return JSONUtils.getValueRecursive(json, "props.pageProps.data.product", JSONObject.class);
-     }
+      Element contextJSONElement = doc.selectFirst("#__NEXT_DATA__");
+      String contextJSONString = "";
+      if (contextJSONElement != null) {
+         contextJSONString = contextJSONElement.data();
+      } else {
+         String cssWithNextDataString = doc.selectFirst("style:containsData(__NEXT_DATA__)").data();
+         String startNextDataString = "<script id=\"__NEXT_DATA__\" type=\"application/json\">";
+         String endNextDataString = "</script>";
+         int startIdx = cssWithNextDataString.indexOf(startNextDataString) + startNextDataString.length();
+         int endIdx = cssWithNextDataString.indexOf(endNextDataString);
+         contextJSONString = cssWithNextDataString.substring(startIdx, endIdx);
+      }
+
+      JSONObject json = CrawlerUtils.stringToJSONObject(contextJSONString);
+      if (json != null) {
+         return JSONUtils.getValueRecursive(json, "props.pageProps.data.product", JSONObject.class);
+      }
      return null;
    }
 
