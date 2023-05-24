@@ -2,11 +2,13 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -26,19 +28,19 @@ public class BrasilBoschMarketplaceCrawler extends VTEXNewScraper {
    }
 
    protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
-      String description = JSONUtils.getValueRecursive(productJson, "description", ".", String.class, "");
+      String description = JSONUtils.getValueRecursive(productJson, "TEXTO ABAIXO DO COMPLEMENTO DO TÍTULO:.0", ".", String.class, "");
+
       if (description.equals("")) {
-         String complementName = JSONUtils.getValueRecursive(productJson, "items.0.complementName", ".", String.class, "");
-         String nameComplete = JSONUtils.getValueRecursive(productJson, "items.0.nameComplete", ".", String.class, "");
+         String smallDescription = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".section.section__text p"));
+         String completeDescription = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".vtex-tabs__content div[class*=\"product-description\"] div"));
 
-         if (!complementName.isEmpty() && !complementName.equals(nameComplete)) {
-            description = description.concat(complementName);
+         if (!smallDescription.isEmpty() && !smallDescription.equals(completeDescription)) {
+            description = description.concat(smallDescription);
          }
-      }
 
-      if (productJson.has("Descrição do Produto (A+)")) {
-         String descriptionComplete = JSONUtils.getValueRecursive(productJson, "Descrição do Produto (A+).0", ".", String.class, "");
-         return description.concat(descriptionComplete);
+         if (smallDescription.isEmpty() && completeDescription.isEmpty()) {
+            description = JSONUtils.getValueRecursive(productJson, "Descrição do Produto (A+).0", ".", String.class, "");
+         }
       }
 
       return description;
