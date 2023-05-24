@@ -14,6 +14,7 @@ import models.Offers
 import models.pricing.Pricing
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.jsoup.nodes.Document
+import java.util.*
 import kotlin.math.roundToInt
 
 class MarcheCrawler(session: Session) : Crawler(session) {
@@ -33,7 +34,7 @@ class MarcheCrawler(session: Session) : Crawler(session) {
    }
 
    override fun shouldVisit(): Boolean {
-      val href = session.originalURL.toLowerCase()
+      val href = session.originalURL.lowercase(Locale.getDefault())
       return !FILTERS.matcher(href).matches() && href.startsWith(home)
    }
 
@@ -96,13 +97,13 @@ class MarcheCrawler(session: Session) : Crawler(session) {
 
       val creditCards = listOf(Card.VISA, Card.MASTERCARD, Card.ELO, Card.AMEX).toCreditCards(price)
 
-      val sales: MutableList<String> = mutableListOf();
+      val sales: MutableList<String> = mutableListOf()
 
       if (priceFrom != null && priceFrom > price) {
          val value = ((price / priceFrom - 1.0) * 100.0).roundToInt()
          sale = value.toString()
       }
-      sales.add(sale.toString());
+      sales.add(sale.toString())
 
       offers.add(
          Offer.OfferBuilder.create()
