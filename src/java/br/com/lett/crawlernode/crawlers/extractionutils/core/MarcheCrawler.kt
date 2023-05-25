@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
@@ -18,6 +19,10 @@ import java.util.*
 import kotlin.math.roundToInt
 
 class MarcheCrawler(session: Session) : Crawler(session) {
+
+   init {
+      config.fetcher = FetchMode.APACHE
+   }
 
    private val home = "https://www.marche.com.br/"
 
@@ -39,7 +44,6 @@ class MarcheCrawler(session: Session) : Crawler(session) {
    }
 
    override fun extractInformation(doc: Document): MutableList<Product> {
-      super.extractInformation(doc)
       val products = mutableListOf<Product>()
 
       if (!isProductPage(doc)) {
