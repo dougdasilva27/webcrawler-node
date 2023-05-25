@@ -14,20 +14,27 @@ import models.Offers
 import models.pricing.Pricing
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.jsoup.nodes.Document
+import java.util.*
+import kotlin.math.roundToInt
 
-abstract class MarcheCrawler(session: Session) : Crawler(session) {
+class MarcheCrawler(session: Session) : Crawler(session) {
 
    private val home = "https://www.marche.com.br/"
 
-   abstract fun getCEP(): String
-   abstract fun getSellerName(): String
+   private fun getSellerFullname(): String? {
+      return session.options.optString("seller_name")
+   }
+
+   private fun getZipCode(): String? {
+      return session.options.optString("user_zip_code")
+   }
 
    override fun handleCookiesBeforeFetch() {
-      cookies.add(BasicClientCookie("user_zip_code", getCEP()))
+      cookies.add(BasicClientCookie("user_zip_code", getZipCode()))
    }
 
    override fun shouldVisit(): Boolean {
-      val href = session.originalURL.toLowerCase()
+      val href = session.originalURL.lowercase(Locale.getDefault())
       return !FILTERS.matcher(href).matches() && href.startsWith(home)
    }
 
@@ -90,13 +97,13 @@ abstract class MarcheCrawler(session: Session) : Crawler(session) {
 
       val creditCards = listOf(Card.VISA, Card.MASTERCARD, Card.ELO, Card.AMEX).toCreditCards(price)
 
-      val sales: MutableList<String> = mutableListOf();
+      val sales: MutableList<String> = mutableListOf()
 
-      if (priceFrom != null && priceFrom!! > price) {
-         val value = Math.round((price / priceFrom!! - 1.0) * 100.0).toInt()
-         sale = Integer.toString(value)
+      if (priceFrom != null && priceFrom > price) {
+         val value = ((price / priceFrom - 1.0) * 100.0).roundToInt()
+         sale = value.toString()
       }
-      sales.add(sale.toString());
+      sales.add(sale.toString())
 
       offers.add(
          Offer.OfferBuilder.create()
@@ -111,7 +118,7 @@ abstract class MarcheCrawler(session: Session) : Crawler(session) {
             .setIsMainRetailer(true)
             .setIsBuybox(false)
             .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(getSellerName())
+            .setSellerFullName(getSellerFullname())
             .setSales(sales)
             .build()
       )
