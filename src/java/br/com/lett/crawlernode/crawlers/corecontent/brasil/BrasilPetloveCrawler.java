@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -36,10 +35,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -96,46 +92,51 @@ public class BrasilPetloveCrawler extends Crawler {
          String nuxtData = doc.selectFirst("script:containsData(window.__NUXT__)").data();
          String nuxtDataSanitized = CommonMethods.getLast(nuxtData.split("}\\(\"\",true,void 0,\"id\",.{2,20}\"")).replace("));", "");
          JSONObject productJson = CrawlerUtils.stringToJSONObject(doc.selectFirst("script:containsData(\"@type\":\"Product\")").data());
+
          String internalPid = productJson.optString("sku");
-         CategoryCollection categories = crawlCategories(doc);
          String description = crawlDescription(doc);
+         CategoryCollection categories = crawlCategories(doc);
          RatingsReviews ratingReviews = crawlRating(productJson);
 
          JSONArray variantOffers = JSONUtils.getValueRecursive(productJson, "offers.offers", ".", JSONArray.class, new JSONArray());
          List<String> variantSkus = JSONUtils.jsonArrayToStringList(variantOffers, "sku");
-         variantSkus.removeIf(sku -> !nuxtDataSanitized.matches(".*\\d{2,20},\"" + sku + "\".*"));
          List<String> variantGrammature = doc.select(".variant-list-modal .font-bold").eachText();
-         Map<String, String> variantMap = IntStream.range(0, variantSkus.size()).boxed().collect(Collectors.toMap(variantSkus::get, variantGrammature::get));
+         if (variantSkus.size() > variantGrammature.size()) {
+            variantSkus = resizeVariantSku(variantOffers, variantSkus);
+         }
+         Map<String, String> variantMap = IntStream.range(0, variantGrammature.size()).boxed().collect(Collectors.toMap(variantSkus::get, variantGrammature::get));
 
          for (Object obj : variantOffers) {
             if (obj instanceof JSONObject) {
                JSONObject jsonSku = (JSONObject) obj;
 
-               String url = HOME_PAGE + jsonSku.optString("url");
                String internalId = JSONUtils.getStringValue(jsonSku, "sku");
-               String name = productJson.optString("name") + " " + variantMap.get(internalId);
-               String primaryImage = crawlPrimaryImage(internalId, nuxtDataSanitized);
-               List<String> secondaryImages = crawlSecondaryImages(internalId, nuxtDataSanitized, primaryImage);
-               boolean available = jsonSku.optString("availability") != null && jsonSku.optString("availability").equals("https://schema.org/InStock");
-               Offers offers = available ? scrapOffers(jsonSku, doc, url) : new Offers();
 
-               // Creating the product
-               Product product = ProductBuilder.create()
-                  .setUrl(url)
-                  .setRatingReviews(ratingReviews)
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setOffers(offers)
-                  .build();
+               if (variantSkus.contains(internalId)) {
+                  String url = HOME_PAGE + jsonSku.optString("url");
+                  String name = scrapName(productJson, variantMap, internalId);
+                  String primaryImage = productJson.optString("image");
+                  List<String> secondaryImages = crawlSecondaryImages(internalId, nuxtDataSanitized, primaryImage);
+                  boolean available = jsonSku.optString("availability") != null && jsonSku.optString("availability").equals("https://schema.org/InStock");
+                  Offers offers = available ? scrapOffers(jsonSku, doc, url) : new Offers();
 
-               products.add(product);
+                  Product product = ProductBuilder.create()
+                     .setUrl(url)
+                     .setRatingReviews(ratingReviews)
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setOffers(offers)
+                     .build();
+
+                  products.add(product);
+               }
             }
          }
 
@@ -146,8 +147,26 @@ public class BrasilPetloveCrawler extends Crawler {
       return products;
    }
 
+   private List<String> resizeVariantSku(JSONArray variantOffers, List<String> variantSkus) {
+      for (Object obj : variantOffers) {
+         JSONObject jsonSku = (JSONObject) obj;
+         boolean isAvailable = Objects.equals(jsonSku.optString("availability"), "https://schema.org/InStock");
+         if (!isAvailable) {
+            variantSkus.remove(JSONUtils.getStringValue(jsonSku, "sku"));
+         }
+      }
+      return variantSkus;
+   }
+
+   private String scrapName(JSONObject productJson, Map<String, String> variantMap, String internalId) {
+      if (variantMap.size() > 1) {
+         return productJson.optString("name") + " " + variantMap.get(internalId);
+      }
+      return productJson.optString("name");
+   }
+
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".product__content") != null;
+      return doc.selectFirst("section.product.flex") != null;
    }
 
    private RatingsReviews crawlRating(JSONObject productJson) {
@@ -226,7 +245,6 @@ public class BrasilPetloveCrawler extends Crawler {
       return categories;
    }
 
-
    private String crawlDescription(Document doc) {
       StringBuilder description = new StringBuilder();
 
@@ -244,7 +262,6 @@ public class BrasilPetloveCrawler extends Crawler {
 
       return description.toString();
    }
-
 
    private Offers scrapOffers(JSONObject skuJson, Document doc, String urlVariant) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
