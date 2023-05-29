@@ -202,12 +202,14 @@ public class PeruInkafarmaCrawler extends Crawler {
       }
       return name;
    }
+
    private boolean stringHasGrammature(String string) {
       Pattern pattern = Pattern.compile(grammatureRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
       Matcher matcher = pattern.matcher(string);
 
       return matcher.find();
    }
+
    private String extractGrammature(String string) {
       Pattern pattern = Pattern.compile(grammatureRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
       final Matcher matcher = pattern.matcher(string);
