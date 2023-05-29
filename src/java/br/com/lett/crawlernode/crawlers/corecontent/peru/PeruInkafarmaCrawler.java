@@ -135,7 +135,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
          String internalId = productJson.optString("id");
          String internalPid = internalId;
-         String name = productJson.optString("name");
+         String name = productJson.optString("name").toLowerCase().contains(productJson.optString("noFractionatedText").toLowerCase()) ? productJson.optString("name") : productJson.optString("name") + " " + productJson.optString("noFractionatedText");
          String description = productJson.optString("longDescription");
 
          String primaryImage = JSONUtils.getValueRecursive(productJson, "imageList.0.url", String.class);
