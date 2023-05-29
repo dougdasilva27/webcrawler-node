@@ -30,10 +30,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PeruInkafarmaCrawler extends Crawler {
 
    public static final String GOOGLE_KEY = "AIzaSyC2fWm7Vfph5CCXorWQnFqepO8emsycHPc";
+   private final String grammatureRegex = "(\\d+[.,]?\\d*\\s?)(ml|l|g|gr|mg|kg)";
+   private final String quantityRegex = "(\\d+[.,]?\\d*\\s?)(und)";
    private static final String SELLER_NAME = "inkafarma";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(),
       Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.DINERS.toString());
@@ -135,7 +139,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
          String internalId = productJson.optString("id");
          String internalPid = internalId;
-         String name = productJson.optString("name").toLowerCase().contains(productJson.optString("noFractionatedText").toLowerCase()) ? productJson.optString("name") : productJson.optString("name") + " " + productJson.optString("noFractionatedText");
+         String name = scrapName(productJson);
          String description = productJson.optString("longDescription");
 
          String primaryImage = JSONUtils.getValueRecursive(productJson, "imageList.0.url", String.class);
@@ -183,6 +187,46 @@ public class PeruInkafarmaCrawler extends Crawler {
 
 
       return list;
+   }
+
+   private String scrapName(JSONObject productJson) {
+      String name = productJson.optString("name");
+      String quantity = productJson.optString("noFractionatedText");
+
+      if (!stringHasGrammature(name) && stringHasGrammature(quantity)) {
+         name += " " + extractGrammature(quantity);
+      }
+
+      if (!stringHasQuantity(name) && stringHasQuantity(quantity)) {
+         name += " " + extractQuantity(quantity);
+      }
+      return name;
+   }
+   private boolean stringHasGrammature(String string) {
+      Pattern pattern = Pattern.compile(grammatureRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+      Matcher matcher = pattern.matcher(string);
+
+      return matcher.find();
+   }
+   private String extractGrammature(String string) {
+      Pattern pattern = Pattern.compile(grammatureRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+      final Matcher matcher = pattern.matcher(string);
+
+      return matcher.find() ? matcher.group(0) : "";
+   }
+
+   private boolean stringHasQuantity(String string) {
+      Pattern pattern = Pattern.compile(quantityRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+      Matcher matcher = pattern.matcher(string);
+
+      return matcher.find();
+   }
+
+   private String extractQuantity(String string) {
+      Pattern pattern = Pattern.compile(quantityRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+      final Matcher matcher = pattern.matcher(string);
+
+      return matcher.find() ? matcher.group(0) : "";
    }
 
    private CategoryCollection scrapCategories(JSONObject productJson) {
