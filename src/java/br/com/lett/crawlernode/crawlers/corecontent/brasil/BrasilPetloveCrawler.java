@@ -204,7 +204,7 @@ public class BrasilPetloveCrawler extends Crawler {
    private List<String> crawlSecondaryImages(String internalId, String nuxtDataSanitized, String primaryImage) {
       List<String> secondaryImages = new ArrayList<>();
 
-      String regex = "(https:\\\\u002F\\\\u002Fwww.petlove.com.br\\\\u002Fimages\\\\u002Fproducts\\\\u002F\\d{2,10}\\\\u002Fproduct\\\\u002F.{2,220}" + internalId + ".{2,50})\",";
+      String regex = "(https:\\\\u002F\\\\u002Fwww\\.petlove\\.com\\.br\\\\u002Fimages\\\\u002Fproducts\\\\u002F(\\d+)\\\\u002Fmini\\\\u002F([^./]+)\\.jpg\\?(\\d+))";
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
       Matcher matcher = pattern.matcher(nuxtDataSanitized);
       while (matcher.find()) {
