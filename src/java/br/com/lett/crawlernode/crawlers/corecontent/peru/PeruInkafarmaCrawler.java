@@ -18,7 +18,6 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import cdjd.org.apache.arrow.flatbuf.Int;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -192,28 +191,30 @@ public class PeruInkafarmaCrawler extends Crawler {
    private String scrapName(JSONObject productJson) {
       String name = productJson.optString("name");
       String quantity = productJson.optString("noFractionatedText");
-      name += extractGrammature(name, quantity) + extractQuantity(name, quantity);
+
+      if (!stringHasPattern(name, grammatureRegex) && stringHasPattern(quantity, grammatureRegex)) {
+         name += " " + extractPattern(quantity, grammatureRegex);
+      }
+
+      if (!stringHasPattern(name, quantityRegex) && stringHasPattern(quantity, quantityRegex)) {
+         name += " " + extractPattern(quantity, quantityRegex);
+      }
 
       return name;
    }
 
-   private String extractGrammature(String name, String quantity) {
-      Pattern pattern = Pattern.compile(grammatureRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-      if (!pattern.matcher(name).find() && pattern.matcher(quantity).find()) {
-         final Matcher matcher = pattern.matcher(quantity);
-         return matcher.find() ? " " + matcher.group(0) : "";
-      }
-      return "";
+   private boolean stringHasPattern(String string, String patternRegex) {
+      Pattern pattern = Pattern.compile(patternRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+      Matcher matcher = pattern.matcher(string);
+
+      return matcher.find();
    }
 
-   private String extractQuantity(String name, String quantity) {
-      Pattern pattern = Pattern.compile(quantityRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-      if (!pattern.matcher(name).find() && pattern.matcher(quantity).find()) {
-         final Matcher matcher = pattern.matcher(quantity);
+   private String extractPattern(String string, String patternRegex) {
+      Pattern pattern = Pattern.compile(patternRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+      Matcher matcher = pattern.matcher(string);
 
-         return matcher.find() ? " " + matcher.group(0) : "";
-      }
-      return "";
+      return matcher.find() ? matcher.group(0) : "";
    }
 
    private CategoryCollection scrapCategories(JSONObject productJson) {
