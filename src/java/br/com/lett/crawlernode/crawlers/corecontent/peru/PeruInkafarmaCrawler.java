@@ -37,7 +37,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
    public static final String GOOGLE_KEY = "AIzaSyC2fWm7Vfph5CCXorWQnFqepO8emsycHPc";
    private final String grammatureRegex = "(\\d+[.,]?\\d*\\s?)(ml|l|g|gr|mg|kg)";
-   private final String quantityRegex = "(\\d+[.,]?\\d*\\s?)(und)";
+   private final String quantityRegex = "(\\d+[.,]?\\d*\\s?)(und|un)";
    private static final String SELLER_NAME = "inkafarma";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(),
       Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.DINERS.toString());
@@ -192,43 +192,28 @@ public class PeruInkafarmaCrawler extends Crawler {
    private String scrapName(JSONObject productJson) {
       String name = productJson.optString("name");
       String quantity = productJson.optString("noFractionatedText");
+      name += extractGrammature(name, quantity) + extractQuantity(name, quantity);
 
-      if (!stringHasGrammature(name) && stringHasGrammature(quantity)) {
-         name += " " + extractGrammature(quantity);
-      }
-
-      if (!stringHasQuantity(name) && stringHasQuantity(quantity)) {
-         name += " " + extractQuantity(quantity);
-      }
       return name;
    }
 
-   private boolean stringHasGrammature(String string) {
+   private String extractGrammature(String name, String quantity) {
       Pattern pattern = Pattern.compile(grammatureRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-      Matcher matcher = pattern.matcher(string);
-
-      return matcher.find();
+      if (!pattern.matcher(name).find() && pattern.matcher(quantity).find()) {
+         final Matcher matcher = pattern.matcher(quantity);
+         return matcher.find() ? " " + matcher.group(0) : "";
+      }
+      return "";
    }
 
-   private String extractGrammature(String string) {
-      Pattern pattern = Pattern.compile(grammatureRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-      final Matcher matcher = pattern.matcher(string);
-
-      return matcher.find() ? matcher.group(0) : "";
-   }
-
-   private boolean stringHasQuantity(String string) {
+   private String extractQuantity(String name, String quantity) {
       Pattern pattern = Pattern.compile(quantityRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-      Matcher matcher = pattern.matcher(string);
+      if (!pattern.matcher(name).find() && pattern.matcher(quantity).find()) {
+         final Matcher matcher = pattern.matcher(quantity);
 
-      return matcher.find();
-   }
-
-   private String extractQuantity(String string) {
-      Pattern pattern = Pattern.compile(quantityRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-      final Matcher matcher = pattern.matcher(string);
-
-      return matcher.find() ? matcher.group(0) : "";
+         return matcher.find() ? " " + matcher.group(0) : "";
+      }
+      return "";
    }
 
    private CategoryCollection scrapCategories(JSONObject productJson) {
