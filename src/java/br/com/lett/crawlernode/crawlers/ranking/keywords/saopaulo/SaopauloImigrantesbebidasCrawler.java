@@ -42,8 +42,8 @@ public class SaopauloImigrantesbebidasCrawler extends CrawlerRankingKeywords {
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".productItem__image > img", List.of("data-src"), "https", BASE_URL);
             String internalId = scrapInternalId(product, imageUrl);
             String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".productItem__name", "title");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".productItem__price .productItem__price--value", null, false, ',', session, 0);
             boolean isAvailable = product.selectFirst("article") != null && !product.selectFirst("article").classNames().contains("productItem--out-of-stock");
+            Integer price = isAvailable ? CrawlerUtils.scrapPriceInCentsFromHtml(product, ".productItem__price .productItem__price--value", null, false, ',', session, null) : null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
