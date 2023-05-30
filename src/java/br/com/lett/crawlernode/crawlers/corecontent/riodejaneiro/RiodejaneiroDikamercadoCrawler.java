@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -42,7 +43,7 @@ public class RiodejaneiroDikamercadoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = getProductId(doc);
+         String internalId = CommonMethods.getLast(session.getOriginalURL().split("-")).replace("/", "");
          String internalPid = getProductPid(doc);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.mb-3", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > li:not(:first-child):not(:last-child) > a");
@@ -75,12 +76,6 @@ public class RiodejaneiroDikamercadoCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".pt-1.mb-4 > span:nth-child(1)") != null;
-   }
-
-   private String getProductId(Document doc) {
-      String extractId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".col-md-6 .altera-quantidade .product-cart form", "action");
-      String[] id = extractId != null ? extractId.split("-") : null;
-      return id != null ? id[id.length - 1].split("/")[0] : null;
    }
 
    private String getProductPid(Document doc) {
