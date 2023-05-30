@@ -14,11 +14,15 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SaopauloImigrantesbebidasCrawler extends Crawler {
 
@@ -37,28 +41,26 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".productPage__info form > input[type=hidden]:nth-child(3)", "value");
-         String internalPId = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".productPage__name", true);
          List<String> images = scrapImages(doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-         String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList(".tabs"));
-         boolean availability = doc.selectFirst(".out-of-stock") == null;
-         Offers offers = availability ? scrapOffers(doc) : new Offers();
+         String internalId = scrapInternalId(doc, primaryImage);
+
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".productPage__tabs__content__text", ".productPage__tabs__content__text br"));
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs__wrapper a:not(:last-child)", true);
          List<String> eans = scrapEans(doc);
+
+         boolean availability = doc.selectFirst(".out-of-stock") == null;
+         Offers offers = availability ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalPId)
+            .setInternalPid(internalId)
             .setName(name)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(images)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
+            .setCategories(categories)
             .setDescription(description)
             .setOffers(offers)
             .setEans(eans)
@@ -69,6 +71,19 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapInternalId(Document doc, String primaryImage) {
+      String id = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".productPage__info form > input[type=hidden]:nth-child(3)", "value");
+      if (id == null) {
+         String regex = "full\\/([^\\/\\-]+)\\-";
+         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+         Matcher matcher = pattern.matcher(primaryImage);
+         if (matcher.find()) {
+            return matcher.group(1);
+         }
+      }
+      return id;
    }
 
    private boolean isProductPage(Document doc) {
@@ -105,7 +120,7 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".productPage__wholeprice", null, true, ',', this.session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".productPage__priceFrom", null, true, ',', this.session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".productPage__price", null, true, ',', this.session);
 
       return Pricing.PricingBuilder.create()
@@ -142,14 +157,6 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
          .build();
    }
 
-   private CategoryCollection scrapCategories(JSONObject productJson) {
-      CategoryCollection finalCategory = new CategoryCollection();
-      String categories = productJson.optString("category");
-      String[] split = categories.split("\\/");
-      finalCategory.addAll(Arrays.asList(split));
-      return finalCategory;
-   }
-
    private List<String> scrapEans(Document document) {
       List<String> listEans = new ArrayList<>();
       String element = CrawlerUtils.scrapStringSimpleInfo(document, "productPage__tabs__content__text", false);
@@ -158,17 +165,5 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
          listEans.add(CommonMethods.getLast(element.split("EAN:")));
       }
       return listEans;
-   }
-
-   private String getEansKey(JSONObject productJson) {
-      Iterator<String> keys = productJson.keys();
-      String currentKey;
-      while (keys.hasNext()) {
-         currentKey = keys.next();
-         if (currentKey.contains("gtin")) {
-            return currentKey;
-         }
-      }
-      return null;
    }
 }
