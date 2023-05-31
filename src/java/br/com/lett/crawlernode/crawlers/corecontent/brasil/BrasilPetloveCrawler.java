@@ -106,7 +106,7 @@ public class BrasilPetloveCrawler extends Crawler {
 
             if (docVariant.select("div.alert__text").isEmpty()) {
                String internalId = JSONUtils.getStringValue(jsonSku, "sku");
-               String variantName = name + " - " + CrawlerUtils.scrapStringSimpleInfo(docVariant, ".variant-list .variant-selector__card--selected .font-bold", true);
+               String variantName = scrapName(docVariant, name);
                List<String> images = scrapImages(docVariant);
                String primaryImage = !images.isEmpty() ? images.remove(0) : null;
 
@@ -134,6 +134,14 @@ public class BrasilPetloveCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapName(Document docVariant, String name) {
+      String nameVariant = CrawlerUtils.scrapStringSimpleInfo(docVariant, ".variant-list .variant-selector__card--selected .font-bold", true);
+      if (nameVariant != null && !name.contains(nameVariant)) {
+         return name + " - " + nameVariant;
+      }
+      return name;
    }
 
    private List<String> scrapImages(Document docVariant) {
