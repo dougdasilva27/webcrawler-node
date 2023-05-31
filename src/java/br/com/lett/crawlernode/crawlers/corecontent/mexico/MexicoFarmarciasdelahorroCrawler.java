@@ -56,7 +56,7 @@ public class MexicoFarmarciasdelahorroCrawler extends Crawler {
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            ProxyCollection.SMART_PROXY_MX
          ))
          .setHeaders(headers)
          .build();
