@@ -115,8 +115,10 @@ public class BrasilPetloveCrawler extends Crawler {
                if (variantSkus.contains(internalId)) {
                   String url = HOME_PAGE + jsonSku.optString("url");
                   String name = scrapName(productJson, variantMap, internalId);
-                  String primaryImage = productJson.optString("image");
-                  List<String> secondaryImages = crawlSecondaryImages(internalId, nuxtDataSanitized, primaryImage);
+
+                  List<String> secondaryImages = crawlSecondaryImages(variantSkus, nuxtDataSanitized);
+                  String primaryImage = !secondaryImages.isEmpty() && secondaryImages != null ? secondaryImages.remove(0) : null;
+                  variantSkus.remove(0);
                   boolean available = jsonSku.optString("availability") != null && jsonSku.optString("availability").equals("https://schema.org/InStock");
                   Offers offers = available ? scrapOffers(jsonSku, doc, url) : new Offers();
 
@@ -126,9 +128,7 @@ public class BrasilPetloveCrawler extends Crawler {
                      .setInternalId(internalId)
                      .setInternalPid(internalPid)
                      .setName(name)
-                     .setCategory1(categories.getCategory(0))
-                     .setCategory2(categories.getCategory(1))
-                     .setCategory3(categories.getCategory(2))
+                     .setCategories(categories)
                      .setPrimaryImage(primaryImage)
                      .setSecondaryImages(secondaryImages)
                      .setDescription(description)
@@ -184,47 +184,27 @@ public class BrasilPetloveCrawler extends Crawler {
       return ratingReviews;
    }
 
-   private String crawlPrimaryImage(String internalId, String nuxtDataSanitized) {
+   private List<String> crawlSecondaryImages(List<String> variantSkus, String nuxtDataSanitized) {
+      List<String> secondaryImages = new ArrayList<>();
+      String substring = null;
 
-      String regex = "(https:\\\\u002F\\\\u002Fwww.petlove.com.br\\\\u002Fimages\\\\u002Fproducts\\\\u002F\\d{2,10}\\\\u002Fproduct\\\\u002F.{2,220}" + internalId + ".{2,50})\",";
-      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-      Matcher matcher = pattern.matcher(nuxtDataSanitized);
-
-      if (matcher.find()) {
-         return matcher.group(1).replace("\\u002F", "/");
+      if (variantSkus.size() == 1) {
+         int endIndex = nuxtDataSanitized.indexOf(variantSkus.get(0));
+         substring = nuxtDataSanitized.substring(endIndex + variantSkus.size());
+      } else {
+         int startIndex = nuxtDataSanitized.indexOf(variantSkus.get(0)) + variantSkus.size();
+         int endIndex = nuxtDataSanitized.indexOf(variantSkus.get(1));
+         if (startIndex != -1 && endIndex != -1) {
+            substring = nuxtDataSanitized.substring(startIndex, endIndex);
+         }
       }
 
-      String regexSingleImage = "(https:\\\\u002F\\\\u002Fwww.petlove.com.br\\\\u002Fimages\\\\u002Fproducts\\\\u002F\\d{2,10}\\\\u002Fproduct\\\\u002F.{2,220})\",";
-      Pattern patternSingleImage = Pattern.compile(regexSingleImage, Pattern.MULTILINE);
-      Matcher matcherSingleImage = patternSingleImage.matcher(nuxtDataSanitized);
-
-      return matcherSingleImage.find() ? matcherSingleImage.group(1).replace("\\u002F", "/") : null;
-   }
-
-   private List<String> crawlSecondaryImages(String internalId, String nuxtDataSanitized, String primaryImage) {
-      List<String> secondaryImages = new ArrayList<>();
-
-      String regex = "(https:\\\\u002F\\\\u002Fwww\\.petlove\\.com\\.br\\\\u002Fimages\\\\u002Fproducts\\\\u002F(\\d+)\\\\u002Fmini\\\\u002F([^./]+)\\.jpg\\?(\\d+))";
+      String regex = "(https:\\\\u002F\\\\u002Fwww\\.petlove\\.com\\.br\\\\u002Fimages\\\\u002Fproducts\\\\u002F(\\d+)\\\\u002Fhd_no_extent\\\\u002F([^./]+)\\.jpg\\?(\\d+))";
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-      Matcher matcher = pattern.matcher(nuxtDataSanitized);
+      Matcher matcher = pattern.matcher(substring);
       while (matcher.find()) {
          String secondaryImage = matcher.group(1).replace("\\u002F", "/");
-         if (!secondaryImage.equals(primaryImage)) {
-            secondaryImages.add(secondaryImage);
-         }
-      }
-
-      if (secondaryImages.isEmpty()) {
-         String regexSingleImage = "(https:\\\\u002F\\\\u002Fwww.petlove.com.br\\\\u002Fimages\\\\u002Fproducts\\\\u002F\\d{2,10}\\\\u002Fproduct\\\\u002F.{2,220})\",";
-         Pattern patternSingleImage = Pattern.compile(regexSingleImage, Pattern.MULTILINE);
-         Matcher matcherSingleImage = patternSingleImage.matcher(nuxtDataSanitized);
-
-         while (matcherSingleImage.find()) {
-            String secondaryImage = matcherSingleImage.group(1).replace("\\u002F", "/");
-            if (!secondaryImage.equals(primaryImage)) {
-               secondaryImages.add(secondaryImage);
-            }
-         }
+         secondaryImages.add(secondaryImage);
       }
 
       return secondaryImages;
