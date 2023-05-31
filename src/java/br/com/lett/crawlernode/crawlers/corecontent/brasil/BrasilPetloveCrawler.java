@@ -2,8 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -35,11 +33,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * date: 27/03/2018
@@ -49,7 +45,7 @@ import java.util.stream.IntStream;
 
 public class BrasilPetloveCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "https://www.petlove.com.br/";
+   private static final String HOME_PAGE = "https://www.petlove.com.br";
    private static final String SELLER_FULL_NAME = "petlove";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
@@ -60,13 +56,17 @@ public class BrasilPetloveCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
+      return fetchDocumentVariation(session.getOriginalURL());
+   }
+
+   private Document fetchDocumentVariation(String url) {
       List<String> proxies = List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY);
       int attempt = 0;
       boolean succes = false;
       Document doc = new Document("");
       do {
          try {
-            webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), proxies.get(attempt), session);
+            webdriver = DynamicDataFetcher.fetchPageWebdriver(url, proxies.get(attempt), session);
             if (webdriver != null) {
                doc = Jsoup.parse(webdriver.getCurrentPageSource());
                succes = !doc.select("section.product.flex").isEmpty();
@@ -89,57 +89,46 @@ public class BrasilPetloveCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String nuxtData = doc.selectFirst("script:containsData(window.__NUXT__)").data();
-         String nuxtDataSanitized = CommonMethods.getLast(nuxtData.split("}\\(\"\",true,void 0,\"id\",.{2,20}\"")).replace("));", "");
          JSONObject productJson = CrawlerUtils.stringToJSONObject(doc.selectFirst("script:containsData(\"@type\":\"Product\")").data());
 
+         JSONArray variantOffers = JSONUtils.getValueRecursive(productJson, "offers.offers", ".", JSONArray.class, new JSONArray());
          String internalPid = productJson.optString("sku");
          String description = crawlDescription(doc);
          CategoryCollection categories = crawlCategories(doc);
          RatingsReviews ratingReviews = crawlRating(productJson);
 
-         JSONArray variantOffers = JSONUtils.getValueRecursive(productJson, "offers.offers", ".", JSONArray.class, new JSONArray());
-         List<String> variantSkus = JSONUtils.jsonArrayToStringList(variantOffers, "sku");
-         List<String> variantGrammature = doc.select(".variant-list-modal .font-bold").eachText();
-         if (variantSkus.size() > variantGrammature.size()) {
-            variantSkus = resizeVariantSku(variantOffers, variantSkus);
-         }
-         Map<String, String> variantMap = IntStream.range(0, variantGrammature.size()).boxed().collect(Collectors.toMap(variantSkus::get, variantGrammature::get));
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__header h1", true);
 
          for (Object obj : variantOffers) {
-            if (obj instanceof JSONObject) {
-               JSONObject jsonSku = (JSONObject) obj;
+            JSONObject jsonSku = (JSONObject) obj;
+            String productUrl = HOME_PAGE + jsonSku.optString("url");
+            Document docVariant = fetchDocumentVariation(productUrl);
 
+            if (docVariant.select("div.alert__text").isEmpty()) {
                String internalId = JSONUtils.getStringValue(jsonSku, "sku");
+               String variantName = name + " - " + CrawlerUtils.scrapStringSimpleInfo(docVariant, ".variant-list .variant-selector__card--selected .font-bold", true);
+               List<String> images = scrapImages(docVariant);
+               String primaryImage = !images.isEmpty() ? images.remove(0) : null;
 
-               if (variantSkus.contains(internalId)) {
-                  String url = HOME_PAGE + jsonSku.optString("url");
-                  String name = scrapName(productJson, variantMap, internalId);
-                  List<String> standardImage = scrapStandardImage(nuxtDataSanitized, name);
-                  List<String> secondaryImages = crawlSecondaryImages(variantSkus, nuxtDataSanitized, standardImage);
-                  String primaryImage = !secondaryImages.isEmpty() ? secondaryImages.remove(0) : null;
-                  variantSkus.remove(0);
-                  boolean available = jsonSku.optString("availability") != null && jsonSku.optString("availability").equals("https://schema.org/InStock");
-                  Offers offers = available ? scrapOffers(jsonSku, doc, url) : new Offers();
+               boolean isAvailable = docVariant.select(".my-8 .button.button--secondary").isEmpty();
+               Offers offers = isAvailable ? scrapOffers(docVariant) : new Offers();
 
-                  Product product = ProductBuilder.create()
-                     .setUrl(url)
-                     .setRatingReviews(ratingReviews)
-                     .setInternalId(internalId)
-                     .setInternalPid(internalPid)
-                     .setName(name)
-                     .setCategories(categories)
-                     .setPrimaryImage(primaryImage)
-                     .setSecondaryImages(secondaryImages)
-                     .setDescription(description)
-                     .setOffers(offers)
-                     .build();
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setName(variantName)
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(images)
+                  .setDescription(description)
+                  .setCategories(categories)
+                  .setRatingReviews(ratingReviews)
+                  .setOffers(offers)
+                  .build();
 
-                  products.add(product);
-               }
+               products.add(product);
             }
          }
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -147,22 +136,15 @@ public class BrasilPetloveCrawler extends Crawler {
       return products;
    }
 
-   private List<String> resizeVariantSku(JSONArray variantOffers, List<String> variantSkus) {
-      for (Object obj : variantOffers) {
-         JSONObject jsonSku = (JSONObject) obj;
-         boolean isAvailable = Objects.equals(jsonSku.optString("availability"), "https://schema.org/InStock");
-         if (!isAvailable) {
-            variantSkus.remove(JSONUtils.getStringValue(jsonSku, "sku"));
-         }
+   private List<String> scrapImages(Document docVariant) {
+      List<String> imageList = new ArrayList<>();
+      Elements images = docVariant.select("[datatest-id=\"mini-img\"] img");
+      for (Element image : images) {
+         String img = CrawlerUtils.scrapStringSimpleInfoByAttribute(image, "img", "src");
+         img = img.replaceAll("min", "hd_no_extent");
+         imageList.add(img);
       }
-      return variantSkus;
-   }
-
-   private String scrapName(JSONObject productJson, Map<String, String> variantMap, String internalId) {
-      if (variantMap.size() > 1) {
-         return productJson.optString("name") + " " + variantMap.get(internalId);
-      }
-      return productJson.optString("name");
+      return imageList;
    }
 
    private boolean isProductPage(Document doc) {
@@ -185,50 +167,6 @@ public class BrasilPetloveCrawler extends Crawler {
       }
 
       return ratingReviews;
-   }
-
-   private List<String> crawlSecondaryImages(List<String> variantSkus, String nuxtDataSanitized, List<String> standardImage) {
-      List<String> secondaryImages;
-      String substring = null;
-
-      if (variantSkus.size() == 1) {
-         int endIndex = nuxtDataSanitized.indexOf(variantSkus.get(0));
-         substring = nuxtDataSanitized.substring(endIndex + variantSkus.size());
-      } else {
-         int startIndex = nuxtDataSanitized.indexOf(variantSkus.get(0)) + variantSkus.size();
-         int endIndex = nuxtDataSanitized.indexOf(variantSkus.get(1));
-         if (startIndex != -1 && endIndex != -1) {
-            substring = nuxtDataSanitized.substring(startIndex, endIndex);
-         }
-      }
-
-      secondaryImages = scrapImagesRegex(substring);
-      if (!standardImage.isEmpty()) {
-         secondaryImages.addAll(standardImage);
-      }
-
-      return secondaryImages;
-   }
-
-   private List<String> scrapImagesRegex(String substring) {
-      List<String> images = new ArrayList<>();
-      String regex = "(https:\\\\u002F\\\\u002Fwww\\.petlove\\.com\\.br\\\\u002Fimages\\\\u002Fproducts\\\\u002F(\\d+)\\\\u002Fhd_no_extent\\\\u002F([^./]+)\\.([^./]+)\\?(\\d+))";
-      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-      Matcher matcher = pattern.matcher(substring);
-      while (matcher.find()) {
-         String secondaryImage = matcher.group(1).replace("\\u002F", "/");
-         images.add(secondaryImage);
-      }
-      return images;
-   }
-
-   private List<String> scrapStandardImage(String nuxtDataSanitized, String name) {
-      String slugUrl = CommonMethods.substring(session.getOriginalURL(), HOME_PAGE, "/p", true);
-      String parameters1 = "\"" + name + "\",null,false,\"" + slugUrl + "\"";
-      String parameters2 = "\"Outros\",\"total\"";
-
-      String substring = CommonMethods.substring(nuxtDataSanitized, parameters1, parameters2, true);
-      return scrapImagesRegex(substring);
    }
 
    private CategoryCollection crawlCategories(Document document) {
@@ -264,10 +202,10 @@ public class BrasilPetloveCrawler extends Crawler {
       return description.toString();
    }
 
-   private Offers scrapOffers(JSONObject skuJson, Document doc, String urlVariant) throws MalformedPricingException, OfferException {
+   private Offers scrapOffers(Document docVariant) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      List<String> sales = scrapSales(doc);
-      Pricing pricing = scrapPricing(skuJson, urlVariant);
+      List<String> sales = scrapSales(docVariant);
+      Pricing pricing = scrapPricing(docVariant);
 
       offers.add(OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -283,26 +221,9 @@ public class BrasilPetloveCrawler extends Crawler {
 
    }
 
-   private Double getPriceFrom(String url) {
-      Response response = dataFetcher.get(session, Request.RequestBuilder.create().setCookies(cookies).setUrl(url).build());
-
-      Document variantDoc = Jsoup.parse(response.getBody());
-      Double priceFrom = null;
-
-      if (variantDoc.select(".font-body.font-medium.color-neutral").size() > 1) {
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(variantDoc, ".font-body.font-medium.color-neutral", null, false, ',', session);
-      }
-
-      return priceFrom;
-   }
-
-   private Pricing scrapPricing(JSONObject skuJson, String urlVariant) throws MalformedPricingException {
-      Double priceFrom = getPriceFrom(urlVariant);
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(skuJson, "price", true);
-
-      if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
-         priceFrom = null;
-      }
+   private Pricing scrapPricing(Document docVariant) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(docVariant, ".product__call-to-action-wrapper .mb-2 .font-body", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(docVariant, ".product__call-to-action-wrapper .font-title-xs", null, true, ',', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
