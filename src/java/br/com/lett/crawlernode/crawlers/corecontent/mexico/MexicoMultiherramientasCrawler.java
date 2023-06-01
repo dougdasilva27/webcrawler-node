@@ -45,10 +45,13 @@ public class MexicoMultiherramientasCrawler extends Crawler {
    protected Response fetchResponse() {
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
-         .setProxyservice(List.of(ProxyCollection.BUY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NETNUT_RESIDENTIAL_MX, ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .setProxyservice(List.of(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
 
       return response;
    }
@@ -60,7 +63,7 @@ public class MexicoMultiherramientasCrawler extends Crawler {
       if (isProductPage(document)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".h2.mb-4", false);
+         String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".prod-description", true);
          String internalId = CommonMethods.getLast(session.getOriginalURL().split("="));
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".exzoom_img_ul > li > img", Arrays.asList("src"), "https", "multiherramientas.mx");
          List<String> secondaryImages = getSecondaryImages(document);
@@ -87,7 +90,7 @@ public class MexicoMultiherramientasCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".col-md-6.m-4") != null;
+      return doc.selectFirst(".prod-separator") != null;
    }
 
    private List<String> getSecondaryImages(Document doc) {
