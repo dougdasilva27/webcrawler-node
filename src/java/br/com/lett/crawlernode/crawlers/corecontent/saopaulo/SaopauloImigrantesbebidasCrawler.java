@@ -41,12 +41,12 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".productPage__name", true);
+         String name = scrapName(doc);
          List<String> images = scrapImages(doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
          String internalId = scrapInternalId(doc, primaryImage);
 
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".productPage__tabs__content__text", ".productPage__tabs__content__text br"));
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".productPage__tabs__content__text", ".productPage__tabs__content__text br", ".personalization__description p"));
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs__wrapper a:not(:last-child)", true);
          List<String> eans = scrapEans(doc);
 
@@ -73,30 +73,52 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
       return products;
    }
 
+   private String scrapName(Document doc) {
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".productPage__name", true);
+      if (name == null || name.isEmpty()) {
+         name = CrawlerUtils.scrapStringSimpleInfo(doc, "div.productName", true);
+      }
+
+      return name;
+   }
+
    private String scrapInternalId(Document doc, String primaryImage) {
-      String id = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".productPage__info form > input[type=hidden]:nth-child(3)", "value");
+      String id = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".productPage__info  [name=\"products_id\"]", "value");
+
       if (id == null) {
-         String regex = "full\\/([^\\/\\-]+)\\-";
-         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-         Matcher matcher = pattern.matcher(primaryImage);
-         if (matcher.find()) {
-            return matcher.group(1);
+         id = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".personalization--desktop [name=\"products_id\"]", "value");
+
+         if (id == null) {
+            String regex = "full\\/([^\\/\\-]+)\\-";
+            Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+            Matcher matcher = pattern.matcher(primaryImage);
+            if (matcher.find()) {
+               return matcher.group(1);
+            }
          }
       }
+
       return id;
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".productPage") != null;
+      boolean personalizedPage = doc.selectFirst("main[class*='personalized']") != null;
+      boolean isProductPage = doc.selectFirst(".productPage") != null;
+
+      return personalizedPage || isProductPage;
    }
 
    private List<String> scrapImages(Document doc) {
       List<String> imgList = new ArrayList<>();
+      Elements elementImages =  doc.select("div.slider.productGallery__slider > picture");
 
-      Elements el = doc.select("div.slider.productGallery__slider > picture");
+      if (elementImages != null) {
+         elementImages.forEach(img -> imgList.add("https://www.imigrantesbebidas.com.br" + img.attr("rel")));
+      }
 
-      if (el != null) {
-         el.forEach(img -> imgList.add("https://www.imigrantesbebidas.com.br" + img.attr("rel")));
+      String personalizedImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "div[class*=\"personalized\"] img", Arrays.asList("src"), "https", "www.imigrantesbebidas.com.br");
+      if (imgList.isEmpty() && personalizedImage != null) {
+         imgList.add(personalizedImage);
       }
 
       return imgList;
