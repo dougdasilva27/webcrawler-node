@@ -13,7 +13,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -51,7 +50,7 @@ public class MexicoMultiherramientasCrawler extends Crawler {
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
          .build();
 
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new ApacheDataFetcher(), new FetcherDataFetcher()), session, "get");
 
       return response;
    }
@@ -63,18 +62,20 @@ public class MexicoMultiherramientasCrawler extends Crawler {
       if (isProductPage(document)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".col-auto  button.btn-saveprod", "data-fkproduct");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfo(document, ".prod-sku", true).replace("SKU:", "");
          String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".prod-description", true);
-         String internalId = CommonMethods.getLast(session.getOriginalURL().split("="));
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".exzoom_img_ul > li > img", Arrays.asList("src"), "https", "multiherramientas.mx");
          List<String> secondaryImages = getSecondaryImages(document);
-         String description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList(".col-md-6.m-4"));
+         String description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList(".text-muted.descomer .readless"));
+
          boolean available = document.selectFirst(".text-success") != null;
          Offers offers = available ? scrapOffers(document) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalId)
+            .setInternalPid(internalPid)
             .setName(productName)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
@@ -125,8 +126,8 @@ public class MexicoMultiherramientasCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".h3.fw-bold.my-4", null, false, '.', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".col-md-6.m-4 >.text-muted >bdi", null, false, '.', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prod-separator .h3.fw-bold", null, false, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".text-muted bdi", null, false, '.', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       return Pricing.PricingBuilder.create()
