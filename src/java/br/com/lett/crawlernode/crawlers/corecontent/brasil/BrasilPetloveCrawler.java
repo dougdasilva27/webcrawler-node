@@ -70,11 +70,14 @@ public class BrasilPetloveCrawler extends Crawler {
             if (webdriver != null) {
                doc = Jsoup.parse(webdriver.getCurrentPageSource());
                succes = !doc.select("section.product.flex").isEmpty();
-               webdriver.terminate();
             }
          } catch (Exception e) {
             Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
             Logging.printLogWarn(logger, "Page not captured");
+         } finally {
+            if (webdriver != null) {
+               webdriver.terminate();
+            }
          }
       } while (!succes && attempt++ <= (proxies.size() - 1));
 
@@ -149,7 +152,7 @@ public class BrasilPetloveCrawler extends Crawler {
       Elements images = docVariant.select("[datatest-id=\"mini-img\"] img");
       for (Element image : images) {
          String img = CrawlerUtils.scrapStringSimpleInfoByAttribute(image, "img", "src");
-         img = img.replaceAll("min", "hd_no_extent");
+         img = img.replaceAll("mini", "hd_no_extent");
          imageList.add(img);
       }
       return imageList;
