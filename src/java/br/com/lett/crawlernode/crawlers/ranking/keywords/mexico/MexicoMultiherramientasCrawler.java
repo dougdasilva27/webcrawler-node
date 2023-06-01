@@ -20,9 +20,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
 
@@ -41,12 +44,15 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
       String payload = "price_level=2&order=1&page=" + this.currentPage + "&limit=25&pmin=&pmax=&ask0=&ask1=&ask2=&tspecial=" + this.keywordEncoded.replace(" ", "+");
 
       Request request = Request.RequestBuilder.create()
+         .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
-         .setUrl(url)
-         .setProxyservice(List.of(ProxyCollection.SMART_PROXY_MX, ProxyCollection.SMART_PROXY_MX_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX, ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
+         .setProxyservice(List.of(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
          .build();
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "post");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
 
       return Jsoup.parse(response.getBody());
    }
@@ -56,16 +62,16 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
       this.pageSize = 25;
       String url = "https://multiherramientas.mx/loadproducts.php";
       this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select("div[class=\"adv-product produc \"]");
+      Elements products = this.currentDoc.select(".producto");
 
       if (products != null && !products.isEmpty()) {
          for (Element product : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".options > button", "data-fkproduct");
-            String productName = CrawlerUtils.scrapStringSimpleInfo(product, "div > span.label > a", true);
-            String productUrl = CrawlerUtils.scrapUrl(product, "div > span.label > a", "href", "https", "multiherramientas.mx");
-            String imageUrl = getImageUrl(product);
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".price > a > span.final", null, false, '.', session, null);
-            boolean available = price > 0;
+            String internalPid = scrapInternalPid(product);
+            String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".noRastro .label", true);
+            String productUrl = CrawlerUtils.scrapUrl(product, "a.noRastro", "href", "https", "multiherramientas.mx");
+            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(product, "a.noRastro figure img", Arrays.asList("src"), "https", "multiherramientas.mx");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "span.precio", null, true, '.', session, null);
+            boolean available = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -87,21 +93,22 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página: " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   @Override
-   protected boolean hasNextPage() {
-      return !this.currentDoc.select("button[onclick=\"loadmoreproducts()\"]").isEmpty();
-   }
+   private String scrapInternalPid(Element product) {
+      String text = CrawlerUtils.scrapStringSimpleInfo(product, ".noRastro .marca", true);
+      String regex = "\\| ([0-9]*)";
 
-   private String getImageUrl(Element element) {
-      String imageUrl = null;
-      String[] arrayImage;
-      String selectorImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "div[class=\"adv-product produc \"]  > figure.text-center", "style");
-      if (selectorImage != null && !selectorImage.isEmpty()) {
-         arrayImage = selectorImage.split(" ");
-         if (arrayImage.length > 1 && arrayImage != null) {
-            imageUrl = arrayImage[1].replace("url(/", "").replace(")", "");
+      if (text != null) {
+         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+         Matcher matcher = pattern.matcher(text);
+         if (matcher.find()) {
+            return matcher.group(1);
          }
       }
-      return CrawlerUtils.completeUrl(imageUrl, "https", "multiherramientas.mx");
+      return null;
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      return true;
    }
 }
