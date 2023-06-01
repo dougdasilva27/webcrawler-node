@@ -88,7 +88,7 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
       if (id == null) {
          id = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".personalization--desktop [name=\"products_id\"]", "value");
 
-         if (id == null) {
+         if (id == null && primaryImage != null) {
             String regex = "full\\/([^\\/\\-]+)\\-";
             Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
             Matcher matcher = pattern.matcher(primaryImage);
