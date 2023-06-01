@@ -104,17 +104,20 @@ public class BrasilPetloveCrawler extends Crawler {
 
          for (Object obj : variantOffers) {
             JSONObject jsonSku = (JSONObject) obj;
-            String productUrl = HOME_PAGE + jsonSku.optString("url");
-            Document docVariant = fetchDocumentVariation(productUrl);
+            String internalId = JSONUtils.getStringValue(jsonSku, "sku");
 
-            if (docVariant.select("div.alert__text").isEmpty()) {
-               String internalId = JSONUtils.getStringValue(jsonSku, "sku");
-               String variantName = scrapName(docVariant, name);
-               List<String> images = scrapImages(docVariant);
+            if (variantOffers.length() > 1) {
+               String productUrl = assembleProductUrl(internalId);
+               doc = fetchDocumentVariation(productUrl);
+            }
+
+            if (doc.select("div.alert__text").isEmpty()) {
+               String variantName = scrapName(doc, name);
+               List<String> images = scrapImages(doc);
                String primaryImage = !images.isEmpty() ? images.remove(0) : null;
 
-               boolean isAvailable = docVariant.select(".my-8 .button.button--secondary").isEmpty();
-               Offers offers = isAvailable ? scrapOffers(docVariant) : new Offers();
+               boolean isAvailable = doc.select(".my-8 .button.button--secondary").isEmpty();
+               Offers offers = isAvailable ? scrapOffers(doc) : new Offers();
 
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
@@ -139,6 +142,10 @@ public class BrasilPetloveCrawler extends Crawler {
       return products;
    }
 
+   private String assembleProductUrl(String internalId) {
+      return session.getOriginalURL().replace("/p.*", "") + "?sku=" + internalId;
+   }
+
    private String scrapName(Document docVariant, String name) {
       String nameVariant = CrawlerUtils.scrapStringSimpleInfo(docVariant, ".variant-list .variant-selector__card--selected .font-bold", true);
       if (nameVariant != null && !name.contains(nameVariant)) {
@@ -150,11 +157,22 @@ public class BrasilPetloveCrawler extends Crawler {
    private List<String> scrapImages(Document docVariant) {
       List<String> imageList = new ArrayList<>();
       Elements images = docVariant.select("[datatest-id=\"mini-img\"] img");
-      for (Element image : images) {
-         String img = CrawlerUtils.scrapStringSimpleInfoByAttribute(image, "img", "src");
-         img = img.replaceAll("mini", "hd_no_extent");
-         imageList.add(img);
+
+      if (!images.isEmpty()) {
+         for (Element image : images) {
+            String img = CrawlerUtils.scrapStringSimpleInfoByAttribute(image, "img", "src");
+            if (img != null) {
+               img = img.replaceAll("mini", "hd_no_extent");
+               imageList.add(img);
+            }
+         }
+      } else {
+         String img = CrawlerUtils.scrapStringSimpleInfoByAttribute(docVariant, "[datatest-id=\"main-img\"]", "src");
+         if (img != null) {
+            imageList.add(img);
+         }
       }
+
       return imageList;
    }
 
