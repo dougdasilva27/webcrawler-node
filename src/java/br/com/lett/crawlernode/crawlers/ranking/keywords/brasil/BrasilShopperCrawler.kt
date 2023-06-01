@@ -16,13 +16,13 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
    private fun requestProducts(): JSONObject {
 
-      val url = "https://siteapi.shopper.com.br/catalog/search?query=${keywordEncoded}"+"&page="+this.currentPage;
+      val url = "https://siteapi.shopper.com.br/catalog/search?query=${keywordEncoded}" + "&page=" + this.currentPage;
 
       val headers: MutableMap<String, String> = HashMap()
 
       headers["authorization"] = "Bearer $token"
       headers["accept"] = "application/json, text/plain, */*"
-      headers["x-store-id"] = session.options.optString("storeId", "3");
+      headers["shopper_current_store"] = session.options.optString("storeId", "3");
 
       val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
 
