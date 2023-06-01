@@ -51,10 +51,10 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
    }
 
    private fun uptadeToken() {
-      var tokenSession =  session.options.optString("tokenShopper", null);
-      if(tokenSession != null){
+      var tokenSession = session.options.optString("tokenShopper", null);
+      if (tokenSession != null) {
          token = tokenSession;
-      }else{
+      } else {
          try {
             webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.BUY_HAPROXY, session)
 
@@ -100,7 +100,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       val headers: MutableMap<String, String> = HashMap()
 
       headers["authorization"] = "Bearer $token"
-      headers["x-store-id"] = session.options.optString("storeId", "3");
+      headers["shopper_current_store"] = session.options.optString("storeId", "3");
 
       val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
 
@@ -115,7 +115,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
    override fun extractInformation(json: JSONObject?): MutableList<Product> {
 
-      if (json == null ||  json.optString("title") == null || json.length() <=3) {
+      if (json == null || json.optString("title") == null || json.length() <= 3) {
          log("Not a product page " + session.originalURL)
          return mutableListOf()
       }
@@ -132,6 +132,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
             is JSONObject -> {
                return@map it.optString("photo_url")
             }
+
             else -> {}
          }
       }?.toList() as List<String>?
