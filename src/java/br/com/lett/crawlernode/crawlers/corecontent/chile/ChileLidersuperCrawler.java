@@ -86,7 +86,7 @@ public class ChileLidersuperCrawler extends Crawler {
    }
 
    private String crawlInternalId(Document doc) {
-      String imgUrl = crawlPrimaryImage(doc);
+      String imgUrl = crawlPreviewImage(doc);
       String regex = "productos\\/(\\d+)[a-z].";
 
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
@@ -95,7 +95,7 @@ public class ChileLidersuperCrawler extends Crawler {
       return matcher.find() ? matcher.group(1) : null;
    }
 
-   private String crawlPrimaryImage(Document doc) {
+   private String crawlPreviewImage(Document doc) {
       Element figure = doc.selectFirst("div.image-preview__figure-wrapper > figure");
       String styleValue = figure != null ? figure.attr("style") : "";
       String regex = "background-image: url\\(\"(.+)\"\\).";
@@ -104,6 +104,20 @@ public class ChileLidersuperCrawler extends Crawler {
       Matcher matcher = pattern.matcher(styleValue);
 
       return matcher.find() ? matcher.group(1) : null;
+   }
+
+   private String crawlPrimaryImage(Document doc) {
+      String previewImage = crawlPreviewImage(doc);
+
+      // checking if preview image it's the primary image
+      // sometimes Lider don't loads the primary image, only the secondary images
+      // primary image url example: https://images.lider.cl/wmtcl?source=url[file:/productos/500244a.jpg]&sink
+      // secondary image url example: https://images.lider.cl/wmtcl?source=url[file:/productos/500244b.jpg]&sink
+      String regex = "\\/\\d+a\\.jpg";
+      Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      Matcher matcher = pattern.matcher(previewImage != null ? previewImage : "");
+
+      return matcher.find() ? previewImage : null;
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
