@@ -143,7 +143,12 @@ public class BrasilPetloveCrawler extends Crawler {
    }
 
    private String assembleProductUrl(String internalId) {
-      return session.getOriginalURL().replace("/p.*", "") + "?sku=" + internalId;
+      if (session.getOriginalURL().endsWith("/p")) {
+         return session.getOriginalURL() + "?sku=" + internalId;
+      }
+
+      String baseUrl = session.getOriginalURL().replaceFirst("\\?.*", "");
+      return baseUrl + "?sku=" + internalId;
    }
 
    private String scrapName(Document docVariant, String name) {
@@ -156,13 +161,12 @@ public class BrasilPetloveCrawler extends Crawler {
 
    private List<String> scrapImages(Document docVariant) {
       List<String> imageList = new ArrayList<>();
-      Elements images = docVariant.select("[datatest-id=\"mini-img\"] img");
+      Elements images = docVariant.select(".main__photo .main__item");
 
       if (!images.isEmpty()) {
          for (Element image : images) {
             String img = CrawlerUtils.scrapStringSimpleInfoByAttribute(image, "img", "src");
             if (img != null) {
-               img = img.replaceAll("mini", "hd_no_extent");
                imageList.add(img);
             }
          }
