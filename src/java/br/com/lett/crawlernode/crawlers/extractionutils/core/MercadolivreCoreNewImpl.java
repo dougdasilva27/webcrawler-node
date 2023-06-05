@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import org.json.JSONArray;
 
@@ -15,6 +16,7 @@ public class MercadolivreCoreNewImpl extends MercadolivreCrawler{
       super.setHomePage(session.getOptions().optString("HomePage"));
       super.setMainSellerNameLower(session.getOptions().optString("Seller"));
       super.setSellerVariations(getSellersWithVariations());
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
 //This method was implemented to get the product with 1P availability even if there is any variation in the seller's name
