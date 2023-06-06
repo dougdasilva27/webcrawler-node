@@ -57,7 +57,7 @@ public class BrasilDavoSupermercadosCrawler extends Crawler {
          String name = structureProduct.optString("name");
          String primaryImage = sanitizedUrl(structureProduct.optString("image"));
          JSONObject scriptObject = getObjectProductScript(document, internalId);
-         boolean isAvailable = Available(structureProduct, scriptObject);
+         boolean isAvailable = GetAvailable(structureProduct, scriptObject);
          String description = scriptObject.optString("longDescription");
          Offers offers = isAvailable ? scrapOffers(scriptObject) : new Offers();
          Product product = ProductBuilder.create()
@@ -77,7 +77,7 @@ public class BrasilDavoSupermercadosCrawler extends Crawler {
       return products;
    }
 
-   private boolean Available(JSONObject scriptObject,JSONObject structureProduct) {
+   private boolean GetAvailable(JSONObject scriptObject,JSONObject structureProduct) {
       Double price = scriptObject.optDouble("listPrice");
      return JSONUtils.getValueRecursive(structureProduct, "offers.availability", String.class, "").equals("https://schema.org/InStock") && price != null ;
    }
