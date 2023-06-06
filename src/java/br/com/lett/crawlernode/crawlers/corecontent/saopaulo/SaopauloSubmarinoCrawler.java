@@ -5,6 +5,8 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 import java.net.HttpCookie;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -35,7 +37,7 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
    public void handleCookiesBeforeFetch() {
 
       try {
-         HttpClient client = HttpClient.newBuilder().build();
+         HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", 3130))).build();
          HttpRequest request = HttpRequest.newBuilder()
             .GET()
             .uri(URI.create(homePage))
