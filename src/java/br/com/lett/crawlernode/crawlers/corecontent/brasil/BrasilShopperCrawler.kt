@@ -100,7 +100,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       val headers: MutableMap<String, String> = HashMap()
 
       headers["authorization"] = "Bearer $token"
-      headers["shopper_current_store"] = session.options.optString("storeId", "3");
+      headers["x-store-id"] = session.options.optString("storeId", "3");
 
       val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
 
