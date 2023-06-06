@@ -57,7 +57,7 @@ public class BrasilDavoSupermercadosCrawler extends Crawler {
          String name = structureProduct.optString("name");
          String primaryImage = sanitizedUrl(structureProduct.optString("image"));
          JSONObject scriptObject = getObjectProductScript(document, internalId);
-         boolean isAvailable = JSONUtils.getValueRecursive(structureProduct, "offers.availability", String.class, "").equals("https://schema.org/InStock");
+         boolean isAvailable = Available(structureProduct, scriptObject);
          String description = scriptObject.optString("longDescription");
          Offers offers = isAvailable ? scrapOffers(scriptObject) : new Offers();
          Product product = ProductBuilder.create()
@@ -75,6 +75,11 @@ public class BrasilDavoSupermercadosCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
       return products;
+   }
+
+   private boolean Available(JSONObject scriptObject,JSONObject structureProduct) {
+      Double price = scriptObject.optDouble("listPrice");
+     return JSONUtils.getValueRecursive(structureProduct, "offers.availability", String.class, "").equals("https://schema.org/InStock") && price != null ;
    }
 
    private JSONObject getObjectProductScript(Document document, String internalId) throws UnsupportedEncodingException {
