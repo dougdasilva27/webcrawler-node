@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -101,10 +102,11 @@ public class MercadolivreCrawler extends Crawler {
    }
 
    @Override
-   protected Object fetch() {
-      Document doc = new Document("");
+   protected Response fetchResponse() {
+      Document doc;
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
+      Response response = null;
 
       if (acceptCatalog || isOwnProduct()) {
 
@@ -125,7 +127,7 @@ public class MercadolivreCrawler extends Crawler {
                .setHeaders(headers)
                .build();
 
-            Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), dataFetcher), session);
+            response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), dataFetcher), session);
 
             doc = Jsoup.parse(response.getBody());
             String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-description", false);
@@ -140,7 +142,7 @@ public class MercadolivreCrawler extends Crawler {
 
       }
 
-      return doc;
+      return response;
    }
 
    private boolean isOwnProduct() {
