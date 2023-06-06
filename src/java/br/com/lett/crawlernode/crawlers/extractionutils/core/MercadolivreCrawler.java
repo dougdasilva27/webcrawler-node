@@ -130,7 +130,7 @@ public class MercadolivreCrawler extends Crawler {
             response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), dataFetcher), session);
 
             doc = Jsoup.parse(response.getBody());
-            String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-description", false);
+            String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-description__content", true);
             success = description != null && !description.isEmpty();
             if (success) {
                Logging.printLogInfo(logger, session, "HTML has description!");

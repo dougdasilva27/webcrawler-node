@@ -91,7 +91,7 @@ public class MercadolivreNewCrawler {
                "http2.mlstatic.com");
             List<String> secondaryImages = crawlImages(primaryImage, doc);
             String description =
-               CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
+               CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description__content", ".ui-pdp-specs"));
 
             RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
             ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
