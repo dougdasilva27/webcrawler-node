@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
@@ -51,6 +52,7 @@ public class MexicoAmazonCrawler extends Crawler {
 
    public MexicoAmazonCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.MIRANHA);
       super.config.setParser(Parser.HTML);
    }
 
