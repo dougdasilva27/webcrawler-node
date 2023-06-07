@@ -113,7 +113,7 @@ public class ChileLidersuperCrawler extends Crawler {
       // sometimes Lider don't loads the primary image, only the secondary images
       // primary image url example: https://images.lider.cl/wmtcl?source=url[file:/productos/500244a.jpg]&sink
       // secondary image url example: https://images.lider.cl/wmtcl?source=url[file:/productos/500244b.jpg]&sink
-      String regex = "\\/\\d+a\\.jpg";
+      String regex = "\\/\\d+a\\.jpg|\\/\\d+a-1\\.jpg";
       Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
       Matcher matcher = pattern.matcher(previewImage != null ? previewImage : "");
 
