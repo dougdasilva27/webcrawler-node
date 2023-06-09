@@ -420,7 +420,7 @@ public abstract class RappiCrawler extends Crawler {
       String description = productJson.optString("description");
 
       if (!stringHasGrammature(name) && stringHasGrammature(presentation)) {
-         name += " " + extractGrammature(presentation);
+         name += " " + presentation;
       } else if (!stringHasGrammature(name) && stringHasGrammature(description)) {
          name += " " + extractGrammature(description);
       }
