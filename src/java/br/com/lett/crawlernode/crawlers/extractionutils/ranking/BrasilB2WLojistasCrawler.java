@@ -12,7 +12,9 @@ import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.cookie.Cookie;
 import org.jsoup.Jsoup;
@@ -42,6 +44,28 @@ public class BrasilB2WLojistasCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
+
+   @Override
+   protected void processBeforeFetch() {
+      String urlAmericanas = "https://www.americanas.com.br";
+      Request request = Request.RequestBuilder.create()
+         .setHeaders(B2WCrawler.getHeaders())
+         .setUrl(urlAmericanas)
+         .setProxyservice(List.of(
+            ProxyCollection.SMART_PROXY_MX_HAPROXY,
+            ProxyCollection.SMART_PROXY_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY
+         ))
+         .build();
+      Response response = CrawlerUtils.retryRequest(request, session, new ApacheDataFetcher(), true);
+      List<Cookie> cookiesResponse = response.getCookies();
+      for (Cookie cookieResponse : cookiesResponse) {
+         this.cookies.add(CrawlerUtils.setCookie(cookieResponse.getName(), cookieResponse.getValue(), CommonMethods.getLast(urlAmericanas.split("//")), "/"));
+      }
+   }
 
    @Override
    protected Document fetchDocument(String url) {
@@ -76,6 +100,7 @@ public class BrasilB2WLojistasCrawler extends CrawlerRankingKeywords {
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
             )
          )
+         .setCookies(this.cookies)
          .build();
 
       Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
