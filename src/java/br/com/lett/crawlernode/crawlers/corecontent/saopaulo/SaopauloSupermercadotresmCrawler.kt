@@ -34,20 +34,19 @@ class SaopauloSupermercadotresmCrawler(session: Session) : Crawler(session) {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: ${session.originalURL}")
 
-         val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-details  #variant_id", "value")
-         val internalPid = internalId
-         val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", true)
-         val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li", true)
+         val internalId = scrapInternalId(doc)
+         val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".productName", true)
+         val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb.hidden-xs li a", true)
          val description = CrawlerUtils.scrapSimpleDescription(doc, listOf(".description"))
-         val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image_zoom", listOf("data-zoom-image"), "https", "s3-sa-east-1.amazonaws.com")
-         val availability = doc.selectFirst(".product-details #add-to-cart-button") != null
+         val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image_zoom", listOf("src"), "https", "s3-sa-east-1.amazonaws.com")
+         val availability = doc.selectFirst(".subinfo-container.notify-me-section") == null
          val offers = if (availability) scrapOffers(doc) else Offers()
          val ratingsReviews = scrapRating(doc)
 
          val product = ProductBuilder.create()
             .setUrl(session.originalURL)
             .setInternalId(internalId)
-            .setInternalPid(internalPid)
+            .setInternalPid(internalId)
             .setName(name)
             .setOffers(offers)
             .setCategory1(categories.getCategory(0))
@@ -66,13 +65,24 @@ class SaopauloSupermercadotresmCrawler(session: Session) : Crawler(session) {
       return products
    }
 
+   private fun scrapInternalId(doc: Document): String? {
+      val idAvailable = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".checkout-container .add-item-to-cart #variant_id", "value")
+
+      if (idAvailable == null) {
+         return CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".notify-me-form #stock_request_variant_id", "value")
+      }
+
+      return idAvailable
+   }
+
    private fun isProductPage(doc: Document): Boolean {
-      return doc.selectFirst("#product-details") != null
+      return doc.selectFirst(".product-details") != null
    }
 
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
       val pricing = scrapPricing(doc)
+
       offers.add(
          OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
@@ -88,8 +98,9 @@ class SaopauloSupermercadotresmCrawler(session: Session) : Crawler(session) {
 
    private fun scrapPricing(doc: Document): Pricing {
 
-      val spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.col-md-5.col-xl-6.col-xxl-6 > h4 > span", null, false, ',', this.session)
-      val priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.col-md-5.col-xl-6.col-xxl-6 > h4 > small.rrf > span", null, false, ',', this.session)
+      val spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal_price > span", null, false, ',', this.session)
+      val priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal_price .rrf span", null, false, ',', this.session)
+
       return PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setPriceFrom(priceFrom)
