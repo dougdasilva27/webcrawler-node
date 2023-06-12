@@ -33,7 +33,6 @@ public class BrasilAppRappiCrawler extends Crawler {
    private final String lat = session.getOptions().optString("lat");
    private final String lng = session.getOptions().optString("lng");
    private final String storeId = session.getOptions().optString("storeId");
-   private final String authorization = session.getOptions().optString("authorization");
    private static final String imgUrl = "https://images.rappi.com.br/products/";
 
    Map<String, String> headers = new HashMap<>();
