@@ -43,8 +43,9 @@ public class SaoPauloJauServe extends CrawlerRankingKeywords {
          .setUrl(url)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          ))
          .setCookies(this.cookies)
          .build();
