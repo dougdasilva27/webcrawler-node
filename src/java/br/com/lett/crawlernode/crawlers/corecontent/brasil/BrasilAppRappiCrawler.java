@@ -42,7 +42,6 @@ public class BrasilAppRappiCrawler extends Crawler {
    protected Response fetchResponse() {
       ;
       headers.put("content-type", "application/json; charset=UTF-8");
-      headers.put("Authorization", authorization);
       headers.put("Host", "services.rappi.com.br");
       headers.put("app-version-name", "7.48.20230420-72418");
       headers.put(HttpHeaders.ACCEPT, "*/*");
