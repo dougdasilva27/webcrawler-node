@@ -279,7 +279,7 @@ public abstract class CrawlerRanking extends Task {
    }
 
    // função que extrai os produtos da página atual
-   protected abstract void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException;
+   protected abstract void extractProductsFromCurrentPage() throws Exception;
 
    /**
     * função que retorna se há ou não uma próxima página default: total de produtos maior que os
