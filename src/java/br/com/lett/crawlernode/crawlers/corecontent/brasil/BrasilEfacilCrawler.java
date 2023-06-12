@@ -47,25 +47,25 @@ public class BrasilEfacilCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
       JSONObject dataJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
-      JSONObject productArray = JSONUtils.getValueRecursive(dataJson, "props.pageProps.staticProductData", JSONObject.class);
+      JSONObject productInfo = JSONUtils.getValueRecursive(dataJson, "props.pageProps.staticProductData", JSONObject.class);
 
-      if (productArray != null && !productArray.isEmpty()) {
-         String internalId = JSONUtils.getValueRecursive(productArray, "idProduto", String.class);
-         String internalPid = JSONUtils.getValueRecursive(productArray, "sku", String.class);
-         String name = JSONUtils.getValueRecursive(productArray, "nome", String.class);
-         JSONArray images = JSONUtils.getValueRecursive(productArray, "skus.0.imagens", JSONArray.class, new JSONArray());
+      if (productInfo != null && !productInfo.isEmpty()) {
+         String internalId = JSONUtils.getValueRecursive(productInfo, "idProduto", String.class);
+         String internalPid = JSONUtils.getValueRecursive(productInfo, "sku", String.class);
+         String name = JSONUtils.getValueRecursive(productInfo, "nome", String.class);
+         JSONArray images = JSONUtils.getValueRecursive(productInfo, "skus.0.imagens", JSONArray.class, new JSONArray());
          String primaryImage = JSONUtils.getValueRecursive(images, "0.url1000", String.class);
          List<String> secondaryImages = getSecondaryImages(images);
-         String description = JSONUtils.getValueRecursive(productArray, "descricao", String.class);
-         String categories = JSONUtils.getValueRecursive(productArray, "subcategoria", String.class, "");
-         boolean available = JSONUtils.getValueRecursive(productArray, "skus.0.disponivel", Boolean.class);
-         //Offers offers = stock > 0 ? scrapOffers(data) : new Offers();
+         String description = JSONUtils.getValueRecursive(productInfo, "descricao", String.class);
+         String categories = JSONUtils.getValueRecursive(productInfo, "subcategoria", String.class, "");
+         boolean available = JSONUtils.getValueRecursive(productInfo, "skus.0.disponivel", Boolean.class);
+         Offers offers = available ? scrapOffers(doc) : new Offers();
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
-            //.setOffers(offers)
+            .setOffers(offers)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
@@ -100,10 +100,10 @@ public class BrasilEfacilCrawler extends Crawler {
    }
 
 
-   private Offers scrapOffers(Document doc, String internalPid, String internalId) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = scrapSales(internalPid, internalId);
+      //List<String> sales = scrapSales(internalPid, internalId);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -111,7 +111,7 @@ public class BrasilEfacilCrawler extends Crawler {
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(getSellerName(doc).equalsIgnoreCase(SELLER_FULL_NAME))
-         .setSales(sales)
+         //.setSales(sales)
          .setPricing(pricing)
          .build());
 
@@ -185,30 +185,6 @@ public class BrasilEfacilCrawler extends Crawler {
       }
 
       return installments;
-   }
-
-   private List<String> scrapSales(String internalPid, String internalId) {
-
-      String apiPrice = "https://www.efacil.com.br/webapp/wcs/stores/servlet/ProductPriceView?storeId=10154&catalogId=10051&productInfoPage=true&type=product&productIdPRD=" + internalPid + "&catalogEntryId=" + internalId;
-
-      Map<String, String> headers = new HashMap<>();
-
-      headers.put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36");
-      headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("Accept-Encoding", "gzip, deflate, br");
-      headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-
-      Request request = RequestBuilder.create().setUrl(apiPrice).setHeaders(headers).mustSendContentEncoding(false).build();
-      String response = this.dataFetcher.get(session, request).getBody();
-      Document htmlPrice = Jsoup.parse(response);
-
-      List<String> sales = new ArrayList<>();
-      String sale = CrawlerUtils.scrapStringSimpleInfo(htmlPrice, "#entryPriceAtacarejo", false);
-      if (sale != null) {
-         sales.add(sale);
-      }
-
-      return sales;
    }
 
    private String getSellerName(Document doc) {
