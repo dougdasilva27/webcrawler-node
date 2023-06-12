@@ -81,7 +81,6 @@ public class CarrefourMercadoRanking extends CrawlerRankingKeywords {
             ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
             ProxyCollection.LUMINATI_SERVER_BR,
             ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.SMART_PROXY_BR,
             ProxyCollection.BUY,
             ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
