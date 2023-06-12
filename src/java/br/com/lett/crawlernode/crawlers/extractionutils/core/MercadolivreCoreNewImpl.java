@@ -16,7 +16,6 @@ public class MercadolivreCoreNewImpl extends MercadolivreCrawler {
       super.setHomePage(session.getOptions().optString("HomePage"));
       super.setMainSellerNameLower(session.getOptions().optString("Seller"));
       super.setSellerVariations(getSellersWithVariations());
-      super.config.setFetcher(FetchMode.FETCHER);
       super.config.setParser(Parser.HTML);
    }
 
