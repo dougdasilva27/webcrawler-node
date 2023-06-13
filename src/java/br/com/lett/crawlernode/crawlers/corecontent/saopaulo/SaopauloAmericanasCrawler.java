@@ -24,6 +24,7 @@ import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static br.com.lett.crawlernode.util.CrawlerUtils.setCookie;
 
@@ -109,9 +110,19 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    }
 
    private static HttpResponse RequestHandler(String urlAmericanas, Integer port) throws IOException, InterruptedException {
+      String [] listaHeaders = new String[30];
+      Map<String,String> headers = getHeaders();
+      int i =0;
+      for (String chave : headers.keySet()) {
+         int j = 2*i;
+         listaHeaders[j] = chave;
+         listaHeaders[j+1]= headers.get(chave);
+         i++;
+      }
       HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", port))).build();
       HttpRequest request = HttpRequest.newBuilder()
          .GET()
+         .headers(listaHeaders)
          .uri(URI.create(urlAmericanas))
          .build();
       HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
