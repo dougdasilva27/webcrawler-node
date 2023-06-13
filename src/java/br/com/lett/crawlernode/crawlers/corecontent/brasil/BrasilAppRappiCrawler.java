@@ -33,7 +33,6 @@ public class BrasilAppRappiCrawler extends Crawler {
    private final String lat = session.getOptions().optString("lat");
    private final String lng = session.getOptions().optString("lng");
    private final String storeId = session.getOptions().optString("storeId");
-   private final String authorization = session.getOptions().optString("authorization");
    private static final String imgUrl = "https://images.rappi.com.br/products/";
 
    Map<String, String> headers = new HashMap<>();
@@ -42,7 +41,6 @@ public class BrasilAppRappiCrawler extends Crawler {
    protected Response fetchResponse() {
       ;
       headers.put("content-type", "application/json; charset=UTF-8");
-      headers.put("Authorization", authorization);
       headers.put("Host", "services.rappi.com.br");
       headers.put("app-version-name", "7.48.20230420-72418");
       headers.put(HttpHeaders.ACCEPT, "*/*");

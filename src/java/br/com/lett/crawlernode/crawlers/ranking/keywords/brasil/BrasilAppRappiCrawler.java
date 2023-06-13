@@ -32,7 +32,6 @@ public class BrasilAppRappiCrawler extends CrawlerRankingKeywords {
       headers.put("content-type", "application/json");
       headers.put("content-length", payload.length() + "");
       headers.put("host", "services.rappi.com.br");
-      headers.put("authorization", session.getOptions().optString("authorization"));
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://services.rappi.com.br/api/cpgs/search/v2/store/" + storeId + "/products")
