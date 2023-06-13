@@ -1,10 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -15,10 +10,12 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 
 public class BrasilIfoodAppCrawler extends CrawlerRankingKeywords {
@@ -36,31 +33,26 @@ public class BrasilIfoodAppCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected JSONObject fetchJSONObject(String url) {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("host", "wsloja.ifood.com.br");
-      headers.put("channel", "IFOOD");
-      headers.put("user-agent", "okhttp/4.10.0");
-      headers.put("app_package_name", "br.com.brainweb.ifood");
-      headers.put("authority", "marketplace.ifood.com.br");
-      headers.put("sec-fetch-dest", "empty");
-      headers.put("sec-fetch-mode", "cors");
-      headers.put("item_experiment_details", "{\"default_internal\":{\"recommendation_filter\":\"internal_search\",\"model_id\":\"ifood-ml-discovery-default-sort-items\",\"engine\":\"sagemaker\",\"backend_experiment_id\":\"rank_exact\",\"force_recommendation_disabled\":true},\"market_internal\":{\"recommendation_filter\":\"internal_search\",\"model_id\":\"search-bumblebee-endpoint\",\"engine\":\"sagemaker\",\"query_rewriter_model_id\":\"search-r5d4-serve-endpoint\",\"backend_experiment_id\":\"v5\",\"query_rewriter_rule\":\"groceries-context\",\"force_recommendation_disabled\":false,\"similar_search\":{\"backend_experiment_id\":\"v5\",\"query_rewriter_model_id\":\"search-marvin-curated-endpoint\",\"force_recommendation_disabled\":false, \"model_id\": \"search-marvin-filter-endpoint\"}}}");
-      headers.put("item_experiment_enabled", "true");
-      headers.put("item_experiment_variant", "market_internal");
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY
-         ))
-         .setFollowRedirects(false)
-         .build();
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
-      return CrawlerUtils.stringToJson(response.getBody());
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(url))
+            .header("user-agent", "okhttp/4.10.0")
+            .header("app_package_name", "br.com.brainweb.ifood")
+            .header("authority", "marketplace.ifood.com.br")
+            .header("sec-fetch-dest", "empty")
+            .header("sec-fetch-mode", "cors")
+            .header("item_experiment_details", "{\"default_internal\":{\"recommendation_filter\":\"internal_search\",\"model_id\":\"ifood-ml-discovery-default-sort-items\",\"engine\":\"sagemaker\",\"backend_experiment_id\":\"rank_exact\",\"force_recommendation_disabled\":true},\"market_internal\":{\"recommendation_filter\":\"internal_search\",\"model_id\":\"search-bumblebee-endpoint\",\"engine\":\"sagemaker\",\"query_rewriter_model_id\":\"search-r5d4-serve-endpoint\",\"backend_experiment_id\":\"v5\",\"query_rewriter_rule\":\"groceries-context\",\"force_recommendation_disabled\":false,\"similar_search\":{\"backend_experiment_id\":\"v5\",\"query_rewriter_model_id\":\"search-marvin-curated-endpoint\",\"force_recommendation_disabled\":false, \"model_id\": \"search-marvin-filter-endpoint\"}}}")
+            .header("item_experiment_enabled", "true")
+            .header("item_experiment_variant", "market_internal")
+            .build();
+
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return new JSONObject(response.body());
+      } catch (IOException | InterruptedException e) {
+         throw new RuntimeException("Failed to load document: " + url, e);
+      }
    }
 
    @Override
