@@ -44,7 +44,6 @@ public class BrasilEfacilCrawler extends Crawler {
 
       if (productInfo != null && !productInfo.isEmpty()) {
          String internalId = JSONUtils.getValueRecursive(productInfo, "idProduto", String.class);
-         String internalPid = JSONUtils.getValueRecursive(productInfo, "sku", String.class);
          String name = JSONUtils.getValueRecursive(productInfo, "nome", String.class);
          JSONArray images = JSONUtils.getValueRecursive(productInfo, "skus.0.imagens", JSONArray.class, new JSONArray());
          String primaryImage = JSONUtils.getValueRecursive(images, "0.url1000", String.class);
@@ -56,7 +55,7 @@ public class BrasilEfacilCrawler extends Crawler {
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalPid)
+            .setInternalPid(internalId)
             .setName(name)
             .setOffers(offers)
             .setPrimaryImage(primaryImage)

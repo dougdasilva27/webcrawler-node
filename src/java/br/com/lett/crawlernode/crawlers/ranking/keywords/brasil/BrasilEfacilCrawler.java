@@ -42,7 +42,6 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
         String internalPid = crawlInternalPid(e);
-        String internalId = crawlInternalId(e);
         String productUrl = null;
          try {
             productUrl = crawlProductUrl(e);
@@ -56,7 +55,6 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
 
          RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(productUrl)
-            .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setImageUrl(imgUrl)
             .setName(name)
@@ -107,23 +105,8 @@ public class BrasilEfacilCrawler extends CrawlerRankingKeywords {
 
   }
 
-  private String crawlInternalId(Element e) {
-     return CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "catentry");
-  }
-
   private String crawlInternalPid(Element e) {
-    String internalPid = null;
-
-    String comparedProducts = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".compare label input", "onclick");
-    String[] formattedProducts = comparedProducts != null ? comparedProducts.split(",") : null;
-
-    if(formattedProducts != null){
-       internalPid = formattedProducts.length > 0 ? formattedProducts[formattedProducts.length -1]: null;
-       internalPid = internalPid != null ? internalPid.replaceAll("[^0-9]", "").trim() : null;
-    }
-
-
-    return internalPid;
+     return CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "catentry");
   }
 
   private String crawlProductUrl(Element e) throws UnsupportedEncodingException {
