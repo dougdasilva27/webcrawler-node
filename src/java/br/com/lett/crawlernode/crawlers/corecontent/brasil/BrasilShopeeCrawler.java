@@ -197,6 +197,7 @@ public class BrasilShopeeCrawler extends Crawler {
       } else {
          ids = this.session.getOriginalURL();
       }
+      ids = ids.split("\\?")[0];
       String[] arr = ids.split("\\.");
       String itemId = arr[arr.length - 1];
       String shopId = arr[arr.length - 2];
