@@ -146,8 +146,18 @@ public class BrasilEfacilCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject productInfo) throws MalformedPricingException {
-      Double spotlightPrice = MathUtils.parseDoubleWithComma(JSONUtils.getValueRecursive(productInfo, "preco.precoAVistaText", String.class, ""));
-      Double priceFrom = MathUtils.parseDoubleWithComma(JSONUtils.getValueRecursive(productInfo, "preco.precoAVistaText", String.class, ""));
+      String spotlightPriceString = JSONUtils.getValueRecursive(productInfo, "skus.0.preco.precoPorText", String.class, "");
+      String priceFromString = JSONUtils.getValueRecursive(productInfo, "skus.0.preco.precoDeText", String.class, "");
+      Double spotlightPrice = null;
+      Double priceFrom = null;
+
+      if (spotlightPriceString != null && !spotlightPriceString.isEmpty()) {
+         spotlightPrice = MathUtils.parseDoubleWithComma(spotlightPriceString);
+      }
+
+      if (priceFromString != null && !priceFromString.isEmpty()) {
+         priceFrom = MathUtils.parseDoubleWithComma(priceFromString);
+      }
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(productInfo, spotlightPrice);
@@ -187,8 +197,19 @@ public class BrasilEfacilCrawler extends Crawler {
       Installments installments = new Installments();
 
       if (productInfo != null && !productInfo.isEmpty()) {
-         Integer installment = JSONUtils.getValueRecursive(productInfo, "preco.parcelas.numeroParcelas", Integer.class);
+         Integer installment = JSONUtils.getValueRecursive(productInfo, "preco.parcelas.numeroParcelas", Integer.class, 0);
          Double value = MathUtils.parseDoubleWithComma(JSONUtils.getValueRecursive(productInfo, "preco.parcelas.valorParcela", String.class, ""));
+
+         if (installment == null || installment == 0) {
+            installment++;
+         }
+
+         if (value == null) {
+            String valueString = JSONUtils.getValueRecursive(productInfo, "skus.0.preco.precoPorText", String.class, "");
+            if (valueString != null && !valueString.isEmpty()) {
+               value = MathUtils.parseDoubleWithComma(valueString);
+            }
+         }
 
          installments.add(Installment.InstallmentBuilder.create()
             .setInstallmentNumber(installment)
