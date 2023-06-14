@@ -62,15 +62,15 @@ public class BrasilAppRappiCrawler extends CrawlerRankingKeywords {
             JSONObject productJson = (JSONObject) product;
 
             if (productJson != null) {
-               String url = productJson.optString("id");
+               String internalId = productJson.optString("id");
                String name = productJson.optString("name");
                String imageUrl = productJson.optString("image");
                Integer price = productJson.optInt("price");
                boolean isAvailable = productJson.optBoolean("in_stock");
 
                RankingProduct productRanking = RankingProductBuilder.create()
-                  .setUrl(url)
-                  .setInternalId(url)
+                  .setUrl(session.getOptions().optString("preLink")+internalId)
+                  .setInternalId(internalId)
                   .setName(name)
                   .setPriceInCents(price)
                   .setAvailability(isAvailable)

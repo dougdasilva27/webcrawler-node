@@ -44,7 +44,7 @@ public class BrasilAppRappiCrawler extends Crawler {
       headers.put("Host", "services.rappi.com.br");
       headers.put("app-version-name", "7.48.20230420-72418");
       headers.put(HttpHeaders.ACCEPT, "*/*");
-      String productId = session.getOriginalURL().split("_")[1];
+      String productId = session.getOriginalURL().split("#")[1].split("_")[1];
 
       String payload = "{\"context\":\"product_detail\",\"stores\":[" + storeId + "],\"offset\":0,\"limit\":1,\"state\":{\"parent_store_type\":\"market\",\"product_id\":\"" + productId + "\",\"sessions\":\"0\",\"is_prime\":\"false\",\"zone_ids\":\"[]\",\"unlimited_shipping\":\"false\",\"lat\":\"" + lat + "\",\"lng\":\"" + lng + "\"}}";
 
@@ -87,7 +87,7 @@ public class BrasilAppRappiCrawler extends Crawler {
          Offers offers = availableToBuy ? scrapOffers(jsonProduct) : new Offers();
 
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
+            .setUrl(session.getOptions().optString("preLink")+internalId)
             .setInternalId(internalId)
             .setInternalPid(internalId)
             .setName(name)
