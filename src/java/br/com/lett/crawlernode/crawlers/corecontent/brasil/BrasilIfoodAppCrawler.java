@@ -47,7 +47,7 @@ public class BrasilIfoodAppCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
-      String url = "https://wsloja.ifood.com.br/ifood-ws-v3/restaurants/" + merchant_id + "/menuitem/" + session.getOriginalURL();
+      String url = "https://wsloja.ifood.com.br/ifood-ws-v3/restaurants/" + merchant_id + "/menuitem/" + session.getOriginalURL().split("#")[1];
       try {
          HttpClient client = HttpClient.newBuilder().build();
          HttpRequest request = HttpRequest.newBuilder()
@@ -91,7 +91,7 @@ public class BrasilIfoodAppCrawler extends Crawler {
             Offers offers = availability.equals("AVAILABLE") ? scrapOffers(item) : new Offers();
 
             Product product = ProductBuilder.create()
-               .setUrl(internalId)
+               .setUrl(session.getOptions().optString("preLink")+internalId)
                .setInternalId(internalId)
                .setInternalPid(internalId)
                .setName(name)
