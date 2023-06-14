@@ -52,8 +52,6 @@ public class BrasilB2WLojistasCrawler extends CrawlerRankingKeywords {
          .setHeaders(B2WCrawler.getHeaders())
          .setUrl(urlAmericanas)
          .setProxyservice(List.of(
-            ProxyCollection.SMART_PROXY_MX_HAPROXY,
-            ProxyCollection.SMART_PROXY_AR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
