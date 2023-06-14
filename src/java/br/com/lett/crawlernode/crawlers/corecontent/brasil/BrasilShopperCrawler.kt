@@ -41,17 +41,13 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       return session.options.optString("login");
    }
 
-
    override fun fetch(): JSONObject? {
-      val name = productIdByURL().toLowerCase()
-
-      uptadeToken();
-
+      updateToken();
       return requestProduct()
    }
 
-   private fun uptadeToken() {
-      var tokenSession = session.options.optString("tokenShopper", null);
+   private fun updateToken() {
+      val tokenSession = session.options.optString("tokenShopper", null);
       if (tokenSession != null) {
          token = tokenSession;
       } else {
@@ -74,14 +70,13 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
             log("submit login")
             webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 20000)
 
-
             webdriver.waitForElement("div h1", 240)
 
             cookies = webdriver.driver.manage().cookies.map {
                BasicClientCookie(it.name, it.value)
             }
 
-            var tokenShopper = this.cookies.first { it.name == "shopper_token" }.value
+            val tokenShopper = this.cookies.first { it.name == "shopper_token" }.value
 
             if (tokenShopper.isEmpty()) {
                token = tokenShopper
@@ -89,6 +84,11 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
          } catch (e: Exception) {
             Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e))
             Logging.printLogWarn(logger, "login não realizado")
+         } finally {
+            if (webdriver != null) {
+               webdriver.terminate()
+               Logging.printLogWarn(logger, "WebDriver terminate")
+            }
          }
       }
    }
@@ -112,18 +112,15 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       return HttpUrl.parse(session.originalURL)?.queryParameter("id") ?: ""
    }
 
-
    override fun extractInformation(json: JSONObject?): MutableList<Product> {
 
-      if (json == null || json.optString("title") == null || json.length() <= 3) {
+      if (json?.optString("title") == null || json.length() <= 3) {
          log("Not a product page " + session.originalURL)
          return mutableListOf()
       }
 
       val name = json.optString("name")
-
-      val internalId = json.getInt("id").toString()
-
+      val internalId = json.optInt("id", 0).toString()
       val primaryImage = json.optString("image")
       val description = json.optString("description")
 
@@ -157,9 +154,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       val offers = Offers()
 
       val stringPrice = json.optString("price")
-
       val price: Double = MathUtils.parseDoubleWithComma(stringPrice)
-
       val bankSlip = price.toBankSlip()
 
       val creditCards = listOf(
@@ -197,5 +192,4 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
    fun log(message: String) {
       Logging.printLogDebug(logger, session, message)
    }
-
 }
