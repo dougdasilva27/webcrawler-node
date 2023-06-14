@@ -47,7 +47,8 @@ public class BrasilIfoodAppCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
-      String url = "https://wsloja.ifood.com.br/ifood-ws-v3/restaurants/" + merchant_id + "/menuitem/" + session.getOriginalURL().split("#")[1];
+      String productId = session.getOriginalURL().split("#")[1].length() > 1 ? session.getOriginalURL().split("#")[1] : session.getOriginalURL();
+      String url = "https://wsloja.ifood.com.br/ifood-ws-v3/restaurants/" + merchant_id + "/menuitem/" + productId;
       try {
          HttpClient client = HttpClient.newBuilder().build();
          HttpRequest request = HttpRequest.newBuilder()
