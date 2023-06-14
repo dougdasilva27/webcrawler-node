@@ -60,7 +60,6 @@ class AtacadaoCrawlerRanking(session: Session) : CrawlerRankingKeywords(session)
          .build()
 
       val response = CrawlerUtils.retryRequest(request, session, ApacheDataFetcher(), true);
-
       return response.body.toJson()
    }
 
@@ -94,12 +93,7 @@ class AtacadaoCrawlerRanking(session: Session) : CrawlerRankingKeywords(session)
       val data = fetchProducts()
       val products = JSONUtils.getJSONArrayValue(data, "results")
 
-      if (this.totalProducts == 0) {
-         products.length()
-      }
-
       for (product in products) {
-
          if (product is JSONObject) {
             val internalId = product.optString("id", null)
             val productUrl = CrawlerUtils.completeUrl(product.optString("slug"), "https", "www.atacadao.com.br");
@@ -126,7 +120,6 @@ class AtacadaoCrawlerRanking(session: Session) : CrawlerRankingKeywords(session)
       }
 
       log("Finalizando Crawler de produtos da página $currentPage - até agora ${arrayProducts.size} +  produtos crawleados")
-
    }
 
    private fun getKeyword(): String {
@@ -160,5 +153,9 @@ class AtacadaoCrawlerRanking(session: Session) : CrawlerRankingKeywords(session)
       }
 
       return null
+   }
+
+   override fun hasNextPage(): Boolean {
+      return true
    }
 }
