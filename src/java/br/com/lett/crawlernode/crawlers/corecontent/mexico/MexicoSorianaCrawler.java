@@ -40,7 +40,7 @@ public class MexicoSorianaCrawler extends Crawler {
    @Override
    protected Response fetchResponse() {
       try {
-         HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", 3130))).build();
+         HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", 3130))).followRedirects(HttpClient.Redirect.NORMAL).build();
          HttpRequest request = HttpRequest.newBuilder()
             .GET()
             .uri(URI.create(session.getOriginalURL()))
