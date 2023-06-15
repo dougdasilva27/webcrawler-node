@@ -1,17 +1,13 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.MathUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
@@ -35,13 +31,16 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
       cookies = this.amazonScraperUtils.handleCookiesBeforeFetch("https://www.amazon.com.br/", cookies);
    }
 
+   protected String getUrl() {
+      return "https://www.amazon.com.br/s/ref=sr_pg_" + this.currentPage + "?page=" + this.currentPage + "&keywords=" + this.keywordEncoded + "&ie=UTF8";
+   }
+
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.amazon.com.br/s/ref=sr_pg_" + this.currentPage + "?page=" + this.currentPage +
-         "&keywords=" + this.keywordEncoded + "&ie=UTF8";
+      String url = getUrl();
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = Jsoup.parse(amazonScraperUtils.fetchPage(url, new HashMap<>(), cookies, dataFetcher));
