@@ -46,8 +46,8 @@ public class BrasilFarmaciaRosarioCrawler extends Crawler {
       }
       String productDescription = CrawlerUtils.scrapStringSimpleInfo(document, "#main-wrapper > div.content > div > div:nth-child(2)", false);
       List<String> categories = CrawlerUtils.crawlCategories(document, "#breadcrumb > ul > li > a");
-      List<String> productSecondaryImages = scrapImagesLarge(document);
-      String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, "#content-product > div > div > div > div.col-12.col-md-7.product-image > div > div > figure > img", Arrays.asList("data-src"), "https", "");
+      List<String> productImages = scrapImagesLarge(document);
+      String primaryImage = !productImages.isEmpty() ? productImages.remove(0) : CrawlerUtils.scrapSimplePrimaryImage(document, "#content-product > div > div > div > div.col-12.col-md-7.product-image > div > div > figure > img", Arrays.asList("data-src"), "https", "");
       Offers offers = isValid(document) ? scrapOffers(document) : new Offers();
 
       Product product = ProductBuilder.create()
@@ -56,8 +56,8 @@ public class BrasilFarmaciaRosarioCrawler extends Crawler {
          .setInternalPid(productInternalPid)
          .setName(productName)
          .setCategories(categories)
-         .setPrimaryImage(productPrimaryImage)
-         .setSecondaryImages(productSecondaryImages)
+         .setPrimaryImage(primaryImage)
+         .setSecondaryImages(productImages)
          .setDescription(productDescription)
          .setOffers(offers)
          .build();
@@ -67,12 +67,12 @@ public class BrasilFarmaciaRosarioCrawler extends Crawler {
 
    private List<String> scrapImagesLarge(Document document) {
       List<String> imagesMini = CrawlerUtils.scrapSecondaryImages(document, ".thumbs li img", Arrays.asList("data-src"), "https", "io.convertiez.com.br", null);
-      if( imagesMini != null){
-         for (String str : imagesMini){
-
-         }
-
+      List<String> imagesLarge = new ArrayList<>();
+      for (String image : imagesMini) {
+         String updatedImage = image.replaceAll("mini", "large");
+         imagesLarge.add(updatedImage);
       }
+      return imagesLarge;
    }
 
    private Offers scrapOffers(Document document) throws MalformedPricingException, OfferException {
