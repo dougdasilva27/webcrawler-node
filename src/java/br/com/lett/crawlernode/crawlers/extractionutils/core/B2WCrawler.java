@@ -61,7 +61,7 @@ public class B2WCrawler extends Crawler {
    protected boolean allow3PSellers = isAllow3PSellers();
    protected String seller1P = getSeller1P();
 
-   private static final List<String> UserAgent = Arrays.asList(
+   public static final List<String> UserAgent = Arrays.asList(
       "Mozilla/5.0 (iPhone; CPU iPhone OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
       "Mozilla/5.0 (iPad; CPU OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
       "Mozilla/5.0 (iPod; CPU iPhone OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
@@ -130,7 +130,7 @@ public class B2WCrawler extends Crawler {
       return Jsoup.parse(fetchPage(session.getOriginalURL(), this.dataFetcher, cookies, headers, session));
    }
 
-   public static String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
+   public String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -146,20 +146,13 @@ public class B2WCrawler extends Crawler {
          )
          .setProxyservice(
             Arrays.asList(
-
-
                ProxyCollection.NETNUT_RESIDENTIAL_MX,
-               ProxyCollection.SMART_PROXY_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.SMART_PROXY_AR_HAPROXY,
-               ProxyCollection.SMART_PROXY_BR,
-               ProxyCollection.SMART_PROXY_MX,
-               ProxyCollection.SMART_PROXY_CL,
-               ProxyCollection.SMART_PROXY_PE_HAPROXY
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
+
             )
          )
          .build();
