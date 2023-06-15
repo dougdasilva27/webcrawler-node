@@ -75,7 +75,7 @@ public class BrasilIfoodAppCrawler extends CrawlerRankingKeywords {
             Integer price = availability ? (int) (priceDouble * 100) : null;
 
             RankingProduct objProducts = RankingProductBuilder.create()
-               .setUrl(id)
+               .setUrl(session.getOptions().optString("preLink")+id)
                .setInternalId(id)
                .setAvailability(availability)
                .setImageUrl(image)
