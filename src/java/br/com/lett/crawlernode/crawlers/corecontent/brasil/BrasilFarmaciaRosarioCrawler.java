@@ -28,26 +28,28 @@ public class BrasilFarmaciaRosarioCrawler extends Crawler {
    @Override
    public List<Product> extractInformation(Document document) throws Exception {
       super.extractInformation(document);
+
       List<Product> products = new ArrayList<>();
       if (!isProductPage(document)) {
          Logging.printLogDebug(logger, session, "Not a product page" + session.getOriginalURL());
          return products;
       }
-      // Get all product information
+
       String productName = CrawlerUtils.scrapStringSimpleInfo(document, ".name.pb-1", false);
+      String productInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".d-flex.flex-wrap.mb-4 > span > meta:nth-child(1)", "content");
       String productInternalPid = CrawlerUtils.scrapStringSimpleInfo(document, ".mr-3.text-muted.font-size-12.font-weight-bold", false);
       if (productInternalPid != null) {
          String[] arrProduct = productInternalPid.split(" ");
-         if (arrProduct != null && arrProduct.length == 2) {
+         if (arrProduct.length == 2) {
             productInternalPid = String.valueOf(Integer.parseInt(arrProduct[1]));
          }
       }
-      String productInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".d-flex.flex-wrap.mb-4 > span > meta:nth-child(1)", "content");;
       String productDescription = CrawlerUtils.scrapStringSimpleInfo(document, "#main-wrapper > div.content > div > div:nth-child(2)", false);
+      List<String> categories = CrawlerUtils.crawlCategories(document, "#breadcrumb > ul > li > a");
+      List<String> productSecondaryImages = scrapImagesLarge(document);
       String productPrimaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, "#content-product > div > div > div > div.col-12.col-md-7.product-image > div > div > figure > img", Arrays.asList("data-src"), "https", "");
-      List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(document, ".thumbs li img", Arrays.asList("data-src"), "https", "", productPrimaryImage);
-      Offers offers = isValid(document) ? scrapOffers(document, productInternalId) : new Offers();
-      List<String> categories =CrawlerUtils.crawlCategories(document, "#breadcrumb > ul > li > a");
+      Offers offers = isValid(document) ? scrapOffers(document) : new Offers();
+
       Product product = ProductBuilder.create()
          .setUrl(session.getOriginalURL())
          .setInternalId(productInternalId)
@@ -63,9 +65,19 @@ public class BrasilFarmaciaRosarioCrawler extends Crawler {
       return products;
    }
 
-   private Offers scrapOffers(Document document, String productInternalId) throws MalformedPricingException, OfferException {
+   private List<String> scrapImagesLarge(Document document) {
+      List<String> imagesMini = CrawlerUtils.scrapSecondaryImages(document, ".thumbs li img", Arrays.asList("data-src"), "https", "io.convertiez.com.br", null);
+      if( imagesMini != null){
+         for (String str : imagesMini){
+
+         }
+
+      }
+   }
+
+   private Offers scrapOffers(Document document) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(document, productInternalId);
+      Pricing pricing = scrapPricing(document);
       List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
       offers.add(new Offer.OfferBuilder()
          .setIsBuybox(false)
@@ -79,9 +91,10 @@ public class BrasilFarmaciaRosarioCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document document, String id) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, "#content-product > div > div > div > div.col-12.col-md-5 > div > form > div.mobile-fixed > div.row > div.col-6.col-sm-7 > div > div > p.sale-price > strong", null, false, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, "#content-product > div > div > div > div.col-12.col-md-5 > div > form > div.mobile-fixed > div.row > div.col-6.col-sm-7 > div > div > p.unit-price.mr-md-2", null, false, ',', session);
+   private Pricing scrapPricing(Document document) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, ".product-form .sale-price strong", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, ".product-form .unit-price:not([style='display:none;'])", null, false, ',', session);
+
       CreditCards creditCards = CrawlerUtils.scrapCreditCards(spotlightPrice, cards);
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
