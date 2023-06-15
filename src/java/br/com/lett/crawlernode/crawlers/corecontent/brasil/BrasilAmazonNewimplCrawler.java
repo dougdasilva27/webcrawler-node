@@ -23,8 +23,6 @@ import org.jsoup.nodes.Document;
 import java.util.*;
 
 public class BrasilAmazonNewimplCrawler extends Crawler {
-
-   private static final String HOME_PAGE = "https://" + AmazonScraperUtils.HOST;
    private static final String IMAGES_HOST = "images-na.ssl-images-amazon.com";
    private static final String IMAGES_PROTOCOL = "https";
    private String sellerName = this.session.getOptions().optString("seller", "");
