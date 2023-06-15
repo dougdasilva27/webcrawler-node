@@ -1,5 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -8,6 +12,7 @@ import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -18,6 +23,24 @@ public class BrasilSuperbomemcasaCrawler extends CrawlerRankingKeywords {
 
    public BrasilSuperbomemcasaCrawler(Session session) {
       super(session);
+   }
+
+   @Override
+   protected Document fetchDocument(String url) {
+      this.currentDoc = new Document(url);
+
+      if (this.currentPage == 1) {
+         this.session.setOriginalURL(url);
+      }
+
+      Request request = Request.RequestBuilder.create()
+         .setCookies(cookies)
+         .setUrl(url)
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher()), session, "get");
+
+      return Jsoup.parse(response.getBody());
    }
 
    @Override
