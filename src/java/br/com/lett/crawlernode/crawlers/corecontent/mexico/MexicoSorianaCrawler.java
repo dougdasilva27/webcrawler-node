@@ -1,12 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
@@ -19,12 +13,19 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.apache.http.HttpHeaders;
 import org.jsoup.nodes.Document;
 
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 
 public class MexicoSorianaCrawler extends Crawler {
+
+   private String dwsidCookie = this.session.getOptions().optString("dwsid");
 
    private static final String SELLER_FULL_NAME = "soriana";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
@@ -32,11 +33,32 @@ public class MexicoSorianaCrawler extends Crawler {
 
    public MexicoSorianaCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.MIRANHA);
-
+      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setParser(Parser.HTML);
    }
 
-
+   @Override
+   protected Response fetchResponse() {
+      try {
+         HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", 3130))).followRedirects(HttpClient.Redirect.NORMAL).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(session.getOriginalURL()))
+            .header("authority", "www.soriana.com")
+            .header("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+            .header("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7")
+            .header("cache-control", "max-age=0")
+            .header("cookie", dwsidCookie)
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load document: " + session.getOriginalURL(), e);
+      }
+   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
