@@ -490,20 +490,18 @@ public class MexicoAmazonCrawler extends Crawler {
          marketplaceUrl = doc.selectFirst(".a-box-inner .olp-text-box");
       }
 
-      if (marketplaceUrl != null) {
+      Document docMarketplace = fetchDocumentsOffersRequest(page, internalId);
+      docs.add(docMarketplace);
 
-         Document docMarketplace = fetchDocumentsOffersRequest(page, internalId);
+      int totalOffers = CrawlerUtils.scrapIntegerFromHtml(docMarketplace, "#aod-filter-offer-count-string", false);
+      Elements offers = docMarketplace.select("#aod-offer");
+
+      if (totalOffers != offers.size()) {
+         page++;
+         docMarketplace = fetchDocumentsOffersRequest(page, internalId);
          docs.add(docMarketplace);
-
-         int totalOffers = CrawlerUtils.scrapIntegerFromHtml(docMarketplace, "#aod-filter-offer-count-string", false);
-         Elements offers = docMarketplace.select("#aod-offer");
-
-         if (totalOffers != offers.size()) {
-            page++;
-            docMarketplace = fetchDocumentsOffersRequest(page, internalId);
-            docs.add(docMarketplace);
-         }
       }
+
       return docs;
    }
 
