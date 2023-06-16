@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilAmigaoCrawler extends Crawler {
    public BrasilAmigaoCrawler(Session session) {
@@ -49,7 +51,7 @@ public class BrasilAmigaoCrawler extends Crawler {
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".pricing", "#description > div"));
 
 
-         String primaryImage = treatedImage(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".gallery-placeholder__image", "src"));
+         String primaryImage = getPrimaryImage(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".gallery-placeholder__image", "src"));
          List<String> productSecondaryImages = scrapImages(doc);
 
 
@@ -81,19 +83,16 @@ public class BrasilAmigaoCrawler extends Crawler {
       return doc.selectFirst("div.product-info-basic") != null;
    }
 
-   public static String treatedImage(String s) {
-      String[] parts = s.split("\\?", 2);
-      return parts[0] + "?";
-   }
+   public static String getPrimaryImage(String url) {
+      String pattern = "(.*\\.jpg)";
+      Pattern regex = Pattern.compile(pattern);
+      Matcher matcher = regex.matcher(url);
 
-   public static List<String> treatedImage(List<String> urls) {
-      List<String> processedUrls = new ArrayList<>();
-
-      for (String url : urls) {
-         processedUrls.add(treatedImage(url));
+      if (matcher.find()) {
+         return matcher.group();
+      } else {
+         return "";
       }
-
-      return processedUrls;
    }
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
@@ -114,7 +113,6 @@ public class BrasilAmigaoCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      // Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-box.price-final_price", null, false, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-wrapper .price", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price-final_price .price", null, false, ',', session);
 
