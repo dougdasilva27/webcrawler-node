@@ -152,6 +152,10 @@ public class MexicoAmazonCrawler extends Crawler {
          seller = CrawlerUtils.scrapStringSimpleInfo(doc, "div.tabular-buybox-container .tabular-buybox-text .tabular-buybox-text .tabular-buybox-text-message #sellerProfileTriggerId", false);
       }
 
+      if (seller == null) {
+         seller = CrawlerUtils.scrapStringSimpleInfo(doc, "div.tabular-buybox-container .tabular-buybox-text .tabular-buybox-text .tabular-buybox-text-message", false);
+      }
+
       if (seller != null && !seller.isEmpty()) {
          boolean isMainRetailer = seller.equalsIgnoreCase(SELLER_NAME) || seller.equalsIgnoreCase(SELLER_NAME_2) || seller.equalsIgnoreCase(SELLER_NAME_3) || seller.equalsIgnoreCase(SELLER_NAME_4);
          Pricing pricing = scrapMainPagePricing(doc);
