@@ -1,8 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
@@ -34,7 +36,6 @@ import java.util.*;
  */
 public class LeroymerlinCrawler extends Crawler {
 
-   private final String HOME_PAGE = "https://www.leroymerlin.com.br";
    protected String region;
 
    public LeroymerlinCrawler(Session session) {
@@ -87,31 +88,26 @@ public class LeroymerlinCrawler extends Crawler {
          String internalPid = scrapInternalPid(doc);
          String name = crawlName(doc);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb-item:not(:first-child) a .name", false);
-         List<String> images = crawlImages(doc);
-         String primaryImage = images.isEmpty() ? null : images.get(0);
+         List<String> images = crawlImages(internalId);
+         String primaryImage = images.isEmpty() ? null : images.remove(0);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-header .product-text-description > div:first-child:not(.customer-service)", "[name=descricao-do-produto]", ".product-info-details"));
-         Integer stock = null;
 
          boolean available = crawlAvailability(doc);
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-         ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
+         ratingReviewsCollection.addRatingReviews(crawlRating(internalId));
          RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
 
-         // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(images)
+            .setCategories(categories)
             .setDescription(description)
-            .setStock(stock)
             .setOffers(offers)
             .setRatingReviews(ratingReviews)
             .build();
@@ -122,10 +118,9 @@ public class LeroymerlinCrawler extends Crawler {
       }
 
       return products;
-
    }
 
-   private RatingsReviews crawlRating(Document doc, String internalId) {
+   private RatingsReviews crawlRating(String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
       JSONObject reviewSummary = new JSONObject();
       JSONObject primaryRating = new JSONObject();
@@ -143,6 +138,7 @@ public class LeroymerlinCrawler extends Crawler {
             primaryRating = reviewSummary.getJSONObject("primaryRating");
          }
       }
+
       ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(getTotalRating(reviewSummary));
       ratingReviews.setAverageOverallRating(getAverageOverallRating(primaryRating));
@@ -213,9 +209,9 @@ public class LeroymerlinCrawler extends Crawler {
       return internalPid;
    }
 
-   private String crawlName(Document document) {
+   private String crawlName(Document doc) {
       String name = null;
-      Element nameElement = document.selectFirst(".product-title");
+      Element nameElement = doc.selectFirst(".product-title");
 
       if (nameElement != null) {
          name = nameElement.ownText().trim();
@@ -224,29 +220,28 @@ public class LeroymerlinCrawler extends Crawler {
       return name;
    }
 
-   private List<String> crawlImages(Document doc) {
+   private List<String> crawlImages(String internalId) {
       List<String> images = new ArrayList<>();
 
-      Element divImages = doc.selectFirst(".product-carousel .carousel[data-items]");
-      if (divImages != null) {
-         JSONArray imagesArray = new JSONArray(divImages.attr("data-items"));
+      HashMap<String, String> headers = new HashMap<>();
+      headers.put("authority", "www.leroymerlin.com.br");
+      headers.put("accept", "application/json, text/plain, */*");
 
-         for (Object o : imagesArray) {
-            JSONObject imageJson = (JSONObject) o;
+      Request request = RequestBuilder.create()
+         .setUrl("https://www.leroymerlin.com.br/api/v3/products/" + internalId + "/visual-medias")
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .build();
 
-            // in this case the image is a video thumbnail
-            if (imageJson.has("youtubeId") && imageJson.get("youtubeId") instanceof String && !imageJson.getString("youtubeId").trim().isEmpty()) {
-               continue;
-            }
+      Response response = new FetcherDataFetcher().get(session, request);
+      JSONObject jsonResponse = new JSONObject(response.getBody());
 
-            if (imageJson.has("shouldLoadImageZoom") && imageJson.getBoolean("shouldLoadImageZoom") && imageJson.has("zoomUrl")
-               && !imageJson.get("zoomUrl").toString().trim().isEmpty()) {
-               images.add(imageJson.get("zoomUrl").toString());
-            } else if (imageJson.has("url") && !imageJson.get("url").toString().trim().isEmpty()) {
-               images.add(imageJson.get("url").toString());
-            } else if (imageJson.has("thumb") && !imageJson.get("thumb").toString().trim().isEmpty()) {
-               images.add(imageJson.get("thumb").toString());
-            }
+      JSONArray medias = JSONUtils.getValueRecursive(jsonResponse, "data.medias", JSONArray.class);
+      if (medias != null) {
+         for (Object img : medias) {
+            JSONObject imgJson = (JSONObject) img;
+            String imgMain = imgJson.optString("main");
+            images.add(imgMain);
          }
       }
 
@@ -268,7 +263,7 @@ public class LeroymerlinCrawler extends Crawler {
 
          for (Object o : arrayOffers) {
             JSONObject offerJson = (JSONObject) o;
-            Pricing pricing = scrapPricing(doc, offerJson);
+            Pricing pricing = scrapPricing(offerJson);
 
             String sellerNameLower = JSONUtils.getValueRecursive(offerJson, "shop.name", String.class).toLowerCase(Locale.ROOT);
 
@@ -289,7 +284,7 @@ public class LeroymerlinCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(Document doc, JSONObject json) throws MalformedPricingException {
+   private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
       String spotlightPriceStr = JSONUtils.getValueRecursive(json, "price.to.integers", String.class);
       spotlightPriceStr += "," + JSONUtils.getValueRecursive(json, "price.to.decimals", String.class);
       String priceFromStr = JSONUtils.getValueRecursive(json, "price.from.integers", String.class);
