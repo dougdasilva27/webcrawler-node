@@ -5,13 +5,11 @@ import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.Parser;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -20,10 +18,16 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 
 public class FerreiracostaCrawler extends Crawler {
@@ -41,79 +45,74 @@ public class FerreiracostaCrawler extends Crawler {
    @Override
    protected Response fetchResponse() {
       String location = session.getOptions().optString("location");
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(session.getOriginalURL()))
+            .header("cookie", "ASP.NET_SessionId=afdhrtmd1chvych4b1y1zqmv;" +
+               " osVisitor=b44b973b-4257-4e0b-a2ca-47e37d439251;" +
+               " osVisit=f29d817f-51ed-4082-8dd0-7ae9b309c837;" +
+               " eco_ce=; ecoFC=FCB02C35F253FCE56D9696DC7757BC6E;" +
+               " _gid=GA1.2.1245936171.1631798355;" +
+               " _gat_UA-48783684-2=1;" +
+               " _gat_gtag_UA_48783684_2=1;" +
+               " G_ENABLED_IDPS=google;" +
+               " _fbp=fb.1.1631798354801.1640176812;" +
+               " _pin_unauth=dWlkPU9XVTBZMlExTlRRdE5UZ3pNeTAwTWprd0xXSTNNMkV0TVRWaE5XVTJZVE0yTkRZMw;" +
+               " _hjid=fdb9c70b-3929-430b-8698-0a11e9020213;" +
+               " _hjIncludedInSessionSample=1;" +
+               " _hjAbsoluteSessionInProgress=0;" +
+               " eco_lo=" + location + ";" +
+               " _ga=GA1.2.1447234012.1631798354;" +
+               " _ga_DD7Y69210P=GS1.1.1631798009.3.1.1631798369.0;" +
+               " cto_bundle=QnJvIl9STm1tMVN2ZVhydXYxSXhnSGJFbEV1ak1kT1VRYXlGRnIyUldQbm4lMkZhM0hFVWNCYXM4JTJCUDRJUFklMkIzJTJGblglMkJaSCUyQkU5QkUlMkYweWVVNUU5bkYxWkV0bXdzYnZEOWxxV2xEdjFZMDIlMkZvSTVWTnRueGVKZDZxT3dRQ05SbnQlMkJ0cWdvYnZac1pBSSUyRkZtenpzVzA0RFRQSiUyQmZBJTNEJTNE;" +
+               " AWSALB=AWQren+oPEAFGXDRiJutL5+sy0hpn5zZBAoiHwI5wCsthQh1UcN4sz5hYfT2hEfrlKuY45Vz5J0qEsHDS9JBbMDsPqDb7l12m63zMvEokIrgKyyLHS5mFcV8YyT+;" +
+               " AWSALBCORS=AWQren+oPEAFGXDRiJutL5+sy0hpn5zZBAoiHwI5wCsthQh1UcN4sz5hYfT2hEfrlKuY45Vz5J0qEsHDS9JBbMDsPqDb7l12m63zMvEokIrgKyyLHS5mFcV8YyT+;" +
+               " RT=s=1631798388140&r=https%3A%2F%2Fwww.ferreiracosta.com%2FProduto%2F408846%2Flavadora-de-roupa-brastemp-12kg-branca-127v-bwk12abana")
+            .build();
 
-      Map<String,String> headers = new HashMap<>();
-      headers.put("cookie", "ASP.NET_SessionId=afdhrtmd1chvych4b1y1zqmv;" +
-         " osVisitor=b44b973b-4257-4e0b-a2ca-47e37d439251;" +
-         " osVisit=f29d817f-51ed-4082-8dd0-7ae9b309c837;" +
-         " eco_ce=; ecoFC=FCB02C35F253FCE56D9696DC7757BC6E;" +
-         " _gid=GA1.2.1245936171.1631798355;" +
-         " _gat_UA-48783684-2=1;" +
-         " _gat_gtag_UA_48783684_2=1;" +
-         " G_ENABLED_IDPS=google;" +
-         " _fbp=fb.1.1631798354801.1640176812;" +
-         " _pin_unauth=dWlkPU9XVTBZMlExTlRRdE5UZ3pNeTAwTWprd0xXSTNNMkV0TVRWaE5XVTJZVE0yTkRZMw;" +
-         " _hjid=fdb9c70b-3929-430b-8698-0a11e9020213;" +
-         " _hjIncludedInSessionSample=1;" +
-         " _hjAbsoluteSessionInProgress=0;" +
-         " eco_lo=" + location + ";" +
-         " _ga=GA1.2.1447234012.1631798354;" +
-         " _ga_DD7Y69210P=GS1.1.1631798009.3.1.1631798369.0;" +
-         " cto_bundle=QnJvIl9STm1tMVN2ZVhydXYxSXhnSGJFbEV1ak1kT1VRYXlGRnIyUldQbm4lMkZhM0hFVWNCYXM4JTJCUDRJUFklMkIzJTJGblglMkJaSCUyQkU5QkUlMkYweWVVNUU5bkYxWkV0bXdzYnZEOWxxV2xEdjFZMDIlMkZvSTVWTnRueGVKZDZxT3dRQ05SbnQlMkJ0cWdvYnZac1pBSSUyRkZtenpzVzA0RFRQSiUyQmZBJTNEJTNE;" +
-         " AWSALB=AWQren+oPEAFGXDRiJutL5+sy0hpn5zZBAoiHwI5wCsthQh1UcN4sz5hYfT2hEfrlKuY45Vz5J0qEsHDS9JBbMDsPqDb7l12m63zMvEokIrgKyyLHS5mFcV8YyT+;" +
-         " AWSALBCORS=AWQren+oPEAFGXDRiJutL5+sy0hpn5zZBAoiHwI5wCsthQh1UcN4sz5hYfT2hEfrlKuY45Vz5J0qEsHDS9JBbMDsPqDb7l12m63zMvEokIrgKyyLHS5mFcV8YyT+;" +
-         " RT=s=1631798388140&r=https%3A%2F%2Fwww.ferreiracosta.com%2FProduto%2F408846%2Flavadora-de-roupa-brastemp-12kg-branca-127v-bwk12abana");
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setHeaders(headers)
-         .setCookies(this.cookies)
-         .setProxyservice(List.of(
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.BUY,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR))
-         .build();
-      Response resp = this.dataFetcher.get(session,request);
-
-      if (!resp.isSuccess()) {
-         resp = new JsoupDataFetcher().get(session,request);
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
+      } catch (IOException | InterruptedException e) {
+         throw new RuntimeException("Failed to load document: " + session.getOriginalURL(), e);
       }
-
-      return resp;
    }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
 
-      if (doc.selectFirst(".detalhe-produto") != null) {
-         Logging
-            .printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
+      JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", "", null, false, false);
+      JSONObject jsonProduct = JSONUtils.getValueRecursive(jsonInfo, "props.pageProps.dataProduct", JSONObject.class, new JSONObject());
+      if (!jsonProduct.isEmpty()) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
+         JSONObject offersInfo = JSONUtils.getValueRecursive(jsonProduct, "prices.0", JSONObject.class, new JSONObject());
+         CategoryCollection categories = getCategories(jsonProduct);
+         String name = jsonProduct.optString("description");
+         String internalId = jsonProduct.optString("id");
+         String description = jsonProduct.optString("detailedDescription") + getSpecs(internalId);
+         String primaryImage = getPrimaryImage(jsonProduct);
+         List<String> secondaryImages = getSecondaryImages(jsonProduct);
+         boolean available = jsonProduct.optBoolean("available");
+         Offers offers = available ? scrapOffers(offersInfo) : new Offers();
 
-         JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "span script[type=\"application/ld+json\"]","", null, false, false);
-         JSONObject offersInfo = jsonInfo.optJSONObject("offers");
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalId)
+            .setOffers(offers)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setCategories(categories)
+            .build();
 
-         String name = jsonInfo.optString("name");
-         String internalId = jsonInfo.optString("productID");
-         String description = jsonInfo.optString("description");
-         String primaryImage = jsonInfo.optString("image");
-         boolean available = doc.selectFirst(".btn.btn--full.btn--light-gray") == null;
-
-         Offers offers = available ? scrapOffers(offersInfo): new Offers();
-
-               Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalId)
-                  .setOffers(offers)
-                  .setName(name)
-                  .setPrimaryImage(primaryImage)
-                  .setDescription(description)
-                  .build();
-
-               products.add(product);
+         products.add(product);
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -122,6 +121,70 @@ public class FerreiracostaCrawler extends Crawler {
       return products;
    }
 
+   private String getPrimaryImage(JSONObject jsonProduct) {
+      JSONArray mediaLinks = jsonProduct.getJSONArray("mediaLinks");
+      for (int i = 0; i < mediaLinks.length(); i++) {
+         JSONObject mediaLink = mediaLinks.getJSONObject(i);
+         if (mediaLink.optString("linkType").equals("IMAGEM")) {
+            return mediaLink.optString("imageUrl");
+         }
+      }
+      return "";
+   }
+
+   private List<String> getSecondaryImages(JSONObject jsonProduct) {
+      List<String> secondaryImages = new ArrayList<>();
+      boolean primaryImage = false;
+      JSONArray mediaLinks = jsonProduct.getJSONArray("mediaLinks");
+      for (int i = 0; i < mediaLinks.length(); i++) {
+         JSONObject mediaLink = mediaLinks.getJSONObject(i);
+         if (mediaLink.optString("linkType").equals("IMAGEM")) {
+            if (!primaryImage) {
+               primaryImage = true;
+            } else {
+               secondaryImages.add(mediaLink.optString("imageUrl"));
+            }
+         }
+      }
+      return secondaryImages;
+   }
+
+   private CategoryCollection getCategories(JSONObject jsonProduct) {
+      CategoryCollection categories = new CategoryCollection();
+      JSONObject jsonCategproes = jsonProduct.optJSONObject("breadCrumbs");
+      for (String category : jsonCategproes.keySet()) {
+         JSONObject categoryObject = jsonCategproes.getJSONObject(category);
+         String name = categoryObject.optString("name");
+         categories.add(name);
+      }
+      return categories;
+   }
+
+   private String getSpecs(String internalId) {
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create("https://fcxlabs-ecommerce-api.ferreiracosta.com/catalog/v1/products/" + internalId + "/specs"))
+            .build();
+
+         HttpResponse<String> resp = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+         JSONArray jsonArray = new JSONArray(resp.body());
+         StringBuilder description = new StringBuilder();
+         for (Object item : jsonArray) {
+            JSONObject jsonObject = (JSONObject) item;
+            JSONArray specsArray = jsonObject.getJSONArray("specs");
+            for (Object spec : specsArray) {
+               JSONObject specObject = (JSONObject) spec;
+               description.append(specObject.optString("name") + " : " + specObject.optString("value") + "\n");
+            }
+         }
+         return description.toString();
+      } catch (IOException | InterruptedException e) {
+         throw new RuntimeException("Failed to retrieve specifications for internalId: " + internalId, e);
+      }
+   }
 
    private Offers scrapOffers(JSONObject offersInfo) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
@@ -144,11 +207,14 @@ public class FerreiracostaCrawler extends Crawler {
 
 
    private Pricing scrapPricing(JSONObject offersInfo) throws MalformedPricingException {
-      Double spotlightPrice = offersInfo.optDouble("price");
+      Boolean hasDiscount = !offersInfo.isNull("spotPrice");
+      Double spotlightPrice = hasDiscount ? offersInfo.optDouble("spotPrice") : offersInfo.optDouble("priceList");
+      Double priceFrom = hasDiscount ? offersInfo.optDouble("priceList") : null;
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .build();
    }
