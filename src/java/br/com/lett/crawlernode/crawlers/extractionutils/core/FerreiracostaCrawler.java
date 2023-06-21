@@ -1,9 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
+
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,10 +14,8 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.IOException;
@@ -97,7 +92,7 @@ public class FerreiracostaCrawler extends Crawler {
          String description = jsonProduct.optString("detailedDescription") + getSpecs(internalId);
          String primaryImage = getPrimaryImage(jsonProduct);
          List<String> secondaryImages = getSecondaryImages(jsonProduct);
-         boolean available = jsonProduct.optBoolean("available");
+         boolean available = !offersInfo.isNull("priceList");
          Offers offers = available ? scrapOffers(offersInfo) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -122,9 +117,9 @@ public class FerreiracostaCrawler extends Crawler {
    }
 
    private String getPrimaryImage(JSONObject jsonProduct) {
-      JSONArray mediaLinks = jsonProduct.getJSONArray("mediaLinks");
+      JSONArray mediaLinks = jsonProduct.optJSONArray("mediaLinks");
       for (int i = 0; i < mediaLinks.length(); i++) {
-         JSONObject mediaLink = mediaLinks.getJSONObject(i);
+         JSONObject mediaLink = mediaLinks.optJSONObject(i);
          if (mediaLink.optString("linkType").equals("IMAGEM")) {
             return mediaLink.optString("imageUrl");
          }
@@ -135,9 +130,9 @@ public class FerreiracostaCrawler extends Crawler {
    private List<String> getSecondaryImages(JSONObject jsonProduct) {
       List<String> secondaryImages = new ArrayList<>();
       boolean primaryImage = false;
-      JSONArray mediaLinks = jsonProduct.getJSONArray("mediaLinks");
+      JSONArray mediaLinks = jsonProduct.optJSONArray("mediaLinks");
       for (int i = 0; i < mediaLinks.length(); i++) {
-         JSONObject mediaLink = mediaLinks.getJSONObject(i);
+         JSONObject mediaLink = mediaLinks.optJSONObject(i);
          if (mediaLink.optString("linkType").equals("IMAGEM")) {
             if (!primaryImage) {
                primaryImage = true;
@@ -153,7 +148,7 @@ public class FerreiracostaCrawler extends Crawler {
       CategoryCollection categories = new CategoryCollection();
       JSONObject jsonCategproes = jsonProduct.optJSONObject("breadCrumbs");
       for (String category : jsonCategproes.keySet()) {
-         JSONObject categoryObject = jsonCategproes.getJSONObject(category);
+         JSONObject categoryObject = jsonCategproes.optJSONObject(category);
          String name = categoryObject.optString("name");
          categories.add(name);
       }
@@ -174,7 +169,7 @@ public class FerreiracostaCrawler extends Crawler {
          StringBuilder description = new StringBuilder();
          for (Object item : jsonArray) {
             JSONObject jsonObject = (JSONObject) item;
-            JSONArray specsArray = jsonObject.getJSONArray("specs");
+            JSONArray specsArray = jsonObject.optJSONArray("specs");
             for (Object spec : specsArray) {
                JSONObject specObject = (JSONObject) spec;
                description.append(specObject.optString("name") + " : " + specObject.optString("value") + "\n");

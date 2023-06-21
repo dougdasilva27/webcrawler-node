@@ -1,24 +1,15 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
+
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
-import exceptions.MalformedPricingException;
-import models.pricing.CreditCards;
-import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -26,9 +17,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 public class FerreiracostaCrawler extends CrawlerRankingKeywords {
 
@@ -99,8 +87,9 @@ public class FerreiracostaCrawler extends CrawlerRankingKeywords {
                String name = jsonProduct.optString("description");
                String productUrl = "https://www.ferreiracosta.com/produto/" + internalId;
                String imgUrl = getImage(jsonProduct);
-               Integer price = getPrice(jsonProduct);
-               boolean isAvailable = jsonProduct.optBoolean("available");
+               JSONObject pricesInfo = JSONUtils.getValueRecursive(jsonProduct, "prices.0", JSONObject.class, new JSONObject());
+               Integer price = getPrice(pricesInfo);
+               boolean isAvailable = !pricesInfo.isNull("priceList");
 
                RankingProduct productRanking = RankingProductBuilder.create()
                   .setUrl(productUrl)
@@ -125,17 +114,16 @@ public class FerreiracostaCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private Integer getPrice(JSONObject jsonProduct) {
-      JSONObject pricesInfo = JSONUtils.getValueRecursive(jsonProduct, "prices.0", JSONObject.class, new JSONObject());
+   private Integer getPrice(JSONObject pricesInfo) {
       Boolean hasDiscount = !pricesInfo.isNull("spotPrice");
       Integer price = hasDiscount ? pricesInfo.optInt("spotPrice") : pricesInfo.optInt("priceList");
       return price;
    }
 
    private String getImage(JSONObject jsonProduct) {
-      JSONArray mediaLinks = jsonProduct.getJSONArray("mediaLinks");
+      JSONArray mediaLinks = jsonProduct.optJSONArray("mediaLinks");
       for (int i = 0; i < mediaLinks.length(); i++) {
-         JSONObject mediaLink = mediaLinks.getJSONObject(i);
+         JSONObject mediaLink = mediaLinks.optJSONObject(i);
          if (mediaLink.optString("linkType").equals("IMAGEM")) {
             return mediaLink.optString("imageUrl");
          }
