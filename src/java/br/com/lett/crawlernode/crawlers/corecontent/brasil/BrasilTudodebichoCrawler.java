@@ -28,15 +28,12 @@ public class BrasilTudodebichoCrawler extends VTEXNewImpl {
    protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
       String name = null;
 
-      if (productJson.has("productName")) {
-         name = productJson.optString("productName");
+      if(jsonSku != null && jsonSku.has("nameComplete")){
+         name = jsonSku.optString("nameComplete");
       }
 
-      if (name == null && jsonSku.has("nameComplete") && jsonSku.opt("nameComplete") != null) {
-         name = jsonSku.optString("nameComplete");
-
-      } else if (name == null && jsonSku.has("name")) {
-         name = jsonSku.optString("name");
+      if (jsonSku == null && productJson.has("productName")) {
+         name = productJson.optString("productName");
       }
 
       if (name != null && !name.isEmpty() && productJson.has("brand")) {
