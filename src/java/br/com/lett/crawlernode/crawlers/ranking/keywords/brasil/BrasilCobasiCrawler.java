@@ -1,16 +1,25 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
-import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
-import java.util.Collections;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,13 +30,24 @@ public class BrasilCobasiCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() throws MalformedProductException {
+   protected Document fetchDocument(String url) {
+      Request request = Request.RequestBuilder.create()
+         .setCookies(cookies)
+         .setUrl(url)
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.LUMINATI_SERVER_BR))
+         .build();
+      Response response = new FetcherDataFetcher().get(session, request);
+
+      return Jsoup.parse(response.getBody());
+   }
+
+   @Override
+   protected void extractProductsFromCurrentPage() throws MalformedProductException, UnsupportedEncodingException {
       this.pageSize = 20;
 
       this.log("Página " + this.currentPage);
 
-      // monta a url com a keyword e a página
-      String url = "https://busca.cobasi.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
+      String url = "https://www.cobasi.com.br/pesquisa?terms=" + this.keywordEncoded + "&p=are&ranking=1&typeclick=1&ac_pos=header&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
@@ -42,9 +62,9 @@ public class BrasilCobasiCrawler extends CrawlerRankingKeywords {
          for (Element e : products) {
             String productUrl = CrawlerUtils.scrapUrl(e, "div.ProductListItem a", "href", "https", "www.cobasi.com.br");
             String internalPid = crawlInternalPid(productUrl);
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, "div.ProductListItem div[class*=Title]", false);
-            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "div.ProductListItem img[decoding*=async]", Collections.singletonList("src"), "https", "cobasi.com.br");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "div[class*=PriceBox] span[data-testid*=product-price]", null, true, ',', session, null);
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "h3[class*=styles__Title]", false);
+            String imgUrl = crawlImage(e);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "div[class*=styles__PriceBox] span.card-price", null, true, ',', session, null);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -71,6 +91,19 @@ public class BrasilCobasiCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   private String crawlImage(Element e) throws UnsupportedEncodingException {
+      String attImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[class*=styles__ImageBlock] img", "src");
+      if (attImage != null) {
+         String decodedUrl = URLDecoder.decode(attImage, StandardCharsets.UTF_8);
+         if (decodedUrl.contains("=")) {
+            String urlImage = decodedUrl.substring(decodedUrl.indexOf("=") + 1);
+            return urlImage;
+         }
+      }
+
+      return null;
+   }
+
    @Override
    protected void setTotalProducts() {
       Element totalElement = this.currentDoc.select("div[class*=TotalDescription]").first();
@@ -95,5 +128,4 @@ public class BrasilCobasiCrawler extends CrawlerRankingKeywords {
       }
       return id;
    }
-
 }

@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -22,7 +22,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 //the first crawler made with github copilot
 public class BrasilCobasiCrawler extends Crawler {
@@ -35,8 +38,14 @@ public class BrasilCobasiCrawler extends Crawler {
 
    public BrasilCobasiCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
+   @Override
+   public boolean shouldVisit() {
+      String href = session.getOriginalURL().toLowerCase();
+      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -44,16 +53,14 @@ public class BrasilCobasiCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
       JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
 
-
       if ((pageJson != null && !pageJson.isEmpty()) && pageJson.query("/props/pageProps/productDetail") != null) {
-
 
          JSONObject productsObj = (JSONObject) pageJson.query("/props/pageProps/productDetail");
          JSONArray variants = productsObj.optJSONArray("activeSkus");
          CategoryCollection categoryCollection = scrapeCategory(productsObj);
-         List<String> images = scrapeImages(productsObj);
          String description = scrapDescription(productsObj);
 
+         List<String> images = scrapeImages(productsObj);
          String primaryImage = images.isEmpty() ? null : images.remove(0);
          List<String> secondaryImages = images.isEmpty() ? null : images;
 
@@ -83,22 +90,19 @@ public class BrasilCobasiCrawler extends Crawler {
                .build();
 
             products.add(product);
-
          }
       } else {
          Logging.printLogDebug(logger, "No products page");
       }
+
       return products;
    }
 
    private String scrapDescription(JSONObject productsObj) {
-
       String description = productsObj.optString("description", "");
       String descriptionShort = productsObj.optString("descriptionShort", "");
 
-
       return description + "\n" + descriptionShort;
-
    }
 
    private String crawlName(JSONObject productsObj, JSONObject variant, Document doc) {
@@ -115,8 +119,6 @@ public class BrasilCobasiCrawler extends Crawler {
       }
 
       return name;
-
-
    }
 
    private Offers scrapOffer(JSONObject variation) throws OfferException, MalformedPricingException {
@@ -136,10 +138,9 @@ public class BrasilCobasiCrawler extends Crawler {
             .build());
 
       }
+
       return offers;
-
    }
-
 
    private Pricing scrapPricing(JSONObject jsonObject) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonObject, "bestPriceFormated", false);
@@ -156,7 +157,6 @@ public class BrasilCobasiCrawler extends Crawler {
          .setCreditCards(creditCards)
          .build();
    }
-
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
@@ -181,19 +181,27 @@ public class BrasilCobasiCrawler extends Crawler {
 
    private List<String> scrapeImages(JSONObject productsObj) {
       List<String> images = new ArrayList<>();
-      JSONArray imagesArray = productsObj.optJSONArray("imagesAndVideos");
+      JSONArray imagesArray = JSONUtils.getValueRecursive(productsObj, "mainSku.imagesAndVideos", JSONArray.class);
+
       if (imagesArray != null) {
          for (int i = 0; i < imagesArray.length(); i++) {
             images.add(imagesArray.optJSONObject(i).optString("imageUrl"));
          }
       }
+
       return images;
    }
 
    private CategoryCollection scrapeCategory(JSONObject jsonObject) {
       CategoryCollection categoryCollection = new CategoryCollection();
-      String categories = (String) jsonObject.query("/categories/0");
-      categoryCollection.addAll(Arrays.asList(categories));
+      JSONArray categories = jsonObject.optJSONArray("categories");
+
+      for (Object category : categories) {
+         JSONObject item = (JSONObject) category;
+         String cat = item.optString("crumb");
+         categoryCollection.addAll(Collections.singleton(cat));
+      }
+
       return categoryCollection;
    }
 
@@ -227,6 +235,4 @@ public class BrasilCobasiCrawler extends Crawler {
 
       return new AdvancedRatingReview();
    }
-
-
 }
