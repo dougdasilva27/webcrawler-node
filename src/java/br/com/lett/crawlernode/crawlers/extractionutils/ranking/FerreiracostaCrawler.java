@@ -119,7 +119,7 @@ public class FerreiracostaCrawler extends CrawlerRankingKeywords {
    private Integer getPrice(JSONObject pricesInfo) {
       Boolean hasDiscount = !pricesInfo.isNull("spotPrice");
       Integer price = hasDiscount ? pricesInfo.optInt("spotPrice") : pricesInfo.optInt("priceList");
-      if (!hasDiscount && pricesInfo.optDouble("priceList")!=pricesInfo.optDouble("salePrice")){
+      if (!hasDiscount && pricesInfo.optDouble("priceList") != pricesInfo.optDouble("salePrice")) {
          price = pricesInfo.optInt("salePrice");
       }
       return price;

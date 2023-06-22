@@ -206,7 +206,7 @@ public class FerreiracostaCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject offersInfo) throws MalformedPricingException {
       Boolean hasDiscount = !offersInfo.isNull("spotPrice");
       Double spotlightPrice = hasDiscount ? offersInfo.optDouble("spotPrice") : offersInfo.optDouble("priceList");
-      if (!hasDiscount && offersInfo.optDouble("priceList")!=offersInfo.optDouble("salePrice")){
+      if (!hasDiscount && offersInfo.optDouble("priceList") != offersInfo.optDouble("salePrice")) {
          hasDiscount = true;
          spotlightPrice = offersInfo.optDouble("salePrice");
       }
