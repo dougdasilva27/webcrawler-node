@@ -102,7 +102,7 @@ public class ItaunaRenaemcasaCrawler extends CrawlerRankingKeywords {
    }
 
    private String scrapUrl() {
-      Integer imgCount = LAST_PRODUCT_INDEX + 2;
+      Integer imgCount = LAST_PRODUCT_INDEX + 1;
 
       WebElement openModal = this.webdriver.driver.findElement(
          By.cssSelector("div.product-item-wrapper:nth-child(n + " + imgCount + ") .product-img img ")
