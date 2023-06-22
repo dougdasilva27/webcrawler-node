@@ -70,11 +70,6 @@ public class BrasilBelezanawebCrawler extends Crawler {
       }
    }
 
-   /* When the product have variations, ex: size -> 250ml, 500ml, or color, the quantity of reviews on site, show a total for all ids.
-    https://www.belezanaweb.com.br/loreal-professionnel-serie-expert-blondifier-gloss-mascara-capilar-500ml/
-    https://www.belezanaweb.com.br/maybelline-instant-age-rewind-eraser-dark-circles-120-light-corretivo-liquido-59ml/
-    */
-
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
