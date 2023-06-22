@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -17,6 +19,7 @@ import org.jsoup.select.Elements;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,7 +31,11 @@ public class BrasilCobasiCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url) {
-      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(url).build();
+      Request request = Request.RequestBuilder.create()
+         .setCookies(cookies)
+         .setUrl(url)
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.LUMINATI_SERVER_BR))
+         .build();
       Response response = new FetcherDataFetcher().get(session, request);
 
       return Jsoup.parse(response.getBody());
