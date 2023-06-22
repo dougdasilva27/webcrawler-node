@@ -5,11 +5,9 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 abstract public class TrayCommerceCrawler extends CrawlerRankingKeywords {
 
@@ -31,20 +29,16 @@ abstract public class TrayCommerceCrawler extends CrawlerRankingKeywords {
       String url = homePage + "loja/busca.php?loja=" + storeId + "&palavra_busca=" + this.keywordEncoded + "&pg=" + this.currentPage;
       this.currentDoc = fetchDocument(url);
 
-      JSONObject search = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "script", "dataLayer = [", "]", false, true);
+      Elements products = this.currentDoc.select(".product");
 
-      if (search.has("listProducts") && search.getJSONArray("listProducts").length() > 0) {
-         JSONArray products = search.getJSONArray("listProducts");
-         if (this.totalProducts == 0) {
-            setTotalProducts(search);
-         }
-         for (int i = 0; i < products.length(); i++) {
-            JSONObject product = products.getJSONObject(i);
-            String productUrl = product.optString("urlProduct");
-            String internalId = product.optString("idProduct");
-            String productName = product.optString("nameProduct");
-            String imageUrl = product.optString("urlImage");
-            Integer price = CommonMethods.stringPriceToIntegerPrice(product.optString("price", ""), ',', 0);
+      if (!products.isEmpty()) {
+
+         for (Element product : products) {
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "meta[itemprop=\"productID\"]", "content");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "[itemprop=\"url\"]", "href");
+            String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".product-name > h3", true);
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-image > img", "src");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".product-price > span", null, false, ',', session, null);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -68,8 +62,9 @@ abstract public class TrayCommerceCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página: " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   protected void setTotalProducts(JSONObject search) {
-      this.totalProducts = JSONUtils.getIntegerValueFromJSON(search, "siteSearchResults", 0);
-      this.log("Total da busca: " + this.totalProducts);
+   @Override
+   protected boolean hasNextPage() {
+      return !this.currentDoc.select(".page-next > a").isEmpty();
    }
+
 }
