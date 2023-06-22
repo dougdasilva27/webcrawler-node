@@ -105,7 +105,7 @@ public class LeroymerlinCrawler extends CrawlerRankingKeywords {
 
    protected JSONObject fetchPage() throws Exception {
       String hash = getHashCategory();
-      String url = "https://www.leroymerlin.com.br/api/boitata/v1/categories/" + hash + "/products?perPage=36&term=" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "&searchTerm=" + this.keywordWithoutAccents + "&searchType=Shortcut&page=" + this.currentPage;
+      String url = "https://www.leroymerlin.com.br/api/boitata/v1/categories/" + hash + "/products?perPage=36&term=" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "&searchTerm=" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "&searchType=Shortcut&page=" + this.currentPage;
 
       if (hash == null) {
          url = "https://www.leroymerlin.com.br/api/boitata/v1/search?term=fresas&searchTerm=fresas&searchType=default";
