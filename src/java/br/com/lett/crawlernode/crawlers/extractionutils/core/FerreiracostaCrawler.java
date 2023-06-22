@@ -40,6 +40,7 @@ public class FerreiracostaCrawler extends Crawler {
    @Override
    protected Response fetchResponse() {
       String location = session.getOptions().optString("location");
+      String region = session.getOptions().optString("region");
       try {
          HttpClient client = HttpClient.newBuilder().build();
          HttpRequest request = HttpRequest.newBuilder()
@@ -58,7 +59,8 @@ public class FerreiracostaCrawler extends Crawler {
                " _hjid=fdb9c70b-3929-430b-8698-0a11e9020213;" +
                " _hjIncludedInSessionSample=1;" +
                " _hjAbsoluteSessionInProgress=0;" +
-               " eco_lo=" + location + ";" +
+               "@FC:Ecom:Dropdown:BranchLocation=" + location +
+               ";@FC:Ecom:Dropdown:Region=" + region +
                " _ga=GA1.2.1447234012.1631798354;" +
                " _ga_DD7Y69210P=GS1.1.1631798009.3.1.1631798369.0;" +
                " cto_bundle=QnJvIl9STm1tMVN2ZVhydXYxSXhnSGJFbEV1ak1kT1VRYXlGRnIyUldQbm4lMkZhM0hFVWNCYXM4JTJCUDRJUFklMkIzJTJGblglMkJaSCUyQkU5QkUlMkYweWVVNUU5bkYxWkV0bXdzYnZEOWxxV2xEdjFZMDIlMkZvSTVWTnRueGVKZDZxT3dRQ05SbnQlMkJ0cWdvYnZac1pBSSUyRkZtenpzVzA0RFRQSiUyQmZBJTNEJTNE;" +
@@ -204,6 +206,10 @@ public class FerreiracostaCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject offersInfo) throws MalformedPricingException {
       Boolean hasDiscount = !offersInfo.isNull("spotPrice");
       Double spotlightPrice = hasDiscount ? offersInfo.optDouble("spotPrice") : offersInfo.optDouble("priceList");
+      if (!hasDiscount && offersInfo.optDouble("priceList")!=offersInfo.optDouble("salePrice")){
+         hasDiscount = true;
+         spotlightPrice = offersInfo.optDouble("salePrice");
+      }
       Double priceFrom = hasDiscount ? offersInfo.optDouble("priceList") : null;
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
