@@ -34,7 +34,6 @@ import java.util.*;
  */
 public class BrasilBelezanawebCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "https://www.belezanaweb.com.br/";
    private static final String SELLER_FULL_NAME = "Beleza na Web Brasil";
    private int stars5 = 0;
    private int stars4 = 0;
@@ -78,8 +77,6 @@ public class BrasilBelezanawebCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONObject pageJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", null, null, false, false);
-
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-sku", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nproduct-title", false);
          boolean available = !doc.select(".product-buy > a").isEmpty();
@@ -91,7 +88,6 @@ public class BrasilBelezanawebCrawler extends Crawler {
 
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
-         // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
@@ -251,7 +247,6 @@ public class BrasilBelezanawebCrawler extends Crawler {
       String content = this.dataFetcher.get(session, request).getBody();
 
       return Jsoup.parse(content);
-
    }
 
    private int hasNextPage(Integer totalNumOfEvaluations) {
