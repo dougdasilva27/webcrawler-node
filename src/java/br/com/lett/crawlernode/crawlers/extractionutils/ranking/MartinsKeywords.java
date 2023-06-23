@@ -90,7 +90,7 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
                   if (id != null) {
                      internalPid = CommonMethods.getLast(id.split("_"));
                   }
-                  String urlProduct = "https://www.martinsatacado.com.br" + productObj.optString("productUrl");
+                  String urlProduct = "https://www.martinsatacado.com.br" + productObj.optString("productUrl") + "-" + id;
                   String name = productObj.optString("name");
                   String imageUrl = JSONUtils.getValueRecursive(productObj, "images.0.value", String.class);
                   Integer price = getPrice(id, prices);
