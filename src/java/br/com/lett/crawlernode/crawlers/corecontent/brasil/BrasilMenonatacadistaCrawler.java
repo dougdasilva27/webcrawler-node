@@ -1,9 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -20,7 +17,14 @@ import models.pricing.*;
 import org.apache.http.cookie.Cookie;
 import org.jsoup.nodes.Document;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,7 +61,7 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/x-www-form-urlencoded");
       headers.put("authority", "www.menonatacadista.com.br");
-      String payloadString = "email="+this.LOGIN+"&password="+this.PASSWORD;
+      String payloadString = "email=" + this.LOGIN + "&password=" + this.PASSWORD;
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://www.menonatacadista.com.br/index.php?route=account/login")
@@ -84,23 +88,46 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
+      try {
+         HttpResponse<String> response = retryRequest(session.getOriginalURL(), session);
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
+   }
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
+   public HttpResponse retryRequest(String url, Session session) throws IOException, InterruptedException {
+      HttpResponse<String> response = null;
+      ArrayList<Integer> ipPort = new ArrayList<>();
+      ipPort.add(3135); //buy haproxy
+      ipPort.add(3132); //netnut br haproxy
+      ipPort.add(3138); //netnut AR haproxy
+      ipPort.add(3133); //netnut ES haproxy
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY
-         ))
+      try {
+         for (int interable = 0; interable < ipPort.size(); interable++) {
+            response = RequestHandler(url, ipPort.get(interable));
+            if (response.statusCode() == 200) {
+               return response;
+            }
+         }
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
+      return response;
+   }
+
+   private HttpResponse RequestHandler(String url, Integer port) throws IOException, InterruptedException {
+      HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", port))).build();
+      HttpRequest request = HttpRequest.newBuilder()
+         .GET()
+         .uri(URI.create(url))
+         .header("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";")
          .build();
-
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
-
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
       return response;
    }
 
@@ -112,8 +139,8 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String code = CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-detail-info small", true);
-         String internalId = getcodeId(code);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-title", true);
+         String internalId = getcodeId(code) == null ? CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=\"product_id\"]", "value") : null;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-title", true) == null ? CrawlerUtils.scrapStringSimpleInfo(doc, "h1.name", true) : null;
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.breadcrumb a", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "a.thumbnail img", Arrays.asList("src"), "https", "www.menonatacadista.com.br");
 
@@ -143,7 +170,7 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("div.product-detail-info") != null;
+      return doc.selectFirst("div.product-detail-info") != null || doc.selectFirst(".price") != null;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -168,6 +195,9 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.product-price .price", null, true, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[class*=Information_discounted]", null, true, ',', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price", null, true, ',', session);
+      }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create().setSpotlightPrice(spotlightPrice).setPriceFrom(priceFrom).setCreditCards(creditCards).build();
