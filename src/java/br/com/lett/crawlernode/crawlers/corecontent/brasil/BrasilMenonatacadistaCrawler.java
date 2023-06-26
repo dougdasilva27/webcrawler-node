@@ -86,49 +86,6 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
       }
    }
 
-   public HttpResponse retryRequest(String urlAmericanas, Session session) throws IOException, InterruptedException {
-      HttpResponse<String> response = null;
-      ArrayList<Integer> ipPort = new ArrayList<Integer>();
-      ipPort.add(3132); //netnut br haproxy
-      ipPort.add(3135); // buy haproxy
-      ipPort.add(3133); //netnut ES haproxy
-      ipPort.add(3138); //netnut AR haproxy
-      ipPort.add(3137); //netnut CH haproxy
-
-      try {
-         for (int interable = 0; interable < ipPort.size(); interable++) {
-            response = getRequest(urlAmericanas, ipPort.get(interable));
-            if (response.statusCode() == 200) {
-               return response;
-            }
-         }
-      } catch (Exception e) {
-         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
-      }
-      return response;
-   }
-
-   private HttpResponse getRequest(String urlAmericanas, Integer port) throws IOException, InterruptedException {
-      Integer attempt = 0;
-      HttpResponse<String> response;
-      do {
-         response = RequestHandler(urlAmericanas, port);
-         attempt++;
-      } while (response.statusCode() != 200 && attempt < 3);
-      return response;
-   }
-
-   private HttpResponse RequestHandler(String urlAmericanas, Integer port) throws IOException, InterruptedException {
-      HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", port))).build();
-      HttpRequest request = HttpRequest.newBuilder()
-         .GET()
-         .uri(URI.create(urlAmericanas))
-         .header("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";")
-         .build();
-      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      return response;
-   }
-
    @Override
    protected Response fetchResponse() {
       try {
@@ -140,6 +97,38 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
       } catch (Exception e) {
          throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
       }
+   }
+
+   public HttpResponse retryRequest(String url, Session session) throws IOException, InterruptedException {
+      HttpResponse<String> response = null;
+      ArrayList<Integer> ipPort = new ArrayList<>();
+      ipPort.add(3135); //buy haproxy
+      ipPort.add(3132); //netnut br haproxy
+      ipPort.add(3138); //netnut AR haproxy
+      ipPort.add(3133); //netnut ES haproxy
+
+      try {
+         for (int interable = 0; interable < ipPort.size(); interable++) {
+            response = RequestHandler(url, ipPort.get(interable));
+            if (response.statusCode() == 200) {
+               return response;
+            }
+         }
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
+      return response;
+   }
+
+   private HttpResponse RequestHandler(String url, Integer port) throws IOException, InterruptedException {
+      HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", port))).build();
+      HttpRequest request = HttpRequest.newBuilder()
+         .GET()
+         .uri(URI.create(url))
+         .header("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";")
+         .build();
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      return response;
    }
 
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -181,7 +170,6 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-//      return doc.selectFirst("div.product-detail-info") != null;
       return doc.selectFirst("div.product-detail-info") != null || doc.selectFirst(".price") != null;
    }
 
@@ -207,7 +195,7 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.product-price .price", null, true, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[class*=Information_discounted]", null, true, ',', session);
-      if (spotlightPrice == null){
+      if (spotlightPrice == null) {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price", null, true, ',', session);
       }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
