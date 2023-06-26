@@ -265,7 +265,8 @@ public class BrasilMartinsCrawler extends Crawler {
 
       for (Object p : prices) {
          JSONObject price = (JSONObject) p;
-         if (price.optInt("estoque", 0) > 0) {
+         String messageAvailable = JSONUtils.getValueRecursive(price, "mensagem", String.class, "");
+         if (price.optInt("estoque", 0) > 0 && !messageAvailable.contains("Venda bloqueada!") && !messageAvailable.contains("Indisponível para sua região!")) {
             Pricing pricing = scrapPricing(price);
             String sales = scrapSales(price);
             String seller = scrapSeller(price);
