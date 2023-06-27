@@ -1,12 +1,5 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -21,16 +14,15 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 public class MartinsKeywords extends CrawlerRankingKeywords {
 
    public MartinsKeywords(Session session) {
       super(session);
-      super.fetchMode = FetchMode.JSOUP;
    }
 
 
@@ -123,61 +115,52 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
    }
 
    protected void login() {
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-      headers.put("authority", "www.martinsatacado.com.br");
-      headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
       String payload = "{\"grant_type\":\"password\",\"cnpj\":\"" + cnpj + "\",\"username\":\"" + getLogin() + "\",\"codCli\":\"" + codCli + "\",\"password\":\"" + getPassword() + "\",\"codedevnd\":\"\",\"profile\":\"ROLE_CLIENT\"}";
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl("https://ssd.martins.com.br/oauth-marketplace-portal/access-tokens")
-         .setPayload(payload)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
-         .setHeaders(headers)
-         .build();
-
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
-      JSONObject body = JSONUtils.stringToJson(response.getBody());
+      HttpResponse<String> response;
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .POST(HttpRequest.BodyPublishers.ofString(payload))
+            .uri(URI.create("https://ssd.martins.com.br/oauth-marketplace-portal/access-tokens"))
+            .header(HttpHeaders.CONTENT_TYPE, "application/json")
+            .header("authority", "www.martinsatacado.com.br")
+            .header("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==")
+            .build();
+         response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
+      JSONObject body = JSONUtils.stringToJson(response.body());
       accessToken = body.optString("access_token");
    }
 
    protected JSONArray fetchPrices(JSONArray products) {
       JSONArray prices = new JSONArray();
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-      headers.put("Origin", "www.martinsatacado.com.br");
-      headers.put("client_id", "bb6d8be8-0671-32ea-9a6e-3da4c63525a3");
-      headers.put("host", "ssd.martins.com.br");
-      headers.put("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==");
+      HttpResponse<String> response;
       String payload = "{\"produtos\":[" + getPayload(products) + "],\"uid\":" + codCli + ",\"ufTarget\":\"SP\",\"email\":\"" + login + "\"}";
       if (accessToken == null || accessToken.isEmpty()) {
          login();
       }
       if (accessToken != null && !accessToken.isEmpty()) {
-         headers.put("access_token", accessToken);
 
-         Request request = Request.RequestBuilder.create()
-            .setUrl("https://ssd.martins.com.br/b2b-partner/v1/produtosBuyBox")
-            .setPayload(payload)
-            .setProxyservice(Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.BUY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
-            .setHeaders(headers)
-            .build();
+         try {
+            HttpClient client = HttpClient.newBuilder().build();
+            HttpRequest request = HttpRequest.newBuilder()
+               .POST(HttpRequest.BodyPublishers.ofString(payload))
+               .header("access_token", accessToken)
+               .header(HttpHeaders.CONTENT_TYPE, "application/json")
+               .header("Origin", "www.martinsatacado.com.br")
+               .header("client_id", "bb6d8be8-0671-32ea-9a6e-3da4c63525a3")
+               .header("Authorization", "Basic YmI2ZDhiZTgtMDY3MS0zMmVhLTlhNmUtM2RhNGM2MzUyNWEzOmJmZDYxMTdlLWMwZDMtM2ZjNS1iMzc3LWFjNzgxM2Y5MDY2ZA==")
+               .uri(URI.create("https://ssd.martins.com.br/b2b-partner/v1/produtosBuyBox"))
+               .build();
 
-         Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
-         JSONObject body = JSONUtils.stringToJson(response.getBody());
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         } catch (Exception e) {
+            throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+         }
+         JSONObject body = JSONUtils.stringToJson(response.body());
          if (body != null) {
             prices = body.optJSONArray("resultado");
          }
@@ -239,32 +222,35 @@ public class MartinsKeywords extends CrawlerRankingKeywords {
       login();
       String id = captureIdToRequestApi();
       String url = "https://www.martinsatacado.com.br/_next/data/" + id + "/busca/" + this.keywordWithoutAccents.replace(" ", "%20") + ".json?page=" + this.currentPage + "&perPage=" + this.pageSize;
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
-         .build();
-
-      return JSONUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(url))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return JSONUtils.stringToJson(response.body());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
 
    }
 
    protected String captureIdToRequestApi() {
       String id = null;
-      Request request = Request.RequestBuilder.create()
-         .setUrl("https://www.martinsatacado.com.br/")
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
-         .build();
+      HttpResponse<String> response;
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create("https://www.martinsatacado.com.br/"))
+            .build();
+         response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session);
-      Document doc = Jsoup.parse(response.getBody());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
+      Document doc = Jsoup.parse(response.body());
       if (doc != null) {
          JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
          if (json != null) {
