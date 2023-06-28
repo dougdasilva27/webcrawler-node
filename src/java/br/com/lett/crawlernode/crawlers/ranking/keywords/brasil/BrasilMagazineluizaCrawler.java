@@ -103,7 +103,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
          for (Element e : elements) {
 
             String urlProduct = CrawlerUtils.scrapUrl(e, "> a", "href", "https", "www.magazineluiza.com.br");
-            String internalId = getProductId(urlProduct);
+            String internalPid = getProductPid(urlProduct);
             String imageUrl = CrawlerUtils.scrapUrl(e, "img", "src", "https", "a-static.mlcdn.com.br");
             int price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "p[data-testid='price-value']", null, true, ',', session, 0);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "h2", true);
@@ -111,8 +111,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(urlProduct)
-               .setInternalId(internalId)
-               .setInternalPid(null)
+               .setInternalPid(internalPid)
                .setName(name)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
@@ -139,7 +138,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
       this.log("Total: " + this.totalProducts);
    }
 
-   private String getProductId(String url) {
+   private String getProductPid(String url) {
       String id = null;
       Pattern pattern = Pattern.compile("p\\/([a-z-0-9]+)\\/");
       Matcher matcher = pattern.matcher(url);
