@@ -186,11 +186,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       for (String image : images) {
          imagesWithSize.add(image.replace("{w}", imgWidth).replace("{h}", imgHeight));
       }
-
-      if (imagesWithSize.size() > 0) {
-         imagesWithSize.remove(0);
-      }
-
       return imagesWithSize;
    }
 
