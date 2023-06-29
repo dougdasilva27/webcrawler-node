@@ -87,7 +87,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
       JSONObject skuJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, "", false, false);
-      JSONObject json = JSONUtils.getValueRecursive(skuJson, "props.pageProps.data.product", JSONObject.class);
+      JSONObject json = JSONUtils.getValueRecursive(skuJson, "props.pageProps.data.product", JSONObject.class, new JSONObject());
       JSONArray variations = JSONUtils.getValueRecursive(json, "variations", JSONArray.class, new JSONArray());
       String internalPid = crawlInternalPidNewLayout(json);
 
@@ -101,7 +101,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
                CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
                String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
                List<String> imagesVariations = getSecondaryImagesVariations(json, i);
-               String primaryImage = imagesVariations != null && !imagesVariations.isEmpty() ? imagesVariations.remove(0) : null;
+               String primaryImage = !imagesVariations.isEmpty() ? imagesVariations.remove(0) : null;
                boolean availableToBuy = json.optBoolean("available");
                Offers offers = availableToBuy ? scrapOffersNewLayout(doc, json) : new Offers();
                RatingsReviews ratingsReviews = scrapRatingsReviews(json);
