@@ -35,10 +35,8 @@ import java.util.regex.Pattern;
 public class BrasilMenonatacadistaCrawler extends Crawler {
 
    private static final String SELLER_FULL_NAME = "Menon Atacadista";
-   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(),
-      Card.MASTERCARD.toString(), Card.ELO.toString(),
-      Card.AMEX.toString(), Card.DINERS.toString(),
-      Card.DISCOVER.toString(), Card.JCB.toString(), Card.AURA.toString(), Card.HIPERCARD.toString());
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.ELO.toString(),
+      Card.AMEX.toString(), Card.DINERS.toString(), Card.DISCOVER.toString(), Card.JCB.toString(), Card.AURA.toString(), Card.HIPERCARD.toString());
 
    public BrasilMenonatacadistaCrawler(Session session) throws UnsupportedEncodingException {
       super(session);
@@ -164,8 +162,7 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String code = CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-detail-info small", true);
-         String internalId = getcodeId(code) == null ? CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=\"product_id\"]", "value") : null;
+         String internalId = crawlInternalId(doc);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-title", true) == null ? CrawlerUtils.scrapStringSimpleInfo(doc, "h1.name", true) : null;
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.breadcrumb a", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "a.thumbnail img", Arrays.asList("src"), "https", "www.menonatacadista.com.br");
@@ -183,7 +180,6 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setOffers(offers)
             .setDescription(description)
-
             .build();
 
          products.add(product);
@@ -197,6 +193,22 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst("div.product-detail-info") != null || doc.selectFirst(".price") != null;
+   }
+
+   private String crawlInternalId(Document doc) {
+      String id = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=\"product_id\"]", "value");
+
+      if (id == null) {
+         String regex = "product_id=([0-9]*)";
+         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+         Matcher matcher = pattern.matcher(session.getOriginalURL());
+
+         if (matcher.find()) {
+            return matcher.group(1);
+         }
+      }
+
+      return id;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -250,21 +262,5 @@ public class BrasilMenonatacadistaCrawler extends Crawler {
       }
 
       return sales;
-   }
-
-   private String getcodeId(String code) {
-      String aux = "";
-
-      if (code != null) {
-         final String regex = "(\\d+)";
-         final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-         final Matcher matcher = pattern.matcher(code);
-
-         if (matcher.find()) {
-            aux = matcher.group(0);
-            return aux;
-         }
-      }
-      return null;
    }
 }
