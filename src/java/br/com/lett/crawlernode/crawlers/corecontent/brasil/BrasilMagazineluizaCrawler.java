@@ -44,7 +44,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       Document doc;
       int attempts = 0;
 
-      //headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
       Response response;
 
       do {
@@ -278,7 +278,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       List<String> secondaryImages = new ArrayList<>();
       JSONArray images = JSONUtils.getValueRecursive(product, "variations." + i + ".media.images", JSONArray.class, new JSONArray());
       for (i = 0; i < images.length(); i++) {
-         secondaryImages.add(images.optString(i).replace("{w}x{h}","800x560"));
+         secondaryImages.add(images.optString(i).replace("{w}x{h}", "800x560"));
       }
 
       return secondaryImages;
