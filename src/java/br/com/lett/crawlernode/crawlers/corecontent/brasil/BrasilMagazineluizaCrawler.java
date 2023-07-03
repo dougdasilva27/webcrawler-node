@@ -114,7 +114,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
                   String reference = json.optString("reference");
                   String internalId = JSONUtils.getValueRecursive(json, "variations." + i + ".id", String.class, "");
                   String valueName = JSONUtils.getValueRecursive(json, "variations." + i + ".value", String.class, "");
-                  String name = json.optString("title") + " " + (reference != null && !reference.equals("") ? " - " + reference : "") + (!checkIfNameHasValueName(valueName, reference) ? " " + valueName : "");
+                  String name = json.optString("title") + (reference != null && !reference.equals("") ? " - " + reference : "") + (!checkIfNameHasValueName(valueName, reference) ? " " + valueName : "");
                   CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
                   String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
                   List<String> imagesVariations = getSecondaryImagesVariations(json, i);
@@ -184,17 +184,20 @@ public class BrasilMagazineluizaCrawler extends Crawler {
    private Document fetchNewDocument(String productUrl) {
       Document doc;
       HttpResponse<String> response;
-      try {
-         HttpClient client = HttpClient.newBuilder().build();
-         HttpRequest request = HttpRequest.newBuilder()
-            .GET()
-            .uri(URI.create(productUrl))
-            .build();
-         response = client.send(request, HttpResponse.BodyHandlers.ofString());
-         doc = Jsoup.parse(response.body());
-      } catch (Exception e) {
-         throw new RuntimeException("Failed in load document: " + productUrl, e);
-      }
+      int attempts = 0;
+      do {
+         try {
+            HttpClient client = HttpClient.newBuilder().build();
+            HttpRequest request = HttpRequest.newBuilder()
+               .GET()
+               .uri(URI.create(productUrl))
+               .build();
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            doc = Jsoup.parse(response.body());
+         } catch (Exception e) {
+            throw new RuntimeException("Failed in load document: " + productUrl, e);
+         }
+      } while (response.statusCode() != 200 && attempts++ < 3);
 
       return doc;
    }
