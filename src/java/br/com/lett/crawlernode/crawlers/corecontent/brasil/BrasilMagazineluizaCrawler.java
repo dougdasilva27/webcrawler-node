@@ -20,11 +20,16 @@ import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 
 public class BrasilMagazineluizaCrawler extends Crawler {
@@ -95,33 +100,45 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
          if (variations.length() > 0) {
 
+            String previousProductUrl = "";
+
             for (int i = 0; i < variations.length(); i++) {
-               String internalId = JSONUtils.getValueRecursive(json, "variations." + i + ".id", String.class, "");
-               String name = json.optString("title") + " " + JSONUtils.getValueRecursive(json, "variations." + i + ".value", String.class, "");
-               CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
-               String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
-               List<String> imagesVariations = getSecondaryImagesVariations(json, i);
-               String primaryImage = !imagesVariations.isEmpty() ? imagesVariations.remove(0) : null;
-               boolean availableToBuy = json.optBoolean("available");
-               Offers offers = availableToBuy ? scrapOffersNewLayout(doc, json) : new Offers();
-               RatingsReviews ratingsReviews = scrapRatingsReviews(json);
+               String productUrl = "https://www.magazineluiza.com.br/" + JSONUtils.getValueRecursive(json, "variations." + i + ".path", String.class, "");
+               if (!productUrl.equals(previousProductUrl)) {
 
+                  previousProductUrl = productUrl;
+                  doc = fetchNewDocument(productUrl);
+                  skuJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, "", false, false);
+                  json = JSONUtils.getValueRecursive(skuJson, "props.pageProps.data.product", JSONObject.class, new JSONObject());
 
-               // Creating the product
-               Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setCategories(categories)
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(imagesVariations)
-                  .setDescription(description)
-                  .setRatingReviews(ratingsReviews)
-                  .setOffers(offers)
-                  .build();
+                  String reference = json.optString("reference");
+                  String internalId = JSONUtils.getValueRecursive(json, "variations." + i + ".id", String.class, "");
+                  String valueName = JSONUtils.getValueRecursive(json, "variations." + i + ".value", String.class, "");
+                  String name = json.optString("title") + " " + (reference != null && !reference.equals("") ? " - " + reference : "") + (!checkIfNameHasValueName(valueName, reference) ? valueName : "");
+                  CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
+                  String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
+                  List<String> imagesVariations = getSecondaryImagesVariations(json, i);
+                  String primaryImage = !imagesVariations.isEmpty() ? imagesVariations.remove(0) : null;
+                  boolean availableToBuy = json.optBoolean("available");
+                  Offers offers = availableToBuy ? scrapOffersNewLayout(json) : new Offers();
+                  RatingsReviews ratingsReviews = scrapRatingsReviews(json);
 
-               products.add(product);
+                  // Creating the product
+                  Product product = ProductBuilder.create()
+                     .setUrl(productUrl)
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setCategories(categories)
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(imagesVariations)
+                     .setDescription(description)
+                     .setRatingReviews(ratingsReviews)
+                     .setOffers(offers)
+                     .build();
+
+                  products.add(product);
+               }
             }
          } else {
             String internalId = crawlInternalPidNewLayout(json);
@@ -132,7 +149,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
             List<String> images = crawlImagesNewLayout(skuJson, json);
             String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
             boolean availableToBuy = json.optBoolean("available");
-            Offers offers = availableToBuy ? scrapOffersNewLayout(doc, json) : new Offers();
+            Offers offers = availableToBuy ? scrapOffersNewLayout(json) : new Offers();
             RatingsReviews ratingsReviews = scrapRatingsReviews(json);
 
 
@@ -156,6 +173,30 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
       return products;
+   }
+
+   private boolean checkIfNameHasValueName(String value, String name) {
+      String valueStripAccents = StringUtils.stripAccents(value);
+      String nameStripAccents = StringUtils.stripAccents(name);
+      return nameStripAccents.toLowerCase(Locale.ROOT).contains(valueStripAccents.toLowerCase(Locale.ROOT));
+   }
+
+   private Document fetchNewDocument(String productUrl) {
+      Document doc;
+      HttpResponse<String> response;
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(productUrl))
+            .build();
+         response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         doc = Jsoup.parse(response.body());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load document: " + productUrl, e);
+      }
+
+      return doc;
    }
 
    private boolean isProductPage(Document doc) {
@@ -191,7 +232,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       return imagesWithSize;
    }
 
-   private Offers scrapOffersNewLayout(Document doc, JSONObject json) throws OfferException, MalformedPricingException {
+   private Offers scrapOffersNewLayout(JSONObject json) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
       String sellerFullName = JSONUtils.getValueRecursive(json, "seller.id", String.class);
