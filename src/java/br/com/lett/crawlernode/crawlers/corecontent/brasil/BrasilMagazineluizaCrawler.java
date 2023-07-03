@@ -37,7 +37,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
    private static final String SELLER_NAME = "magalu";
    private static final String SELLER_NAME_1 = "magazine luiza";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString(), Card.ELO.toString(), Card.AURA.name());
 
    public BrasilMagazineluizaCrawler(Session session) {
       super(session);
@@ -114,7 +114,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
                   String reference = json.optString("reference");
                   String internalId = JSONUtils.getValueRecursive(json, "variations." + i + ".id", String.class, "");
                   String valueName = JSONUtils.getValueRecursive(json, "variations." + i + ".value", String.class, "");
-                  String name = json.optString("title") + " " + (reference != null && !reference.equals("") ? " - " + reference : "") + (!checkIfNameHasValueName(valueName, reference) ? valueName : "");
+                  String name = json.optString("title") + " " + (reference != null && !reference.equals("") ? " - " + reference : "") + (!checkIfNameHasValueName(valueName, reference) ? " " + valueName : "");
                   CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div[data-testid=\"breadcrumb-item-list\"] a span", true);
                   String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
                   List<String> imagesVariations = getSecondaryImagesVariations(json, i);
@@ -274,7 +274,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       Double priceFrom = price.optDouble("price", 0.0);
       Double spotlightPrice = price.optDouble("bestPrice", 0.0);
 
-      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(json, spotlightPrice);
       return PricingBuilder.create()
          .setPriceFrom(priceFrom)
          .setSpotlightPrice(spotlightPrice)
@@ -283,15 +283,35 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditCards(Double price) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(JSONObject json, Double price) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-      Installments installments = new Installments();
+      Set<Installment> instsSet = new HashSet<>();
+      JSONArray installmentsJson = JSONUtils.getJSONArrayValue(json, "paymentMethods");
 
-      installments.add(Installment.InstallmentBuilder.create()
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(price)
-         .setFinalPrice(price)
-         .build());
+      for (Object obj : installmentsJson) {
+         JSONObject installmentJson = (JSONObject) obj;
+         if (!installmentJson.isEmpty()) {
+            JSONArray installmentPlans = JSONUtils.getJSONArrayValue(installmentJson, "installmentPlans");
+            for (Object o : installmentPlans) {
+               JSONObject installmentObj = (JSONObject) o;
+               Integer installmentNumber = installmentObj.optInt("installment", 0);
+               Double installmentPrice = installmentObj.optDouble("installmentAmount");
+               instsSet.add(Installment.InstallmentBuilder.create()
+                  .setInstallmentPrice(installmentPrice)
+                  .setInstallmentNumber(installmentNumber)
+                  .setFinalPrice(installmentPrice * installmentNumber).build());
+            }
+
+         }
+      }
+
+      if (instsSet.isEmpty()) {
+         instsSet.add(Installment.InstallmentBuilder.create()
+            .setInstallmentPrice(price)
+            .setInstallmentNumber(1)
+            .setFinalPrice(price).build());
+      }
+      Installments installments = new Installments(instsSet);
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
