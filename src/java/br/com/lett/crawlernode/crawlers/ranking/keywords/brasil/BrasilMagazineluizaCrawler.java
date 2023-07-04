@@ -105,9 +105,10 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
             String urlProduct = CrawlerUtils.scrapUrl(e, "> a", "href", "https", "www.magazineluiza.com.br");
             String internalPid = getProductPid(urlProduct);
             String imageUrl = CrawlerUtils.scrapUrl(e, "img", "src", "https", "a-static.mlcdn.com.br");
-            int price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "p[data-testid='price-value']", null, true, ',', session, 0);
+            int price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "p[data-testid='price-value']", null, true, ',', session, null);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "h2", true);
             boolean isAvailable = price != 0;
+            price = isAvailable ? price : null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(urlProduct)
