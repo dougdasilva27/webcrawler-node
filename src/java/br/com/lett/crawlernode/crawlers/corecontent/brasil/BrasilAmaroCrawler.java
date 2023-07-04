@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -26,10 +27,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -89,8 +87,8 @@ public class BrasilAmaroCrawler extends Crawler {
 
                products.add(product);
             }
-         }
-         else{
+
+         } else {
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -127,27 +125,29 @@ public class BrasilAmaroCrawler extends Crawler {
    }
 
    private List<String> crawlImages(Document document) {
-      List<String> imagesList = new ArrayList<>();
-      Elements images = document.select("[class*=ImageGridItem_container]");
-      for (Element img : images) {
-         String imgUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(img, ".gallery_image", "src");
-         imagesList.add(imgUrl);
+      List<String> images = new ArrayList<>();
+      JSONObject json = CrawlerUtils.selectJsonFromHtml(document, "#__NEXT_DATA__", null, " ", false, false);
+      JSONObject data = findData(json);
+      if (data != null) {
+         JSONArray imagesList = data.optJSONArray("images");
+         for (int i = 0; i < imagesList.length(); i++) {
+            JSONObject image = imagesList.optJSONObject(i);
+            String imageUrl = JSONUtils.getStringValue(image, "url");
+            images.add(imageUrl);
+         }
       }
-
-      return imagesList;
+      return images;
    }
 
-   private List<String> scrapImages(JSONObject variant) {
-      JSONArray imagesList = JSONUtils.getValueRecursive(variant, "images", JSONArray.class);
-      List<String> images = new ArrayList<>();
-
-      for (int i = 0; i < imagesList.length(); i++) {
-         JSONObject image = imagesList.optJSONObject(i);
-         String imageUrl = JSONUtils.getStringValue(image, "url");
-         images.add(imageUrl);
+   private JSONObject findData(JSONObject json) {
+      JSONArray arr = JSONUtils.getValueRecursive(json, "props.pageProps.dehydratedState.queries", JSONArray.class);
+      for (Object obj : arr) {
+         JSONObject jObj = (JSONObject) obj;
+         if (JSONUtils.getValueRecursive(jObj, "state.data.baseProduct", String.class) != null) {
+            return JSONUtils.getValueRecursive(jObj, "state.data", JSONObject.class);
+         }
       }
-
-      return images;
+      return null;
    }
 
    private boolean isProductPage(Document doc) {
@@ -193,7 +193,6 @@ public class BrasilAmaroCrawler extends Crawler {
          .setInstallmentPrice(spotlightPrice)
          .build());
 
-
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
             .setBrand(card)
@@ -208,7 +207,6 @@ public class BrasilAmaroCrawler extends Crawler {
    private List<String> scrapSales(Pricing pricing) {
       List<String> sales = new ArrayList<>();
       String saleDiscount = CrawlerUtils.calculateSales(pricing);
-
       if (saleDiscount != null) {
          sales.add(saleDiscount);
       }
@@ -218,11 +216,21 @@ public class BrasilAmaroCrawler extends Crawler {
 
    private RatingsReviews crawlRating(String internalPid) {
       RatingsReviews ratingsReviews = new RatingsReviews();
-      String url = "https://api-cdn.yotpo.com/v1/widget/0eU0TYNuFzWbeD60wD2lB7UWnCbAkVtX3vwtaEH0/products/" + internalPid + "/reviews\n";
+      String url = "https://api-cdn.yotpo.com/v1/widget/0eU0TYNuFzWbeD60wD2lB7UWnCbAkVtX3vwtaEH0/products/" + internalPid + "/reviews";
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Connection", "keep-alive");
+      headers.put("authority", "api-cdn.yotpo.com");
+      headers.put("content-type", "application/json");
+      headers.put("origin", "https://amaro.com");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
+         .setHeaders(headers)
          .setSendUserAgent(true)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.LUMINATI_SERVER_BR))
          .build();
       Response response = new FetcherDataFetcher().get(session, request);
       JSONObject jsonObject = JSONUtils.stringToJson(response.getBody());
@@ -235,11 +243,11 @@ public class BrasilAmaroCrawler extends Crawler {
          ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
          ratingsReviews.setAverageOverallRating(aggregationRating.optDouble("average_score", 0d));
       }
+
       return ratingsReviews;
    }
 
    private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject reviews) {
-
       JSONObject reviewValue = reviews.optJSONObject("star_distribution");
 
       if (reviewValue != null) {
