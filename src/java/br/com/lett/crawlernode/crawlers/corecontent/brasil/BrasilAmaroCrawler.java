@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -12,7 +9,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -26,21 +22,23 @@ import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class BrasilAmaroCrawler extends Crawler {
 
-   private final String HOME_PAGE = "https://amaro.com/br/pt/";
    private static final String SELLER_FULL_NAME = "Amaro";
-   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.ELO.toString(), Card.AMEX.toString(), Card.DINERS.toString(), Card.DISCOVER.toString(),
-      Card.JCB.toString(), Card.AURA.toString(), Card.HIPERCARD.toString());
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.ELO.toString(), Card.AMEX.toString(),
+      Card.DINERS.toString(), Card.DISCOVER.toString(), Card.JCB.toString(), Card.AURA.toString(), Card.HIPERCARD.toString());
 
    public BrasilAmaroCrawler(Session session) {
       super(session);
@@ -49,60 +47,61 @@ public class BrasilAmaroCrawler extends Crawler {
    public List<Product> extractInformation(Document document) throws Exception {
       super.extractInformation(document);
       List<Product> products = new ArrayList<>();
-      JSONObject json = CrawlerUtils.selectJsonFromHtml(document, "#__NEXT_DATA__", null, " ", false, false);
 
-      if (isProductPage(document) && json != null) {
+      if (isProductPage(document)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         JSONObject data = findData(json);
-         
-         if (data != null) {
-            JSONArray variants = JSONUtils.getValueRecursive(data, "baseOptions.0.options", JSONArray.class);
 
-            String internalPid = JSONUtils.getStringValue(data, "baseProduct");
-            String description = JSONUtils.getStringValue(data, "description");
-            String internalId = JSONUtils.getStringValue(data, "code");
-            String name = JSONUtils.getStringValue(data, "name");
+         String internalId = scrapInternal("/([0-9]*_[0-9]*)/");
+         String internalPid = scrapInternal("/(\\d+)_");
 
-            CategoryCollection categories = CrawlerUtils.crawlCategories(document, "a[class*=ProductBreadcrumb_link]", true);
-            RatingsReviews ratingsReviews = crawlRating(internalPid);
+         String name = CrawlerUtils.scrapStringSimpleInfo(document, "h1[class*=Heading_heading]", true) + " - " + CrawlerUtils.scrapStringSimpleInfo(document, "[class*=selectedColor]", true);
 
-            for (int i = 0; i < variants.length(); i++) {
-               JSONObject variantColor = variants.optJSONObject(i);
-               String variantUrl = JSONUtils.getStringValue(variantColor, "url");
-               List<String> imagesList = scrapImages(variantColor);
-               String primaryImage = imagesList != null && !imagesList.isEmpty() ? imagesList.remove(0) : null;
+         List<String> imagesList = crawlImages(document);
+         String primaryImage = !imagesList.isEmpty() ? imagesList.remove(0) : null;
 
-               JSONArray variantSize = JSONUtils.getValueRecursive(variantColor, "amaroVariantOption.sizeVariantOption", JSONArray.class);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(document, "a[class*=Breadcrumb_link]", true);
+         String description = CrawlerUtils.scrapElementsDescription(document, Arrays.asList("[class*=Description_apiMessage] p", "[class*=Description_apiMessage] ul li"));
+         RatingsReviews ratingsReviews = crawlRating(internalPid);
+         Offers offers = scrapOffers(document);
 
-               for (int j = 0; j < variantSize.length(); j++) {
-                  JSONObject variant = variantSize.optJSONObject(j);
-                  String variantName = name;
+         Elements variants = document.select("[class*=SizeSelectFormGroup_sizeOptionsList] div");
 
-                  if (variants.length() > 1 && variantSize.length() > 1) {
-                     variantName = scrapName(variantColor, variant, name);
-                     internalId = JSONUtils.getStringValue(variant, "code");
-                  }
+         if (variants.size() > 1) {
+            for (Element variant : variants) {
+               name = scrapName(variant, name);
+               boolean availableToBuy = variant.selectFirst("label[class*=RadioButton_unavailable]") != null;
+               offers = availableToBuy ? offers : null;
 
-                  boolean availableToBuy = scrapAvaibility(variant);
-                  Offers offers = availableToBuy ? scrapOffers(document) : new Offers();
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setCategories(categories)
+                  .setDescription(description)
+                  .setRatingReviews(ratingsReviews)
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(imagesList)
+                  .setOffers(offers)
+                  .build();
 
-                  Product product = ProductBuilder.create()
-                     .setUrl(variantUrl)
-                     .setInternalId(internalId)
-                     .setInternalPid(internalPid)
-                     .setName(variantName)
-                     .setCategories(categories)
-                     .setDescription(description)
-                     .setRatingReviews(ratingsReviews)
-                     .setPrimaryImage(primaryImage)
-                     .setSecondaryImages(imagesList)
-                     .setOffers(offers)
-                     .build();
-
-                  products.add(product);
-               }
-
+               products.add(product);
             }
+
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategories(categories)
+               .setDescription(description)
+               .setRatingReviews(ratingsReviews)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(imagesList)
+               .setOffers(offers)
+               .build();
+
+            products.add(product);
          }
 
       } else {
@@ -112,41 +111,53 @@ public class BrasilAmaroCrawler extends Crawler {
       return products;
    }
 
-   private JSONObject findData(JSONObject json) {
-      JSONArray arr = JSONUtils.getValueRecursive(json, "props.pageProps.dehydratedState.queries", JSONArray.class);
-      for (Object obj : arr){
-         JSONObject jObj = (JSONObject) obj;
-         if(JSONUtils.getValueRecursive(jObj, "state.data.baseProduct", String.class) != null){
-            return JSONUtils.getValueRecursive(jObj, "state.data", JSONObject.class);
-         }
+   private String scrapInternal(String pattern) {
+      Pattern regexPattern = Pattern.compile(pattern);
+      Matcher matcher = regexPattern.matcher(session.getOriginalURL());
+
+      if (matcher.find()) {
+         return matcher.group(1);
       }
-      return  null;
+
+      return null;
    }
 
-   private String scrapName(JSONObject variantColor, JSONObject variant, String name) {
-      String color = JSONUtils.getStringValue(variantColor, "color");
-      String size = JSONUtils.getStringValue(variant, "size");
+   private List<String> crawlImages(Document document) {
+      List<String> imagesList = new ArrayList<>();
+      Elements images = document.select("[class*=ImageGridItem_container]");
+      for (Element img : images) {
+         String imgUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(img, ".gallery_image", "src");
+         imagesList.add(imgUrl);
+      }
 
-      if (color != null && size != null) {
-         return name + " - " + color + " - " + size;
+      return imagesList;
+   }
+
+   private String scrapName(Element variant, String name) {
+      String size = CrawlerUtils.scrapStringSimpleInfo(variant, "label", true);
+
+      if (size != null) {
+         return name + " - " + size;
       }
 
       return name;
    }
 
-   private boolean scrapAvaibility(JSONObject variant) {
-      Integer stock = JSONUtils.getValueRecursive(variant, "stock.stockLevelOnline", Integer.class);
-      return stock != 0;
+   private boolean scrapAvailability(Document document, JSONObject variant) {
+      String size = JSONUtils.getValueRecursive(variant, "variantOptionQualifiers.1.value", String.class);
+      return document.selectFirst("label[class*=RadioButton_unavailable]") != null;
    }
 
    private List<String> scrapImages(JSONObject variant) {
-      JSONArray imagesList = JSONUtils.getValueRecursive(variant, "amaroVariantOption.images", JSONArray.class);
+      JSONArray imagesList = JSONUtils.getValueRecursive(variant, "images", JSONArray.class);
       List<String> images = new ArrayList<>();
+
       for (int i = 0; i < imagesList.length(); i++) {
          JSONObject image = imagesList.optJSONObject(i);
          String imageUrl = JSONUtils.getStringValue(image, "url");
          images.add(imageUrl);
       }
+
       return images;
    }
 
@@ -173,8 +184,8 @@ public class BrasilAmaroCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "strong[class*=ProductOptions]", null, true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[class*=oldPrice]", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "strong[class*=Prices_value]", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[class*=Prices_oldPrice]", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
