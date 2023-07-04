@@ -89,7 +89,7 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
 
    private JSONObject getProductList() {
       String url = "https://7drsoytyrm-dsn.algolia.net/1/indexes/SHOWCASE_catalog_product_api_index_PROD/query";
-      String payload = "{\"params\":\"page=" + (this.currentPage - 1) + "&hitsPerPage=25&clickAnalytics=true&query=cerveja&facetFilters=%5B%5B%22market_id%3A911b326e-89b3-4e39-a5e0-e6fd89e6040a%22%5D%2C%5B%5D%2C%5B%5D%5D&numericFilters=%5B%5D\"}";
+      String payload = "{\"params\":\"page=" + (this.currentPage - 1) + "&hitsPerPage=25&clickAnalytics=true&query=" + this.keywordEncoded + "&facetFilters=%5B%5B%22market_id%3A911b326e-89b3-4e39-a5e0-e6fd89e6040a%22%5D%2C%5B%5D%2C%5B%5D%5D&numericFilters=%5B%5D\"}";
 
       try {
          HttpClient client = HttpClient.newBuilder().build();
