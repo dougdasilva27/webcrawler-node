@@ -21,7 +21,7 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   String marketCode = session.getOptions().optString("marketId");
+   private String marketCode = session.getOptions().optString("marketId");
 
 
    @Override
