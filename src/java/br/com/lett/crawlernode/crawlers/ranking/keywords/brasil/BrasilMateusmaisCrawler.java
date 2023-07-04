@@ -1,18 +1,20 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
    public BrasilMateusmaisCrawler(Session session) {
@@ -30,39 +32,43 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
 
 
       if (!reponseJson.isEmpty()) {
-         this.totalProducts = reponseJson.optInt("count");
+         this.totalProducts = reponseJson.optInt("nbHits");
          if (this.totalProducts == 0) {
 
          }
 
-         JSONArray productsList = reponseJson.getJSONArray("results");
+         JSONArray productsList = reponseJson.getJSONArray("hits");
 
-         for (Object productObject : productsList) {
-            if (productObject instanceof JSONObject) {
-               JSONObject product = (JSONObject) productObject;
-               String internalId = product.optString("sku");
-               String productUrl = "https://mateusmais.com.br/produto/" + marketCode + "/" + product.optString("id");
-               String name = product.optString("name") + " " + product.optString("measure") + product.optString("measure_type");
-               String imageUrl = product.optString("image");
-               Integer price = null;
-               boolean isAvailable = crawisavailable(product);
-               if (isAvailable == true) {
-                  price = crawlPrice(product);
-               }
+         if (productsList != null && !productsList.isEmpty()) {
 
-               RankingProduct productRanking = RankingProductBuilder.create()
-                  .setUrl(productUrl)
-                  .setInternalId(internalId)
-                  .setName(name)
-                  .setPriceInCents(price)
-                  .setAvailability(isAvailable)
-                  .setImageUrl(imageUrl)
-                  .build();
+            for (Object productObject : productsList) {
+               if (productObject instanceof JSONObject) {
+                  JSONObject product = (JSONObject) productObject;
+                  String internalId = product.optString("sku");
+                  String productUrl = "https://mateusmais.com.br/#/produto/" + marketCode + "/" + product.optString("objectID");
+                  String name = product.optString("name") + " " + product.optString("measure") + product.optString("measure_type");
+                  String imageUrl = product.optString("image");
+                  Integer price = crawlPrice(product);
+                  Integer stock = product.optInt("amount_in_stock");
+                  boolean isAvailable = stock > 0 ? true : false;
+                  if (!isAvailable) {
+                     price = null;
+                  }
 
-               saveDataProduct(productRanking);
+                  RankingProduct productRanking = RankingProductBuilder.create()
+                     .setUrl(productUrl)
+                     .setInternalId(internalId)
+                     .setName(name)
+                     .setPriceInCents(price)
+                     .setAvailability(isAvailable)
+                     .setImageUrl(imageUrl)
+                     .build();
 
-               if (this.arrayProducts.size() == productsLimit) {
-                  break;
+                  saveDataProduct(productRanking);
+
+                  if (this.arrayProducts.size() == productsLimit) {
+                     break;
+                  }
                }
             }
          }
@@ -70,22 +76,12 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
-      hasNextPage(reponseJson);
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
    }
 
-   private boolean crawisavailable(JSONObject productsList) {
-
-      String holder = productsList.optString("available");
-      if (holder.contains("true")) {
-         return true;
-      }
-      return false;
-   }
-
    private Integer crawlPrice(JSONObject productsList) {
-      Integer price = null;
+      Integer price;
       if (productsList.isNull("low_price")) {
          price = JSONUtils.getPriceInCents(productsList, "price");
       } else {
@@ -94,31 +90,26 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
       return price;
    }
 
-   private String crawid(JSONObject productsList) {
-      Object obj = productsList.optString("id");
-      if (obj != null) {
-         return obj.toString();
-      }
-      return null;
-   }
-
    private JSONObject getProductList() {
-      String url = "https://app.mateusmais.com.br/market/" + marketCode + "/product/?page=" + currentPage + "&market=" + marketCode + "&search=" + keywordEncoded;
+      String url = "https://7drsoytyrm-dsn.algolia.net/1/indexes/SHOWCASE_catalog_product_api_index_PROD/query";
+      String payload = "{\"params\":\"page=" + (this.currentPage - 1) + "&hitsPerPage=25&clickAnalytics=true&query=cerveja&facetFilters=%5B%5B%22market_id%3A911b326e-89b3-4e39-a5e0-e6fd89e6040a%22%5D%2C%5B%5D%2C%5B%5D%5D&numericFilters=%5B%5D\"}";
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .mustSendContentEncoding(true)
-         .build();
-      Response response = this.dataFetcher.get(session, request);
-      if (response != null) {
-         return CrawlerUtils.stringToJson(response.getBody());
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .POST(HttpRequest.BodyPublishers.ofString(payload))
+            .uri(URI.create(url))
+            .header("X-Algolia-API-Key", "94f3c9f101d1af973f223496d3fa619e")
+            .header("X-Algolia-Application-Id", "7DRSOYTYRM")
+            .header(HttpHeaders.ACCEPT, "application/json, text/plain, */*")
+            .header(HttpHeaders.CONTENT_TYPE, "application/json")
+            .build();
+
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return JSONUtils.stringToJson(response.body());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
       }
-      return null;
-
    }
 
-   protected boolean hasNextPage(JSONObject reponseJson) {
-      String page = reponseJson.optString("next");
-      return page != null;
-   }
 }
