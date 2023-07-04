@@ -10,12 +10,11 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import com.google.common.net.HttpHeaders;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
@@ -27,16 +26,13 @@ public class BrasilSvicenteCrawler extends CrawlerRankingKeywords {
 
    private static final String HOME_PAGE = "https://www.svicente.com.br";
 
-   @Override
-   protected void processBeforeFetch() {
-      HashMap<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.ACCEPT, "application/json, text/javascript, */*; q=0.01");
-      headers.put(HttpHeaders.REFERER, "https://www.svicente.com.br/pagina-inicial");
-      headers.put("authority", "www.svicente.com.br");
+   protected JSONObject getProductList(String url) {
       String store = session.getOptions().optString("store");
+      HashMap<String, String> headers = new HashMap<>();
+      headers.put("cookie", "dwsid=2hVbN9KSztunRT1mShk_x-zLSWN80Q9ZLHPdOF69FWVh3PISHeZRi_lCamtzPeOew4RKeR_7GWAm4BfpiG9qUg==; hasSelectedStore=" + store + ";dw_store=" + store + ";");
 
       Request request = Request.RequestBuilder.create()
-         .setUrl("https://www.svicente.com.br/on/demandware.store/Sites-SaoVicente-Site/pt_BR/Stores-SelectStore?storeId=" + store)
+         .setUrl(url)
          .setHeaders(headers)
          .build();
       Response response = new ApacheDataFetcher().get(session, request);
@@ -49,74 +45,58 @@ public class BrasilSvicenteCrawler extends CrawlerRankingKeywords {
          }
 
       }
+      return JSONUtils.stringToJson(response.getBody());
    }
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       int start = (this.currentPage - 1) * 24;
       String url = HOME_PAGE + "/on/demandware.store/Sites-SaoVicente-Site/pt_BR/Search-UpdateGrid?q=" + this.keywordEncoded + "&start=" + start + "&sz=24&selectedUrl";
-      this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".searchResults__productGrid__product");
-      if (products != null && !products.isEmpty()) {
-         for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".quantity__maxorder.quantity__maxorder--producttile", "data-pid");
-            String productUrl = scrapUrl(e);
-            String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".productTile__name", "title");
-            String image = scrapImage(e);
-            boolean available = scrapAvailability(e);
-            Integer price = available ? scrapPrice(e) : null;
-            RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(productUrl)
-               .setInternalPid(internalPid)
-               .setImageUrl(image)
-               .setName(name)
-               .setPriceInCents(price)
-               .setAvailability(available)
-               .build();
+      JSONObject responseJson = getProductList(url);
 
-            saveDataProduct(productRanking);
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
+
+      if (!responseJson.isEmpty()) {
+
+         if (this.totalProducts == 0) {
+            this.totalProducts = JSONUtils.getValueRecursive(responseJson, "productSearch.count", Integer.class, 0);
+         }
+
+         JSONArray productsList = responseJson.getJSONArray("productsSearchResult");
+
+         for (Object productObject : productsList) {
+            if (productObject instanceof JSONObject) {
+               JSONObject product = (JSONObject) productObject;
+               String internalId = product.optString("id");
+               String productUrl = product.optString("productShowFullUrl");
+               String name = product.optString("productName");
+               String imageUrl = JSONUtils.getValueRecursive(product, "images.medium.0.absURL", String.class, "").replaceAll(" ", "%20");
+               Integer price = CommonMethods.stringPriceToIntegerPrice(JSONUtils.getValueRecursive(product, "price.sales.decimalPrice", String.class, null), '.', 0);
+               boolean isAvailable = product.optBoolean("available");
+               price = isAvailable ? price : null;
+
+
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setImageUrl(imageUrl)
+                  .build();
+
+               saveDataProduct(productRanking);
+
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
             }
          }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
    }
 
-   private String scrapUrl(Element product) {
-      String suffixUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".productTile__body .productTile__name", "data-product-url");
-      if (suffixUrl != null && !suffixUrl.isEmpty()) {
-         return HOME_PAGE + suffixUrl;
-      }
-      return null;
-   }
-
-   private boolean scrapAvailability(Element product) {
-      return CrawlerUtils.scrapStringSimpleInfo(product, ".quantity__unavailable", true) == null;
-   }
-
-   private String scrapImage(Element product) {
-      String imagePath = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".productTile__imageWrapper__img", "src");
-      if (imagePath != null && !imagePath.isEmpty()) {
-         return CommonMethods.substring(imagePath, "", "?", false);
-      }
-      return null;
-   }
-
-   private Integer scrapPrice(Element product) {
-      String spotlightPriceStr = CrawlerUtils.scrapStringSimpleInfo(product, ".productPrice__priceContainer .productPrice__price", true);
-      if (spotlightPriceStr != null && !spotlightPriceStr.isEmpty()) {
-         return CommonMethods.stringPriceToIntegerPrice(spotlightPriceStr, ',', null);
-      }
-      String priceStr = CrawlerUtils.scrapStringSimpleInfo(product, ".productPrice .productPrice__price", true);
-      if (priceStr != null && !priceStr.isEmpty()) {
-         return CommonMethods.stringPriceToIntegerPrice(priceStr, ',', null);
-      }
-      return null;
-   }
-
-   @Override
-   protected boolean hasNextPage() {
-      return this.currentDoc.selectFirst(".primaryButton.js-productGrid__showMoreBtn") != null;
-   }
 }
