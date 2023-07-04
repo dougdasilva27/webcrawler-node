@@ -21,6 +21,7 @@ import models.RatingsReviews;
 import models.pricing.*;
 import models.pricing.Pricing.PricingBuilder;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -36,11 +37,23 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
    private static final String SELLER_NAME = "magalu";
    private static final String SELLER_NAME_1 = "magazine luiza";
+   private String zipCode = this.session.getOptions().optString("zipCode", "");
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString(), Card.ELO.toString(), Card.AURA.name());
 
    public BrasilMagazineluizaCrawler(Session session) {
       super(session);
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      super.handleCookiesBeforeFetch();
+      if (zipCode != null && !zipCode.isEmpty()) {
+         BasicClientCookie cookie = new BasicClientCookie("zipcode", zipCode);
+         cookie.setDomain("magazineluiza.com.br");
+         cookie.setPath("/");
+         this.cookies.add(cookie);
+      }
    }
 
    @Override

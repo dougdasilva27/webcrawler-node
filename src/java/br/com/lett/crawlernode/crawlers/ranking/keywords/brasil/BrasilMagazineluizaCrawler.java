@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -27,6 +28,19 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
 
    public BrasilMagazineluizaCrawler(Session session) {
       super(session);
+   }
+
+   private String zipCode = this.session.getOptions().optString("zipCode", "");
+
+   @Override
+   protected void processBeforeFetch() {
+      super.processBeforeFetch();
+      if (zipCode != null && !zipCode.isEmpty()) {
+         BasicClientCookie cookie = new BasicClientCookie("zipcode", zipCode);
+         cookie.setDomain("magazineluiza.com.br");
+         cookie.setPath("/");
+         this.cookies.add(cookie);
+      }
    }
 
    @Override
