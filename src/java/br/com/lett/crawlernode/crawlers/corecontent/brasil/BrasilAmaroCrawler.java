@@ -68,15 +68,17 @@ public class BrasilAmaroCrawler extends Crawler {
 
          if (variants.size() > 1) {
             for (Element variant : variants) {
-               name = scrapName(variant, name);
-               boolean availableToBuy = variant.selectFirst("label[class*=RadioButton_unavailable]") != null;
+               String size = CrawlerUtils.scrapStringSimpleInfo(variant, "label", true);
+               String variantName = name + " - " + size;
+               String variantInternalId = internalId + "_" + size;
+               boolean availableToBuy = variant.selectFirst("label[class*=RadioButton_unavailable]") == null;
                offers = availableToBuy ? offers : null;
 
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
+                  .setInternalId(variantInternalId)
                   .setInternalPid(internalPid)
-                  .setName(name)
+                  .setName(variantName)
                   .setCategories(categories)
                   .setDescription(description)
                   .setRatingReviews(ratingsReviews)
@@ -87,6 +89,8 @@ public class BrasilAmaroCrawler extends Crawler {
 
                products.add(product);
             }
+         }
+         else{
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -131,21 +135,6 @@ public class BrasilAmaroCrawler extends Crawler {
       }
 
       return imagesList;
-   }
-
-   private String scrapName(Element variant, String name) {
-      String size = CrawlerUtils.scrapStringSimpleInfo(variant, "label", true);
-
-      if (size != null) {
-         return name + " - " + size;
-      }
-
-      return name;
-   }
-
-   private boolean scrapAvailability(Document document, JSONObject variant) {
-      String size = JSONUtils.getValueRecursive(variant, "variantOptionQualifiers.1.value", String.class);
-      return document.selectFirst("label[class*=RadioButton_unavailable]") != null;
    }
 
    private List<String> scrapImages(JSONObject variant) {
@@ -218,7 +207,6 @@ public class BrasilAmaroCrawler extends Crawler {
 
    private List<String> scrapSales(Pricing pricing) {
       List<String> sales = new ArrayList<>();
-
       String saleDiscount = CrawlerUtils.calculateSales(pricing);
 
       if (saleDiscount != null) {
@@ -229,8 +217,8 @@ public class BrasilAmaroCrawler extends Crawler {
    }
 
    private RatingsReviews crawlRating(String internalPid) {
-      String url = "https://api-cdn.yotpo.com/v1/widget/C3WJEQUAevWXtzD53PwS4IFnSgbOtw3MkvQXWmJj/products/" + internalPid + "/reviews";
       RatingsReviews ratingsReviews = new RatingsReviews();
+      String url = "https://api-cdn.yotpo.com/v1/widget/0eU0TYNuFzWbeD60wD2lB7UWnCbAkVtX3vwtaEH0/products/" + internalPid + "/reviews\n";
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
