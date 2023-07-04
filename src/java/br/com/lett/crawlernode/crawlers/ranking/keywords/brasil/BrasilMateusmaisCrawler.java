@@ -28,17 +28,14 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 30;
       this.log("Página " + this.currentPage);
-      JSONObject reponseJson = getProductList();
+      JSONObject responseJson = getProductList();
 
-
-      if (!reponseJson.isEmpty()) {
-         this.totalProducts = reponseJson.optInt("nbHits");
+      if (!responseJson.isEmpty()) {
+         this.totalProducts = responseJson.optInt("nbHits");
          if (this.totalProducts == 0) {
 
          }
-
-         JSONArray productsList = reponseJson.getJSONArray("hits");
-
+         JSONArray productsList = responseJson.getJSONArray("hits");
          if (productsList != null && !productsList.isEmpty()) {
 
             for (Object productObject : productsList) {
