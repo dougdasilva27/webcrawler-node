@@ -12,7 +12,6 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -30,28 +29,19 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private String zipCode = this.session.getOptions().optString("zipcode","");
-
-   @Override
-   protected void processBeforeFetch() {
-      super.processBeforeFetch();
-      if (zipCode != null && !zipCode.isEmpty()) {
-         BasicClientCookie cookie = new BasicClientCookie("zipcode", zipCode);
-         cookie.setDomain("www.magazineluiza.com.br");
-         cookie.setPath("/");
-         this.cookies.add(cookie);
-      }
-   }
+   private String zipCode = this.session.getOptions().optString("zipcode", "");
 
    @Override
    protected Document fetchDocument(String url) {
       Document doc;
       int attempts = 0;
       Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
       headers.put("authority", "www.magazineluiza.com.br");
-      headers.put("accept-encoding", "gzip, deflate, br");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+      if (zipCode != null && !zipCode.isEmpty()) {
+         headers.put("cookie", zipCode);
+      }
 
       do {
          Request request = Request.RequestBuilder.create()

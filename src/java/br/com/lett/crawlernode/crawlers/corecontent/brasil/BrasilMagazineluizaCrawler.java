@@ -21,7 +21,6 @@ import models.RatingsReviews;
 import models.pricing.*;
 import models.pricing.Pricing.PricingBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -45,16 +44,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       super(session);
    }
 
-   @Override
-   public void handleCookiesBeforeFetch() {
-      super.handleCookiesBeforeFetch();
-      if (zipCode != null && !zipCode.isEmpty()) {
-         BasicClientCookie cookie = new BasicClientCookie("zipcode", zipCode);
-         cookie.setDomain("www.magazineluiza.com.br");
-         cookie.setPath("/");
-         this.cookies.add(cookie);
-      }
-   }
 
    @Override
    protected Document fetch() {
@@ -63,6 +52,9 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       int attempts = 0;
 
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
+      if (zipCode != null && !zipCode.isEmpty()) {
+         headers.put("cookie", zipCode);
+      }
       Response response;
 
       do {
