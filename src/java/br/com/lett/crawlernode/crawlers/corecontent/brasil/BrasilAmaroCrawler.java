@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -40,6 +41,7 @@ public class BrasilAmaroCrawler extends Crawler {
 
    public BrasilAmaroCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    public List<Product> extractInformation(Document document) throws Exception {
@@ -52,7 +54,7 @@ public class BrasilAmaroCrawler extends Crawler {
          String internalId = scrapInternal("/([0-9]*_[0-9]*)/");
          String internalPid = scrapInternal("/(\\d+)_");
 
-         String name = CrawlerUtils.scrapStringSimpleInfo(document, "h1[class*=Heading_heading]", true) + " - " + CrawlerUtils.scrapStringSimpleInfo(document, "[class*=selectedColor]", true);
+         String name = crawlName(document);
 
          List<String> imagesList = crawlImages(document);
          String primaryImage = !imagesList.isEmpty() ? imagesList.remove(0) : null;
@@ -60,7 +62,9 @@ public class BrasilAmaroCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(document, "a[class*=Breadcrumb_link]", true);
          String description = CrawlerUtils.scrapElementsDescription(document, Arrays.asList("[class*=Description_apiMessage] p", "[class*=Description_apiMessage] ul li"));
          RatingsReviews ratingsReviews = crawlRating(internalPid);
-         Offers offers = scrapOffers(document);
+
+         boolean availableToBuy = document.selectFirst("[class*=OutOfStockDesktop_titleWrapper]") == null;
+         Offers offers = availableToBuy ? scrapOffers(document) : new Offers();
 
          Elements variants = document.select("[class*=SizeSelectFormGroup_sizeOptionsList] div");
 
@@ -69,7 +73,7 @@ public class BrasilAmaroCrawler extends Crawler {
                String size = CrawlerUtils.scrapStringSimpleInfo(variant, "label", true);
                String variantName = name + " - " + size;
                String variantInternalId = internalId + "_" + size;
-               boolean availableToBuy = variant.selectFirst("label[class*=RadioButton_unavailable]") == null;
+               availableToBuy = variant.selectFirst("label[class*=RadioButton_unavailable]") == null;
                offers = availableToBuy ? offers : null;
 
                Product product = ProductBuilder.create()
@@ -113,6 +117,22 @@ public class BrasilAmaroCrawler extends Crawler {
       return products;
    }
 
+   private String crawlName(Document document) {
+      String name = CrawlerUtils.scrapStringSimpleInfo(document, "h1[class*=Heading_heading]", true);
+
+      if (name != null) {
+         String color = CrawlerUtils.scrapStringSimpleInfo(document, "[class*=selectedColor]", true);
+         if (color != null) {
+            return name + " - " + color;
+         }
+
+         return name;
+      }
+
+      String outStockName = CrawlerUtils.scrapStringSimpleInfo(document, "[class*=OutOfStockDesktop] p[class*=Paragraph_paragraph] strong", true);
+      return outStockName;
+   }
+
    private String scrapInternal(String pattern) {
       Pattern regexPattern = Pattern.compile(pattern);
       Matcher matcher = regexPattern.matcher(session.getOriginalURL());
@@ -151,7 +171,7 @@ public class BrasilAmaroCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("div[class*=ProductView_container]") != null;
+      return doc.selectFirst("div[class*=ProductView_container]") != null || doc.selectFirst("div[class*=OutOfStockDesktop_wrapperDesktop]") != null;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
