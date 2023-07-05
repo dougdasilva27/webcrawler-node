@@ -55,13 +55,9 @@ public class BrasilDafitiCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         // Nome
          Elements elementPreName = doc.select("h1.product-name");
          String preName = elementPreName.text().replace("'", "").replace("’", "").trim();
          CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, "ul.breadcrumb2", true);
-
-
-         // Imagem primária e imagens secundárias
          Elements elementPrimaryImage = doc.select(".gallery-thumbs ul.carousel-items").select("a");
          String primaryImage = null;
          String secondaryImages = null;
@@ -81,37 +77,20 @@ public class BrasilDafitiCrawler extends Crawler {
             secondaryImages = secondaryImagesArray.toString();
          }
 
-         // Descrição
-         String description = "";
-         Elements elementDescription = doc.select(".product-information-content");
-         description = elementDescription.first().text().replace(".", ".\n").replace("'", "").replace("’", "").trim();
-
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-description", false);
          Element elementSku = doc.select("#add-to-cart input[name=p]").first();
 
          try {
             String sku = elementSku.attr("value");
-
-            // Pegando os produtos usando o endpoint da Dafiti
-
             String url = "https://www.dafiti.com.br/catalog/detailJson?sku=" + sku + "&_=1439492531368";
-
             Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
             JSONObject json = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
-
             JSONArray sizes = json.has("sizes") ? json.getJSONArray("sizes") : new JSONArray();
 
-            /*
-             * Pegar o restante das informações usando os objetos JSON vindos do endpoint da dafit
-             */
             for (int i = 0; i < sizes.length(); i++) {
 
-               // ID interno
                String internalId = sizes.getJSONObject(i).getString("sku");
-
-               // Pid
                String internalPid = internalId.split("-")[0];
-
-               // Nome - pré-nome pego anteriormente, acrescido do tamanho do sapato
                String name = preName + " (tamanho " + sizes.getJSONObject(i).getString("name") + ")";
 
                RatingsReviews ratingReviews = scrapRatingReviews(doc);
@@ -185,15 +164,17 @@ public class BrasilDafitiCrawler extends Crawler {
       Element priceElement = doc.select(".catalog-detail-price-value").first();
 
       if (priceElement != null) {
-         Double price = MathUtils.parseDoubleWithComma(priceElement.ownText());
+         Double spotlightPrice = MathUtils.parseDoubleWithComma(priceElement.ownText());
+         Double priceFrom = skuJson.has("specialPrice") ? MathUtils.parseDoubleWithComma(skuJson.optString("specialPrice")) : null;
          CreditCards creditCards = scrapCard(doc, skuJson);
 
          BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
-            .setFinalPrice(price)
+            .setFinalPrice(spotlightPrice)
             .build();
 
          pricing = Pricing.PricingBuilder.create()
-            .setSpotlightPrice(price)
+            .setSpotlightPrice(spotlightPrice)
+            .setPriceFrom(priceFrom)
             .setCreditCards(creditCards)
             .setBankSlip(bankSlip)
             .build();
