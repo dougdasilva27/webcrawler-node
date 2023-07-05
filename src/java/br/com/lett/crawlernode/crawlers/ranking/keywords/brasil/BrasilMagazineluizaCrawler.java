@@ -30,14 +30,14 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private String zipCode = this.session.getOptions().optString("zipCode", "");
+   private String zipCode = this.session.getOptions().optString("zipcode","");
 
    @Override
    protected void processBeforeFetch() {
       super.processBeforeFetch();
       if (zipCode != null && !zipCode.isEmpty()) {
          BasicClientCookie cookie = new BasicClientCookie("zipcode", zipCode);
-         cookie.setDomain("magazineluiza.com.br");
+         cookie.setDomain("www.magazineluiza.com.br");
          cookie.setPath("/");
          this.cookies.add(cookie);
       }

@@ -37,7 +37,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
    private static final String SELLER_NAME = "magalu";
    private static final String SELLER_NAME_1 = "magazine luiza";
-   private String zipCode = this.session.getOptions().optString("zipCode", "");
+   private String zipCode = this.session.getOptions().optString("zipcode", "");
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString(), Card.ELO.toString(), Card.AURA.name());
 
@@ -50,7 +50,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       super.handleCookiesBeforeFetch();
       if (zipCode != null && !zipCode.isEmpty()) {
          BasicClientCookie cookie = new BasicClientCookie("zipcode", zipCode);
-         cookie.setDomain("magazineluiza.com.br");
+         cookie.setDomain("www.magazineluiza.com.br");
          cookie.setPath("/");
          this.cookies.add(cookie);
       }
