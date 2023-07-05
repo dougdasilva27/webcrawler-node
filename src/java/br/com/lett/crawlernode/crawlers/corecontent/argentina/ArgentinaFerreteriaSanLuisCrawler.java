@@ -23,8 +23,6 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.Pricing;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -32,7 +30,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -79,24 +76,25 @@ public class ArgentinaFerreteriaSanLuisCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Request for availability failed" + this.session.getOriginalURL());
       return true;
    }
+
    public static void waitForElement(WebDriver driver, String cssSelector) {
       WebDriverWait wait = new WebDriverWait(driver, 10);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
-   private Document webDriverLogin(){
+   private Document webDriverLogin() {
       Document document = null;
       try {
          webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.ferreterasanluis.com/login", ProxyCollection.BUY_HAPROXY, session, this.cookiesWD, "https://www.ferreterasanluis.com");
          webdriver.waitForElement(".uk-container.tm-login", 30);
 
-         webdriver.waitForElement( "#loginForm input[name=email]", 10);
+         webdriver.waitForElement("#loginForm input[name=email]", 10);
          webdriver.sendToInput("#loginForm input[name=email]", session.getOptions().optString("email"), 10);
 
-         webdriver.waitForElement( "#loginForm input[name=password]", 10);
+         webdriver.waitForElement("#loginForm input[name=password]", 10);
          webdriver.sendToInput("#loginForm input[name=password]", session.getOptions().optString("password"), 10);
 
-         webdriver.waitForElement( "#loginForm button", 10);
+         webdriver.waitForElement("#loginForm button", 10);
          webdriver.findAndClick("#loginForm button", 30000);
 
          webdriver.waitLoad(30000);
@@ -113,6 +111,7 @@ public class ArgentinaFerreteriaSanLuisCrawler extends Crawler {
       }
       return document;
    }
+
    @Override
    public List<Product> extractInformation(Document document) throws Exception {
       List<Product> products = new ArrayList<>();
@@ -120,7 +119,7 @@ public class ArgentinaFerreteriaSanLuisCrawler extends Crawler {
       if (isProductPage(document)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          Boolean loginRequired = CrawlerUtils.scrapDoublePriceFromHtml(document, ".tm-final-price .tm-num", null, false, ',', session) == null;
-         if (loginRequired){
+         if (loginRequired) {
             Document wdDocument = webDriverLogin();
             document = wdDocument != null ? wdDocument : document;
          }
