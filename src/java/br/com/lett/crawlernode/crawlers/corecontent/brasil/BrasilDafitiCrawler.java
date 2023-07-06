@@ -24,6 +24,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -93,7 +97,7 @@ public class BrasilDafitiCrawler extends Crawler {
                String internalPid = internalId.split("-")[0];
                String name = preName + " (tamanho " + sizes.getJSONObject(i).getString("name") + ")";
 
-               RatingsReviews ratingReviews = scrapRatingReviews(doc);
+               RatingsReviews ratingReviews = scrapRatingReviews(sku);
 
                Offers offers = scrapOffers(doc, json);
 
@@ -166,7 +170,7 @@ public class BrasilDafitiCrawler extends Crawler {
       if (priceElement != null) {
          Double spotlightPrice = MathUtils.parseDoubleWithComma(priceElement.ownText());
          Double priceFrom = skuJson.has("specialPrice") ? MathUtils.parseDoubleWithComma(skuJson.optString("specialPrice")) : null;
-         CreditCards creditCards = scrapCard(doc, skuJson);
+         CreditCards creditCards = scrapCard(skuJson);
 
          BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
@@ -183,7 +187,7 @@ public class BrasilDafitiCrawler extends Crawler {
       return pricing;
    }
 
-   private CreditCards scrapCard(Document doc, JSONObject skuJson) throws MalformedPricingException {
+   private CreditCards scrapCard(JSONObject skuJson) throws MalformedPricingException {
 
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
@@ -214,40 +218,37 @@ public class BrasilDafitiCrawler extends Crawler {
       return creditCards;
    }
 
-   private RatingsReviews scrapRatingReviews(Document doc) {
+   private RatingsReviews scrapRatingReviews(String sku) {
+      String apiURL = "https://trustvox.com.br/widget/root?code=" + sku + "&store_id=113911&url=" + session.getOriginalURL();
       RatingsReviews ratingReviews = new RatingsReviews();
-      ratingReviews.setDate(session.getDate());
+      HttpResponse<String> response;
 
-      Integer totalComments = scrapTotalComments(doc);
-      Double avgRating = scrapAvgRating(doc);
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .header("Accept", "application/vnd.trustvox-v2+json")
+            .header("Referer", "https://www.dafiti.com.br/")
+            .uri(URI.create(apiURL))
+            .build();
+         response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-      ratingReviews.setTotalRating(totalComments);
-      ratingReviews.setTotalWrittenReviews(totalComments);
-      ratingReviews.setAverageOverallRating(avgRating);
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load document: " + session.getOriginalURL(), e);
+      }
+
+      JSONObject json = CrawlerUtils.stringToJson(response.body());
+      JSONObject storeRate = json.optJSONObject("rate");
+
+      if (storeRate != null) {
+         Double avgRating = MathUtils.parseDoubleWithDot(storeRate.optString("average"));
+         int count = storeRate.optInt("count");
+         ratingReviews.setAverageOverallRating(avgRating);
+         ratingReviews.setTotalRating(count);
+         ratingReviews.setTotalWrittenReviews(count);
+      }
 
       return ratingReviews;
    }
 
-   private Integer scrapTotalComments(Document doc) {
-      Integer totalComments = 0;
-      String total = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".ratings-reviews-component.ratings-aggregated a", "title");
-      if (total != null) {
-         int a = total.indexOf("com") + 4;
-         int b = total.indexOf("avaliações") - 1;
-         if (a < b) totalComments = MathUtils.parseInt(total.substring(a, b));
-      } else {
-         totalComments = CrawlerUtils.scrapIntegerFromHtml(doc, ".ratings-reviews-component.hide-mobile.clearflix h2", true, 0);
-      }
-      return totalComments;
-   }
-
-   private Double scrapAvgRating(Document doc) {
-      Double avg = 0d;
-
-      String avgr = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".ratings-reviews-component.ratings-aggregated a", "title");
-      if (avgr != null) {
-         avg = MathUtils.parseDoubleWithDot(avgr.substring(avgr.indexOf("nota") + 5, avgr.indexOf("de") - 1));
-      }
-      return avg;
-   }
 }
