@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.models.*;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -16,6 +18,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilAdegaOnlineCrawler extends Crawler {
    private static String SELLER_NAME = "";
@@ -39,8 +43,8 @@ public class BrasilAdegaOnlineCrawler extends Crawler {
          String countryName = scrapCountry(doc);
          String title = CrawlerUtils.scrapStringSimpleInfo(doc, ".ProductMeta__Title", false);
          String name = title != null && countryName != null ? title + " " + countryName : title;
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=\"store_product_id\"]", "value");
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-short-description", false);
+         String internalId = crawlInternalId(doc);
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".box-short-description", ".card-body"));
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
          String available = CrawlerUtils.scrapStringSimpleInfo(doc, ".ProductForm__AddToCart.Button.Button--secondary", false);
          Offers offers = available != null && !available.isEmpty() && !available.contains("Sold Out") ? scrapOffers(doc) : new Offers();
@@ -59,7 +63,24 @@ public class BrasilAdegaOnlineCrawler extends Crawler {
       } else {
          Logging.printLogDebug(logger, session, "Not a product page:   " + this.session.getOriginalURL());
       }
+
       return products;
+   }
+
+   private String crawlInternalId(Document doc) {
+      String productId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".Product__Info .ProductForm", "id");
+      String regex = "form_(.*)";
+
+      if (productId != null) {
+         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+         Matcher matcher = pattern.matcher(productId);
+
+         if (matcher.find()) {
+            return matcher.group(1);
+         }
+      }
+
+      return null;
    }
 
    private boolean isProductPage(Document doc) {
@@ -86,7 +107,7 @@ public class BrasilAdegaOnlineCrawler extends Crawler {
 
       offers.add(new Offer.OfferBuilder()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(this.SELLER_NAME)
+         .setSellerFullName(SELLER_NAME)
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(true)

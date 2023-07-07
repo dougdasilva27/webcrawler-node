@@ -16,7 +16,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.Cookie;
 
-import java.util.Arrays;
+import java.util.List;
 
 public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
    Integer products;
@@ -80,9 +80,13 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
                Double price = CrawlerUtils.scrapDoublePriceFromHtml(e, "span.ProductItem__Price", null, true, ',', session);
                Integer priceInCents = CommonMethods.doublePriceToIntegerPrice(price, 0);
                String soldOff = CrawlerUtils.scrapStringSimpleInfo(e, ".ProductItem__Label--sold-off", false);
-               Boolean available = soldOff != null && !soldOff.isEmpty() && soldOff.contains("Esgotado") ? false : true;
-               if (!available) {priceInCents = null;}
-               String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "img.ProductItem__Image", Arrays.asList("srcset"), "https", "https://cdn.shopify.com/");
+
+               boolean available = soldOff == null || !soldOff.contains("Esgotado");
+               if (!available) {
+                  priceInCents = null;
+               }
+
+               String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "img.ProductItem__Image", List.of("srcset"), "https", "https://cdn.shopify.com/");
                String productUrl = scrapUrl(e);
 
                RankingProduct productRanking = RankingProductBuilder.create()
@@ -98,11 +102,14 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
                saveDataProduct(productRanking);
             }
          }
+
          this.log("Keyword com resultado!");
+
       } else {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
+
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
@@ -120,16 +127,15 @@ public class BrasilAdegaOnlineCrawler extends CrawlerRankingKeywords {
    private Integer scrapTotalProducts(Element e) {
       String totalProducts = CrawlerUtils.scrapStringSimpleInfo(e, ".boost-pfs-search-result-panel-item > button", false);
 
-      totalProducts = totalProducts.replaceAll("[^0-9]", "");
-
-      return Integer.parseInt(totalProducts);
+      if (totalProducts != null) {
+         totalProducts = totalProducts.replaceAll("[^0-9]", "");
+         return Integer.parseInt(totalProducts);
+      }
+      return null;
    }
 
    @Override
    protected boolean hasNextPage() {
-      if (this.products != null && this.totalProducts < this.products) {
-         return true;
-      }
-      return false;
+      return this.products != null && this.totalProducts < this.products;
    }
 }
