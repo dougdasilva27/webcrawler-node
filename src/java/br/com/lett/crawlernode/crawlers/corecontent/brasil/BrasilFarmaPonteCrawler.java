@@ -21,9 +21,8 @@ public class BrasilFarmaPonteCrawler extends Crawler {
 
    private static  String SELLER_NAME = "Farma Ponte";
 
-   public Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.ELO.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString(),
-      Card.VISAELECTRON.toString(), Card.FARMAPONTE.toString());
+   public Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),Card.ELO.toString(),
+      Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString(), Card.VISAELECTRON.toString());
 
    public BrasilFarmaPonteCrawler(Session session) {
       super(session);

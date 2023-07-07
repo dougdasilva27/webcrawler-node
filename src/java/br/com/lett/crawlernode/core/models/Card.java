@@ -4,7 +4,7 @@ public enum Card {
 
    VISA, MASTERCARD, MAESTRO, AMEX, DINERS, CREDICARD, ELO, HIPERCARD, HIPER, VISAELECTRON, AURA, BNDES, DISCOVER,
    HSCARD, CABAL, SENFF, CREDISHOP, NARANJA, NATIVA, JCB, MULTICASH, MULTIEMPRESARIAL, MULTICHEQUE, MULTIBENEFICIOS,
-   SOROCRED, SHOP_CARD, COPPEL, CORDOBESA, COBAL, UNKNOWN_CARD, GOOD_CARD, ALELO, VR_CARD, FACIL, FARMAPONTE;
+   SOROCRED, SHOP_CARD, COPPEL, CORDOBESA, COBAL, UNKNOWN_CARD, GOOD_CARD, ALELO, VR_CARD, FACIL;
 
    @Override
    public String toString() {
@@ -75,8 +75,6 @@ public enum Card {
             return "Vr_Card";
          case FACIL:
             return "Facil";
-         case FARMAPONTE:
-            return "Farma_Ponte";
          default:
             return "unkown_card";
       }
