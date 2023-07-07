@@ -18,7 +18,8 @@ public class BrasilFarmaPonteCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      String url = "https://www.farmaponte.com.br/" + this.keywordEncoded + "/?p=" + this.currentPage;
+      String newKeywordEncoded = this.keywordEncoded.replace("+", "%20");
+      String url = "https://www.farmaponte.com.br/" + newKeywordEncoded + "/?p=" + this.currentPage;
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".list-products.page-content li");
