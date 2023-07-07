@@ -10,6 +10,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 public class BrasilFarmaPonteCrawler extends CrawlerRankingKeywords {
    public BrasilFarmaPonteCrawler(Session session) {
@@ -28,9 +29,8 @@ public class BrasilFarmaPonteCrawler extends CrawlerRankingKeywords {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".item-product", "data-sku");
             String productUrl = CrawlerUtils.scrapUrl(product, ".item-product .link.image", "href", "https", "www.farmaponte.com.br");
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".item-product .desc .title", false);
-            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".item-product .link.image img", "data-src");
+            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".item-product .link.image img", List.of("data-src"), "https:", "");
             Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product,  ".item-product .desc .box-prices .prices .sale_price", null,  false, ',', session, null);
-            Integer priceFrom = CrawlerUtils.scrapPriceInCentsFromHtml(product, ".item-product .desc .box-prices .prices .price_off", null, false, ',', session, price);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -38,7 +38,6 @@ public class BrasilFarmaPonteCrawler extends CrawlerRankingKeywords {
                .setInternalPid(internalPid)
                .setName(productName)
                .setPriceInCents(price)
-               .setPriceInCents(priceFrom)
                .setAvailability(isAvailable)
                .setImageUrl(imageUrl)
                .build();
