@@ -2,9 +2,9 @@ package br.com.lett.crawlernode.core.models;
 
 public enum Card {
 
-   VISA, MASTERCARD, MAESTRO, AMEX, DINERS, CREDICARD, ELO, HIPERCARD, HIPER, AURA, BNDES, DISCOVER, HSCARD, CABAL, SENFF, CREDISHOP, NARANJA, NATIVA, JCB, MULTICASH, MULTIEMPRESARIAL, MULTICHEQUE, MULTIBENEFICIOS, SOROCRED,
-
-   SHOP_CARD, COPPEL, CORDOBESA, COBAL, UNKNOWN_CARD, GOOD_CARD, ALELO, VR_CARD, FACIL;
+   VISA, MASTERCARD, MAESTRO, AMEX, DINERS, CREDICARD, ELO, HIPERCARD, HIPER, VISAELECTRON, AURA, BNDES, DISCOVER,
+   HSCARD, CABAL, SENFF, CREDISHOP, NARANJA, NATIVA, JCB, MULTICASH, MULTIEMPRESARIAL, MULTICHEQUE, MULTIBENEFICIOS,
+   SOROCRED, SHOP_CARD, COPPEL, CORDOBESA, COBAL, UNKNOWN_CARD, GOOD_CARD, ALELO, VR_CARD, FACIL, FARMAPONTE;
 
    @Override
    public String toString() {
@@ -27,6 +27,8 @@ public enum Card {
             return "Hipercard";
          case HIPER:
             return "Hiper";
+         case VISAELECTRON:
+            return "Visa_Electron";
          case AURA:
             return "Aura";
          case BNDES:
@@ -73,6 +75,8 @@ public enum Card {
             return "Vr_Card";
          case FACIL:
             return "Facil";
+         case FARMAPONTE:
+            return "Farma_Ponte";
          default:
             return "unkown_card";
       }
