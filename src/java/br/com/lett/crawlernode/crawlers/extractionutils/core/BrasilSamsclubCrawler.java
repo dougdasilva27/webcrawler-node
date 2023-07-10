@@ -1,7 +1,13 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -26,20 +32,18 @@ public class BrasilSamsclubCrawler extends VTEXNewScraper {
 
    @Override
    protected Object fetch() {
-      try {
-         HttpClient client = HttpClient.newBuilder().build();
-         HttpRequest request = HttpRequest.newBuilder()
-            .GET()
-            .uri(URI.create(session.getOriginalURL()))
-            .build();
-         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-         return new Response.ResponseBuilder()
-            .setBody(response.body())
-            .setLastStatusCode(response.statusCode())
-            .build();
-      } catch (Exception e) {
-         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
-      }
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setCookies(cookies)
+         .setProxyservice(List.of(
+            ProxyCollection.BUY,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new FetcherDataFetcher(), new JavanetDataFetcher()), session, "get");
+      return response;
    }
 
    @Override
