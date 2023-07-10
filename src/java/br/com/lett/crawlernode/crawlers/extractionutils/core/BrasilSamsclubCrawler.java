@@ -1,13 +1,17 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import models.RatingsReviews;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class BrasilSamsclubCrawler extends VTEXNewScraper {
@@ -18,6 +22,24 @@ public class BrasilSamsclubCrawler extends VTEXNewScraper {
    @Override
    protected String getHomePage() {
       return session.getOptions().optString("homePage");
+   }
+
+   @Override
+   protected Object fetch() {
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(session.getOriginalURL()))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
    }
 
    @Override
@@ -50,5 +72,4 @@ public class BrasilSamsclubCrawler extends VTEXNewScraper {
 
       return description.toString();
    }
-
 }
