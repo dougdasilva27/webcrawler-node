@@ -46,7 +46,7 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    @Override
    protected Response fetchResponse() {
       try {
-         HttpClient client = HttpClient.newBuilder().build();
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
          HttpRequest request = HttpRequest.newBuilder()
             .GET()
             .uri(URI.create(session.getOriginalURL()))

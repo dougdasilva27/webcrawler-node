@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -29,7 +30,7 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
 
 
       this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".spots-interna .fbits-item-lista-spot");
+      Elements products = this.currentDoc.select(".spot");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -37,18 +38,16 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String rawInternal = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id");
-            String internalId = rawInternal != null && rawInternal.contains("produto-spot-item-") ? rawInternal.split("item-")[1] : null;
-            String productUrl = CrawlerUtils.scrapUrl(e, ".spot-parte-um", "href", "https:", "www.abcdaconstrucao.com.br");
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".spotTitle", true);
+            String productUrl = CrawlerUtils.scrapUrl(e, ".spot__image-wrapper > a", "href", "https", "www.abcdaconstrucao.com.br");
+            String internalPid = CommonMethods.getLast(productUrl.split("-"));
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".spot__content-title > a > h3", true);
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".spotImg img", Collections.singletonList("data-original"), "https", "www.abcdaconstrucao.com.br");
-            Integer price = getPrice(e);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".precoPor > span", null, false, ',', session, null);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalId)
-               .setInternalPid(null)
+               .setInternalPid(internalPid)
                .setName(name)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
