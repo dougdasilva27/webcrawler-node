@@ -1,11 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
@@ -23,10 +17,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.*;
 
 /**
  * Date: 23/10/2019
@@ -39,7 +34,6 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
 
    public BrasilAbcdaconstrucaoCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
       super.config.setParser(Parser.HTML);
    }
 
@@ -51,17 +45,20 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setProxyservice(List.of(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
-         .build();
-
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "get");
-
-      return response;
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(session.getOriginalURL()))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load document: " + session.getOriginalURL(), e);
+      }
    }
 
    @Override
@@ -72,16 +69,14 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#hdnProdutoId", "value");
-         String internalPid = internalId;
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".prodTitle", false);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#fbits-breadcrumb li a span");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#zoomImagemProduto", Arrays.asList("src"), "https:",
-            "abcdaconstrucao.fbitsstatic.net/");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "#galeria .fbits-produto-imagensMinicarrossel-item a", Arrays.asList("data-zoom-image", "data-image"),
-            "https:", "abcdaconstrucao.fbitsstatic.net/", primaryImage);
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".paddingbox", false);
-         boolean available = doc.selectFirst(".fbits-preco") != null;
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product-variant-id", "value");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product-id", "value");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__title", false);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb__link");
+         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".gallery-slider.swiper > div >.swiper-slide > img", "src");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".gallery-slider.swiper > div >.swiper-slide > img", Arrays.asList("src"), "https", "abcdaconstrucao.fbitsstatic.net", primaryImage);
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#tblDescricao", false);
+         boolean available = doc.selectFirst(".product__buttons > .buy-button") != null;
          Offers offers = available ? scrapOffer(doc) : new Offers();
 
          // Creating the product
@@ -90,9 +85,7 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
+            .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
@@ -109,17 +102,17 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("div.produto-info") != null;
+      return doc.selectFirst(".product__view") != null;
    }
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = scrapSales(doc);
+      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName("abc da constução")
+         .setSellerFullName("abc da construcao")
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(true)
@@ -131,27 +124,18 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
 
    }
 
-   private List<String> scrapSales(Document doc) {
-      List<String> sales = new ArrayList<>();
-
-      Element salesOneElement = doc.selectFirst(".fbits-preco-off");
-      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
-
-      if (firstSales != null && !firstSales.isEmpty()) {
-         sales.add(firstSales);
-      }
-
-      return sales;
-   }
-
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = calculatePriceSquareMeter(doc);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#precoCalculado", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product__prices > div > p > s", null, false, ',', session);
 
-      if (spotlightPrice == 0d) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#product-prices-div > div.spot-price > h3 > span", null, false, ',', session);
       }
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoDe", null, false, ',', session);
+      if (doc.selectFirst(".box-price") != null) {
+         priceFrom = null;
+      }
+
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
@@ -192,7 +176,7 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    public Installments scrapInstallments(Document doc) throws MalformedPricingException {
       Installments installments = new Installments();
 
-      Elements installmentsCard = doc.select(".details-content p");
+      Elements installmentsCard = doc.select("#product-prices-div > .best-installment");
 
       for (Element e : installmentsCard) {
 
@@ -216,26 +200,6 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       }
 
       return installments;
-   }
-
-   private double calculatePriceSquareMeter(Document doc) {
-      Double spotlightPrice = 0D;
-      Double squareMeter = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div #spanPrecoCalculadoComponente", null, false, ',', session);
-
-      if (squareMeter != null) {
-         Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
-         if (price != null) {
-            Double meter = squareMeter / price;
-            return price / meter;
-         }
-      } else {
-         // Is necessary because some products not have square meter in description on any place
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#novoPrecoCalculado .textoPrecoCalculado:not(:first-child)", null, true, ',', session);
-         if (spotlightPrice == null) {
-            spotlightPrice = 0D;
-         }
-      }
-      return spotlightPrice;
    }
 
 }
