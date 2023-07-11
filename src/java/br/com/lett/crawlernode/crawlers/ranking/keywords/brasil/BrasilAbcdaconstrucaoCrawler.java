@@ -56,7 +56,7 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
       if (!products.isEmpty()) {
 
          for (Element e : products) {
-            String productUrl = CrawlerUtils.scrapUrl(e, ".spot__image-wrapper > a", "href", "https", "www.abcdaconstrucao.com.br").replaceAll("`","%60");
+            String productUrl = CrawlerUtils.scrapUrl(e, ".spot__image-wrapper > a", "href", "https", "www.abcdaconstrucao.com.br").replaceAll("`", "%60");
             String internalPid = CommonMethods.getLast(productUrl.split("-"));
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".spot__content-title > a > h3", true);
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".spotImg img", Collections.singletonList("data-original"), "https", "www.abcdaconstrucao.com.br");
