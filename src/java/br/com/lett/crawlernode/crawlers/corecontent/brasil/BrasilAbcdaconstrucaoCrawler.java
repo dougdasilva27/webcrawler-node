@@ -184,9 +184,7 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
 
             String installmentString = e.text();
 
-            Integer installment = installmentString.contains("x") ? MathUtils.parseInt(installmentString.split("x")[0]) : null;
-
-            //4 x sem juros de R$ 29,49 no Cartão
+            Integer installment = installmentString.contains("x") ? MathUtils.parseInt(installmentString.split("x")[0]) : 1;
             String valueString = installmentString.contains("R$") ? installmentString.split("R")[1].replace("$ ", "") : null;
             String valueString2 = valueString != null && valueString.contains(" ") ? valueString.split(" ")[0] : null;
 
