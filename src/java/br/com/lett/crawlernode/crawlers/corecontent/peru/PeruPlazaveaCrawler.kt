@@ -16,14 +16,6 @@ class PeruPlazaveaCrawler(session: Session) : VTEXNewImpl(session) {
          ?.map { obj: Any -> obj.toString() } ?: listOf()
    }
 
-   override fun isMainRetailer(sellerName: String?): Boolean {
-      var seller = sellerName ?: ""
-      if (sellerName != null && sellerName.last() == '.') {
-         seller = sellerName.substring(0, sellerName.length - 1)
-      }
-      return super.isMainRetailer(seller)
-   }
-
    override fun scrapDescription(doc: Document?, productJson: JSONObject): String? {
       val description = productJson.optString("Descripción del producto")
       return if (description.isEmpty()) {
