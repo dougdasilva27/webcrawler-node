@@ -1,31 +1,25 @@
 package br.com.lett.crawlernode.crawlers.corecontent.peru
 
 import br.com.lett.crawlernode.core.session.Session
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper
-import models.RatingsReviews
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewImpl
 import org.json.JSONObject
 import org.jsoup.nodes.Document
 
-class PeruPlazaveaCrawler(session: Session) : VTEXOldScraper(session) {
-
-   companion object {
-      private val HOME_PAGE = "https://www.plazavea.com.pe/"
-      private val MAIN_SELLER_NAME_LOWER = "plaza vea"
-   }
+class PeruPlazaveaCrawler(session: Session) : VTEXNewImpl(session) {
 
    override fun getHomePage(): String {
-      return HOME_PAGE
+      return session.options.optString("homePage")
    }
 
-   override fun getMainSellersNames(): MutableList<String> {
-      return mutableListOf(MAIN_SELLER_NAME_LOWER)
-   }
-
-   override fun scrapRating(internalId: String?, internalPid: String?, doc: Document?, jsonSku: JSONObject?): RatingsReviews? {
-      return null
+   override fun getMainSellersNames(): List<String> {
+      return session.options?.optJSONArray("sellers")?.toList()
+         ?.map { obj: Any -> obj.toString() } ?: listOf()
    }
 
    override fun scrapDescription(doc: Document?, productJson: JSONObject): String? {
-      return productJson.optString("Descripción del producto")
+      val description = productJson.optString("Descripción del producto")
+      return if (description.isEmpty()) {
+         productJson.optString("metaTagDescription")
+      } else description
    }
 }
