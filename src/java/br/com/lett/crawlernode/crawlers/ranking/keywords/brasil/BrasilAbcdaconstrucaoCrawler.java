@@ -45,6 +45,9 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
       this.pageSize = 12;
       this.log("Página " + this.currentPage);
       String url = "https://www.abcdaconstrucao.com.br/busca?busca=" + this.keywordWithoutAccents.replace(" ", "%20") + "&pagina=" + this.currentPage + "&tamanho=" + pageSize;
+      if (keywordWithoutAccents.equalsIgnoreCase("portobello")) {
+         url = "https://www.abcdaconstrucao.com.br/fabricante/portobello-2499290?pagina=" + this.currentPage + "&tamanho=24";
+      }
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
@@ -53,7 +56,7 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
       if (!products.isEmpty()) {
 
          for (Element e : products) {
-            String productUrl = CrawlerUtils.scrapUrl(e, ".spot__image-wrapper > a", "href", "https", "www.abcdaconstrucao.com.br");
+            String productUrl = CrawlerUtils.scrapUrl(e, ".spot__image-wrapper > a", "href", "https", "www.abcdaconstrucao.com.br").replaceAll("`","%60");
             String internalPid = CommonMethods.getLast(productUrl.split("-"));
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".spot__content-title > a > h3", true);
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".spotImg img", Collections.singletonList("data-original"), "https", "www.abcdaconstrucao.com.br");

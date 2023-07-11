@@ -73,7 +73,7 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product-id", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__title", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb__link");
-         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".gallery-slider.swiper > div >.swiper-slide > img", "src");
+         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".gallery-slider.swiper > div >.swiper-slide > img", "src").replaceAll("`","%60");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".gallery-slider.swiper > div >.swiper-slide > img", Arrays.asList("src"), "https", "abcdaconstrucao.fbitsstatic.net", primaryImage);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#tblDescricao", false);
          boolean available = doc.selectFirst(".product__buttons > .buy-button") != null;
