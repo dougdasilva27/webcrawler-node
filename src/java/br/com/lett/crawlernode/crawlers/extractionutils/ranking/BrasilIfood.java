@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -13,6 +14,7 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,17 +23,15 @@ public class BrasilIfood extends CrawlerRankingKeywords {
 
    public BrasilIfood(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
    }
 
-   protected String storeName = session.getOptions().getString("store_name");
    protected String storeId = session.getOptions().getString("store_id");
    protected String geolocation = session.getOptions().getString("geolocation");
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      String url = "https://marketplace.ifood.com.br/v2/search/catalog-items?" + geolocation + "&channel=IFOOD&term="
-         + this.keywordEncoded + "&size=36&page=" + (this.currentPage - 1) + "&item_from_merchant_ids=" + storeId;
+      String url = "https://marketplace.ifood.com.br/v2/search/catalog-items?" + geolocation + "&channel=IFOOD&term=" +
+         this.keywordEncoded + "&size=36&page=" + (this.currentPage - 1) + "&item_from_merchant_ids=" + storeId;
       JSONObject apiJson = fetch(url);
 
       JSONArray data = JSONUtils.getValueRecursive(apiJson, "items.data", JSONArray.class);
@@ -62,9 +62,7 @@ public class BrasilIfood extends CrawlerRankingKeywords {
                saveDataProduct(productRanking);
                if (this.arrayProducts.size() == productsLimit)
                   break;
-
             }
-
 
             this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
          }
@@ -72,7 +70,6 @@ public class BrasilIfood extends CrawlerRankingKeywords {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
-
    }
 
    private String crawlImage(JSONObject product) {
@@ -115,10 +112,15 @@ public class BrasilIfood extends CrawlerRankingKeywords {
       Request request = RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR
+         ))
          .build();
 
-      String content = CrawlerUtils.retryRequest(request, session, this.dataFetcher, true).getBody();
-
+      String content = CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), true).getBody();
       return JSONUtils.stringToJson(content);
    }
 
@@ -127,4 +129,3 @@ public class BrasilIfood extends CrawlerRankingKeywords {
       return true;
    }
 }
-
