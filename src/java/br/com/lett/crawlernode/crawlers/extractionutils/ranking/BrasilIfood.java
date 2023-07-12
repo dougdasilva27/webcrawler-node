@@ -108,6 +108,8 @@ public class BrasilIfood extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("item_experiment_details", json.toString());
       headers.put("item_experiment_variant", "market_internal");
+      headers.put("accept", "application/json, text/plain, */*");
+      headers.put("authority", "marketplace.ifood.com.br");
 
       Request request = RequestBuilder.create()
          .setUrl(url)
