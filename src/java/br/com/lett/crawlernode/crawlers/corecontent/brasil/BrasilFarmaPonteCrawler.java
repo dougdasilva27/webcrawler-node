@@ -14,22 +14,18 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-public class BrasilAdegaOnlineCrawler extends Crawler {
-   private static String SELLER_NAME = "";
+public class BrasilFarmaPonteCrawler extends Crawler {
 
-   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.ELO.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+   private static  String SELLER_NAME = "Farma Ponte";
 
-   public BrasilAdegaOnlineCrawler(Session session) {
+   public Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),Card.ELO.toString(),
+      Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString(), Card.VISAELECTRON.toString());
+
+   public BrasilFarmaPonteCrawler(Session session) {
       super(session);
-      SELLER_NAME = session.getMarket().getName();
    }
 
    @Override
@@ -40,64 +36,39 @@ public class BrasilAdegaOnlineCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String countryName = scrapCountry(doc);
-         String title = CrawlerUtils.scrapStringSimpleInfo(doc, ".ProductMeta__Title", false);
-         String name = title != null && countryName != null ? title + " " + countryName : title;
-         String internalId = crawlInternalId(doc);
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".box-short-description", ".card-body"));
-         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=\"og:image\"]", "content");
-         String available = CrawlerUtils.scrapStringSimpleInfo(doc, ".ProductForm__AddToCart.Button.Button--secondary", false);
-         Offers offers = available != null && !available.isEmpty() && !available.contains("Sold Out") ? scrapOffers(doc) : new Offers();
+         String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail .name", false);
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail .code span", false);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-detail .box_df .tell_me .bt", "data-sku");
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".description_contents", false);
+         List<String> categories = CrawlerUtils.crawlCategories(doc, "#breadcrumb ul li a span", true);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .thumbs ul li a", List.of("big_img"), "https:", "");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image .thumbs ul li a", List.of("big_img"),
+            "https:", "", primaryImage);
+
+         boolean available = doc.selectFirst(".product-detail .box_df .hide-unavailable") != null;
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalId)
-            .setName(name)
+            .setInternalPid(internalPid)
+            .setName(productName)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
+            .setCategories(categories)
             .setOffers(offers)
             .build();
          products.add(product);
 
       } else {
-         Logging.printLogDebug(logger, session, "Not a product page:   " + this.session.getOriginalURL());
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
-
       return products;
    }
 
-   private String crawlInternalId(Document doc) {
-      String productId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".Product__Info .ProductForm", "id");
-      String regex = "form_(.*)";
-
-      if (productId != null) {
-         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-         Matcher matcher = pattern.matcher(productId);
-
-         if (matcher.find()) {
-            return matcher.group(1);
-         }
-      }
-
-      return null;
-   }
-
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".Product__Wrapper") != null;
-   }
-
-   private String scrapCountry(Document doc) {
-      Elements box = doc.select(".box-specification strong");
-
-      for (Element info : box) {
-         String infoType = CrawlerUtils.scrapStringSimpleInfo(info, null, true);
-         if (infoType != null && infoType.equals("PAÍS:")) {
-            return CrawlerUtils.scrapStringSimpleInfo(info, "span", false);
-         }
-      }
-
-      return null;
+      return doc.selectFirst("#content_product") != null;
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
@@ -107,7 +78,7 @@ public class BrasilAdegaOnlineCrawler extends Crawler {
 
       offers.add(new Offer.OfferBuilder()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_NAME)
+         .setSellerFullName(this.SELLER_NAME)
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(true)
@@ -119,19 +90,17 @@ public class BrasilAdegaOnlineCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".Price--highlight", null, true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".Price--compareAt", null, true, ',', session);
-
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.Price", null, true, ',', session);
-      }
-
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-detail .box-pricing .sale", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-detail .box-pricing .price_off", null, false, ',', session);
+      spotlightPrice = (spotlightPrice == null) ? priceFrom : spotlightPrice;
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
          .build();
    }
 

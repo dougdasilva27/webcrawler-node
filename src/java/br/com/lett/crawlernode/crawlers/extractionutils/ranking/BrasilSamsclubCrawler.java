@@ -1,48 +1,77 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
-import org.jsoup.Jsoup;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import cdjd.com.dremio.exec.rpc.ResponseSender;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-public class BrasilSamsclubCrawler extends VTEXRankingKeywords {
+import java.awt.geom.RectangularShape;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
-   private static final String HOME_PAGE = "https://www.samsclub.com.br/";
+public class BrasilSamsclubCrawler extends VTEXGraphQLRanking {
+   private String HOME_PAGE = getHomePage();
+
+   private String getHomePage() {
+      return session.getOptions().optString("homePage");
+   }
 
    public BrasilSamsclubCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String getHomePage() {
-      return HOME_PAGE;
-   }
+   protected JSONObject fetchSearchApi(Document doc, String redirect) {
+      JSONObject searchApi = new JSONObject();
+      StringBuilder url = new StringBuilder();
+      String sha256Hash = getSha256Hash(doc);
+      url.append(HOME_PAGE).append("_v/segment/graphql/v1?");
+      JSONObject extensions = new JSONObject();
+      JSONObject persistedQuery = new JSONObject();
 
-   @Override
-   protected String getLocation() {
-      return "";
-   }
+      persistedQuery.put("version", "1");
+      persistedQuery.put("sha256Hash", sha256Hash);
+      persistedQuery.put("sender", "vtex.store-resources@0.x");
+      persistedQuery.put("provider", "vtex.search-graphql@0.x");
 
-   @Override
-   protected String getVtexSegment(){
-      return session.getOptions().getJSONObject("cookies").getString("vtex_segment");
-   }
+      extensions.put("variables", createVariablesBase64(redirect));
+      extensions.put("persistedQuery", persistedQuery);
 
-   @Override
-   protected Document fetchDocument() {
+      url.append("extensions=").append(URLEncoder.encode(extensions.toString(), StandardCharsets.UTF_8));
+      this.log("Link onde são feitos os crawlers:" + url);
 
-      StringBuilder searchPage = new StringBuilder();
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url.toString())
+         .setCookies(cookies)
+         .setProxyservice(List.of(
+            ProxyCollection.BUY,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .build();
 
-      searchPage.append(getHomePage())
-         .append(this.keywordEncoded)
-         .append("?_q=")
-         .append(this.keywordEncoded)
-         .append("&map=ft")
-         .append("&page=")
-         .append(this.currentPage);
+      String strResp = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new FetcherDataFetcher(), new JavanetDataFetcher()), session, "get").getBody();
+      JSONObject response = CrawlerUtils.stringToJson(strResp);
 
+      if (response.has("data") && !response.isNull("data")) {
+         JSONObject data = response.optJSONObject("data");
 
-      String apiUrl = searchPage.toString().replace("+", "%20");
+         if (data.has("productSearch") && !data.isNull("productSearch")) {
+            searchApi = data.optJSONObject("productSearch");
 
-      return Jsoup.parse(fetchPage(apiUrl));
+            if (searchApi.optString("redirect") != null && !searchApi.optString("redirect").isEmpty()) {
+               searchApi = fetchSearchApi(doc, searchApi.optString("redirect"));
+            }
+         }
+      }
+
+      return searchApi;
    }
 }

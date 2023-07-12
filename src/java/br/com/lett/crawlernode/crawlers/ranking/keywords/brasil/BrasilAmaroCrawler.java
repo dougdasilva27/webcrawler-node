@@ -1,9 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -12,86 +9,88 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import models.RatingsReviews;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilAmaroCrawler extends CrawlerRankingKeywords {
    public BrasilAmaroCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
    }
+
+   private final String HOME_PAGE = "https://amaro.com";
 
    @Override
    protected void processBeforeFetch() {
       Request request = Request.RequestBuilder.create()
-         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
          .setUrl("https://amaro.com/br/pt")
+         .setProxyservice(List.of(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR))
          .setFollowRedirects(true)
          .build();
-      Response response = this.dataFetcher.get(session, request);
+      Response response = new FetcherDataFetcher().get(session, request);
       this.cookies.addAll(response.getCookies());
    }
 
    @Override
    public void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      this.pageSize = 24;
+      this.pageSize = 64;
+      Integer position = 1;
       this.log("Página " + this.currentPage);
-      String url = "https://cerberus.amaro.pro/search/products?q=" + this.keywordWithoutAccents + "&sort=relevance&curr=BRL&lang=pt&currentPage=" + this.currentPage + "&pageSize=24";
+
+      String url = "https://amaro.com/br/pt/busca/" + this.keywordEncoded + "?order=relevance&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
-      HashMap<String, String> headers = new HashMap<>();
-      headers.put("authority", "cerberus.amaro.pro");
-      headers.put("content-type", "application/json");
-      headers.put("origin", "https://amaro.com/");
+      Elements products = this.currentDoc.select("[class*=ProductList_listItem]");
 
-      Request request = Request.RequestBuilder.create()
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
-         .setUrl(url)
-         .setHeaders(headers)
-         .setCookies(this.cookies)
-         .build();
+      if (!products.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts();
+         }
 
-      JSONObject jsonObject = JSONUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
-      JSONArray products = jsonObject.optJSONArray("products");
+         for (Element product : products) {
+            Elements variants = product.select("ul[class*=ProductTile_variants] li");
 
-      if (products != null) {
-         for (Object o : products) {
-            JSONObject product = (JSONObject) o;
-            String internalPid = product.optString("baseProduct");
-            String internalId = product.optString("code");
-            String productUrl = product.optString("url");
-            String name = product.optString("name");
-            JSONObject priceObj = (JSONObject) product.optQuery("/prices/nowPrice");
-            Integer price = JSONUtils.getPriceInCents(priceObj, "value");
-            String image = (String) product.optQuery("/images/0/url");
+            for (Element variant : variants) {
+               String name = CrawlerUtils.scrapStringSimpleInfo(product, "h3[class*=ProductTile_title]", true);
+               String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(product, "[class*=ProductTile_image] img", Collections.singletonList("src"), "https", "amaroecp-res.cloudinary.com");
+               Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product, "[class*=ProductPrice_mainPrice][class*=ProductPrice_hideDesktop]", null, false, ',', session, null);
+               boolean isAvailable = price != null;
 
-            RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(productUrl)
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setImageUrl(image)
-               .setPriceInCents(price)
-               .setAvailability(price != null)
-               .build();
+               String productUrl = HOME_PAGE + CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "figure [class*=ProductTile_link]", "href");
 
-            saveDataProduct(productRanking);
+               if (variants.size() > 1) {
+                  productUrl = HOME_PAGE + CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "a[class*=Link_link]", "href");
+                  name = crawlVariantName(name, variant);
+               }
+
+               String internalId = scrapInternal(productUrl, "/([0-9]*_[0-9]*)/");
+               String internalPid = scrapInternal(productUrl, "/(\\d+)_");
+
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setImageUrl(imgUrl)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setPosition(position)
+                  .build();
+
+               saveDataProduct(productRanking);
+            }
+
+            position++;
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
@@ -101,10 +100,39 @@ public class BrasilAmaroCrawler extends CrawlerRankingKeywords {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
+
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private String scrapInternal(String productUrl, String pattern) {
+      Pattern regexPattern = Pattern.compile(pattern);
+      Matcher matcher = regexPattern.matcher(productUrl);
+
+      if (matcher.find()) {
+         return matcher.group(1);
+      }
+
+      return null;
+   }
+
+   private String crawlVariantName(String name, Element variant) {
+      String variantCode = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "a[class*=Link_link] img", "alt");
+
+      if (variantCode != null) {
+         return name + " - " + variantCode;
+      }
+
+      return name;
    }
 
    @Override
-   protected boolean hasNextPage() {
-      return true;
+   protected void setTotalProducts() {
+      String totalProducts = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, "strong[class*=countValue]", true);
+
+      if (totalProducts != null) {
+         this.totalProducts = Integer.parseInt(totalProducts);
+      }
+
+      this.log("Total da busca: " + this.totalProducts);
    }
 }

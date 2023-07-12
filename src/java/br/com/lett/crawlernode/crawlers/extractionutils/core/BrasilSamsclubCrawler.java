@@ -1,13 +1,23 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class BrasilSamsclubCrawler extends VTEXNewScraper {
@@ -18,6 +28,22 @@ public class BrasilSamsclubCrawler extends VTEXNewScraper {
    @Override
    protected String getHomePage() {
       return session.getOptions().optString("homePage");
+   }
+
+   @Override
+   protected Object fetch() {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setCookies(cookies)
+         .setProxyservice(List.of(
+            ProxyCollection.BUY,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new FetcherDataFetcher(), new JavanetDataFetcher()), session, "get");
+      return response;
    }
 
    @Override
@@ -50,5 +76,4 @@ public class BrasilSamsclubCrawler extends VTEXNewScraper {
 
       return description.toString();
    }
-
 }

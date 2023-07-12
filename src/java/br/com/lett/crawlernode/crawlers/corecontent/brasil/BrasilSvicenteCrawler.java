@@ -57,11 +57,15 @@ public class BrasilSvicenteCrawler extends Crawler {
    }
 
    @Override
-   public void handleCookiesBeforeFetch() {
+   protected Response fetchResponse() {
       String store = session.getOptions().optString("store");
+      HashMap<String, String> headers = new HashMap<>();
+      headers.put("cookie", "dwsid=2hVbN9KSztunRT1mShk_x-zLSWN80Q9ZLHPdOF69FWVh3PISHeZRi_lCamtzPeOew4RKeR_7GWAm4BfpiG9qUg==; hasSelectedStore=" + store + ";dw_store=" + store + ";");
+
       Request request = Request.RequestBuilder.create()
-         .setUrl("https://www.svicente.com.br/on/demandware.store/Sites-SaoVicente-Site/pt_BR/Stores-SelectStore?storeId=" + store)
-         .setHeaders(this.headers)
+         .setUrl("https://www.svicente.com.br/on/demandware.store/Sites-SaoVicente-Site/pt_BR/Product-ShowQuickView?pid=" + getId())
+         .setHeaders(headers)
+         .setCookies(this.cookies)
          .build();
       Response response = new ApacheDataFetcher().get(session, request);
       if (response.getCookies() != null && !response.getCookies().isEmpty()) {
@@ -73,17 +77,7 @@ public class BrasilSvicenteCrawler extends Crawler {
          }
 
       }
-   }
-
-   @Override
-   protected Response fetchResponse() {
-
-      Request reqForProduct = Request.RequestBuilder.create()
-         .setUrl("https://www.svicente.com.br/on/demandware.store/Sites-SaoVicente-Site/pt_BR/Product-ShowQuickView?pid=" + getId())
-         .setHeaders(this.headers)
-         .setCookies(this.cookies)
-         .build();
-      return new ApacheDataFetcher().get(session, reqForProduct);
+      return response;
    }
 
    @Override
