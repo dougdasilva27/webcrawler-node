@@ -29,8 +29,6 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private String zipCode = this.session.getOptions().optString("zipcode", "");
-
    @Override
    protected Document fetchDocument(String url) {
       Document doc;
@@ -39,9 +37,6 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
       headers.put("authority", "www.magazineluiza.com.br");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-      if (zipCode != null && !zipCode.isEmpty()) {
-         headers.put("cookie", zipCode);
-      }
 
       do {
          Request request = Request.RequestBuilder.create()
