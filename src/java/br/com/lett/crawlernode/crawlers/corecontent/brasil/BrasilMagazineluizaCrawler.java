@@ -185,11 +185,31 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       String sellerId = JSONUtils.getValueRecursive(json, "seller.id", String.class, "");
       String subcategoryId = JSONUtils.getValueRecursive(json, "subcategory.id", String.class, "");
       String type = JSONUtils.getValueRecursive(json, "type", String.class, "");
+
       Double length = JSONUtils.getValueRecursive(json, "dimensions.length", Double.class, null);
+      if (length == null) {
+         length = Double.valueOf(JSONUtils.getValueRecursive(json, "dimensions.length", Integer.class, null));
+      }
+
       Double width = JSONUtils.getValueRecursive(json, "dimensions.width", Double.class, null);
+      if (width == null) {
+         width = Double.valueOf(JSONUtils.getValueRecursive(json, "dimensions.width", Integer.class, null));
+      }
+
       Double weight = JSONUtils.getValueRecursive(json, "dimensions.weight", Double.class, null);
+      if (weight == null) {
+         weight = Double.valueOf(JSONUtils.getValueRecursive(json, "dimensions.weight", Integer.class, null));
+      }
+
       Double height = JSONUtils.getValueRecursive(json, "dimensions.height", Double.class, null);
+      if (height == null) {
+         height = Double.valueOf(JSONUtils.getValueRecursive(json, "dimensions.height", Integer.class, null));
+      }
+
       Double price = Double.parseDouble(JSONUtils.getValueRecursive(json, "price.bestPrice", String.class, ""));
+      if (price == null) {
+         price = Double.valueOf(JSONUtils.getValueRecursive(json, "price.bestPrice", Integer.class, null));
+      }
 
       String payload = "{\n" +
          "    \"operationName\": \"shippingQuery\",\n" +
