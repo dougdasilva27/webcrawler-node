@@ -193,7 +193,7 @@ public class ArgentinaFerreteriaSanLuisCrawler extends Crawler {
 
       Elements imagesDivs = doc.select("#js-gallery-product li img");
       for (Element imageLi : imagesDivs) {
-         images.add(HOST + imageLi.attr("src"));
+         images.add(imageLi.attr("src"));
       }
       return images;
    }
