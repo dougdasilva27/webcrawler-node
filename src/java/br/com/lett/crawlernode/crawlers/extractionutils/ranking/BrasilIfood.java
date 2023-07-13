@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -31,40 +34,43 @@ public class BrasilIfood extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       String url = "https://marketplace.ifood.com.br/v2/search/catalog-items?" + geolocation + "&channel=IFOOD&term=" +
-         this.keywordEncoded + "&size=36&page=" + (this.currentPage - 1) + "&item_from_merchant_ids=" + storeId;
+         this.keywordEncoded + "&size=100&page=" + (this.currentPage - 1) + "&item_from_merchant_ids=" + storeId;
       JSONObject apiJson = fetch(url);
 
-      JSONArray data = JSONUtils.getValueRecursive(apiJson, "items.data", JSONArray.class);
-      if (data != null && !data.isEmpty()) {
+      if (!apiJson.isEmpty()) {
+         this.totalProducts = JSONUtils.getValueRecursive(apiJson, "items.total", Integer.class);
+         JSONArray data = JSONUtils.getValueRecursive(apiJson, "items.data", JSONArray.class);
 
-         for (Object obj : data) {
-            JSONObject product = (JSONObject) obj;
+         if (data != null && !data.isEmpty()) {
+            for (Object obj : data) {
+               JSONObject product = (JSONObject) obj;
 
-            if (!product.isEmpty()) {
-               String internalId = product.optString("code");
-               String internalPid = internalId;
-               String productUrl = getUrl(product, internalId);
-               String imgUrl = crawlImage(product);
-               String name = product.optString("name");
-               int price = JSONUtils.getPriceInCents(product, "price");
-               boolean isAvailable = JSONUtils.getValueRecursive(product, "merchant.available", Boolean.class);
+               if (!product.isEmpty()) {
+                  String internalId = product.optString("code");
+                  String internalPid = internalId;
+                  String productUrl = getUrl(product, internalId);
+                  String imgUrl = crawlImage(product);
+                  String name = product.optString("name");
+                  int price = JSONUtils.getPriceInCents(product, "price");
+                  boolean isAvailable = JSONUtils.getValueRecursive(product, "merchant.available", Boolean.class);
 
-               RankingProduct productRanking = RankingProductBuilder.create()
-                  .setUrl(productUrl)
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setImageUrl(imgUrl)
-                  .setName(name)
-                  .setPriceInCents(price)
-                  .setAvailability(isAvailable)
-                  .build();
+                  RankingProduct productRanking = RankingProductBuilder.create()
+                     .setUrl(productUrl)
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setImageUrl(imgUrl)
+                     .setName(name)
+                     .setPriceInCents(price)
+                     .setAvailability(isAvailable)
+                     .build();
 
-               saveDataProduct(productRanking);
-               if (this.arrayProducts.size() == productsLimit)
-                  break;
+                  saveDataProduct(productRanking);
+                  if (this.arrayProducts.size() == productsLimit)
+                     break;
+               }
+
+               this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
             }
-
-            this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
          }
       } else {
          this.result = false;
@@ -77,8 +83,8 @@ public class BrasilIfood extends CrawlerRankingKeywords {
       return "https://static-images.ifood.com.br/image/upload/t_high/pratos/" + path;
    }
 
-   private String getUrl(JSONObject itensObject, String internalId) {
-      String slug = JSONUtils.getValueRecursive(itensObject, "merchant.slug", String.class);
+   private String getUrl(JSONObject itemsObject, String internalId) {
+      String slug = JSONUtils.getValueRecursive(itemsObject, "merchant.slug", String.class);
       return CrawlerUtils.completeUrl(slug + "/" + storeId + "?item=" + internalId, "https", "www.ifood.com.br/delivery");
    }
 
@@ -89,6 +95,7 @@ public class BrasilIfood extends CrawlerRankingKeywords {
       defaultInternalId.put("model_id", "ifood-ml-discovery-default-sort-items");
       defaultInternalId.put("engine", "sagemaker");
       defaultInternalId.put("force_recommendation_disabled", true);
+
       JSONObject marketInternal = new JSONObject();
       marketInternal.put("recommendation_filter", "internal_search");
       marketInternal.put("model_id", "search-bumblebee-endpoint");
@@ -97,6 +104,7 @@ public class BrasilIfood extends CrawlerRankingKeywords {
       marketInternal.put("backend_experiment_id", "v5");
       marketInternal.put("query_rewriter_rule", "groceries-context");
       marketInternal.put("force_recommendation_disabled", false);
+
       JSONObject similarSearch = new JSONObject();
       similarSearch.put("backend_experiment_id", "v5");
       similarSearch.put("query_rewriter_model_id", "search-marvin-curated-endpoint");
@@ -122,12 +130,7 @@ public class BrasilIfood extends CrawlerRankingKeywords {
          ))
          .build();
 
-      String content = CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), true).getBody();
+      String content = CrawlerUtils.retryRequestString(request, Arrays.asList(new ApacheDataFetcher(), new FetcherDataFetcher(), new JavanetDataFetcher(), new JsoupDataFetcher()), session);
       return JSONUtils.stringToJson(content);
-   }
-
-   @Override
-   protected boolean hasNextPage() {
-      return true;
    }
 }
