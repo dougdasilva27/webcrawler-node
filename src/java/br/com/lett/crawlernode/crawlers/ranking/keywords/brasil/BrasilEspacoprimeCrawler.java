@@ -5,12 +5,12 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.Collections;
 
 public class BrasilEspacoprimeCrawler extends CrawlerRankingKeywords {
 
@@ -18,47 +18,31 @@ public class BrasilEspacoprimeCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   final private String HOME_PAGE = "https://www.espacoprime.com.br";
-   final private String loja = "686651";
-
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      this.pageSize = 36;
+      this.pageSize = 27;
 
-      String url = HOME_PAGE + "/loja/busca.php?loja=" + loja + "&palavra_busca=" + this.keywordEncoded + "&pg=" + this.currentPage;
-
+      String url = "https://www.espacoprime.com.br/busca?busca=" + this.location.replace(" ", "+") + "&pagina=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
       this.log("Página " + this.currentPage);
+      Elements products = this.currentDoc.select("div.spot");
 
-      JSONObject pageJson = crawlPageJson(this.currentDoc);
-
-      if (this.currentPage == 1) {
-         this.totalProducts = pageJson.optInt("siteSearchResults", 0);
-      }
-
-      JSONArray products = pageJson.optJSONArray("listProducts");
-
-      if (products != null && !products.isEmpty()) {
-         for (Object o : products) {
-            JSONObject product = (JSONObject) o;
-            String internalId = product.optString("idProduct");
-            String internalPid = internalId;
-            String productUrl = product.optString("urlProduct");
-            String name = product.optString("nameProduct");
-            String imageUrl = product.optString("urlImage");
-            Double price = JSONUtils.getDoubleValueFromJSON(product,"sellPrice", true);
-            Integer priceInCents = price != null ? (int) Math.round((price * 100)) : null;
-            int stock = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "form[data-id=\"" + internalId + "\"] .qntdProd", true, 0);
-            boolean isAvailable = stock > 0;
+      if (!products.isEmpty()) {
+         for (Element e : products) {
+            String productUrl = CrawlerUtils.scrapUrl(e, ".spot-parte-um", "href", "https", "www.espacoprime.com.br");
+            String internalPid = CommonMethods.getLast(productUrl.split("-"));
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "h3.spotTitle", true);
+            String imageUrl = crawlImage(e);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".precoPor .fbits-valor", null, false, ',', session, null);
+            boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setPriceInCents(priceInCents)
+               .setPriceInCents(price)
                .setAvailability(isAvailable)
                .setImageUrl(imageUrl)
                .build();
@@ -68,7 +52,6 @@ public class BrasilEspacoprimeCrawler extends CrawlerRankingKeywords {
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
-
          }
       } else {
          this.result = false;
@@ -78,9 +61,20 @@ public class BrasilEspacoprimeCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private JSONObject crawlPageJson(Document doc) {
-      Element dataScript = doc.selectFirst("script:containsData(dataLayer = [)");
-      String jsonDataString = dataScript != null ? dataScript.data().substring(13, dataScript.data().length() - 1) : null; // removing "dataLayer = [" and the last "}"
-      return CrawlerUtils.stringToJson(jsonDataString);
+   private String crawlImage(Element e) {
+      String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".spotImg img.imagem-primaria", Collections.singletonList("data-original"), "https", "espacoprime.fbitsstatic.net");
+      if (image != null) {
+         return image.split("\\?")[0];
+      }
+      return image;
+   }
+
+   @Override
+   protected void setTotalProducts() {
+      Integer total = CrawlerUtils.scrapSimpleInteger(this.currentDoc, ".mostrando.left .fbits-qtd-produtos-pagina", true);
+      if (total == null) {
+         total = CrawlerUtils.scrapSimpleInteger(this.currentDoc, ".fbits-qtd-produtos-pagina", true);
+      }
+      this.totalProducts = total;
    }
 }
