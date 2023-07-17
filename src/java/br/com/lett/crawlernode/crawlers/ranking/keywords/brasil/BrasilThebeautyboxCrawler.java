@@ -17,8 +17,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -70,7 +68,8 @@ public class BrasilThebeautyboxCrawler extends CrawlerRankingKeywords {
             String name = data.optString("productName");
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".showcase-item-image img", Collections.singletonList("data-src"), "", "");
             Double priceDouble = data.optDouble("price");
-            Integer price =  (int) Math.round(100 * priceDouble);;
+            Integer price = (int) Math.round(100 * priceDouble);
+
             Boolean isAvailable = price > 0;
 
             RankingProduct productRanking = RankingProductBuilder.create()
