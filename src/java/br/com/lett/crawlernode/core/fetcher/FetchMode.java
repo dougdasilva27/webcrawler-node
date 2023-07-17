@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.core.fetcher;
 
 public enum FetchMode {
 
-   STATIC, APACHE, WEBDRIVER, FETCHER, JAVANET, JSOUP, MIRANHA;
+   STATIC, APACHE, WEBDRIVER, FETCHER, JAVANET, JSOUP, HTTCLIENT, MIRANHA;
 
    @Override
    public String toString() {
@@ -19,6 +19,8 @@ public enum FetchMode {
             return JAVANET.name();
          case JSOUP:
             return JSOUP.name();
+         case HTTCLIENT:
+            return HTTCLIENT.name();
          case MIRANHA:
             return MIRANHA.name();
          default:
