@@ -36,6 +36,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
    private static final String SELLER_NAME = "magalu";
    private static final String SELLER_NAME_1 = "magazine luiza";
+   private String zipCode = this.session.getOptions().optString("zipcode", "");
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString(), Card.ELO.toString(), Card.AURA.name());
 
@@ -119,7 +120,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
                   String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
                   List<String> imagesVariations = getSecondaryImagesVariations(json, i);
                   String primaryImage = !imagesVariations.isEmpty() ? imagesVariations.remove(0) : null;
-                  boolean availableToBuy = json.optBoolean("available");
+                  boolean availableToBuy = zipCode != null && !zipCode.isEmpty() ? newScrapAvailable(json) : json.optBoolean("available");
                   Offers offers = availableToBuy ? scrapOffersNewLayout(json) : new Offers();
                   RatingsReviews ratingsReviews = scrapRatingsReviews(json);
 
@@ -148,7 +149,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
             String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("section[style='grid-area:maincontent']"));
             List<String> images = crawlImagesNewLayout(skuJson, json);
             String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
-            boolean availableToBuy = json.optBoolean("available");
+            boolean availableToBuy = zipCode != null && !zipCode.isEmpty() ? newScrapAvailable(json) : json.optBoolean("available");
             Offers offers = availableToBuy ? scrapOffersNewLayout(json) : new Offers();
             RatingsReviews ratingsReviews = scrapRatingsReviews(json);
 
@@ -173,6 +174,91 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
       return products;
+   }
+
+   private boolean newScrapAvailable(JSONObject json) {
+      HttpResponse<String> response;
+      String apiUrl = "https://federation.magazineluiza.com.br/graphql";
+
+      String sku = JSONUtils.getValueRecursive(json, "seller.sku", String.class, "");
+      String categoryId = JSONUtils.getValueRecursive(json, "category.id", String.class, "");
+      String sellerId = JSONUtils.getValueRecursive(json, "seller.id", String.class, "");
+      String subcategoryId = JSONUtils.getValueRecursive(json, "subcategory.id", String.class, "");
+      String type = JSONUtils.getValueRecursive(json, "type", String.class, "");
+
+      Double length = JSONUtils.getValueRecursive(json, "dimensions.length", Double.class, null);
+      if (length == null) {
+         length = Double.valueOf(JSONUtils.getValueRecursive(json, "dimensions.length", Integer.class, null));
+      }
+
+      Double width = JSONUtils.getValueRecursive(json, "dimensions.width", Double.class, null);
+      if (width == null) {
+         width = Double.valueOf(JSONUtils.getValueRecursive(json, "dimensions.width", Integer.class, null));
+      }
+
+      Double weight = JSONUtils.getValueRecursive(json, "dimensions.weight", Double.class, null);
+      if (weight == null) {
+         weight = Double.valueOf(JSONUtils.getValueRecursive(json, "dimensions.weight", Integer.class, null));
+      }
+
+      Double height = JSONUtils.getValueRecursive(json, "dimensions.height", Double.class, null);
+      if (height == null) {
+         height = Double.valueOf(JSONUtils.getValueRecursive(json, "dimensions.height", Integer.class, null));
+      }
+
+      Double price = Double.parseDouble(JSONUtils.getValueRecursive(json, "price.bestPrice", String.class, ""));
+      if (price == null) {
+         price = Double.valueOf(JSONUtils.getValueRecursive(json, "price.bestPrice", Integer.class, null));
+      }
+
+      String payload = "{\n" +
+         "    \"operationName\": \"shippingQuery\",\n" +
+         "    \"variables\": {\n" +
+         "        \"shippingRequest\": {\n" +
+         "            \"metadata\": {\n" +
+         "                \"categoryId\": \"" + categoryId + "\",\n" +
+         "                \"clientId\": \"\",\n" +
+         "                \"organizationId\": \"\",\n" +
+         "                \"pageName\": \"\",\n" +
+         "                \"partnerId\": \"\",\n" +
+         "                \"salesChannelId\": \"45\",\n" +
+         "                \"sellerId\": \"" + sellerId + "\",\n" +
+         "                \"subcategoryId\": \"" + subcategoryId + "\"\n" +
+         "            },\n" +
+         "            \"product\": {\n" +
+         "                \"dimensions\": {\n" +
+         "                    \"height\": " + height + ",\n" +
+         "                    \"length\": " + length + ",\n" +
+         "                    \"weight\": " + weight + ",\n" +
+         "                    \"width\": " + width + "\n" +
+         "                },\n" +
+         "                \"id\": \"" + sku + "\",\n" +
+         "                \"price\": " + price + ",\n" +
+         "                \"quantity\": 1,\n" +
+         "                \"type\": \"" + type + "\"\n" +
+         "            },\n" +
+         "            \"zipcode\": \"" + zipCode + "\"\n" +
+         "        }\n" +
+         "    },\n" +
+         "    \"query\": \"query shippingQuery($shippingRequest: ShippingRequest!) {\\n  shipping(shippingRequest: $shippingRequest) {\\n    status\\n    ...shippings\\n    ...estimate\\n    ...estimateError\\n    __typename\\n  }\\n}\\n\\nfragment estimateError on EstimateErrorResponse {\\n  error\\n  status\\n  message\\n  __typename\\n}\\n\\nfragment estimate on EstimateResponse {\\n  disclaimers {\\n    sequence\\n    message\\n    __typename\\n  }\\n  deliveries {\\n    id\\n    items {\\n      bundleComposition {\\n        quantity\\n        sku\\n        __typename\\n      }\\n      gifts {\\n        quantity\\n        sku\\n        __typename\\n      }\\n      quantity\\n      seller {\\n        id\\n        name\\n        sku\\n        __typename\\n      }\\n      type\\n      __typename\\n    }\\n    modalities {\\n      id\\n      type\\n      name\\n      serviceProviders\\n      shippingTime {\\n        unit\\n        value {\\n          min\\n          max\\n          __typename\\n        }\\n        description\\n        disclaimers {\\n          sequence\\n          message\\n          __typename\\n        }\\n        __typename\\n      }\\n      campaigns {\\n        id\\n        name\\n        skus\\n        __typename\\n      }\\n      cost {\\n        customer\\n        operation\\n        __typename\\n      }\\n      zipCodeRestriction\\n      __typename\\n    }\\n    provider {\\n      id\\n      __typename\\n    }\\n    status {\\n      code\\n      message\\n      __typename\\n    }\\n    __typename\\n  }\\n  shippingAddress {\\n    city\\n    district\\n    ibge\\n    latitude\\n    longitude\\n    prefixZipCode\\n    state\\n    street\\n    zipCode\\n    __typename\\n  }\\n  status\\n  __typename\\n}\\n\\nfragment shippings on ShippingResponse {\\n  status\\n  shippings {\\n    id\\n    name\\n    packages {\\n      price\\n      seller\\n      sellerDescription\\n      deliveryTypes {\\n        id\\n        description\\n        type\\n        time\\n        price\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n  __typename\\n}\\n\"\n" +
+         "}";
+
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .POST(HttpRequest.BodyPublishers.ofString(payload))
+            .header("content-type", "application/json")
+            .uri(URI.create(apiUrl))
+            .build();
+         response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load API: " + apiUrl, e);
+      }
+
+      JSONObject obj = JSONUtils.stringToJson(response.body());
+      String statusAvailable = JSONUtils.getValueRecursive(obj, "data.shipping.status", String.class, "");
+
+      return statusAvailable != null && !statusAvailable.isEmpty() && statusAvailable.equalsIgnoreCase("OK") ? true : false;
    }
 
    private boolean checkIfNameHasValueName(String value, String name) {

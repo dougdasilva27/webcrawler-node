@@ -458,7 +458,7 @@ public abstract class RappiCrawler extends Crawler {
       return offers;
    }
 
-   public static Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
+   public Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
       Double priceFrom = productJson != null ? JSONUtils.getDoubleValueFromJSON(productJson, "real_price", true) : null;
       Double price = productJson != null ? JSONUtils.getDoubleValueFromJSON(productJson, "balance_price", true) : null;
 
