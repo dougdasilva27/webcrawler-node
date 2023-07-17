@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -45,6 +46,10 @@ public class ChileJumboCrawler extends VTEXNewScraper {
       Request request = Request.RequestBuilder.create()
          .setUrl(API)
          .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
+         ))
          .build();
 
       return this.dataFetcher.get(session, request);
