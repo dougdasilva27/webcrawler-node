@@ -1,5 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -8,17 +12,34 @@ import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.Collections;
 
 public class BrasilThebeautyboxCrawler extends CrawlerRankingKeywords {
 
    public BrasilThebeautyboxCrawler(Session session) {
       super(session);
+   }
+
+   @Override
+   protected Document fetchDocument(String url) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
+            ProxyCollection.LUMINATI_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .build();
+
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+
+      return Jsoup.parse(response.getBody());
    }
 
    @Override
@@ -42,12 +63,13 @@ public class BrasilThebeautyboxCrawler extends CrawlerRankingKeywords {
 
             String internalId = data != null ? data.optString("sku") : null;
 
-            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".showcase-item a", "href");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".showcase-item-image", "href");
 
             String name = data.optString("productName");
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".showcase-item-image img", Collections.singletonList("data-src"), "", "");
             Double priceDouble = data.optDouble("price");
-            Integer price =  (int) Math.round(100 * priceDouble);;
+            Integer price = (int) Math.round(100 * priceDouble);
+
             Boolean isAvailable = price > 0;
 
             RankingProduct productRanking = RankingProductBuilder.create()
