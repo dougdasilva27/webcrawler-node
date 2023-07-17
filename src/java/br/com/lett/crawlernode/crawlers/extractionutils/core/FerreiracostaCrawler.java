@@ -42,7 +42,7 @@ public class FerreiracostaCrawler extends Crawler {
       String location = session.getOptions().optString("location");
       String region = session.getOptions().optString("region");
       try {
-         HttpClient client = HttpClient.newBuilder().build();
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
          HttpRequest request = HttpRequest.newBuilder()
             .GET()
             .uri(URI.create(session.getOriginalURL()))
