@@ -235,7 +235,14 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject variantProduct) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.final_price.value", Double.class, null);
+      if (spotlightPrice == null) {
+         spotlightPrice = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.final_price.value", Integer.class, null).doubleValue();
+      }
+
       Double priceFrom = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.regular_price.value", Double.class, null);
+      if(priceFrom == null){
+         priceFrom = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.regular_price.value", Integer.class, null).doubleValue();
+      }
 
       if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
          priceFrom = null;
