@@ -45,7 +45,7 @@ public class BrasilMateusmaisCrawler extends CrawlerRankingKeywords {
                   String imageUrl = product.optString("image");
                   Integer price = crawlPrice(product);
                   Integer stock = product.optInt("amount_in_stock");
-                  boolean isAvailable = stock > 0 ? true : false;
+                  boolean isAvailable = stock > 0;
                   if (!isAvailable) {
                      price = null;
                   }
