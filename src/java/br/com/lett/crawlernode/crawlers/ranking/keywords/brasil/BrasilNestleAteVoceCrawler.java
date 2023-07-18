@@ -19,7 +19,11 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,31 +45,29 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
    }
 
    protected Map<String, String> fetchToken() {
+      HttpResponse<String> response;
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-      headers.put(HttpHeaders.ACCEPT, "*/*");
-      headers.put(HttpHeaders.ORIGIN, "https://www.nestleatevoce.com.br");
-      headers.put(HttpHeaders.REFERER, "https://www.nestleatevoce.com.br/login");
-      headers.put("x-authorization", "");
 
       String payload = "{\"operationName\":\"signIn\",\"variables\":{\"taxvat\":\"" + LOGIN + "\",\"password\":\"" + PASSWORD + "\", \"chatbot\":null},\"query\":\"mutation signIn($taxvat: String!, $password: String!, $chatbot: String) {\\ngenerateCustomerToken(taxvat: $taxvat, password: $password, chatbot: $chatbot) {\\ntoken\\nis_clube_nestle\\nenabled_club_nestle\\n__typename\\n}\\n}\\n\"}";
 
-      Request requestToken = Request.RequestBuilder.create()
-         .setUrl("https://www.nestleatevoce.com.br/graphql")
-         .setHeaders(headers)
-         .setPayload(payload)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-               ProxyCollection.BUY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR
-            ))
-         .build();
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .POST(HttpRequest.BodyPublishers.ofString(payload))
+            .header(HttpHeaders.CONTENT_TYPE, "application/json")
+            .header(HttpHeaders.ACCEPT, "*/*")
+            .header(HttpHeaders.ORIGIN, "https://www.nestleatevoce.com.br")
+            .header(HttpHeaders.REFERER, "https://www.nestleatevoce.com.br/login")
+            .header("x-authorization", "")
+            .uri(URI.create("https://www.nestleatevoce.com.br/graphql"))
+            .build();
 
-      Response responseToken = CrawlerUtils.retryRequest(requestToken, session, new JsoupDataFetcher(), false);
-      if (responseToken != null) {
-         JSONObject objResponseToken = JSONUtils.stringToJson(responseToken.getBody());
+         response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load document: " + session.getOriginalURL(), e);
+      }
+      if (response != null) {
+         JSONObject objResponseToken = JSONUtils.stringToJson(response.body());
          String token = JSONUtils.getValueRecursive(objResponseToken, "data.generateCustomerToken.token", String.class);
          headers.put("x-authorization", "Bearer " + token);
       }
