@@ -1,13 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -104,18 +100,24 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
    @Override
    protected Response fetchResponse() {
       Map<String, String> headers = fetchToken();
-
+      String header = "x-authorization";
       String requestURL = getSessionUrl();
-      Request request = Request.RequestBuilder.create()
-         .setUrl(requestURL)
-         .setHeaders(headers)
-         .setFollowRedirects(true)
-         .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR))
-         .build();
 
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
-
-      return response;
+      try {
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .header(header, headers.get(header))
+            .uri(URI.create(requestURL))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load document: " + requestURL, e);
+      }
    }
 
    public List<Product> extractInformation(JSONObject jsonObject) throws Exception {
@@ -240,7 +242,7 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
       }
 
       Double priceFrom = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.regular_price.value", Double.class, null);
-      if(priceFrom == null){
+      if (priceFrom == null) {
          priceFrom = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.regular_price.value", Integer.class, null).doubleValue();
       }
 

@@ -1,9 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -24,7 +20,6 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -87,24 +82,23 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
 
    private JSONObject fetchJSONObject() {
       Map<String, String> headers = fetchToken();
-
+      String header = "x-authorization";
       String requestURL = getSessionUrl();
-      Request request = Request.RequestBuilder.create()
-         .setUrl(requestURL)
-         .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-               ProxyCollection.BUY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR
-            )
-         )
-         .build();
+      HttpResponse<String> response;
 
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+      try {
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .header(header, headers.get(header))
+            .uri(URI.create(requestURL))
+            .build();
+         response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load document: " + requestURL, e);
+      }
 
-      return CrawlerUtils.stringToJson(response.getBody());
+      return CrawlerUtils.stringToJson(response.body());
    }
 
    @Override
