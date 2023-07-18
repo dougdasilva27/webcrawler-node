@@ -75,7 +75,7 @@ public class BrasilTodimoCrawler extends CrawlerRankingKeywords {
          String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-name a", true);
          String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-image img", "src");
          Integer price = CrawlerUtils.scrapIntegerFromHtml(product, ".best-price-price", true, null);
-         boolean isAvailable = price != null;
+         boolean isAvailable = price != null && price != 0;
 
          RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(productUrl)
