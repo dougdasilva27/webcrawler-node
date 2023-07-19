@@ -1,13 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -21,7 +17,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,30 +48,29 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
    }
 
    protected Map<String, String> fetchToken() {
+      HttpResponse<String> response;
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-      headers.put(HttpHeaders.ACCEPT, "*/*");
-      headers.put(HttpHeaders.ORIGIN, "https://www.nestleatevoce.com.br");
-      headers.put(HttpHeaders.REFERER, "https://www.nestleatevoce.com.br/login");
-      headers.put("x-authorization", "");
 
       String payload = "{\"operationName\":\"signIn\",\"variables\":{\"taxvat\":\"" + LOGIN + "\",\"password\":\"" + PASSWORD + "\", \"chatbot\":null},\"query\":\"mutation signIn($taxvat: String!, $password: String!, $chatbot: String) {\\ngenerateCustomerToken(taxvat: $taxvat, password: $password, chatbot: $chatbot) {\\ntoken\\nis_clube_nestle\\nenabled_club_nestle\\n__typename\\n}\\n}\\n\"}";
 
-      Request requestToken = Request.RequestBuilder.create()
-         .setUrl("https://www.nestleatevoce.com.br/graphql")
-         .setHeaders(headers)
-         .setPayload(payload)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-               ProxyCollection.BUY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR
-            ))
-         .build();
-      Response responseToken = CrawlerUtils.retryRequest(requestToken, session, new JsoupDataFetcher(), false);
-      if (responseToken != null) {
-         JSONObject objResponseToken = JSONUtils.stringToJson(responseToken.getBody());
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .POST(HttpRequest.BodyPublishers.ofString(payload))
+            .header(HttpHeaders.CONTENT_TYPE, "application/json")
+            .header(HttpHeaders.ACCEPT, "*/*")
+            .header(HttpHeaders.ORIGIN, "https://www.nestleatevoce.com.br")
+            .header(HttpHeaders.REFERER, "https://www.nestleatevoce.com.br/login")
+            .header("x-authorization", "")
+            .uri(URI.create("https://www.nestleatevoce.com.br/graphql"))
+            .build();
+
+         response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load document: " + session.getOriginalURL(), e);
+      }
+      if (response != null) {
+         JSONObject objResponseToken = JSONUtils.stringToJson(response.body());
          String token = JSONUtils.getValueRecursive(objResponseToken, "data.generateCustomerToken.token", String.class);
          headers.put("x-authorization", "Bearer " + token);
       }
@@ -101,17 +100,24 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
    @Override
    protected Response fetchResponse() {
       Map<String, String> headers = fetchToken();
-
+      String header = "x-authorization";
       String requestURL = getSessionUrl();
-      Request request = Request.RequestBuilder.create()
-         .setUrl(requestURL)
-         .setHeaders(headers)
-         .setProxyservice(Arrays.asList(ProxyCollection.LUMINATI_RESIDENTIAL_BR, ProxyCollection.BUY, ProxyCollection.SMART_PROXY_BR_HAPROXY))
-         .build();
 
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
-
-      return response;
+      try {
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .header(header, headers.get(header))
+            .uri(URI.create(requestURL))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load document: " + requestURL, e);
+      }
    }
 
    public List<Product> extractInformation(JSONObject jsonObject) throws Exception {
@@ -231,7 +237,14 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject variantProduct) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.final_price.value", Double.class, null);
+      if (spotlightPrice == null) {
+         spotlightPrice = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.final_price.value", Integer.class, null).doubleValue();
+      }
+
       Double priceFrom = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.regular_price.value", Double.class, null);
+      if (priceFrom == null) {
+         priceFrom = JSONUtils.getValueRecursive(variantProduct, "price_range.minimum_price.regular_price.value", Integer.class, null).doubleValue();
+      }
 
       if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
          priceFrom = null;
