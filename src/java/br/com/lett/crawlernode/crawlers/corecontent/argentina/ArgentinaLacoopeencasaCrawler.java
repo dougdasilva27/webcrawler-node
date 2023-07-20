@@ -141,6 +141,7 @@ public class ArgentinaLacoopeencasaCrawler extends Crawler {
    private Offers scrapOffers(JSONObject product) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(product);
+      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -149,6 +150,7 @@ public class ArgentinaLacoopeencasaCrawler extends Crawler {
          .setIsBuybox(false)
          .setIsMainRetailer(true)
          .setPricing(pricing)
+         .setSales(sales)
          .build());
 
       return offers;

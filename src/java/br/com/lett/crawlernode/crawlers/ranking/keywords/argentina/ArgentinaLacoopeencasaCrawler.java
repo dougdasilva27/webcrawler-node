@@ -87,8 +87,8 @@ public class ArgentinaLacoopeencasaCrawler extends CrawlerRankingKeywords {
       String url = "https://www.lacoopeencasa.coop/ws/index.php/categoria/categoriaController/filtros_busqueda";
       JSONObject productsJson = fetchJSONObject(url);
 
-      JSONArray products = JSONUtils.getValueRecursive(productsJson, "datos.articulos", JSONArray.class);
-      this.totalProducts = JSONUtils.getValueRecursive(productsJson, "datos.cantidad_articulos", Integer.class);
+      JSONArray products = JSONUtils.getValueRecursive(productsJson, "datos.articulos", JSONArray.class, null);
+      this.totalProducts = JSONUtils.getValueRecursive(productsJson, "datos.cantidad_articulos", Integer.class, 0);
 
       if (products != null) {
          for (Object p : products) {
@@ -117,15 +117,11 @@ public class ArgentinaLacoopeencasaCrawler extends CrawlerRankingKeywords {
          this.result = false;
          this.log("Keyword sem resultados!");
       }
-
    }
 
    private Integer crawlPrice(JSONObject product) {
       String price = JSONUtils.getStringValue(product, "precio_promo") == null ? JSONUtils.getStringValue(product, "precio") : JSONUtils.getStringValue(product, "precio_promo");
-
-      double doubleValue = Double.parseDouble(price);
-      double centsDouble = doubleValue * 100;
-      return (int) centsDouble;
+      return (int) Double.parseDouble(price) * 100;
    }
 
    private String scrapProductUrl(String name, String internalId) {
