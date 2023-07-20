@@ -141,7 +141,7 @@ public class ChileLidersuperCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[class*=product-prices] .saving__price__pdp", null, true, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[class*=product-prices] .pdp-mobile-sales-price", null, true, ',', session);
+      Double spotlightPrice = extractPrice(doc);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
@@ -176,6 +176,17 @@ public class ChileLidersuperCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   private Double extractPrice(Document doc) {
+      String defaultSelector = "div.d-flex > span.pdp-mobile-sales-price";
+      String alternativeSelector = ".regular-unit-price__price-default > span";
+
+      String text = CrawlerUtils.scrapStringSimpleInfo(doc, defaultSelector, true);
+
+      String priceSelector = (text != null && text.contains("x")) ? alternativeSelector : defaultSelector;
+
+      return CrawlerUtils.scrapDoublePriceFromHtml(doc, priceSelector, null, true, ',', session);
    }
 
    private boolean isProductPage(Document doc) {
