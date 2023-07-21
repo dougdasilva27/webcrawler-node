@@ -53,7 +53,7 @@ public class ChileLidersuperCrawler extends Crawler {
          String primaryImage = crawlPrimaryImage(doc);
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "div[class*=ShowProductImages] > img", List.of("src"), "https", "images.lider.cl", primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, List.of(".product-detail__card-section:contains(Descripción)"));
-         boolean available = doc.selectFirst(".no-available") == null;
+         boolean available = doc.selectFirst(".tags__attribute-tag-container--opaque") == null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
