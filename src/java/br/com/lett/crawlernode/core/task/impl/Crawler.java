@@ -215,7 +215,7 @@ public abstract class Crawler extends Task {
          case JSOUP:
             dataFetcher = new JsoupDataFetcher();
             break;
-         case HTTCLIENT:
+         case HTTPCLIENT:
             dataFetcher = new HttpClientFetcher();
             break;
          default:

@@ -13,7 +13,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Base64;
 import java.util.Map;
 
 public class HttpClientFetcher implements DataFetcher {
@@ -42,13 +41,21 @@ public class HttpClientFetcher implements DataFetcher {
       return null;
    }
 
-   private Response HttpClientRequest(Session session, Request request, String getRequest, boolean b) throws IOException, InterruptedException {
-      String proxyHost = GlobalConfigurations.proxies.getProxy(request.getProxyServices().get(0)).get(0).getAddress();
-      int proxyPort = GlobalConfigurations.proxies.getProxy(request.getProxyServices().get(0)).get(0).getPort();
+   private Response HttpClientRequest(Session session, Request request, String getRequest, boolean b) {
+      HttpClient httpClient = null;
+      if(request.getProxyServices() != null ){
+         String proxyHost = GlobalConfigurations.proxies.getProxy(request.getProxyServices().get(0)).get(0).getAddress();
+         int proxyPort = GlobalConfigurations.proxies.getProxy(request.getProxyServices().get(0)).get(0).getPort();
 
-      HttpClient httpClient = HttpClient.newBuilder()
-         .proxy(ProxySelector.of(new InetSocketAddress(proxyHost, proxyPort)))
-         .build();
+         httpClient = HttpClient.newBuilder()
+            .proxy(ProxySelector.of(new InetSocketAddress(proxyHost, proxyPort)))
+            .build();
+      }else{
+       httpClient = HttpClient.newBuilder()
+
+            .build();
+      }
+
 
       HttpRequest.Builder httpRequestBuilder = HttpRequest.newBuilder()
          .uri(URI.create(request.getUrl()));
@@ -59,7 +66,7 @@ public class HttpClientFetcher implements DataFetcher {
          httpRequestBuilder.POST(HttpRequest.BodyPublishers.ofString(request.getPayload()));
       }
       if (request.getHeaders().size() > 0) {
-         httpRequestBuilder.headers(listaHeaders(request));
+         httpRequestBuilder.headers(listHeaders(request));
       }
 
       HttpRequest httpRequest = httpRequestBuilder.build();
@@ -68,15 +75,6 @@ public class HttpClientFetcher implements DataFetcher {
          // Envio da requisição
          HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-         // Obtenção da resposta
-         int statusCode = response.statusCode();
-         String responseBody = response.body();
-         HttpHeaders headers = response.headers();
-
-         // Exemplo de uso dos dados obtidos
-         System.out.println("Status Code: " + statusCode);
-         System.out.println("Response Body: " + responseBody);
-         System.out.println("Headers: " + headers);
          return new Response.ResponseBuilder()
             .setBody(response.body())
             .setLastStatusCode(response.statusCode())
@@ -90,13 +88,13 @@ public class HttpClientFetcher implements DataFetcher {
 
    }
 
-   private String[] listaHeaders(Request request) {
+   private String[] listHeaders(Request request) {
       String[] listaHeaders = new String[request.getHeaders().size()*2];
       Map<String, String> headers = request.getHeaders();
       int i = 0;
-      for (String chave : headers.keySet()) {
-         listaHeaders[i++] = chave;
-         listaHeaders[i++] = headers.get(chave);
+      for (String key : headers.keySet()) {
+         listaHeaders[i++] = key;
+         listaHeaders[i++] = headers.get(key);
       }
       return listaHeaders;
    }
