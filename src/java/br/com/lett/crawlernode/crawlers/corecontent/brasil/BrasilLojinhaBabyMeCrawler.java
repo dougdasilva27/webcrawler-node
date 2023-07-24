@@ -1,9 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.HttpClientFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
@@ -35,44 +31,22 @@ import java.util.Set;
 public class BrasilLojinhaBabyMeCrawler extends Crawler {
    public BrasilLojinhaBabyMeCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.HTTCLIENT);
       super.config.setParser(Parser.HTML);
    }
 
-   //   Request request = Request.RequestBuilder.create()
-//      .setUrl(newUrl)
-//      .build();
-//response = this.dataFetcher.post(session, request);
-
-//   Response response = this.dataFetcher.get(session, request);
-  @Override
+   @Override
    protected Response fetchResponse() {
       try {
-//         HttpClient client = HttpClient.newBuilder().build();
-//         HttpRequest request = HttpRequest.newBuilder()
-//            .GET()
-//            .uri(URI.create(session.getOriginalURL()))
-//            .build();
-//         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-//         return new Response.ResponseBuilder()
-//            .setBody(response.body())
-//            .setLastStatusCode(response.statusCode())
-//            .build();
-
-         Request request = Request.RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setProxyservice(
-               Arrays.asList(
-                //  ProxyCollection.BUY,
-                  //ProxyCollection.SMART_PROXY_BR
-                 //ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR
-                  ProxyCollection.SMART_PROXY_BR_HAPROXY
-               )
-            )
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(session.getOriginalURL()))
             .build();
-         Response response = this.dataFetcher.get(session, request);
-
-         return response;
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
       } catch (Exception e) {
          throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
       }
