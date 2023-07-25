@@ -1,17 +1,15 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -20,10 +18,13 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 
 public class BrasilAtacadaomarketplaceCrawler extends Crawler {
@@ -38,6 +39,7 @@ public class BrasilAtacadaomarketplaceCrawler extends Crawler {
    public BrasilAtacadaomarketplaceCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setParser(Parser.HTML);
    }
 
    @Override
@@ -54,30 +56,24 @@ public class BrasilAtacadaomarketplaceCrawler extends Crawler {
    }
 
    @Override
-   protected Object fetch() {
-      String url = this.session.getOriginalURL();
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Accept", "*/*");
-      headers.put("Cookie", CommonMethods.cookiesToString(cookies));
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
-            )
-         )
-         .setSendUserAgent(true)
-         .build();
-
-      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher, true);
-
-      return response;
+   protected Response fetchResponse() {
+      try {
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(session.getOriginalURL()))
+            .header("Accept", "*/*")
+            .header("Cookie", CommonMethods.cookiesToString(cookies))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load document: " + session.getOriginalURL(), e);
+      }
    }
-
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -88,12 +84,10 @@ public class BrasilAtacadaomarketplaceCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".container > h1.h1", false);
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".card div[data-pk]", "data-pk");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".card > div > div.row:not(:first-child)"));
-         List<String> categories = CrawlerUtils.crawlCategories(doc,".js-sku-category");
+         List<String> categories = CrawlerUtils.crawlCategories(doc, ".js-sku-category");
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".card .product-image-box > img[src]", "src");
-         JSONObject skuInfo = requestFromApi(internalId);
-         JSONArray price = JSONUtils.getValueRecursive(skuInfo, "offers", JSONArray.class);
          boolean available = doc.select(".js-btn-add-product") != null;
-         Offers offers = available ? scrapOffers(price) : new Offers();
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -114,59 +108,39 @@ public class BrasilAtacadaomarketplaceCrawler extends Crawler {
       return products;
    }
 
-   private JSONObject requestFromApi(String internalId) {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("x-requested-with", "XMLHttpRequest");
-
-      String url = "https://www.atacadao.com.br/dashboard/sku/api/" + internalId + "/?city_id=" + this.cityId;
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.LUMINATI_SERVER_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY
-            )
-         )
-         .setSendUserAgent(true)
-         .build();
-
-      Response response = CrawlerUtils.retryRequest(request, session, dataFetcher, true);
-
-      return CrawlerUtils.stringToJson(response.getBody());
-   }
-
-
-   private Offers scrapOffers(JSONArray prices) throws MalformedPricingException, OfferException {
+   private Offers scrapOffers(Document document) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
+      Pricing pricing = scrapPricing(document);
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
+      String mainSeller = isMainSeller(document);
 
-      for (Object p : prices) {
-         JSONObject price = (JSONObject) p;
-         String seller = scrapSeller(price);
-         Pricing pricing = scrapPricing(price);
-         List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(mainSeller)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(mainSeller.equals(SELLER_NAME))
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
-         offers.add(new Offer.OfferBuilder()
-            .setIsBuybox(false)
-            .setPricing(pricing)
-            .setSales(sales)
-            .setSellerFullName(seller)
-            .setIsMainRetailer(seller.equalsIgnoreCase(SELLER_NAME))
-            .setUseSlugNameAsInternalSellerId(true)
-            .build());
 
-      }
       return offers;
    }
 
-   private String scrapSeller(JSONObject price) {
-      return JSONUtils.getValueRecursive(price, "distributor.name", String.class);
+   private String isMainSeller(Document doc) {
+      String isMarketPlace = CrawlerUtils.scrapStringSimpleInfo(doc, ".js-product-box__supplier", true);
+
+      if (isMarketPlace != null && !isMarketPlace.isEmpty() && !isMarketPlace.equalsIgnoreCase(SELLER_NAME)) {
+         return isMarketPlace;
+      }
+
+      return SELLER_NAME;
    }
 
-   private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
-      Double spotlightPrice = data.optDouble("unit_price");
+   private Pricing scrapPricing(Document document) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, ".product-box__price--number", null, true, ',', session);
       Double priceFrom = null;
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
