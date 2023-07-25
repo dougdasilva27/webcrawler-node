@@ -130,7 +130,7 @@ public class BrasilAtacadaomarketplaceCrawler extends Crawler {
    }
 
    private String isMainSeller(Document doc) {
-      String isMarketPlace = CrawlerUtils.scrapStringSimpleInfo(doc, ".js-product-box__supplier", true);
+      String isMarketPlace = CrawlerUtils.scrapStringSimpleInfo(doc, ".js-product-box__supplier", false);
 
       if (isMarketPlace != null && !isMarketPlace.isEmpty() && !isMarketPlace.equalsIgnoreCase(SELLER_NAME)) {
          return isMarketPlace;
