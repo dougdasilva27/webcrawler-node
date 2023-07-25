@@ -49,8 +49,8 @@ public class SaoPauloJauServe extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          ))
          .setCookies(this.cookies)
