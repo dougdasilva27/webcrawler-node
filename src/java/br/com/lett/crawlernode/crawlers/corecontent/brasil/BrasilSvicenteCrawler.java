@@ -163,6 +163,11 @@ public class BrasilSvicenteCrawler extends Crawler {
          priceFrom = null;
       }
 
+      if (spotlightPrice == null) {
+         Integer priceInteger = JSONUtils.getValueRecursive(json, "price.sales.value", Integer.class, null);
+         spotlightPrice = priceInteger.doubleValue();
+      }
+
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
