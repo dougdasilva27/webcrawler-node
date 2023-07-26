@@ -41,12 +41,16 @@ public class SaoPauloJauServe extends Crawler {
       cookie.setDomain("www.jauserve.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
+      BasicClientCookie cookie2 = new BasicClientCookie("dwsid", "jPOJi5TL2REFT9-u1jztngzNjxZFbOT-JmYhCTklueRYEP27Hfgb9D0MRiqOwCNXxxqfrFicDYi3ZypSaHJ2lA==");
+      cookie2.setDomain("www.jauserve.com.br");
+      cookie2.setPath("/");
+      this.cookies.add(cookie2);
 
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          ))
          .setCookies(this.cookies)
@@ -62,8 +66,8 @@ public class SaoPauloJauServe extends Crawler {
       String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".container.product-detail", "data-pid");
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", true);
       String primaryImage = getImage(doc);
-      List<String> categories = CrawlerUtils.crawlCategories(doc,".breadcrumb-item a");
-      String description  = CrawlerUtils.scrapSimpleDescription(doc,List.of(".text-muted"));
+      List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb-item a");
+      String description = CrawlerUtils.scrapSimpleDescription(doc, List.of(".text-muted"));
       boolean isAvailable = getAvailabity(doc);
       Offers offers = isAvailable ? scrapOffer(doc) : new Offers();
 
@@ -83,9 +87,11 @@ public class SaoPauloJauServe extends Crawler {
       return products;
 
    }
+
    private boolean getAvailabity(Document doc) {
       return doc.selectFirst(".btn-out-of-stock.add-to-cart-disabled") == null;
    }
+
    private String getImage(Document doc) {
       String imagePath = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".slide-img", "src");
       if (imagePath != null && !imagePath.isEmpty()) {
@@ -114,7 +120,7 @@ public class SaoPauloJauServe extends Crawler {
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sales .value", "content", false, '.', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".strike-through .value", "content", false, '.', session);
-      if(spotlightPrice == null) {
+      if (spotlightPrice == null) {
          spotlightPrice = priceFrom;
          priceFrom = null;
       }

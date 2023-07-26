@@ -38,13 +38,17 @@ public class SaoPauloJauServe extends CrawlerRankingKeywords {
       cookie.setDomain("www.jauserve.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
+      BasicClientCookie cookie2 = new BasicClientCookie("dwsid", "jPOJi5TL2REFT9-u1jztngzNjxZFbOT-JmYhCTklueRYEP27Hfgb9D0MRiqOwCNXxxqfrFicDYi3ZypSaHJ2lA==");
+      cookie2.setDomain("www.jauserve.com.br");
+      cookie2.setPath("/");
+      this.cookies.add(cookie2);
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          ))
          .setCookies(this.cookies)
