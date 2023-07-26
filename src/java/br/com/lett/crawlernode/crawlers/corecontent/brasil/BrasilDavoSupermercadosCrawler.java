@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -59,6 +60,7 @@ public class BrasilDavoSupermercadosCrawler extends Crawler {
          JSONObject scriptObject = getObjectProductScript(document, internalId);
          boolean isAvailable = GetAvailable(structureProduct, scriptObject);
          String description = scriptObject.optString("longDescription");
+         CategoryCollection categories = CrawlerUtils.crawlCategories(document, ".chakra-breadcrumb__list-item > a");
          Offers offers = isAvailable ? scrapOffers(scriptObject) : new Offers();
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -68,6 +70,7 @@ public class BrasilDavoSupermercadosCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setDescription(description)
             .setOffers(offers)
+            .setCategories(categories)
             .build();
 
          products.add(product);
@@ -78,8 +81,16 @@ public class BrasilDavoSupermercadosCrawler extends Crawler {
    }
 
    private boolean GetAvailable(JSONObject scriptObject,JSONObject structureProduct) {
-      Double price = scriptObject.optDouble("listPrice");
-     return JSONUtils.getValueRecursive(structureProduct, "offers.availability", String.class, "").equals("https://schema.org/InStock") && price != null ;
+      Double price = null;
+
+      if (structureProduct.has("listPrice")) {
+         price = structureProduct.optDouble("listPrice");
+         if (price.isNaN()) {
+            price = null;
+         }
+      }
+
+      return JSONUtils.getValueRecursive(scriptObject, "offers.availability", String.class, "").equals("https://schema.org/InStock") && price != null;
    }
 
    private JSONObject getObjectProductScript(Document document, String internalId) throws UnsupportedEncodingException {
@@ -115,7 +126,11 @@ public class BrasilDavoSupermercadosCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
-      Double spotlightPrice = json.optDouble("listPrice");
+      Double listPrice = json.optDouble("listPrice");
+      Double salePrice = json.optDouble("salePrice");
+
+      Double spotlightPrice = Double.isNaN(salePrice) ? listPrice : salePrice;
+      Double priceFrom = spotlightPrice == salePrice ? listPrice : null;
 
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
@@ -123,6 +138,7 @@ public class BrasilDavoSupermercadosCrawler extends Crawler {
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
+         .setPriceFrom(priceFrom)
          .build();
    }
 
