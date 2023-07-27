@@ -7,10 +7,8 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.*;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
@@ -42,38 +40,39 @@ public class HttpClientFetcher implements DataFetcher {
    }
 
    private Response HttpClientRequest(Session session, Request request, String getRequest, boolean b) {
-      HttpClient httpClient = null;
-      if(request.getProxyServices() != null ){
-         String proxyHost = GlobalConfigurations.proxies.getProxy(request.getProxyServices().get(0)).get(0).getAddress();
-         int proxyPort = GlobalConfigurations.proxies.getProxy(request.getProxyServices().get(0)).get(0).getPort();
-
-         httpClient = HttpClient.newBuilder()
-            .proxy(ProxySelector.of(new InetSocketAddress(proxyHost, proxyPort)))
-            .build();
-      }else{
-       httpClient = HttpClient.newBuilder()
-
-            .build();
-      }
-
-
-      HttpRequest.Builder httpRequestBuilder = HttpRequest.newBuilder()
-         .uri(URI.create(request.getUrl()));
-
-      if (getRequest.equals("GET_REQUEST")) {
-         httpRequestBuilder.GET();
-      } else {
-         httpRequestBuilder.POST(HttpRequest.BodyPublishers.ofString(request.getPayload()));
-      }
-      if (request.getHeaders().size() > 0) {
-         httpRequestBuilder.headers(listHeaders(request));
-      }
-
-      HttpRequest httpRequest = httpRequestBuilder.build();
-
       try {
-         // Envio da requisição
-         HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+         HttpResponse<String> response = null;
+         int countProxyList = 0;
+         int totalCountProxy = 0;
+         do {
+            HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
+            if (request.isFollowRedirects()) {
+               httpClientBuilder = httpClientBuilder.followRedirects(HttpClient.Redirect.NORMAL);
+            }
+            if (request.getProxyServices() != null) {
+               totalCountProxy = request.getProxyServices().size();
+               httpClientBuilder = setProxys(httpClientBuilder, request, countProxyList);
+               countProxyList++;
+            }
+            HttpClient httpClient = httpClientBuilder.build();
+
+            HttpRequest.Builder httpRequestBuilder = HttpRequest.newBuilder()
+               .uri(URI.create(request.getUrl()));
+
+            if (getRequest.equals("GET_REQUEST")) {
+               httpRequestBuilder.GET();
+            } else {
+               httpRequestBuilder.POST(HttpRequest.BodyPublishers.ofString(request.getPayload()));
+            }
+            if (request.getHeaders().size() > 0) {
+               httpRequestBuilder.headers(listHeaders(request));
+            }
+            HttpRequest httpRequest = httpRequestBuilder.build();
+
+            response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+         } while (countProxyList < totalCountProxy && response.statusCode() != 200);
+
 
          return new Response.ResponseBuilder()
             .setBody(response.body())
@@ -88,8 +87,20 @@ public class HttpClientFetcher implements DataFetcher {
 
    }
 
+   private HttpClient.Builder setProxys(HttpClient.Builder httpClientBuilder, Request request, int countProxyList) {
+      if (countProxyList < request.getProxyServices().size()) {
+         String proxyHost = GlobalConfigurations.proxies.getProxy(request.getProxyServices().get(countProxyList)).get(0).getAddress();
+         int proxyPort = GlobalConfigurations.proxies.getProxy(request.getProxyServices().get(countProxyList)).get(0).getPort();
+         httpClientBuilder = httpClientBuilder.proxy(ProxySelector.of(new InetSocketAddress(proxyHost, proxyPort)));
+
+      }
+
+      return httpClientBuilder;
+   }
+
+
    private String[] listHeaders(Request request) {
-      String[] listaHeaders = new String[request.getHeaders().size()*2];
+      String[] listaHeaders = new String[request.getHeaders().size() * 2];
       Map<String, String> headers = request.getHeaders();
       int i = 0;
       for (String key : headers.keySet()) {
