@@ -94,7 +94,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          String internalPid = productData.optString("productNumber");
          Boolean available = JSONUtils.getValueRecursive(productData, "storeDetail." + STORE_ID + ".productAvailable", ".", Boolean.class, false);
          String name = productData.optString("ecomDescription");
-         String primaryImage = productData.optString("imageUrl") != null ? productData.optString("imageUrl").replace(".jpg", "_1.jpg") : null;
+         String primaryImage = productData.optString("imageUrl") != null ? productData.optString("imageUrl") : null;
          List<String> secondaryImages = scrapSecondaryImages();
          String description = productData.optString("descriptiveParagraph");
          Offers offers = available ? scrapOffers(productData) : new Offers();
