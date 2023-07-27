@@ -137,7 +137,8 @@ public class Request {
     this.statusCodesToIgnore = statusCodesToIgnore;
   }
 
-  public static class RequestBuilder {
+
+   public static class RequestBuilder {
 
     private String url;
     private LettProxy proxy;
