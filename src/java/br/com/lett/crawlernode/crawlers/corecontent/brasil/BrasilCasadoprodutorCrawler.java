@@ -7,10 +7,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
+import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -23,20 +20,21 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-/**
- * @author Paula
- */
 
 public class BrasilCasadoprodutorCrawler extends Crawler {
 
@@ -48,7 +46,6 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
       super(session);
    }
 
-
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
@@ -56,17 +53,18 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value");
 
       if (internalId != null) {
-         Logging.printLogDebug(logger, session,
-            "Product page identified: " + this.session.getOriginalURL());
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute.sku .value", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title span", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li:not(:first-child)");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".description"));
+         List<String> images = crawlImageList(doc);
+         String primaryImage = !images.isEmpty() ? images.remove(0) : CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder._block-content-loading img", Collections.singletonList("src"), "https:", "www.casadoprodutor.com.br");
+
          boolean available = doc.select(".product.alert.stock").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder._block-content-loading img", Collections.singletonList("src"), "https:", "www.casadoprodutor.com.br");
          List<String> eans = scrapEans(doc);
 
          // Creating the product
@@ -75,13 +73,12 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
-            .setOffers(offers)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setEans(eans)
+            .setCategories(categories)
             .setDescription(description)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(images)
+            .setOffers(offers)
+            .setEans(eans)
             .build();
 
          products.add(product);
@@ -92,10 +89,38 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
       return products;
    }
 
-   /*******************
-    * General methods *
-    *******************/
+   private List<String> crawlImageList(Document doc) {
+      List<String> imagesList = new ArrayList<>();
+      Element imageScript = doc.selectFirst("script:containsData(mage/gallery/gallery)");
 
+      if (imageScript != null) {
+         JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
+         JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data", JSONArray.class, new JSONArray());
+
+         for (Object obj : imageArray) {
+            if (obj instanceof JSONObject) {
+               String imageUrl = ((JSONObject) obj).optString("img");
+               String cleanedUrl = cleanUrlImage(imageUrl);
+               if (cleanedUrl != null) {
+                  imagesList.add(cleanedUrl);
+               }
+            }
+         }
+      }
+
+      return imagesList;
+   }
+
+   private String cleanUrlImage(String imageUrl) {
+      try {
+         URL url = new URL(imageUrl);
+         String path = url.getPath();
+         return url.getProtocol() + "://" + url.getHost() + path;
+      } catch (MalformedURLException e) {
+         e.printStackTrace();
+      }
+      return null;
+   }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
@@ -116,7 +141,7 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
 
    private List<String> scrapEans(Document doc) {
       List<String> eans = new ArrayList<>();
-      String ean = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "body[class^=\"catalog-product-view\"]","class" );
+      String ean = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "body[class^=\"catalog-product-view\"]", "class");
       if (ean != null) {
          Pattern pattern = Pattern.compile("product-([0-9]*)-");
          Matcher matcher = pattern.matcher(ean.toString());
@@ -127,10 +152,8 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
       return eans;
    }
 
-
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[itemprop=\"offers\"] .price", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[data-price-type=\"finalPrice\"] .price", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, false, ',', session);
 
       CreditCards creditCards = new CreditCards();
@@ -175,5 +198,4 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
 
       return installments;
    }
-
 }
