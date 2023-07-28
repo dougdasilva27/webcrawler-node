@@ -1,23 +1,20 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 public class BrasilDutramaquinasCrawler extends CrawlerRankingKeywords {
 
@@ -26,27 +23,42 @@ public class BrasilDutramaquinasCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
+   protected Document fetchDocument(String url) {
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(url))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return Jsoup.parse(response.body());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + url, e);
+      }
+   }
+
+   @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 24;
-
       this.log("Página " + this.currentPage);
-
-      String url = "https://busca.dutramaquinas.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
-
+      String url = "https://www.dutramaquinas.com.br/model/md_busca_site.php?vc_termo=" + this.keywordEncoded + "&termo_tipo=simples&tot_termos=1&ordering=relevancia&max=" + this.pageSize + "&pg_num=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
-
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".neemu-products-container .nm-product-item");
+      Elements products = this.currentDoc.select("div > .produto.list");
 
       if (!products.isEmpty()) {
+
          for (Element e : products) {
-            String internalId = crawlInternalId(e.attr("id"));
-            String urlProduct = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".nm-product-info a", "href"), "https", "www.dutramaquinas.com");
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".nm-product-name", false);
-            String imgUrl = scrapImage(e);
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".nm-price-container", null, false, ',', session, null);
+            String internalId = e.attr("key");
+            String urlProduct = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".produto-slick > a", "href"), "https", "www.dutramaquinas.com.br");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "h3 > a", true);
+            String imgUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".produto-slick > a > img", "data-original"), "https", "www.dutramaquinas.com.br");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".valor-total", null, false, ',', session, null);
             boolean isAvailable = price != null;
+            if (!isAvailable) {
+               price = null;
+            }
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(urlProduct)
@@ -69,32 +81,8 @@ public class BrasilDutramaquinasCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private String scrapImage(Element e) {
-      String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".nm-product-img", Collections.singletonList("src"), "https", "images.colombo.com.br");
-
-      if (image != null && image.contains("/grande/")) {
-         image = image.replace("/grande/", "/alta/");
-      }
-
-      return image;
-   }
-
-   private String crawlInternalId(String text) {
-      String internalId = "";
-
-      if (text != null && !text.isEmpty()) {
-         try {
-            internalId = text.split("-")[2];
-         } catch (Exception e) {
-            internalId = text.replaceAll("[^0-9]+", "");
-         }
-      }
-      return internalId;
-   }
-
    @Override
    protected boolean hasNextPage() {
-      return this.currentDoc.select(".neemu-pagination .neemu-pagination-inner a") != null;
+      return true;
    }
-
 }
