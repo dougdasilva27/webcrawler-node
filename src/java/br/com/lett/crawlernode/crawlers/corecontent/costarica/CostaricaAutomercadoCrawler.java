@@ -17,10 +17,6 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -95,7 +91,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          Boolean available = JSONUtils.getValueRecursive(productData, "storeDetail." + STORE_ID + ".productAvailable", ".", Boolean.class, false);
          String name = productData.optString("ecomDescription");
          String primaryImage = productData.optString("imageUrl") != null ? productData.optString("imageUrl") : null;
-         List<String> secondaryImages = scrapSecondaryImages();
+         List<String> secondaryImages = getSecondaryImages(primaryImage);
          String description = productData.optString("descriptiveParagraph");
          Offers offers = available ? scrapOffers(productData) : new Offers();
 
@@ -118,38 +114,14 @@ public class CostaricaAutomercadoCrawler extends Crawler {
       return products;
    }
 
-   private List<String> scrapSecondaryImages() {
+   private List<String> getSecondaryImages(String primaryImage) {
       List<String> secondaryImages = new ArrayList<>();
-      int attempts = 0;
-      String page;
-      do {
-         try {
-            HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
-            HttpRequest request = HttpRequest.newBuilder(URI.create(this.session.getOriginalURL())).GET().build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            page = response.body();
-
-            boolean productPage;
-            if (page != null) {
-               Document doc = Jsoup.parse(page);
-               productPage = doc.selectFirst(".splide__list") != null;
-               if (productPage) {
-                  Elements divImages = doc.select("li > .img-fluid");
-                  for (Element e : divImages) {
-                     String image = e.attr("src");
-                     if (image != null && !image.isEmpty()) {
-                        secondaryImages.add(image);
-                     }
-                  }
-                  if (secondaryImages.size() > 0) {
-                     secondaryImages.remove(0);
-                  }
-               }
-            }
-         } catch (Exception e) {
-            throw new RuntimeException("Failed to scrape html: ", e);
+      for (int i = 2; i < 7; i++) { //Padrão do site é de no máximo 5 imagens secundárias
+         String imageUrl = primaryImage.replace(".jpg", "_" + i + ".jpg");
+         if (imageUrl != null) {
+            secondaryImages.add(imageUrl);
          }
-      } while (page == null && attempts++ < 3);
+      }
 
       return secondaryImages;
    }
