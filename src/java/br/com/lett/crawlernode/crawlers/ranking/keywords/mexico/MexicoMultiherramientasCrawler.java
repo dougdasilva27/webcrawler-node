@@ -66,6 +66,7 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
 
       if (products != null && !products.isEmpty()) {
          for (Element product : products) {
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".btn-saveprod", "data-fkproduct");
             String internalPid = scrapInternalPid(product);
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".noRastro .label", true);
             String productUrl = CrawlerUtils.scrapUrl(product, "a.noRastro", "href", "https", "multiherramientas.mx");
@@ -75,6 +76,7 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
+               .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(productName)
                .setPriceInCents(price)
@@ -95,7 +97,7 @@ public class MexicoMultiherramientasCrawler extends CrawlerRankingKeywords {
 
    private String scrapInternalPid(Element product) {
       String text = CrawlerUtils.scrapStringSimpleInfo(product, ".noRastro .marca", true);
-      String regex = "\\| ([0-9]*)";
+      String regex = "\\| ([A-Z0-9]*)";
 
       if (text != null) {
          Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
