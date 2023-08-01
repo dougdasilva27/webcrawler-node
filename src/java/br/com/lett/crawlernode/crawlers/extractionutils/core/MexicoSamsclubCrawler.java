@@ -62,8 +62,8 @@ public class MexicoSamsclubCrawler extends Crawler {
             .setUrl(apiUrl)
             .setCookies(cookies)
             .setProxyservice(Arrays.asList(
-               ProxyCollection.BUY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.BUY,
                ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
             .build();
 
