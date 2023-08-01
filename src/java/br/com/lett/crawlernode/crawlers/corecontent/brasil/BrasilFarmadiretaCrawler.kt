@@ -53,7 +53,7 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
          return mutableListOf()
       }
 
-      val name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#NameProduto", "value")
+      val name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.dgf-titulo", true)
       val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#ID_SubProduto", "value")
       val primaryCategory = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#CategoriaProduto", "value")
       val secondaryCategory = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#SubCategoriaProduto", "value")
