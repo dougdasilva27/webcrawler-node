@@ -2,18 +2,13 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
-import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.Arrays;
 
@@ -30,13 +25,12 @@ public class BrasilPetcenterexpressCrawler extends CrawlerRankingKeywords {
       this.pageSize = 15;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.petcenterexpress.com.br/loja/busca.php?loja=1059813&palavra_busca=" + CommonMethods.encondeStringURLToISO8859(this.location, logger, session)
-         + "&pg=" + this.currentPage;
+      String url = "https://www.petcenterexpress.com.br/loja/busca.php?loja=1059813&palavra_busca=" + CommonMethods.encondeStringURLToISO8859(this.location, logger, session) + "&pg=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".showcase__list .showcase__item");
+      Elements products = this.currentDoc.select(".showcase__list .showcase__item .product");
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
             this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".paginate__count strong", false, 0);
@@ -69,12 +63,8 @@ public class BrasilPetcenterexpressCrawler extends CrawlerRankingKeywords {
                break;
             }
 
-            this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-               + this.arrayProducts.size() + " produtos crawleados");
-
+            this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
          }
       }
-
-
    }
 }
