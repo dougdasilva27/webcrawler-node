@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import cdjd.com.google.common.net.HttpHeaders;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -18,13 +19,18 @@ import org.jsoup.select.Elements;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static br.com.lett.crawlernode.util.CrawlerUtils.getRedirectedUrl;
 
 public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
+   private String idSucursal = this.session.getOptions().optString("idSucursal", "182");
+
+
    public ArgentinaCotoCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.APACHE;
    }
 
    @Override
@@ -53,7 +59,7 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      this.pageSize = 72;
+      this.pageSize = 12;
       this.log("Página " + this.currentPage);
       String url = getPageUrl();
       this.log("URL : " + url);
@@ -89,10 +95,50 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+//   private String getPageUrl() {
+//      return "https://www.cotodigital3.com.ar" + getUrlKeyword() + "?suc=" + this.idSucursal;
+//   }
+
    private String getPageUrl() {
-      int productsShow = this.currentPage == 1 ? 0 : this.pageSize * (this.currentPage - 1);
-      return "https://www.cotodigital3.com.ar/sitios/cdigi/browse?Dy=1&Nf=product.startDate%7CLTEQ+1.640304E12%7C%7Cproduct.endDate%7CGTEQ+1.640304E12&No=" + productsShow + "&Nr=AND%28product.language%3Aespa%C3%B1ol%2Cproduct.sDisp_200%3A1004%2Cproduct.siteId%3ACotoDigital%2COR%28product.siteId%3ACotoDigital%29%29&Nrpp=72&Ntt=" + this.keywordEncoded + "&Nty=1&_D%3AidSucursal=+&_D%3AsiteScope=+&atg_store_searchInput=" + this.keywordEncoded + "&idSucursal=200&siteScope=ok";
+      int pagination = this.pageSize * this.currentPage;
+      String url = "https://www.cotodigital3.com.ar" + getUrlKeyword();
+      url += "?No=" + pagination;
+      url += "&Nr=AND%28product.language%3Aespa%C3%B1ol%2Cproduct.sDisp_" + this.idSucursal + "%3A1004%2COR%28product.siteId%3ACotoDigital%29%29";
+      url += "&Nrpp=" + this.pageSize;
+      return url;
    }
+
+   private String getUrlKeyword() {
+     // String urlKeyword = "https://www.cotodigital3.com.ar/sitios/cdigi/browse?Ntt=" + this.keywordEncoded;
+
+      Document doc = currentDoc();
+      String content = doc.select("meta[name=DC.identifier][scheme=DCTERMS.URI]").first().attr("content");
+      return content;
+   }
+
+   private Document currentDoc(){
+      try {
+//         Map<String, String> headers = new HashMap<>();
+//         headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
+//         headers.put("origin", "https://www.lojinhababyandme.com.br/%22");
+            Request request = Request.RequestBuilder.create()
+               .setUrl("https://www.cotodigital3.com.ar/sitios/cdigi/browse?Ntt=" + this.keywordEncoded)
+//               .setHeaders(headers)
+               .setProxyservice(
+                  Arrays.asList(
+                     ProxyCollection.BUY_HAPROXY,
+                     ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_AR,
+                     ProxyCollection.SMART_PROXY_BR_HAPROXY
+                  )
+               )
+               .build();
+         Response response = this.dataFetcher.get(session, request);
+
+         return Jsoup.parse(response.getBody());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
+   };
 
    @Override
    protected boolean hasNextPage() {
