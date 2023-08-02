@@ -69,7 +69,18 @@ public class ArgentinaLacoopeencasaCrawler extends Crawler {
       headers.put("Host", "www.lacoopeencasa.coop");
       headers.put("Cookie", "_lcec_sid_inv=" + this.cookieSecurity + ";_lcec_linf=" + locationCookie + ";");
 
-      String urlRequest = assemblyUrl();
+      Response response = fetchProductResponse(headers, "false");
+      JSONObject json = CrawlerUtils.stringToJson(response.getBody());
+
+      if (json.optString("mensaje").equals("No existe el articulo")) {
+         response = fetchProductResponse(headers, "true"); //if product unavailable simple must be true so the field datos has information
+      }
+
+      return response;
+   }
+
+   private Response fetchProductResponse(Map<String, String> headers, String simple) {
+      String urlRequest = assemblyUrl(simple);
       Request request = Request.RequestBuilder.create()
          .setUrl(urlRequest)
          .setHeaders(headers)
@@ -82,34 +93,32 @@ public class ArgentinaLacoopeencasaCrawler extends Crawler {
       return response;
    }
 
-   private String assemblyUrl() {
+   private String assemblyUrl(String simple) {
       String id = session.getOriginalURL().substring(session.getOriginalURL().lastIndexOf("/") + 1);
       if (id.contains("?")) {
          id = id.substring(0, id.lastIndexOf("?"));
       }
-      String requestUrl = "https://www.lacoopeencasa.coop/ws/index.php/articulo/articuloController/articulo_detalle?cod_interno=" + id + "&simple=false";
+      String requestUrl = "https://www.lacoopeencasa.coop/ws/index.php/articulo/articuloController/articulo_detalle?cod_interno=" + id + "&simple=" + simple;
       return requestUrl;
    }
 
    @Override
    public List<Product> extractInformation(JSONObject json) throws Exception {
       List<Product> products = new ArrayList<>();
-
       JSONObject productJson = json.optJSONObject("datos");
 
       if (productJson != null) {
          String internalId = productJson.optString("cod_interno");
          String name = productJson.optString("descripcion");
 
-         JSONArray imagesJson = productJson.optJSONArray("imagenes");
-         List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(imagesJson, "imagen", null, "", "", session);
-         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+         boolean isAvailable = setAvailability(productJson);
+         List<String> images = isAvailable ? scrapImagesArray(productJson) : null;
+         String primaryImage = scrapPrimaryImage(images, productJson);
 
          String description = productJson.optString("desc_larga");
          CategoryCollection categories = scrapCategories(productJson);
 
-         boolean available = setAvailability(productJson);
-         Offers offers = available ? scrapOffers(productJson) : new Offers();
+         Offers offers = isAvailable ? scrapOffers(productJson) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -128,6 +137,22 @@ public class ArgentinaLacoopeencasaCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapPrimaryImage(List<String> images, JSONObject productJson) {
+      if (images == null) {
+         return productJson.optString("imagen");
+      }
+      return !images.isEmpty() ? images.remove(0) : null;
+   }
+
+   private List<String> scrapImagesArray(JSONObject productJson) {
+      List<String> images = new ArrayList<>();
+      JSONArray imagesJson = productJson.optJSONArray("imagenes");
+      if (imagesJson != null) {
+         images = CrawlerUtils.scrapImagesListFromJSONArray(imagesJson, "imagen", null, "", "", session);
+      }
+      return images;
    }
 
    private boolean setAvailability(JSONObject productJson) {
