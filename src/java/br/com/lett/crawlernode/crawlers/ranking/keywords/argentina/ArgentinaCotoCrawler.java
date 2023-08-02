@@ -22,7 +22,7 @@ import java.util.Collections;
 import static br.com.lett.crawlernode.util.CrawlerUtils.getRedirectedUrl;
 
 public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
-   private String idSucursal = this.session.getOptions().optString("idSucursal", "182");
+   private String idSucursal = this.session.getOptions().optString("idSucursal");
 
 
    public ArgentinaCotoCrawler(Session session) {
@@ -92,20 +92,13 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-//   private String getPageUrl() {
-//      return "https://www.cotodigital3.com.ar" + getUrlKeyword() + "?suc=" + this.idSucursal;
-//   }
    private String getPageUrl() {
       int pagination = this.pageSize * this.currentPage;
-      String url = "https://www.cotodigital3.com.ar" + getUrlKeyword();
-      url += "?No=" + pagination;
-      url += "&Nr=AND%28product.language%3Aespa%C3%B1ol%2Cproduct.sDisp_" + this.idSucursal + "%3A1004%2COR%28product.siteId%3ACotoDigital%29%29";
-      url += "&Nrpp=" + this.pageSize;
+      String url = "https://www.cotodigital3.com.ar" + getUrlKeyword() + "?No=" + pagination + "&Nr=AND%28product.language%3Aespa%C3%B1ol%2Cproduct.sDisp_" + this.idSucursal + "%3A1004%2COR%28product.siteId%3ACotoDigital%29%29" + "&Nrpp=" + this.pageSize;
       return url;
    }
 
    private String getUrlKeyword() {
-     // String urlKeyword = "https://www.cotodigital3.com.ar/sitios/cdigi/browse?Ntt=" + this.keywordEncoded;
 
       Document doc = currentDoc();
       String content = doc.select("meta[name=DC.identifier][scheme=DCTERMS.URI]").first().attr("content");
@@ -114,12 +107,8 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
 
    private Document currentDoc(){
       try {
-//         Map<String, String> headers = new HashMap<>();
-//         headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
-//         headers.put("origin", "https://www.lojinhababyandme.com.br/%22");
             Request request = Request.RequestBuilder.create()
                .setUrl("https://www.cotodigital3.com.ar/sitios/cdigi/browse?Ntt=" + this.keywordEncoded)
-//               .setHeaders(headers)
                .setProxyservice(
                   Arrays.asList(
                      ProxyCollection.BUY_HAPROXY,
