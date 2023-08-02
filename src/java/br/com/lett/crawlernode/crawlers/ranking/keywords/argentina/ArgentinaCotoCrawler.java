@@ -95,7 +95,6 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
 //   private String getPageUrl() {
 //      return "https://www.cotodigital3.com.ar" + getUrlKeyword() + "?suc=" + this.idSucursal;
 //   }
-
    private String getPageUrl() {
       int pagination = this.pageSize * this.currentPage;
       String url = "https://www.cotodigital3.com.ar" + getUrlKeyword();
