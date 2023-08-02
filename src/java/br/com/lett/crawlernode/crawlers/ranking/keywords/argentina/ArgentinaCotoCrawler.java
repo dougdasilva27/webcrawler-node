@@ -16,13 +16,17 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Arrays;
 import java.util.Collections;
 
 import static br.com.lett.crawlernode.util.CrawlerUtils.getRedirectedUrl;
 
 public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
-   private String idSucursal = this.session.getOptions().optString("idSucursal");
+   private String idSucursal = this.session.getOptions().optString("idSucursal", "200");
 
 
    public ArgentinaCotoCrawler(Session session) {
@@ -88,42 +92,40 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productRanking);
          }
+      } else {
+         this.log("Não foram encontrados produtos para a página " + this.currentPage);
       }
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
    private String getPageUrl() {
       int pagination = this.pageSize * this.currentPage;
-      String url = "https://www.cotodigital3.com.ar" + getUrlKeyword() + "?No=" + pagination + "&Nr=AND%28product.language%3Aespa%C3%B1ol%2Cproduct.sDisp_" + this.idSucursal + "%3A1004%2COR%28product.siteId%3ACotoDigital%29%29" + "&Nrpp=" + this.pageSize;
+      String url = "https://www.cotodigital3.com.ar" + getUrlKeyword();
+      url += "?No=" + pagination;
+      url += "&Nr=AND%28product.language%3Aespa%C3%B1ol%2Cproduct.sDisp_" + this.idSucursal + "%3A1004%2COR%28product.siteId%3ACotoDigital%29%29";
+      url += "&Nrpp=" + this.pageSize;
       return url;
    }
 
    private String getUrlKeyword() {
-
       Document doc = currentDoc();
       String content = doc.select("meta[name=DC.identifier][scheme=DCTERMS.URI]").first().attr("content");
       return content;
    }
 
-   private Document currentDoc(){
+   private Document currentDoc() {
       try {
-            Request request = Request.RequestBuilder.create()
-               .setUrl("https://www.cotodigital3.com.ar/sitios/cdigi/browse?Ntt=" + this.keywordEncoded)
-               .setProxyservice(
-                  Arrays.asList(
-                     ProxyCollection.BUY_HAPROXY,
-                     ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_AR,
-                     ProxyCollection.SMART_PROXY_BR_HAPROXY
-                  )
-               )
-               .build();
-         Response response = this.dataFetcher.get(session, request);
-
-         return Jsoup.parse(response.getBody());
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create("https://www.cotodigital3.com.ar/sitios/cdigi/browse?Ntt=" + this.keywordEncoded))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return Jsoup.parse(response.body());
       } catch (Exception e) {
          throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
       }
-   };
+   }
 
    @Override
    protected boolean hasNextPage() {
