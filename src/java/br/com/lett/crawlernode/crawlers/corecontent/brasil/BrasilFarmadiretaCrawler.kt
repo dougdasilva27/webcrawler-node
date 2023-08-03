@@ -42,7 +42,6 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
       )
    }
 
-   //the product has no description
    override fun extractInformation(doc: Document): MutableList<Product> {
 
       if (!isProductPage(doc)) {
@@ -79,7 +78,6 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
       return doc.getElementById("ID_SubProduto") != null
    }
 
-   //the price is always there, even if the product is sold out
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
 
