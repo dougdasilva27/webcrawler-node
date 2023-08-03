@@ -1,16 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher
+import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card
-import br.com.lett.crawlernode.core.models.Parser
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.CrawlerUtils
-import br.com.lett.crawlernode.util.Logging
-import br.com.lett.crawlernode.util.toBankSlip
-import br.com.lett.crawlernode.util.toCreditCards
+import br.com.lett.crawlernode.util.*
 import models.Offer
 import models.Offers
 import models.pricing.Pricing
@@ -19,11 +16,6 @@ import org.jsoup.nodes.Element
 import java.util.*
 
 class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
-
-   init {
-      super.config.fetcher = FetchMode.HTTPCLIENT
-      super.config.parser = Parser.HTML
-   }
 
    companion object {
       const val SELLER_NAME: String = "Farma Direta"
@@ -42,7 +34,19 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
       )
    }
 
-   //the product has no description
+   override fun fetch(): Document {
+      val url = session.originalURL
+
+      val request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .build()
+
+      val response = CrawlerUtils.retryRequest(request, session, JsoupDataFetcher(), true);
+
+
+      return response.body?.toDoc() ?: Document(url)
+   }
+
    override fun extractInformation(doc: Document): MutableList<Product> {
 
       if (!isProductPage(doc)) {
@@ -79,7 +83,6 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
       return doc.getElementById("ID_SubProduto") != null
    }
 
-   //the price is always there, even if the product is sold out
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
 
