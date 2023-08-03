@@ -15,6 +15,8 @@ import org.json.JSONObject;
 
 public class ArgentinaHiperlibertadCrawler extends CrawlerRankingKeywords {
 
+   private String storeId = this.session.getOptions().optString("sc", "1");
+
    public ArgentinaHiperlibertadCrawler(Session session) {
       super(session);
       this.pageSize = 24;
@@ -27,7 +29,7 @@ public class ArgentinaHiperlibertadCrawler extends CrawlerRankingKeywords {
          "&_from=" + start +
          "&_to=" + end +
          "&ft=" + keywordWithoutAccents.replace(" ", "%20") +
-         "&sc=1";
+         "&sc=" + storeId;
       Response response = dataFetcher.get(session, Request.RequestBuilder.create().setUrl(url).build());
       return JSONUtils.stringToJsonArray(response.getBody());
    }
@@ -46,9 +48,9 @@ public class ArgentinaHiperlibertadCrawler extends CrawlerRankingKeywords {
             Double productPrice = (Double) product.optQuery("/items/0/sellers/0/commertialOffer/Price");
             Integer productPriceInCents = null;
             if (productIsAvailable && productPrice != null) {
-               productPriceInCents = MathUtils.parseInt( productPrice * 100);
+               productPriceInCents = MathUtils.parseInt(productPrice * 100);
             }
-            
+
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalPid(internalPid)
