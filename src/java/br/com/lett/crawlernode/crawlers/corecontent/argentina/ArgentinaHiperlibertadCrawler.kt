@@ -93,8 +93,8 @@ class ArgentinaHiperlibertadCrawler(session: Session) : VTEXOldScraper(session) 
                   .setOffers(offers)
                   .build()
 
-               return mutableListOf(product)
                products.add(product)
+               return mutableListOf(product)
             }
          }
       } else {
