@@ -131,7 +131,10 @@ class ArgentinaHiperlibertadCrawler(session: Session) : VTEXOldScraper(session) 
       val offers = Offers()
 
       val priceFromString = json.optString("listPriceFormated")
-      var priceFrom: Double = MathUtils.parseDoubleWithComma(priceFromString)
+      var priceFrom: Double? = MathUtils.parseDoubleWithComma(priceFromString)
+      if (priceFrom == 0.0) {
+         priceFrom = null
+      }
 
       val stringPrice = json.optString("fullSellingPrice")
       val spotlightPrice: Double = MathUtils.parseDoubleWithComma(stringPrice)
