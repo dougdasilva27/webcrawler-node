@@ -140,7 +140,6 @@ public class ChileLidersuperCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[class*=product-prices] .saving__price__pdp", null, true, ',', session);
       Double spotlightPrice = extractPrice(doc);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
@@ -151,7 +150,7 @@ public class ChileLidersuperCrawler extends Crawler {
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
-         .setPriceFrom(priceFrom)
+         .setPriceFrom(spotlightPrice)
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
