@@ -36,7 +36,9 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.FETCHER;
    }
 
-   private String getPostalCode() { return session.getOptions().getString("postal_code"); }
+   private String getPostalCode() {
+      return session.getOptions().getString("postal_code");
+   }
 
    @Override
    protected void processBeforeFetch() {
@@ -49,27 +51,23 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 15;
-//      String url = HOME_PAGE + "/graphql/";
 
       JSONObject json = fetchJSON();
-
       if (this.currentPage == 1) {
-         this.totalProducts = JSONUtils.getValueRecursive(json,"results.0.nbHits",Integer.class, 0);
+         this.totalProducts = JSONUtils.getValueRecursive(json, "results.0.nbHits", Integer.class, 0);
       }
-
 
       JSONArray products = JSONUtils.getValueRecursive(json, "results.0.hits", JSONArray.class, new JSONArray());
       for (int i = 0; i < products.length(); i++) {
          JSONObject product = products.getJSONObject(i);
          String internalId = JSONUtils.getValueRecursive(product, "sku", String.class, "");
-         String internalPid =internalId;
+         String internalPid = internalId;
          String productUrl = HOME_PAGE + JSONUtils.getValueRecursive(product, "url", String.class, "");
-         String name = JSONUtils.getValueRecursive(product, "full_name.shortName", String.class, "");
+         String name = product.optString("name");
          String imageUrl = JSONUtils.getValueRecursive(product, "image_thumbnail_url", String.class, "");
          Double price = JSONUtils.getValueRecursive(product, "stores.10.filter_price", Double.class, 0d);
-         boolean isAvailable = JSONUtils.getValueRecursive(product, "stores.10.available", Boolean.class);
-         Integer priceInCents = isAvailable ? (int)(price * 100) : null;
-
+         boolean isAvailable = JSONUtils.getValueRecursive(product, "stores." + idStore + ".available", Boolean.class);
+         Integer priceInCents = isAvailable ? (int) (price * 100) : null;
 
          RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(productUrl)
@@ -82,25 +80,20 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
             .build();
 
          saveDataProduct(productRanking);
+
          if (this.arrayProducts.size() == productsLimit) {
             break;
          }
-
       }
-
    }
 
    private JSONObject fetchJSON() {
       int offset = this.currentPage - 1;
 
-      String payload = "{\n" +
-         "    \"requests\": [\n" +
-         "        {\n" +
-         "            \"indexName\": \"arcade_storefront\",\n" +
-         "            \"params\": \"analyticsTags=%5B%22desktop%22%2C%22anonymous%22%2C%22search%22%2C%22short%20query%22%5D&clickAnalytics=true&facets=%5B%22brand%22%2C%22categories.lvl0%22%2C%22first_publication_timestamp%22%2C%22same_day_shipping_available%22%2C%22stores." + this.idStore + ".filter_price%22%2C%22stores." + this.idStore + ".has_discount%22%5D&filters=is_published%3A%20true%20AND%20stores." + this.idStore + ".active%3A%20true&highlightPostTag=%2Fais-highlight&highlightPreTag=ais-highlight&hitsPerPage=" + this.pageSize +"&maxValuesPerFacet=30&page=" + offset + "&query=" + this.keywordEncoded + "&ruleContexts=%5B%22user_store%3A" + this.idStore + "%22%5D&tagFilters=&userToken=2c2f950f-2e53-47f5-9846-82a8168e0a24\"\n" +
-         "        }\n" +
-         "    ]\n" +
-         "}";
+      String payload = "{\"requests\":[{\"indexName\":\"arcade_storefront\",\"params\":\"analyticsTags=%5B%22desktop%22%2C%22anonymous%22%2C%22search%22%2C%22short%20query%22%5D&clickAnalytics=true&facets=%5B%22brand%22%2C%22categories.lvl0%22%2C%22first_publication_timestamp%22%2C%22same_day_shipping_available%22%2C%22stores."
+         + this.idStore + ".filter_price%22%2C%22stores." + this.idStore + ".has_discount%22%5D&filters=is_published%3A%20true%20AND%20stores."
+         + this.idStore + ".active%3A%20true&highlightPostTag=%2Fais-highlight&highlightPreTag=ais-highlight&hitsPerPage=" + this.pageSize + "&maxValuesPerFacet=30&page="
+         + offset + "&query=" + this.keywordEncoded.replace("+", "%20") + "&ruleContexts=%5B%22user_store%3A" + this.idStore + "%22%5D&tagFilters=&userToken=2c2f950f-2e53-47f5-9846-82a8168e0a24\"}]}";
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -115,16 +108,12 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
             ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-         ))
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY))
          .mustSendContentEncoding(false)
          .setPayload(payload)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of( new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
-
-
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
       return CrawlerUtils.stringToJson(response.getBody());
    }
-
 }
