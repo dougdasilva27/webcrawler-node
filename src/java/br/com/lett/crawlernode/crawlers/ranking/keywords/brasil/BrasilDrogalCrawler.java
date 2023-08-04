@@ -22,7 +22,7 @@ public class BrasilDrogalCrawler extends CrawlerRankingKeywords {
       this.pageSize = 56;
 
       this.log("Página " + this.currentPage);
-      String url = "https://www.drogal.com.br/" + this.keywordEncoded.replace(" ", "%20") + "/?p=" + this.currentPage;
+      String url = "https://www.drogal.com.br/" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "/?p=" + this.currentPage;
       this.currentDoc = fetchDocument(url);
 
       this.log("Link onde são feitos os crawlers: " + url);
