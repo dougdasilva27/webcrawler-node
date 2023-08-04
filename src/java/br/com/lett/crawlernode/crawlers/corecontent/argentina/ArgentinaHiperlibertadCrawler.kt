@@ -94,9 +94,7 @@ class ArgentinaHiperlibertadCrawler(session: Session) : VTEXOldScraper(session) 
                   .build()
 
                return mutableListOf(product)
-               if (product != null) {
-                  products.add(product)
-               }
+               products.add(product)
             }
          }
       } else {
@@ -134,9 +132,6 @@ class ArgentinaHiperlibertadCrawler(session: Session) : VTEXOldScraper(session) 
 
       val priceFromString = json.optString("listPriceFormated")
       var priceFrom: Double = MathUtils.parseDoubleWithComma(priceFromString)
-      if (priceFrom == 0.00) {
-         priceFrom == null
-      }
 
       val stringPrice = json.optString("fullSellingPrice")
       val spotlightPrice: Double = MathUtils.parseDoubleWithComma(stringPrice)
