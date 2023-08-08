@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
@@ -47,13 +48,22 @@ public class BrasilBoschMarketplaceCrawler extends VTEXNewScraper {
    }
 
    protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
-      String name = JSONUtils.getValueRecursive(productJson, "items.0.nameComplete", ".", String.class, null);
+      String name;
 
-      if (name == null && jsonSku.has("productName") && jsonSku.opt("productName") != null) {
-         name = jsonSku.optString("productName");
+      JSONArray itemsArray = productJson.optJSONArray("items");
+      if (itemsArray != null && itemsArray.length() > 1) {
+         name = jsonSku.optString("nameComplete");
+      } else {
+         name = JSONUtils.getValueRecursive(productJson, "items.0.nameComplete", ".", String.class, null);
+      }
 
-      } else if (name == null && jsonSku.has("name")) {
-         name = jsonSku.optString("name");
+      if (name == null) {
+         if (jsonSku.has("productName")) {
+            name = jsonSku.optString("productName");
+
+         } else if (jsonSku.has("name")) {
+            name = jsonSku.optString("name");
+         }
       }
 
       if (name != null && !name.isEmpty() && productJson.has("brand")) {
@@ -62,7 +72,6 @@ public class BrasilBoschMarketplaceCrawler extends VTEXNewScraper {
             name = name + " " + brand;
          }
       }
-
 
       return name;
    }
