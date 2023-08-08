@@ -151,7 +151,7 @@ public class FalabellaCrawler extends Crawler {
    }
 
    protected String crawlBrandName(Document doc) {
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div[data-name]", true);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "section.pdp-detail-section h1", true);
       String brand = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-brand]", "data-brand");
       if (brand != null || brand.isEmpty()) {
          name = name + " - " + brand;
