@@ -114,12 +114,13 @@ public class MaceioPalatoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-options input[name='id']", "value");
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-options input[name='sku']", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h3.font-weight-bold", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".sp-wrap img", Collections.singletonList("src"), "https", "loja.palato.com.br/");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".produto-informacoes"));
+
          boolean availableToBuy = !doc.select(".col-xl-6 .add-to-cart ").isEmpty();
+         String internalId = availableToBuy ? CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-options input[name='id']", "value") : CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#id-produto", "value");
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
 
          // Creating the product
@@ -204,7 +205,6 @@ public class MaceioPalatoCrawler extends Crawler {
 
       return null;
    }
-
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
