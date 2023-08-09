@@ -20,6 +20,7 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,12 +73,8 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
 
    private String getSessionUrl() {
       String variables = "{\"currentPage\":" + this.currentPage + ",\"pageSize\":20,\"filters\":{\"name\":{\"match\":\"" + this.keywordEncoded + "\"}},\"inputText\":\"" + this.keywordEncoded + "\",\"sort\":{\"relevance\":\"ASC\"}}";
-      try {
-         String variablesEncoded = URLEncoder.encode(variables, "UTF-8");
-         return "https://www.nestleatevoce.com.br/graphql?query=query+productSearch%28%24currentPage%3AInt%3D1%24inputText%3AString%21%24pageSize%3AInt%3D20%24filters%3AProductAttributeFilterInput%21%24sort%3AProductAttributeSortInput%29%7Bproducts%28currentPage%3A%24currentPage+pageSize%3A%24pageSize+search%3A%24inputText+filter%3A%24filters+sort%3A%24sort%29%7Bitems%7Burl_key+url_suffix+small_image%7Burl+__typename%7D...ProductCardFragment+__typename%7Dpage_info%7Btotal_pages+__typename%7Dtotal_count+__typename%7D%7Dfragment+ProductCardFragment+on+ProductInterface%7Bstock_status+__typename+id+sku+name+brand+combo_nrab_data%7Bis_nrab+qty_take+qty_buy+__typename%7Dscales%7Bqty+discount_percentage+__typename%7Dcategories%7Bid+name+url_key+__typename%7Dprice_range%7Bminimum_price%7Bfinal_price%7Bvalue+currency+__typename%7D__typename%7D__typename%7Dz076_data%7Bis_z076+discount_percent+__typename%7D...on+ConfigurableProduct%7Bis_assortment+is_best_seller+is_scaled+variants%7Battributes%7Bcode+label+value_index+__typename%7Dproduct%7Bid+sku+increments+units+stock_status+price_range%7Bminimum_price%7Bdiscount%7Bpercent_off+amount_off+__typename%7Dregular_price%7Bvalue+currency+__typename%7Dfinal_price%7Bvalue+currency+__typename%7D__typename%7D__typename%7D__typename%7D__typename%7Dconfigurable_options%7Bproduct_id+attribute_code+attribute_id+id+label+values%7Blabel+value_index+__typename%7D__typename%7D__typename%7D%7D&operationName=productSearch&variables=" + variablesEncoded;
-      } catch (UnsupportedEncodingException e) {
-         throw new RuntimeException(e);
-      }
+      String variablesEncoded = URLEncoder.encode(variables, StandardCharsets.UTF_8);
+      return "https://www.nestleatevoce.com.br/graphql?query=query+productSearch%28%24currentPage%3AInt%3D1%24inputText%3AString%21%24pageSize%3AInt%3D20%24filters%3AProductAttributeFilterInput%21%24sort%3AProductAttributeSortInput%29%7Bproducts%28currentPage%3A%24currentPage+pageSize%3A%24pageSize+search%3A%24inputText+filter%3A%24filters+sort%3A%24sort%29%7Bitems%7Burl_key+url_suffix+small_image%7Burl+__typename%7D...ProductCardFragment+__typename%7Dpage_info%7Btotal_pages+__typename%7Dtotal_count+__typename%7D%7Dfragment+ProductCardFragment+on+ProductInterface%7Bstock_status+__typename+is_regular_combo+is_assortment+is_best_seller+is_scaled+id+sku+name+brand+media_gallery_entries%7Blabel+file+__typename%7Dcombo_nrab_data%7Bis_nrab+qty_take+qty_buy+__typename%7Dscales%7Bqty+discount_percentage+__typename%7Dcategories%7Bid+name+url_key+__typename%7Dprice_range%7Bminimum_price%7Bfinal_price%7Bvalue+currency+__typename%7D__typename%7D__typename%7Dz076_data%7Bis_z076+discount_percent+__typename%7D...on+ConfigurableProduct%7Bvariants%7Battributes%7Bcode+label+value_index+__typename%7Dproduct%7Bid+sku+increments+units+stock_status+price_range%7Bminimum_price%7Bdiscount%7Bpercent_off+amount_off+__typename%7Dregular_price%7Bvalue+currency+__typename%7Dfinal_price%7Bvalue+currency+__typename%7D__typename%7D__typename%7D...on+SimpleProduct%7Bincrements+units+sku+__typename+best_seller_percentage+ean+price_range%7Bminimum_price%7Bregular_price%7Bvalue+currency+__typename%7Dfinal_price%7Bvalue+currency+__typename%7Ddiscount%7Bamount_off+percent_off+__typename%7D__typename%7D__typename%7D%7D__typename%7D__typename%7Dconfigurable_options%7Bproduct_id+attribute_code+attribute_id+id+label+values%7Blabel+value_index+__typename%7D__typename%7D__typename%7D...on+BundleProduct%7Bprice_range%7Bminimum_price%7Bregular_price%7Bvalue+currency+__typename%7Dfinal_price%7Bvalue+currency+__typename%7Ddiscount%7Bamount_off+percent_off+__typename%7D__typename%7D__typename%7Ditems%7Btitle+sku+options%7Buid+quantity+position+price+price_type+can_change_quantity+label+product%7Buid+name+sku+__typename%7D__typename%7D__typename%7D__typename%7D%7D&operationName=productSearch&variables=" + variablesEncoded;
    }
 
    private JSONObject fetchJSONObject() {
@@ -110,10 +107,7 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
             this.totalProducts = JSONUtils.getValueRecursive(bodyJson, "data.products.total_count", Integer.class, 0);
          }
          JSONArray products = JSONUtils.getValueRecursive(bodyJson, "data.products.items", JSONArray.class, new JSONArray());
-         /*
-            the api returns 20 products at a time this logic tries to
-            adjust the position of the product based on the return of products per page
-         */
+
          int alternativePosition = ((this.currentPage - 1) * 20) + 1;
          if (!products.isEmpty()) {
             for (Object o : products) {
@@ -124,19 +118,16 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
                String imageUrl = JSONUtils.getValueRecursive(product, "small_image.url", String.class);
 
                JSONArray variants = product.optJSONArray("variants");
-               for (int i = 0; i < variants.length(); i++) {
-                  JSONObject variantProduct = JSONUtils.getValueRecursive(variants, i + ".product", JSONObject.class);
-                  JSONArray variantAttributes = JSONUtils.getValueRecursive(variants, i + ".attributes", JSONArray.class);
-                  String internalId = variantProduct.optString("id");
-                  String variantName = crawlVariantName(variantAttributes, name);
+               if (variants == null) {
+                  String internalId = product.optString("id");
 
-                  boolean availability = JSONUtils.getValueRecursive(variantProduct, "stock_status", String.class).equals("IN_STOCK");
-                  Integer price = getPrice(availability, variantProduct);
+                  boolean availability = product.optString("stock_status").equals("IN_STOCK");
+                  Integer price = getPrice(availability, product);
                   RankingProduct productRanking = RankingProductBuilder.create()
                      .setUrl(productUrl)
                      .setInternalId(internalId)
                      .setInternalPid(internalPid)
-                     .setName(variantName)
+                     .setName(name)
                      .setPriceInCents(price)
                      .setAvailability(availability)
                      .setImageUrl(imageUrl)
@@ -144,6 +135,28 @@ public class BrasilNestleAteVoceCrawler extends CrawlerRankingKeywords {
                      .build();
 
                   saveDataProduct(productRanking);
+               } else {
+                  for (int i = 0; i < variants.length(); i++) {
+                     JSONObject variantProduct = JSONUtils.getValueRecursive(variants, i + ".product", JSONObject.class);
+                     JSONArray variantAttributes = JSONUtils.getValueRecursive(variants, i + ".attributes", JSONArray.class);
+                     String internalId = variantProduct.optString("id");
+                     String variantName = crawlVariantName(variantAttributes, name);
+
+                     boolean availability = JSONUtils.getValueRecursive(variantProduct, "stock_status", String.class).equals("IN_STOCK");
+                     Integer price = getPrice(availability, variantProduct);
+                     RankingProduct productRanking = RankingProductBuilder.create()
+                        .setUrl(productUrl)
+                        .setInternalId(internalId)
+                        .setInternalPid(internalPid)
+                        .setName(variantName)
+                        .setPriceInCents(price)
+                        .setAvailability(availability)
+                        .setImageUrl(imageUrl)
+                        .setPosition(alternativePosition)
+                        .build();
+
+                     saveDataProduct(productRanking);
+                  }
                }
                alternativePosition++;
                if (this.arrayProducts.size() == productsLimit)
