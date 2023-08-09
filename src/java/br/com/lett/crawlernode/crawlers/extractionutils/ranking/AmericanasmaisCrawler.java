@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.HttpClientFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -32,10 +32,12 @@ public class AmericanasmaisCrawler extends CrawlerRankingKeywords {
    public AmericanasmaisCrawler(Session session) {
       super(session);
    }
+
    private final String storeId = getStoreId();
 
    protected Map<String, String> headers = getHeaders();
    private static final String HOME_PAGE = "https://www.americanas.com.br/lojas-proximas/33014556000196/";
+
    public String getStoreId() {
       return session.getOptions().optString("store_id");
    }
@@ -49,7 +51,8 @@ public class AmericanasmaisCrawler extends CrawlerRankingKeywords {
       "Mozilla/5.0 (Linux; Android 10; SM-A102U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
       "Mozilla/5.0 (Linux; Android 10; SM-G960U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
       "Mozilla/5.0 (Linux; Android 10; LM-X420) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
-      "Mozilla/5.0 (Linux; Android 10; LM-Q710(FGN)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36"
+      "Mozilla/5.0 (Linux; Android 10; LM-Q710(FGN)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
    );
 
    public static Map<String, String> getHeaders() {
@@ -60,11 +63,11 @@ public class AmericanasmaisCrawler extends CrawlerRankingKeywords {
       headers.put("user-agent", UserAgent.get(random.nextInt(UserAgent.size())));
       headers.put(HttpHeaders.REFERER, HOME_PAGE);
       headers.put(
-         HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+         HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
       );
       headers.put(HttpHeaders.CACHE_CONTROL, "max-age=0");
-      headers.put(HttpHeaders.CONNECTION, "keep-alive");
-      headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+      headers.put("authority", "www.americanas.com.br");
+      headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("sec-fetch-site", "none");
       headers.put("sec-fetch-mode", "navigate");
       headers.put("sec-fetch-user", "?1");
@@ -97,24 +100,10 @@ public class AmericanasmaisCrawler extends CrawlerRankingKeywords {
             )
          ).build();
 
-
-      Response response = new JsoupDataFetcher().get(session, request);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new HttpClientFetcher()), session, "get");
       String content = response.getBody();
 
-      int statusCode = response.getLastStatusCode();
-
-      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-         Integer.toString(statusCode).charAt(0) != '3'
-         && statusCode != 404)) {
-         request.setProxyServices(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR));
-
-         content = new FetcherDataFetcher().get(session, request).getBody();
-      }
-
       return Jsoup.parse(content);
-
    }
 
    @Override
@@ -128,7 +117,7 @@ public class AmericanasmaisCrawler extends CrawlerRankingKeywords {
       JSONObject json = extractProductFromApollo(apolloJson);
       JSONArray products = json.optJSONArray("products");
 
-      if (!products.isEmpty()) {
+      if (products != null && !products.isEmpty()) {
          for (Object o : products) {
             if (o instanceof JSONObject) {
                JSONObject productJson = (JSONObject) o;
