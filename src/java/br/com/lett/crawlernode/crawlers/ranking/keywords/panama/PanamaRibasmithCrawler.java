@@ -8,7 +8,6 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.util.UriEncoder;
 
@@ -24,7 +23,7 @@ public class PanamaRibasmithCrawler extends CrawlerRankingKeywords {
 
    private JSONObject searchJson() {
       Request request = Request.RequestBuilder.create()
-         .setUrl("https://ultimate-dot-acp-magento.appspot.com/full_text_search?q=" + keywordEncoded + "&page_num=" + currentPage + "&UUID=19f6f39a-57d5-470f-8795-84369d66b79e")
+         .setUrl("https://api.fastsimon.com/full_text_search?q=" + keywordEncoded.replaceAll(" ", "%20") + "&page_num=" + currentPage + "&UUID=19f6f39a-57d5-470f-8795-84369d66b79e")
          .build();
 
       String response = dataFetcher.get(session, request).getBody();
@@ -73,7 +72,7 @@ public class PanamaRibasmithCrawler extends CrawlerRankingKeywords {
 
    private String scrapUrl(JSONObject product) {
       String url = product.optString("u");
-      if(!url.isEmpty()) {
+      if (!url.isEmpty()) {
          url = UriEncoder.encode(url);
       }
 
