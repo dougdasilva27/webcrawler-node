@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Parser;
@@ -22,6 +19,11 @@ import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 
 public class BrasilIfoodAppCrawler extends Crawler {
@@ -45,30 +47,32 @@ public class BrasilIfoodAppCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("host", "wsloja.ifood.com.br");
-      headers.put("channel", "IFOOD");
-      headers.put("user-agent", "okhttp/4.10.0");
-      headers.put("app_package_name", "br.com.brainweb.ifood");
-      headers.put("authority", "marketplace.ifood.com.br");
-      headers.put("sec-fetch-dest", "empty");
-      headers.put("sec-fetch-mode", "cors");
-      headers.put("state", state);
-      headers.put("access_key", access_key);
-      headers.put("secret_key", secret_key);
-      String url = "https://wsloja.ifood.com.br/ifood-ws-v3/restaurants/" + merchant_id + "/menuitem/" + session.getOriginalURL();
-      Request request = Request.RequestBuilder.create()
-         .setHeaders(headers)
-         .setUrl(url)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_ANY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.SMART_PROXY_BR,
-            ProxyCollection.SMART_PROXY_BR_HAPROXY
-         ))
-         .build();
-      return CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+      String productId = session.getOriginalURL().split("#")[1].length() > 1 ? session.getOriginalURL().split("#")[1] : session.getOriginalURL();
+      String url = "https://wsloja.ifood.com.br/ifood-ws-v3/restaurants/" + merchant_id + "/menuitem/" + productId;
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(url))
+            .header("channel", "IFOOD")
+            .header("user-agent", "okhttp/4.10.0")
+            .header("app_package_name", "br.com.brainweb.ifood")
+            .header("authority", "marketplace.ifood.com.br")
+            .header("sec-fetch-dest", "empty")
+            .header("sec-fetch-mode", "cors")
+            .header("state", state)
+            .header("access_key", access_key)
+            .header("secret_key", secret_key)
+            .build();
+
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
+      } catch (IOException | InterruptedException e) {
+         throw new RuntimeException("Failed to load document: " + session.getOriginalURL(), e);
+      }
    }
 
    @Override
@@ -88,7 +92,7 @@ public class BrasilIfoodAppCrawler extends Crawler {
             Offers offers = availability.equals("AVAILABLE") ? scrapOffers(item) : new Offers();
 
             Product product = ProductBuilder.create()
-               .setUrl(internalId)
+               .setUrl(session.getOptions().optString("preLink")+internalId)
                .setInternalId(internalId)
                .setInternalPid(internalId)
                .setName(name)

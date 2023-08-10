@@ -1,12 +1,18 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.List;
 
 public class RiodejaneiroDikamercadoCrawler extends CrawlerRankingKeywords {
 
@@ -15,7 +21,7 @@ public class RiodejaneiroDikamercadoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
 
@@ -30,25 +36,27 @@ public class RiodejaneiroDikamercadoCrawler extends CrawlerRankingKeywords {
             setTotalProducts(this.currentDoc);
          }
          for (Element e : products) {
-            String infoProduct = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".media a", "href");
+            String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".media a", "href"), "https", "dikamercado.com.br");
+            String internalId = productUrl != null ? CommonMethods.getLast(productUrl.split("-")).replace("/", "") : null;
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "span.nome", false);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "input.valor-produto-peso", "value", false, ',', session, null);
+            String image = CrawlerUtils.scrapSimplePrimaryImage(e, ".media img", List.of("data-src"), "https", "us-southeast-1.linodeobjects.com");
+            boolean isAvailable = price != null;
 
-            if (infoProduct != null) {
-               String internalId = getProductId(infoProduct);
-               String productUrl = CrawlerUtils.completeUrl(infoProduct, "https", "dikamercado.com.br");
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(image)
+               .build();
 
-               saveDataProduct(internalId, null, productUrl);
+            saveDataProduct(productRanking);
 
-               this.log(
-                  "Position: " + this.position +
-                     " - InternalId: " + internalId +
-                     " - InternalPid: " + null +
-                     " - Url: " + productUrl);
-
-               if (this.arrayProducts.size() == productsLimit) {
-                  break;
-               }
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
             }
-
          }
       } else {
          this.result = false;
@@ -58,11 +66,6 @@ public class RiodejaneiroDikamercadoCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
          + this.arrayProducts.size() + " produtos crawleados");
 
-   }
-
-   private String getProductId(String infoProduct) {
-      String[] url = infoProduct.split("-");
-      return url[url.length - 1].split("/")[0];
    }
 
    private void setTotalProducts(Document doc) {

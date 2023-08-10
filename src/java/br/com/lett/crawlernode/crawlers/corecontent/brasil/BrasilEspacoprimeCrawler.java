@@ -7,19 +7,15 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,41 +38,34 @@ public class BrasilEspacoprimeCrawler extends Crawler {
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
-
       List<Product> products = new ArrayList<>();
-
-      JSONObject productJson = crawlPageJson(doc);
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".center > #hdnProdutoId", "value");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.prodTitle", true);
+         List<String> secondaryImages = crawlImagesArray(doc);
+         String primaryImage = !secondaryImages.isEmpty() ? secondaryImages.remove(0) : null;
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "[itemprop=\"itemListElement\"] a span", true);
+         String description = crawlDescription(doc);
 
-         String internalId = productJson.optString("idProduct");
-         String internalPid = internalId;
-         String name = productJson.optString("nameProduct");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".image-show .zoom img", List.of("src"), "https", "images.tcdn.com.br");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".image-show .zoom img", List.of("src"), "https", "images.tcdn.com.br", primaryImage);
-         CategoryCollection categories = crawlCategories(productJson);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, List.of(".page-info-product"));
-         int stock = CrawlerUtils.scrapIntegerFromHtml(doc, ".product-colum-right .info-product span:contains(Estoque:) b", true, 0);
-         boolean isAvailable = stock > 0;
-         Offers offers = isAvailable ? crawlOffers(productJson) : new Offers();
-         List<String> eans = List.of(productJson.optString("EAN"));
+         boolean isAvailable = doc.selectFirst("a.comprarProduto") != null;
+         Offers offers = isAvailable ? crawlOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalPid)
+            .setInternalPid(internalId)
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            .setStock(stock)
             .setOffers(offers)
-            .setEans(eans)
             .build();
 
          products.add(product);
+
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -84,30 +73,35 @@ public class BrasilEspacoprimeCrawler extends Crawler {
       return products;
    }
 
-   private JSONObject crawlPageJson(Document doc) {
-      Element dataScript = doc.selectFirst("script:containsData(dataLayer = [)");
-      String jsonDataString = dataScript != null ? dataScript.data().substring(13, dataScript.data().length() - 1) : null; // removing "dataLayer = [" and the last "}"
-      return CrawlerUtils.stringToJson(jsonDataString);
+   private String crawlDescription(Document doc) {
+      JSONObject jsonDataString = CrawlerUtils.selectJsonFromHtml(doc, "script[type='application/ld+json']", null, " ", false, false);
+      if (!jsonDataString.isEmpty()) {
+         return jsonDataString.optString("description");
+      }
+      return null;
+   }
+
+   private List<String> crawlImagesArray(Document doc) {
+      List<String> cleanImages = new ArrayList<>();
+      List<String> arrayImages = CrawlerUtils.scrapSecondaryImages(doc, "a.elevatezoom-gallery img", List.of("src"), "https", "espacoprime.fbitsstatic.net", null);
+      for (String img : arrayImages) {
+         img = img.split("\\?")[0];
+         cleanImages.add(img);
+      }
+
+      return cleanImages;
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("#product-container") != null;
+      return doc.selectFirst(".detalhe-produto") != null;
    }
 
-   private CategoryCollection crawlCategories(JSONObject productJson) {
-      CategoryCollection categories = new CategoryCollection();
-      List<String> categoriesString = JSONUtils.jsonArrayToStringList(productJson.optJSONArray("breadcrumbDetails"), "name");
-      categories.addAll(categoriesString);
-
-      return categories;
-   }
-
-   private Offers crawlOffers(JSONObject productJson) throws OfferException, MalformedPricingException {
+   private Offers crawlOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(productJson);
+      Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(pricing);
 
-      if (pricing != null){
+      if (pricing != null) {
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
             .setSellerFullName("espacoprime")
@@ -122,19 +116,16 @@ public class BrasilEspacoprimeCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(productJson, "priceSell", true);
-      Double priceFrom = JSONUtils.getDoubleValueFromJSON(productJson, "price", true);
-      String bankSlipPriceString = JSONUtils.getValueRecursive(productJson, "priceSellDetails,0,installment.amount", ",", String.class, null);
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco div.precoPor", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco div.precoDe", null, true, ',', session);
 
-      if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
-         priceFrom = null;
-      }
+      Double bankSlipPriceString = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".pag-produto-boleto .details-content b", null, true, ',', session);
 
-      if (spotlightPrice != null){
-         CreditCards creditCards = scrapCreditCards(productJson);
+      if (spotlightPrice != null) {
+         CreditCards creditCards = scrapCreditCards(doc);
          BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
-            .setFinalPrice(bankSlipPriceString != null ? MathUtils.parseDoubleWithDot(bankSlipPriceString) : spotlightPrice)
+            .setFinalPrice(bankSlipPriceString)
             .build();
 
          return Pricing.PricingBuilder.create()
@@ -143,26 +134,28 @@ public class BrasilEspacoprimeCrawler extends Crawler {
             .setCreditCards(creditCards)
             .setBankSlip(bankSlip)
             .build();
+
       } else {
          return null;
       }
    }
 
-   private CreditCards scrapCreditCards(JSONObject productJson) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Document doc) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
+      Integer installmentNumber = null;
 
-      JSONArray priceSellDetails = productJson.optJSONArray("priceSellDetails");
-      for (Object o : priceSellDetails) {
-         JSONObject installment = (JSONObject) o;
-         Integer installmentNumber = JSONUtils.getIntegerValueFromJSON(installment, "installment.months", null);
-         Double installmentPrice = JSONUtils.getDoubleValueFromJSON(installment, "installment.amount", true);
-         if (installmentNumber != null && installmentPrice != null) {
-            installments.add(Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(installmentNumber)
-               .setInstallmentPrice(installmentPrice)
-               .build());
-         }
+      String installmentString = CrawlerUtils.scrapStringSimpleInfo(doc, ".colunaProduto .fbits-quantidadeParcelas", true);
+      if (installmentString != null) {
+         installmentNumber = Integer.parseInt(installmentString);
+      }
+      Double installmentPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".colunaProduto .fbits-parcela", null, true, ',', session);
+
+      if (installmentNumber != null && installmentPrice != null) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(installmentNumber)
+            .setInstallmentPrice(installmentPrice)
+            .build());
       }
 
       Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(), Card.DINERS.toString());

@@ -16,7 +16,7 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
    private fun requestProducts(): JSONObject {
 
-      val url = "https://siteapi.shopper.com.br/catalog/search?query=${keywordEncoded}"+"&page="+this.currentPage;
+      val url = "https://siteapi.shopper.com.br/catalog/search?query=${keywordEncoded}" + "&page=" + this.currentPage;
 
       val headers: MutableMap<String, String> = HashMap()
 

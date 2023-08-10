@@ -1,11 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -25,53 +19,55 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 
 public class ChileUnimarcCrawler extends Crawler {
 
    public ChileUnimarcCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
 
       List<Product> products = new ArrayList<>();
-
       Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
       JSONObject dataJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
-      JSONObject data = JSONUtils.getValueRecursive(dataJson, "props.pageProps.product.data", JSONObject.class);
-      if (data != null && !data.isEmpty()) {
-         String internalId = JSONUtils.getStringValue(data, "itemId");
-         String internalPid = JSONUtils.getStringValue(data, "productId");
-         String name = JSONUtils.getStringValue(data, "name");
-         JSONArray images = JSONUtils.getJSONArrayValue(data, "images");
-         String primaryImage = !images.isEmpty() ? (String) images.get(0) : "";
-         String description = JSONUtils.getStringValue(data, "description");
-         CategoryCollection categories = scrapCategories(dataJson);
-         Integer stock = JSONUtils.getValueRecursive(data, "sellers.0.availableQuantity", Integer.class, 0);
-         List<String> secondaryImages = scrapSecondaryImages(images, primaryImage);
-         Offers offers = stock > 0 ? scrapOffers(data) : new Offers();
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setOffers(offers)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setCategories(categories)
-            .setStock(stock)
-            .build();
+      JSONArray productsArray = JSONUtils.getValueRecursive(dataJson, "props.pageProps.product.data.products", JSONArray.class);
+      for (Object o : productsArray) {
+         JSONObject data = (JSONObject) o;
+         if (data != null && !data.isEmpty()) {
+            String internalId = JSONUtils.getValueRecursive(data, "item.itemId", String.class);
+            String internalPid = JSONUtils.getValueRecursive(data, "item.productId", String.class);
+            String name = JSONUtils.getValueRecursive(data, "item.nameComplete", String.class);
+            JSONArray images = JSONUtils.getValueRecursive(data, "item.images", JSONArray.class, new JSONArray());
+            String primaryImage = !images.isEmpty() ? (String) images.get(0) : "";
+            String description = JSONUtils.getValueRecursive(data, "item.description", String.class);
+            CategoryCollection categories = scrapCategories(data);
+            Integer stock = JSONUtils.getValueRecursive(data, "price.availableQuantity", Integer.class, 0);
+            List<String> secondaryImages = scrapSecondaryImages(images, primaryImage);
+            Offers offers = stock > 0 ? scrapOffers(data) : new Offers();
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setOffers(offers)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setCategories(categories)
+               .setStock(stock)
+               .build();
 
-         products.add(product);
-      } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + session.getOriginalURL());
+            products.add(product);
+         } else {
+            Logging.printLogDebug(logger, session, "Not a product page " + session.getOriginalURL());
+         }
       }
-
       return products;
    }
 
@@ -84,21 +80,14 @@ public class ChileUnimarcCrawler extends Crawler {
             list.add(image);
          }
       }
-
-
       return list;
    }
 
    private CategoryCollection scrapCategories(JSONObject dataJson) {
-      JSONArray arr = JSONUtils.getValueRecursive(dataJson, "props.pageProps.categories", JSONArray.class);
+      JSONArray arr = JSONUtils.getValueRecursive(dataJson, "item.categories", JSONArray.class, new JSONArray());
       CategoryCollection categories = new CategoryCollection();
-      int cont = 0;
-      for (Integer i = 0; i < arr.length(); i++) {
+      for (int i = 0; i < Math.min(3, arr.length()); i++) {
          categories.add((String) arr.get(i));
-         cont++;
-         if (cont == 3) {
-            return categories;
-         }
       }
       return categories;
    }
@@ -124,21 +113,18 @@ public class ChileUnimarcCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
-      Integer spotlightPriceInt = JSONUtils.getValueRecursive(data, "sellers.0.price", Integer.class);
+      Integer spotlightPriceInt = JSONUtils.getValueRecursive(data, "price.price", Integer.class);
       if (spotlightPriceInt == null) {
-         Double priceDouble = JSONUtils.getValueRecursive(data, "sellers.0.price", Double.class);
+         Double priceDouble = JSONUtils.getValueRecursive(data, "price.price", Double.class);
          spotlightPriceInt = priceDouble.intValue();
       }
-      spotlightPriceInt = spotlightPriceInt * 100;
-      Integer priceFromInt = JSONUtils.getValueRecursive(data, "sellers.0.priceWithoutDiscount", Integer.class);
+      Integer priceFromInt = JSONUtils.getValueRecursive(data, "price.priceWithoutDiscount", Integer.class);
       if (priceFromInt == null) {
-         Double priceDouble = JSONUtils.getValueRecursive(data, "sellers.0.priceWithoutDiscount", Double.class);
+         Double priceDouble = JSONUtils.getValueRecursive(data, "price.priceWithoutDiscount", Double.class);
          priceFromInt = priceDouble.intValue();
       }
-      priceFromInt = priceFromInt * 100;
-      Double spotlightPrice = spotlightPriceInt / 100.0;
-      Double priceFrom = priceFromInt / 100.0;
-
+      Double spotlightPrice = spotlightPriceInt * 1.0;
+      Double priceFrom = priceFromInt * 1.0;
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
@@ -170,33 +156,6 @@ public class ChileUnimarcCrawler extends Crawler {
             .setIsShopCard(false)
             .build());
       }
-
       return creditCards;
    }
-
-
-   @Override
-   protected Response fetchResponse() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      headers.put("accept-encoding", "gzip, deflate, br");
-      headers.put("authority", "www.unimarc.cl");
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setHeaders(headers)
-         .setSendUserAgent(false)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.SMART_PROXY_CL_HAPROXY))
-         .build();
-
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), dataFetcher), session, "get");
-
-      return response;
-   }
-
-
 }

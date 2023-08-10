@@ -68,6 +68,11 @@ public class MexicoLacomerCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
+         .setProxyservice(List.of(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX
+         ))
          .build();
 
       String content = this.dataFetcher

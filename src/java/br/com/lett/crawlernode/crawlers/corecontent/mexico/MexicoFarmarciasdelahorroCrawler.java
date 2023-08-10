@@ -22,6 +22,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -45,8 +46,9 @@ public class MexicoFarmarciasdelahorroCrawler extends Crawler {
    protected Response fetchResponse() {
       Map<String, String> headers = new HashMap<>();
       headers.put("authority", "www.fahorro.com");
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+      headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36");
 
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
@@ -54,7 +56,7 @@ public class MexicoFarmarciasdelahorroCrawler extends Crawler {
             ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_MX,
             ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            ProxyCollection.SMART_PROXY_MX
          ))
          .setHeaders(headers)
          .build();

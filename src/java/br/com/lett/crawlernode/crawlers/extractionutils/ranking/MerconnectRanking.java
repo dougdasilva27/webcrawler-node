@@ -8,9 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -26,31 +24,33 @@ public class MerconnectRanking extends CrawlerRankingKeywords {
     *
     * @return store id for cep
     */
-   protected String getStoreId(){
+   protected String getStoreId() {
       return session.getOptions().optString("STORE_ID");
-   };
+   }
+
 
    /**
     * Can be found in the request https://www.merconnect.com.br/oauth/token
     *
     * @return client id
     */
-   protected String getClientId(){
+   protected String getClientId() {
       return session.getOptions().optString("CLIENT_ID");
-   };
+   }
 
    /**
     * Can be found in the request https://www.merconnect.com.br/oauth/token
     *
     * @return client secret
     */
-   protected String getClientSecret(){
+   protected String getClientSecret() {
       return session.getOptions().optString("CLIENT_SECRET");
-   };
+   }
 
-   protected String getHomePage(){
+   protected String getHomePage() {
       return session.getOptions().optString("STORE_HOME");
-   };
+   }
+
 
    public MerconnectRanking(Session session) {
       super(session);
@@ -64,6 +64,7 @@ public class MerconnectRanking extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "gzip, deflate, br");
       headers.put("Content-Type", "application/json");
+      headers.put("origin", "https://loja.centerbox.com.br");
       headers.put("Authorization", "Bearer " + fetchApiToken(headers));
 
       Request request = Request.RequestBuilder.create()
@@ -142,26 +143,29 @@ public class MerconnectRanking extends CrawlerRankingKeywords {
    protected String retrieveInternalId(JSONObject product) {
       return product.optString("id");
    }
-   private String scrapName(JSONObject prod){
-         return prod.optString("short_description");
-   }
-   private String scrapImg(JSONObject prod){
 
-         return prod.optString("image");
+   private String scrapName(JSONObject prod) {
+      return prod.optString("short_description");
    }
-   private Integer scrapPrice(JSONObject prod){
+
+   private String scrapImg(JSONObject prod) {
+
+      return prod.optString("image");
+   }
+
+   private Integer scrapPrice(JSONObject prod) {
       try {
          //usei o try por que o optdouble retorna um NAN que se eu tentar fazer o calculo vai quebrar a função
          Double price = prod.optDouble("price");
          Integer priceInCents = (int) Math.round(100 * price);
          return priceInCents;
-      }catch (NullPointerException e){
+      } catch (NullPointerException e) {
          return 0;
       }
    }
 
-   private boolean scrapAvailable(JSONObject prod){
-         return prod.optInt("stock") > 0 ;
+   private boolean scrapAvailable(JSONObject prod) {
+      return prod.optInt("stock") > 0;
    }
 
    @Override

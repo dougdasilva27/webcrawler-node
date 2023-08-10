@@ -80,8 +80,8 @@ public class SaopauloSondaCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h3.product--title_in", false);
          boolean available = crawlAvailability(doc);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li > a");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".owl-carousel .prod", Arrays.asList("src"), "hhtps", "www.sondadelivery.com.br");
-         List<String> images = CrawlerUtils.scrapSecondaryImages(doc, "#owl-carousel--gallery li img", Arrays.asList("src"), "hhtps", "www.sondadelivery.com.br", primaryImage);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".owl-carousel .prod", Arrays.asList("data-zoom-image"), "https", "www.sondadelivery.com.br");
+         List<String> images = CrawlerUtils.scrapSecondaryImages(doc, ".owl-carousel .prod", Arrays.asList("data-zoom-image"), "https", "www.sondadelivery.com.br", primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-details"));
          Offers offers = available ? scrapOffers(doc) : new Offers();
 

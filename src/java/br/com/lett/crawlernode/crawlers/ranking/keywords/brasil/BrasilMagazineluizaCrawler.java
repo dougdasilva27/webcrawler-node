@@ -34,10 +34,9 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
       Document doc;
       int attempts = 0;
       Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36");
       headers.put("authority", "www.magazineluiza.com.br");
-      headers.put("accept-encoding", "gzip, deflate, br");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
 
       do {
          Request request = Request.RequestBuilder.create()
@@ -103,16 +102,16 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
          for (Element e : elements) {
 
             String urlProduct = CrawlerUtils.scrapUrl(e, "> a", "href", "https", "www.magazineluiza.com.br");
-            String internalId = getProductId(urlProduct);
+            String internalPid = getProductPid(urlProduct);
             String imageUrl = CrawlerUtils.scrapUrl(e, "img", "src", "https", "a-static.mlcdn.com.br");
-            int price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "p[data-testid='price-value']", null, true, ',', session, 0);
+            int price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "p[data-testid='price-value']", null, true, ',', session, null);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "h2", true);
             boolean isAvailable = price != 0;
+            price = isAvailable ? price : null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(urlProduct)
-               .setInternalId(internalId)
-               .setInternalPid(null)
+               .setInternalPid(internalPid)
                .setName(name)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
@@ -139,7 +138,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
       this.log("Total: " + this.totalProducts);
    }
 
-   private String getProductId(String url) {
+   private String getProductPid(String url) {
       String id = null;
       Pattern pattern = Pattern.compile("p\\/([a-z-0-9]+)\\/");
       Matcher matcher = pattern.matcher(url);

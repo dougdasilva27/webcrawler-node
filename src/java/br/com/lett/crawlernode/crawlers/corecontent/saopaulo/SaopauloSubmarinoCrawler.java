@@ -1,24 +1,20 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.apache.http.cookie.Cookie;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.util.CommonMethods;
 
+import java.net.HttpCookie;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
+
+import static br.com.lett.crawlernode.util.CrawlerUtils.setCookie;
 
 public class SaopauloSubmarinoCrawler extends B2WCrawler {
 
@@ -37,4 +33,24 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       super.urlPageOffers = URL_PAGE_OFFERS;
    }
 
+   @Override
+   public void handleCookiesBeforeFetch() {
+
+      try {
+         HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", 3130))).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(homePage))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+         List<String> cookiesResponse = response.headers().map().get("Set-Cookie");
+         for (String cookieStr : cookiesResponse) {
+            HttpCookie cookie = HttpCookie.parse(cookieStr).get(0);
+            cookies.add(setCookie(cookie.getName(), cookie.getValue(), CommonMethods.getLast(homePage.split("//")), "/"));
+         }
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
+   }
 }

@@ -18,7 +18,6 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import cdjd.org.apache.arrow.flatbuf.Int;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -30,10 +29,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PeruInkafarmaCrawler extends Crawler {
 
    public static final String GOOGLE_KEY = "AIzaSyC2fWm7Vfph5CCXorWQnFqepO8emsycHPc";
+   private final String grammatureRegex = "(\\d+[.,]?\\d*\\s?)(ml|l|g|gr|mg|kg)";
+   private final String quantityRegex = "(\\d+[.,]?\\d*\\s?)(und|un)";
    private static final String SELLER_NAME = "inkafarma";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(),
       Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.DINERS.toString());
@@ -135,7 +138,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
          String internalId = productJson.optString("id");
          String internalPid = internalId;
-         String name = productJson.optString("name");
+         String name = scrapName(productJson);
          String description = productJson.optString("longDescription");
 
          String primaryImage = JSONUtils.getValueRecursive(productJson, "imageList.0.url", String.class);
@@ -183,6 +186,35 @@ public class PeruInkafarmaCrawler extends Crawler {
 
 
       return list;
+   }
+
+   private String scrapName(JSONObject productJson) {
+      String name = productJson.optString("name");
+      String quantity = productJson.optString("noFractionatedText");
+
+      if (!stringHasPattern(name, grammatureRegex) && stringHasPattern(quantity, grammatureRegex)) {
+         name += " " + extractPattern(quantity, grammatureRegex);
+      }
+
+      if (!stringHasPattern(name, quantityRegex) && stringHasPattern(quantity, quantityRegex)) {
+         name += " " + extractPattern(quantity, quantityRegex);
+      }
+
+      return name;
+   }
+
+   private boolean stringHasPattern(String string, String patternRegex) {
+      Pattern pattern = Pattern.compile(patternRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+      Matcher matcher = pattern.matcher(string);
+
+      return matcher.find();
+   }
+
+   private String extractPattern(String string, String patternRegex) {
+      Pattern pattern = Pattern.compile(patternRegex, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+      Matcher matcher = pattern.matcher(string);
+
+      return matcher.find() ? matcher.group(0) : "";
    }
 
    private CategoryCollection scrapCategories(JSONObject productJson) {

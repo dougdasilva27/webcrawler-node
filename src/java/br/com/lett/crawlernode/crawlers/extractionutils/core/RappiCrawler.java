@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -28,7 +27,6 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
-import org.apache.avro.data.Json;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -102,8 +100,12 @@ public abstract class RappiCrawler extends Crawler {
                   productJson = JSONUtils.getValueRecursive(fallback.get(key), "master_product_detail_response.data.components.0.resource.product", JSONObject.class, new JSONObject());
                }
 
-               if (productJson.isEmpty()) {
+               if (productJson.isEmpty()) { // product fallback
                   productJson = JSONUtils.getValueRecursive(fallback.get(key), "primaryStore.product", JSONObject.class, new JSONObject());
+               }
+
+               if (productJson.isEmpty()) { //product unavailable fallback
+                  productJson = fallback.optJSONObject(key);
                }
             }
          }
@@ -295,7 +297,7 @@ public abstract class RappiCrawler extends Crawler {
          ))
          .build();
 
-      JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post").getBody());
+      JSONObject json = JSONUtils.stringToJson(CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false).getBody());
 
       String token = json.optString("access_token");
       String tokenType = json.optString("token_type");
@@ -418,7 +420,7 @@ public abstract class RappiCrawler extends Crawler {
       String description = productJson.optString("description");
 
       if (!stringHasGrammature(name) && stringHasGrammature(presentation)) {
-         name += " " + extractGrammature(presentation);
+         name += " " + presentation;
       } else if (!stringHasGrammature(name) && stringHasGrammature(description)) {
          name += " " + extractGrammature(description);
       }
@@ -456,7 +458,7 @@ public abstract class RappiCrawler extends Crawler {
       return offers;
    }
 
-   public static Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
+   public Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
       Double priceFrom = productJson != null ? JSONUtils.getDoubleValueFromJSON(productJson, "real_price", true) : null;
       Double price = productJson != null ? JSONUtils.getDoubleValueFromJSON(productJson, "balance_price", true) : null;
 

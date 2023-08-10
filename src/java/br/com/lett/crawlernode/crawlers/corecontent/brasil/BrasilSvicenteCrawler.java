@@ -41,7 +41,7 @@ public class BrasilSvicenteCrawler extends Crawler {
    }
 
    private void setHeaders() {
-      this.headers.put(HttpHeaders.ACCEPT, "application/json, text/javascript, */*; q=0.01");
+      this.headers.put(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
       this.headers.put(HttpHeaders.REFERER, "https://www.svicente.com.br/pagina-inicial");
       this.headers.put("authority", "www.svicente.com.br");
    }
@@ -57,11 +57,15 @@ public class BrasilSvicenteCrawler extends Crawler {
    }
 
    @Override
-   public void handleCookiesBeforeFetch() {
+   protected Response fetchResponse() {
       String store = session.getOptions().optString("store");
+      HashMap<String, String> headers = new HashMap<>();
+      headers.put("cookie", "dwsid=Yvz9ZF-7WCb0S2EuzkGnKvWZmgpiOxl8D4fOrHQl8gkiFbhe3fC8jYK59ve7G8mSp2DGXdQG4oJZzFfakVmV-A==; hasSelectedStore=" + store + ";dw_store=" + store + ";");
+
       Request request = Request.RequestBuilder.create()
-         .setUrl("https://www.svicente.com.br/on/demandware.store/Sites-SaoVicente-Site/pt_BR/Stores-SelectStore?storeId=" + store)
-         .setHeaders(this.headers)
+         .setUrl("https://www.svicente.com.br/on/demandware.store/Sites-SaoVicente-Site/pt_BR/Product-ShowQuickView?pid=" + getId())
+         .setHeaders(headers)
+         .setCookies(this.cookies)
          .build();
       Response response = new ApacheDataFetcher().get(session, request);
       if (response.getCookies() != null && !response.getCookies().isEmpty()) {
@@ -73,17 +77,7 @@ public class BrasilSvicenteCrawler extends Crawler {
          }
 
       }
-   }
-
-   @Override
-   protected Response fetchResponse() {
-
-      Request reqForProduct = Request.RequestBuilder.create()
-         .setUrl("https://www.svicente.com.br/on/demandware.store/Sites-SaoVicente-Site/pt_BR/Product-ShowQuickView?pid=" + getId())
-         .setHeaders(this.headers)
-         .setCookies(this.cookies)
-         .build();
-      return new ApacheDataFetcher().get(session, reqForProduct);
+      return response;
    }
 
    @Override
@@ -163,6 +157,17 @@ public class BrasilSvicenteCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getValueRecursive(json, "price.sales.value", Double.class, null);
       Double priceFrom = JSONUtils.getValueRecursive(json, "price.list.value", Double.class, null);
+
+      if (spotlightPrice == null) {
+         spotlightPrice = JSONUtils.getValueRecursive(json, "price.list.value", Double.class, null);
+         priceFrom = null;
+      }
+
+      if (spotlightPrice == null) {
+         Integer priceInteger = JSONUtils.getValueRecursive(json, "price.sales.value", Integer.class, null);
+         spotlightPrice = priceInteger.doubleValue();
+      }
+
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 

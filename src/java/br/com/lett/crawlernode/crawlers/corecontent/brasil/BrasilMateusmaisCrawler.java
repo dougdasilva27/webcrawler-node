@@ -46,7 +46,7 @@ public class BrasilMateusmaisCrawler extends Crawler {
       }
 
       Request request = Request.RequestBuilder.create()
-         .setUrl("https://app.mateusmais.com.br/market/" + marketCode + "/product/" + CommonMethods.getLast(session.getOriginalURL().split("/")))
+         .setUrl("https://app.mateusmais.com.br/api/products/product-detail/" + CommonMethods.getLast(session.getOriginalURL().split("/")) + "/")
          .build();
 
       return this.dataFetcher.get(session, request);
@@ -68,8 +68,8 @@ public class BrasilMateusmaisCrawler extends Crawler {
          String primaryImage = productJson.optString("image");
          List<String> eans = Collections.singletonList(productJson.optString("barcode"));
          CategoryCollection categories = getCategory(productJson);
-         boolean available = productJson.optBoolean("available");
-         Offers offers = available ? scrapOffers(productJson) : new Offers();
+         Integer stock = productJson.optInt("amount_in_stock");
+         Offers offers = stock > 0 ? scrapOffers(productJson) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -80,6 +80,7 @@ public class BrasilMateusmaisCrawler extends Crawler {
             .setSecondaryImages(secondaryImages)
             .setCategories(categories)
             .setEans(eans)
+            .setStock(stock)
             .setDescription(description)
             .setOffers(offers)
             .build();

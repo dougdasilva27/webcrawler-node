@@ -16,15 +16,22 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Arrays;
 import java.util.Collections;
 
 import static br.com.lett.crawlernode.util.CrawlerUtils.getRedirectedUrl;
 
 public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
+   private String idSucursal = this.session.getOptions().optString("idSucursal", "200");
+
+
    public ArgentinaCotoCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.APACHE;
    }
 
    @Override
@@ -53,7 +60,7 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      this.pageSize = 72;
+      this.pageSize = 12;
       this.log("Página " + this.currentPage);
       String url = getPageUrl();
       this.log("URL : " + url);
@@ -85,13 +92,39 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productRanking);
          }
+      } else {
+         this.log("Não foram encontrados produtos para a página " + this.currentPage);
       }
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
    private String getPageUrl() {
-      int productsShow = this.currentPage == 1 ? 0 : this.pageSize * (this.currentPage - 1);
-      return "https://www.cotodigital3.com.ar/sitios/cdigi/browse?Dy=1&Nf=product.startDate%7CLTEQ+1.640304E12%7C%7Cproduct.endDate%7CGTEQ+1.640304E12&No=" + productsShow + "&Nr=AND%28product.language%3Aespa%C3%B1ol%2Cproduct.sDisp_200%3A1004%2Cproduct.siteId%3ACotoDigital%2COR%28product.siteId%3ACotoDigital%29%29&Nrpp=72&Ntt=" + this.keywordEncoded + "&Nty=1&_D%3AidSucursal=+&_D%3AsiteScope=+&atg_store_searchInput=" + this.keywordEncoded + "&idSucursal=200&siteScope=ok";
+      int pagination = this.pageSize * this.currentPage;
+      String url = "https://www.cotodigital3.com.ar" + getUrlKeyword();
+      url += "?No=" + pagination;
+      url += "&Nr=AND%28product.language%3Aespa%C3%B1ol%2Cproduct.sDisp_" + this.idSucursal + "%3A1004%2COR%28product.siteId%3ACotoDigital%29%29";
+      url += "&Nrpp=" + this.pageSize;
+      return url;
+   }
+
+   private String getUrlKeyword() {
+      Document doc = currentDoc();
+      String content = doc.select("meta[name=DC.identifier][scheme=DCTERMS.URI]").first().attr("content");
+      return content;
+   }
+
+   private Document currentDoc() {
+      try {
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create("https://www.cotodigital3.com.ar/sitios/cdigi/browse?Ntt=" + this.keywordEncoded))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return Jsoup.parse(response.body());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
    }
 
    @Override

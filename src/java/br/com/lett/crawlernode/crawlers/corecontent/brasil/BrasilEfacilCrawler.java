@@ -1,43 +1,35 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.*;
-
-import br.com.lett.crawlernode.util.CommonMethods;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import com.google.common.collect.Sets;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
-import models.RatingsReviews;
-import models.pricing.BankSlip;
-import models.pricing.CreditCard;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
-import models.pricing.Installments;
-import models.pricing.Pricing;
+import models.pricing.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilEfacilCrawler extends Crawler {
 
-   private static final String SELLER_FULL_NAME = "eFácil";
+   private static final String SELLER_FULL_NAME = "efacil";
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilEfacilCrawler(Session session) {
       super(session);
@@ -47,178 +39,184 @@ public class BrasilEfacilCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
+      JSONObject dataJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
+      JSONObject productInfo = JSONUtils.getValueRecursive(dataJson, "props.pageProps.staticProductData", JSONObject.class);
 
-      if (isProductPage(doc)) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false);
-         String internalPid = scrapInternalPid(doc);
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=productId]", "value");
-         CategoryCollection categories = scrapCategories(doc);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-photo a", Collections.singletonList("href"), "https", "efacil.com.br");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".wrap-thumbnails .thumbnails a:not(:first-child)", Collections.singletonList("href"), "https", "efacil.com.br", primaryImage);
-         String description = scrapDescription(doc);
-         boolean available = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-secondary-info #widget_product_info_viewer", false) != null;         Offers offers = available ? scrapOffer(doc, internalPid, internalId) : new Offers();
-
-         String codeTrustVox = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product-star a div", "data-trustvox-product-code-js");
-         RatingsReviews reviews = new TrustvoxRatingCrawler(session, "545", logger).extractRatingAndReviews(codeTrustVox, doc, dataFetcher);
-
-         // Creating the product
+      if (productInfo != null && !productInfo.isEmpty()) {
+         String internalId = JSONUtils.getValueRecursive(productInfo, "idProduto", String.class);
+         String name = JSONUtils.getValueRecursive(productInfo, "nome", String.class);
+         JSONArray images = JSONUtils.getValueRecursive(productInfo, "skus.0.imagens", JSONArray.class, new JSONArray());
+         String primaryImage = JSONUtils.getValueRecursive(images, "0.url1000", String.class);
+         List<String> secondaryImages = getSecondaryImages(images);
+         String description = getDescription(productInfo);
+         List<String> categories = getCategories(productInfo);
+         boolean available = JSONUtils.getValueRecursive(productInfo, "skus.0.disponivel", Boolean.class);
+         Offers offers = available ? scrapOffers(productInfo) : new Offers();
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setName(name)
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setCategories(categories)
-               .setDescription(description)
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setOffers(offers)
-               .setRatingReviews(reviews)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalId)
+            .setName(name)
+            .setOffers(offers)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setCategories(categories)
+            .build();
 
          products.add(product);
-
       } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+         Logging.printLogDebug(logger, session, "Not a product page " + session.getOriginalURL());
       }
-
       return products;
    }
 
-   private boolean isProductPage(Document doc) {
-      return !doc.select(".product-details > div").isEmpty();
+   private String getDescription(JSONObject productInfo) {
+      StringBuilder description = new StringBuilder();
+
+      String longDescription = JSONUtils.getValueRecursive(productInfo, "descricaoLonga", String.class, "");
+      if (longDescription != null && !longDescription.isEmpty()) {
+         description.append(longDescription);
+      }
+
+      String shortDescription = JSONUtils.getValueRecursive(productInfo, "descricao", String.class, "");
+      if (shortDescription != null && !shortDescription.isEmpty()) {
+         description.append(description);
+      }
+
+      return description.toString();
    }
 
-   private String scrapInternalPid(Document doc) {
-      String rawPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-details > div", "id");
+   private List<String> getCategories(JSONObject productInfo) {
+      List<String> categories = new ArrayList<>();
 
-      return rawPid != null? CommonMethods.getLast(rawPid.split("_")): null;
+      String category = JSONUtils.getValueRecursive(productInfo, "categoria", String.class, "");
+      if (category != null && !category.isEmpty()) {
+         categories.add(category);
+      }
+
+      String subCategory = JSONUtils.getValueRecursive(productInfo, "subcategoria", String.class, "");
+      if (subCategory != null && !subCategory.isEmpty()) {
+         categories.add(subCategory);
+      }
+
+      return categories;
    }
 
-   private CategoryCollection scrapCategories(Document doc) {
 
-      return CrawlerUtils.crawlCategories(doc, "#widget_breadcrumb > ul > li > a", false);
+   private List<String> getSecondaryImages(JSONArray images) {
+      List<String> secondaryImages = new ArrayList<>();
+      if (images != null) {
+         for (Object o : images) {
+            JSONObject data = (JSONObject) o;
+            String image = JSONUtils.getValueRecursive(data, "url1000", String.class);
 
+            if (image != null) {
+               secondaryImages.add(image);
+            }
+         }
+         if (secondaryImages.size() > 0) {
+            secondaryImages.remove(0);
+         }
+         return secondaryImages;
+      }
+      return null;
    }
 
-   private String scrapDescription(Document doc) {
-      return CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#tab1_content div"," #tabContainer"));
-   }
 
-   private Offers scrapOffer(Document doc, String internalPid, String internalId) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(JSONObject productInfo) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
-      List<String> sales = scrapSales(internalPid, internalId);
+      Pricing pricing = scrapPricing(productInfo);
+      List<String> sales = new ArrayList<>();
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
-      offers.add(Offer.OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(getSellerName(doc))
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(getSellerName(doc).equalsIgnoreCase(SELLER_FULL_NAME))
-            .setSales(sales)
-            .setPricing(pricing)
-            .build());
+      offers.add(new Offer.OfferBuilder()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(this.SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       return offers;
 
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".line-through", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".priceby span span", null, false, ',', session);
-      Double bankSlip = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceViewInCash > span.blue > span", null, false, ',', session);
-      if (bankSlip == null) {
-         bankSlip = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#ProductPriceView > div.priceby > span.large > span", null, false, ',', session);
+   private Pricing scrapPricing(JSONObject productInfo) throws MalformedPricingException {
+      String spotlightPriceString = JSONUtils.getValueRecursive(productInfo, "skus.0.preco.precoPorText", String.class, "");
+      String priceFromString = JSONUtils.getValueRecursive(productInfo, "skus.0.preco.precoDeText", String.class, "");
+      Double spotlightPrice = null;
+      Double priceFrom = null;
+
+      if (spotlightPriceString != null && !spotlightPriceString.isEmpty()) {
+         spotlightPrice = MathUtils.parseDoubleWithComma(spotlightPriceString);
       }
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+
+      if (priceFromString != null && !priceFromString.isEmpty()) {
+         priceFrom = MathUtils.parseDoubleWithComma(priceFromString);
+      }
+
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+      CreditCards creditCards = scrapCreditCards(productInfo, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
-            .setPriceFrom(priceFrom)
-            .setSpotlightPrice(spotlightPrice)
-            .setBankSlip(scrapBankSlip(bankSlip))
-            .setCreditCards(creditCards)
-            .build();
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
 
    }
 
-   private BankSlip scrapBankSlip(Double bankSlipPrice) throws MalformedPricingException {
-      return BankSlip.BankSlipBuilder.create()
-            .setFinalPrice(bankSlipPrice)
-            .build();
-   }
-
-   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(JSONObject productInfo, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments installments = scrapInstallments(doc);
+      Installments installments = scrapInstallments(productInfo);
       if (installments.getInstallments().isEmpty()) {
          installments.add(Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;
    }
 
-   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+   public Installments scrapInstallments(JSONObject productInfo) throws MalformedPricingException {
       Installments installments = new Installments();
-      Element installmentsCard = doc.selectFirst(".container-price-installment span.blue");
 
-      if (installmentsCard != null) {
-         String installmentString = installmentsCard.ownText().replaceAll("[^0-9]", "").trim();
-         Integer installment = !installmentString.isEmpty() ? Integer.parseInt(installmentString) : null;
-         Element valueElement = doc.selectFirst("#valBold");
+      if (productInfo != null && !productInfo.isEmpty()) {
+         Integer installment = JSONUtils.getValueRecursive(productInfo, "preco.parcelas.numeroParcelas", Integer.class, 0);
+         Double value = MathUtils.parseDoubleWithComma(JSONUtils.getValueRecursive(productInfo, "preco.parcelas.valorParcela", String.class, ""));
 
-         if (valueElement != null && installment != null) {
-            Double value = MathUtils.parseDoubleWithComma(valueElement.text());
-
-            installments.add(Installment.InstallmentBuilder.create()
-                  .setInstallmentNumber(installment)
-                  .setInstallmentPrice(value)
-                  .build());
+         if (installment == null || installment == 0) {
+            installment++;
          }
-      }
 
+         if (value == null) {
+            String valueString = JSONUtils.getValueRecursive(productInfo, "skus.0.preco.precoPorText", String.class, "");
+            if (valueString != null && !valueString.isEmpty()) {
+               value = MathUtils.parseDoubleWithComma(valueString);
+            }
+         }
+
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(installment)
+            .setInstallmentPrice(value)
+            .build());
+      }
       return installments;
+
    }
 
-   private List<String> scrapSales(String internalPid, String internalId) {
-
-      String apiPrice = "https://www.efacil.com.br/webapp/wcs/stores/servlet/ProductPriceView?storeId=10154&catalogId=10051&productInfoPage=true&type=product&productIdPRD=" + internalPid + "&catalogEntryId=" + internalId;
-
-      Map<String, String> headers = new HashMap<>();
-
-      headers.put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36");
-      headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("Accept-Encoding", "gzip, deflate, br");
-      headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-
-      Request request = RequestBuilder.create().setUrl(apiPrice).setHeaders(headers).mustSendContentEncoding(false).build();
-      String response = this.dataFetcher.get(session, request).getBody();
-      Document htmlPrice = Jsoup.parse(response);
-
-      List<String> sales = new ArrayList<>();
-      String sale = CrawlerUtils.scrapStringSimpleInfo(htmlPrice, "#entryPriceAtacarejo", false);
-      if (sale != null) {
-         sales.add(sale);
-      }
-
-      return sales;
-   }
-
-   private String getSellerName(Document doc) {
-
-      return CrawlerUtils.scrapStringSimpleInfo(doc, "#nomeEntregue", false);
-   }
 }

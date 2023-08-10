@@ -1,13 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.costarica;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -16,15 +9,16 @@ import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
-import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 
 public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
 
@@ -101,26 +95,23 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
       String apiUrl = "https://fu5xfx7knl-2.algolianet.com/1/indexes/*/queries?x-algolia-api-key=113941a18a90ae0f17d602acd16f91b2&x-algolia-application-id=FU5XFX7KNL";
       int page = this.currentPage - 1;
       String payload = "{\"requests\":[{\"indexName\":\"Product_CatalogueV2\",\"params\":\"query=" + this.keywordEncoded + "&optionalWords=%5B%22" + this.keywordEncoded + "%22%5D&filters=NOT%20marca%3AMASTERCHEF%20AND%20NOT%20marca%3APANINI&page=" + page + "&getRankingInfo=true&facets=%5B%22marca%22%2C%22addedSugarFree%22%2C%22fiberSource%22%2C%22lactoseFree%22%2C%22lfGlutemFree%22%2C%22lfOrganic%22%2C%22lfVegan%22%2C%22lowFat%22%2C%22lowSodium%22%2C%22preservativeFree%22%2C%22sweetenersFree%22%2C%22parentProductid%22%2C%22parentProductid2%22%2C%22parentProductid_URL%22%2C%22catecom%22%5D&facetFilters=%5B%5B%22storeDetail." + storeId + ".storeid%3A" + storeId + "%22%5D%5D\"}]}";
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
-      headers.put("origin", "https://automercado.cr");
-      headers.put("authorization", "https://automercado.cr");
-      headers.put("connect", "keep-alive");
-      Request request = Request.RequestBuilder.create()
-         .setUrl(apiUrl)
-         .setHeaders(headers)
-         .setPayload(payload)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-         ))
-         .setFollowRedirects(false)
-         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().mustUseMovingAverage(true).build())
-         .mustSendContentEncoding(false)
-         .setSendUserAgent(true)
-         .build();
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new FetcherDataFetcher(), new JsoupDataFetcher(), new ApacheDataFetcher()), session, "post");
+      String object;
 
-      return CrawlerUtils.stringToJson(response.getBody());
+      try {
+         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .POST(HttpRequest.BodyPublishers.ofString(payload))
+            .uri(URI.create(apiUrl))
+            .headers("Content-type", "application/x-www-form-urlencoded", "origin", "https://automercado.cr", "authorization", "https://automercado.cr")
+            .build();
+
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         object = response.body();
+
+      } catch (IOException | InterruptedException e) {
+         throw new RuntimeException("Failed to scrape API: " + apiUrl, e);
+      }
+
+      return CrawlerUtils.stringToJson(object);
    }
 }

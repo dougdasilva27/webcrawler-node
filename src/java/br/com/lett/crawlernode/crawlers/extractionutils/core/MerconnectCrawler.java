@@ -4,13 +4,13 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -26,30 +26,29 @@ public class MerconnectCrawler extends Crawler {
    public MerconnectCrawler(Session session) {
       super(session);
       config.setFetcher(FetchMode.APACHE);
+      config.setParser(Parser.JSON);
    }
 
    //Client ID and Client Secret can be found in token request. If you cannot found this request in browser, open the website in anonymous mode tracking the requests.
-   protected String getClientId(){
+   protected String getClientId() {
       return session.getOptions().optString("CLIENT_ID");
-   };
+   }
 
-   protected String getClientSecret(){
+   protected String getClientSecret() {
       return session.getOptions().optString("CLIENT_SECRET");
-   };
+   }
 
    //The store id can be found in the product json in the key "marketId"
-   protected  String getStoreId(){
+   protected String getStoreId() {
       return session.getOptions().optString("STORE_ID");
-   };
+   }
 
-   protected String getSellerName(){
+   protected String getSellerName() {
       return session.getOptions().optString("SELLER_NAME");
-   };
+   }
 
    @Override
-   protected JSONObject fetch() {
-      JSONObject json = new JSONObject();
-
+   protected Response fetchResponse() {
       String[] splittedUrl = session.getOriginalURL().split("/");
 
       if (splittedUrl.length > 0) {
@@ -60,6 +59,7 @@ public class MerconnectCrawler extends Crawler {
          headers.put("Accept-Encoding", "gzip, deflate, br");
          headers.put("Content-Type", "application/json");
          headers.put("Connection", "keep-alive");
+         headers.put("origin", "https://loja.centerbox.com.br");
          headers.put("Authorization", "Bearer " + fetchApiToken(headers));
 
          Request request = Request.RequestBuilder.create()
@@ -68,11 +68,9 @@ public class MerconnectCrawler extends Crawler {
             .build();
 
          Response response = dataFetcher.get(session, request);
-
-         json = CrawlerUtils.stringToJson(response.getBody());
+         return response;
       }
-
-      return json;
+      return null;
    }
 
    protected String fetchApiToken(Map<String, String> headers) {
@@ -141,7 +139,9 @@ public class MerconnectCrawler extends Crawler {
       return products;
    }
 
-   protected String scrapDescription(JSONObject jsonSku) { return jsonSku.optString("aditional_info"); }
+   protected String scrapDescription(JSONObject jsonSku) {
+      return jsonSku.optString("aditional_info");
+   }
 
    protected String scrapInternalId(JSONObject json) {
       return json.optString("id");
@@ -233,6 +233,4 @@ public class MerconnectCrawler extends Crawler {
 
       return creditCards;
    }
-
-
 }

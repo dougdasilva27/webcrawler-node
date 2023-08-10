@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
@@ -51,6 +52,7 @@ public class MexicoAmazonCrawler extends Crawler {
 
    public MexicoAmazonCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.MIRANHA);
       super.config.setParser(Parser.HTML);
    }
 
@@ -144,6 +146,10 @@ public class MexicoAmazonCrawler extends Crawler {
                seller = seller.substring(0, seller.length() - 1);
             }
          }
+      }
+
+      if (seller == null) {
+         seller = CrawlerUtils.scrapStringSimpleInfo(doc, "div.tabular-buybox-container .tabular-buybox-text .tabular-buybox-text .tabular-buybox-text-message #sellerProfileTriggerId", false);
       }
 
       if (seller == null) {
@@ -488,20 +494,18 @@ public class MexicoAmazonCrawler extends Crawler {
          marketplaceUrl = doc.selectFirst(".a-box-inner .olp-text-box");
       }
 
-      if (marketplaceUrl != null) {
+      Document docMarketplace = fetchDocumentsOffersRequest(page, internalId);
+      docs.add(docMarketplace);
 
-         Document docMarketplace = fetchDocumentsOffersRequest(page, internalId);
+      int totalOffers = CrawlerUtils.scrapIntegerFromHtml(docMarketplace, "#aod-filter-offer-count-string", false);
+      Elements offers = docMarketplace.select("#aod-offer");
+
+      if (totalOffers != offers.size()) {
+         page++;
+         docMarketplace = fetchDocumentsOffersRequest(page, internalId);
          docs.add(docMarketplace);
-
-         int totalOffers = CrawlerUtils.scrapIntegerFromHtml(docMarketplace, "#aod-filter-offer-count-string", false);
-         Elements offers = docMarketplace.select("#aod-offer");
-
-         if (totalOffers != offers.size()) {
-            page++;
-            docMarketplace = fetchDocumentsOffersRequest(page, internalId);
-            docs.add(docMarketplace);
-         }
       }
+
       return docs;
    }
 

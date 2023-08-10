@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -18,6 +19,7 @@ import org.jsoup.select.Elements;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
@@ -42,15 +44,13 @@ public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
          ))
          .build();
 
-      String response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true).getBody();
-
-      return Jsoup.parse(response);
+      return Jsoup.parse(CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new ApacheDataFetcher()), session).getBody());
    }
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
 
-      String url = "https://www.fahorro.com/catalogsearch/result/index/?form_key=DyVPXTKFDThn0LvJ&p=" + this.currentPage + "&q=" + this.keywordEncoded;
+      String url = "https://www.fahorro.com/catalogsearch/result/index/?form_key=9DWsXsAvEucbUVql&p=" + this.currentPage + "&q=" + this.keywordEncoded;
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".products.wrapper.grid.products-grid li");

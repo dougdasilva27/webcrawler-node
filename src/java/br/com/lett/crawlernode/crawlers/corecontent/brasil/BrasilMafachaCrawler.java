@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -22,7 +23,8 @@ import java.util.*;
 public class BrasilMafachaCrawler extends Crawler {
    public BrasilMafachaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.MIRANHA);
+      super.config.setFetcher(FetchMode.HTTPCLIENT);
+      super.config.setParser(Parser.HTML);
    }
    protected Set<String> cards = Sets.newHashSet(Card.MASTERCARD.toString(), Card.VISA.toString());
    @Override

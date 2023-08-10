@@ -1,16 +1,16 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.Pair;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -19,8 +19,6 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
-import org.apache.commons.lang.ArrayUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -31,11 +29,30 @@ import java.util.*;
 
 public class BrasilThebeautyboxCrawler extends Crawler {
 
+
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilThebeautyboxCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.HTML);
+   }
+
+   @Override
+   protected Response fetchResponse() {
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
+            ProxyCollection.LUMINATI_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .build();
+
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+
+      return response;
    }
 
    private static final String MAIN_SELLER_NAME_LOWER = "the beauty box brasil";
@@ -131,10 +148,18 @@ public class BrasilThebeautyboxCrawler extends Crawler {
    }
 
    private Document fetchPage(String url) {
-      Request requestPage = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      Response pageResponse = this.dataFetcher.get(session, requestPage);
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
+            ProxyCollection.LUMINATI_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .build();
 
-      return Jsoup.parse(pageResponse.getBody());
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
+
+      return Jsoup.parse(response.getBody());
    }
 
    private RatingsReviews scrapRating(Document doc, String internalPid) {

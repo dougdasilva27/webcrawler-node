@@ -5,10 +5,17 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Collections;
 
 public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
@@ -18,37 +25,47 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
+   protected Document fetchDocument(String url) {
+      try {
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(url))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return Jsoup.parse(response.body());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load document: " + session.getOriginalURL(), e);
+      }
+   }
+
+   @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
 
-      this.pageSize = 24;
-
+      this.pageSize = 12;
       this.log("Página " + this.currentPage);
-
-      String url = "https://www.abcdaconstrucao.com.br/busca?busca=" + this.keywordEncoded + "&pagina=" + this.currentPage;
+      String url = "https://www.abcdaconstrucao.com.br/busca?busca=" + this.keywordWithoutAccents.replace(" ", "%20") + "&pagina=" + this.currentPage + "&tamanho=" + pageSize;
+      if (keywordWithoutAccents.equalsIgnoreCase("portobello")) {
+         url = "https://www.abcdaconstrucao.com.br/fabricante/portobello-2499290?pagina=" + this.currentPage + "&tamanho=24";
+      }
       this.log("Link onde são feitos os crawlers: " + url);
-
-
       this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".spots-interna .fbits-item-lista-spot");
+
+      Elements products = this.currentDoc.select(".spot");
 
       if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts();
-         }
 
          for (Element e : products) {
-            String rawInternal = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id");
-            String internalId = rawInternal != null && rawInternal.contains("produto-spot-item-") ? rawInternal.split("item-")[1] : null;
-            String productUrl = CrawlerUtils.scrapUrl(e, ".spot-parte-um", "href", "https:", "www.abcdaconstrucao.com.br");
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".spotTitle", true);
+            String productUrl = CrawlerUtils.scrapUrl(e, ".spot__image-wrapper > a", "href", "https", "www.abcdaconstrucao.com.br").replaceAll("`", "%60");
+            String internalPid = CommonMethods.getLast(productUrl.split("-"));
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".spot__content-title > a > h3", true);
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".spotImg img", Collections.singletonList("data-original"), "https", "www.abcdaconstrucao.com.br");
-            Integer price = getPrice(e);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".precoPor > span", null, false, ',', session, null);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalId)
-               .setInternalPid(null)
+               .setInternalPid(internalPid)
                .setName(name)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
@@ -70,16 +87,7 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".fbits-qtd-produtos-pagina", true, 0);
-      this.log("Total: " + this.totalProducts);
+   protected boolean hasNextPage() {
+      return !this.currentDoc.select("#next-page").isEmpty();
    }
-
-   private Integer getPrice(Element e) {
-      Integer price = CrawlerUtils.scrapIntegerFromHtml(e, ".fbits-preco-calculado-spot", true, null);
-      if (price == null) price = CrawlerUtils.scrapIntegerFromHtml(e, ".fbits-valor", true, null);
-
-      return price;
-   }
-
 }

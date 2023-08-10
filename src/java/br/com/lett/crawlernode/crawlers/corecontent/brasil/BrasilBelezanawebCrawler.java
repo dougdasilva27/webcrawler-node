@@ -1,11 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -13,26 +10,24 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.BankSlip;
-import models.pricing.CreditCard;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
-import models.pricing.Installments;
-import models.pricing.Pricing;
+import models.pricing.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.*;
 
 /**
  * Date: 27/09/2018
@@ -41,7 +36,6 @@ import org.jsoup.select.Elements;
  */
 public class BrasilBelezanawebCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "https://www.belezanaweb.com.br/";
    private static final String SELLER_FULL_NAME = "Beleza na Web Brasil";
    private int stars5 = 0;
    private int stars4 = 0;
@@ -56,13 +50,51 @@ public class BrasilBelezanawebCrawler extends Crawler {
 
    public BrasilBelezanawebCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setParser(Parser.HTML);
    }
 
    @Override
-   public boolean shouldVisit() {
-      String href = session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   protected Response fetchResponse() {
+      try {
+         HttpResponse<String> response = retryRequest(session.getOriginalURL(), session);
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
+   }
+
+   public static HttpResponse retryRequest(String urlAmericanas, Session session) throws IOException, InterruptedException {
+      HttpResponse<String> response = null;
+      ArrayList<Integer> ipPort = new ArrayList<Integer>();
+      ipPort.add(3132); //netnut br haproxy
+      ipPort.add(3135); //buy haproxy
+      ipPort.add(3133); //netnut ES haproxy
+      ipPort.add(3138); //netnut AR haproxy
+
+      try {
+         for (int interable = 0; interable < ipPort.size(); interable++) {
+            response = RequestHandler(urlAmericanas, ipPort.get(interable));
+            if (response.statusCode() == 200) {
+               return response;
+            }
+         }
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
+      return response;
+   }
+
+   private static HttpResponse RequestHandler(String urlAmericanas, Integer port) throws IOException, InterruptedException {
+      HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", port))).build();
+      HttpRequest request = HttpRequest.newBuilder()
+         .GET()
+         .uri(URI.create(urlAmericanas))
+         .build();
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      return response;
    }
 
    @Override
@@ -77,22 +109,18 @@ public class BrasilBelezanawebCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nproduct-title", false);
          boolean available = !doc.select(".product-buy > a").isEmpty();
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb .breadcrumb-item:not(:first-child) > a", false);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-wrapper > img", Arrays.asList("data-zoom-image", "src"),
-            "https:", "res.cloudinary.com");
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-wrapper > img", Arrays.asList("data-zoom-image", "src"), "https:", "res.cloudinary.com");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".gallery-lightbox .product-image-wrapper > img", Arrays.asList("data-zoom-image", "src"), "https:", "res.cloudinary.com", primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-description", ".product-characteristics"));
          RatingsReviews rating = scrapRating(doc);
 
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
-         // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
+            .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
@@ -107,13 +135,11 @@ public class BrasilBelezanawebCrawler extends Crawler {
       }
 
       return products;
-
    }
 
    private boolean isProductPage(Document doc) {
       return !doc.select(".product-sku").isEmpty();
    }
-
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
@@ -131,7 +157,6 @@ public class BrasilBelezanawebCrawler extends Crawler {
          .build());
 
       return offers;
-
    }
 
    private List<String> scrapSales(Pricing pricing) {
@@ -144,7 +169,6 @@ public class BrasilBelezanawebCrawler extends Crawler {
       }
       return sales;
    }
-
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".nproduct-price-value", null, true, ',', session);
@@ -213,41 +237,6 @@ public class BrasilBelezanawebCrawler extends Crawler {
       return avgRating;
    }
 
-
-   private Document htmlToCaptureStars(Document doc, int page) {
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("referer", session.getOriginalURL());
-
-      String captureIds = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a.js-load-more", "data-ajax");
-      String apiIds = captureIds != null ? captureIds.split("\\?")[0] : null;
-      String url = "https://www.belezanaweb.com.br" + apiIds + "?pagina=" + page + "&size=50";
-      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build();
-      String content = this.dataFetcher.get(session, request).getBody();
-
-      return Jsoup.parse(content);
-
-   }
-
-   private int hasNextPage(Integer totalNumOfEvaluations) {
-
-      if (totalNumOfEvaluations % 50 > 0) {
-
-         return totalNumOfEvaluations / 50 + 1;
-
-      } else {
-
-         return totalNumOfEvaluations / 50;
-
-      }
-
-   }
-
-   /* When the product have variations, ex: size -> 250ml, 500ml, or color, the quantity of reviews on site, show a total for all ids.
-    https://www.belezanaweb.com.br/loreal-professionnel-serie-expert-blondifier-gloss-mascara-capilar-500ml/
-    https://www.belezanaweb.com.br/maybelline-instant-age-rewind-eraser-dark-circles-120-light-corretivo-liquido-59ml/
-    */
-
    private AdvancedRatingReview scrapAdvancedRatingReview(Document doc, Integer totalNumOfEvaluations) {
       AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
 
@@ -274,6 +263,27 @@ public class BrasilBelezanawebCrawler extends Crawler {
       return advancedRatingReview;
    }
 
+   private Document htmlToCaptureStars(Document doc, int page) {
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("referer", session.getOriginalURL());
+
+      String captureIds = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a.js-load-more", "data-ajax");
+      String apiIds = captureIds != null ? captureIds.split("\\?")[0] : null;
+      String url = "https://www.belezanaweb.com.br" + apiIds + "?pagina=" + page + "&size=50";
+      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build();
+      String content = this.dataFetcher.get(session, request).getBody();
+
+      return Jsoup.parse(content);
+   }
+
+   private int hasNextPage(Integer totalNumOfEvaluations) {
+      if (totalNumOfEvaluations % 50 > 0) {
+         return totalNumOfEvaluations / 50 + 1;
+      } else {
+         return totalNumOfEvaluations / 50;
+      }
+   }
 
    private AdvancedRatingReview scrapAdvancedRating(Document doc) {
 
@@ -317,5 +327,4 @@ public class BrasilBelezanawebCrawler extends Crawler {
          .build();
 
    }
-
 }

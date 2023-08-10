@@ -20,7 +20,6 @@ import org.jsoup.nodes.Document;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -35,6 +34,7 @@ public class BrasilAlthoffSupermercadosCrawler extends Crawler {
    private Set<String> cards = Sets.newHashSet(Card.AMEX.toString(), Card.CABAL.toString(), Card.MASTERCARD.toString(),
       Card.ELO.toString(), Card.HIPERCARD.toString(), Card.HIPER.toString(), Card.VISA.toString(), Card.DINERS.toString());
    private final String SELLER_NAME = "Althoff Supermercados";
+
    protected String getStoreId() {
       return session.getOptions().optString("storeId");
    }
@@ -58,9 +58,9 @@ public class BrasilAlthoffSupermercadosCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = getUrlInternalId();
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info-box h2", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img.mobile-img", Arrays.asList("src"), "https", "d21wiczbqxib04.cloudfront.net");
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".category-path a");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".info > h5", true);
+         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-image-gallery-active-image > img", "src");
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product-renderer-category-path > a");
          boolean available = doc.selectFirst(".common-action-btn.item-button .icomoon-plus") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
@@ -121,12 +121,18 @@ public class BrasilAlthoffSupermercadosCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-box .active-price-box", null, true, ',', session);
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-box .price-value", null, true, ',', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-renderer-active-price-box", null, true, ',', session);
+      }
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-box .price-value", null, true, ',', session);
+      if (priceFrom == null) {
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-renderer-normal-price-value", null, true, ',', session);
+      }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
-         .setPriceFrom(price)
+         .setPriceFrom(priceFrom)
          .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
          .build();

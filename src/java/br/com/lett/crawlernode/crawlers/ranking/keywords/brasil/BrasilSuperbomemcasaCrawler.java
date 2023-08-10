@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -7,11 +9,15 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.List;
 
 public class BrasilSuperbomemcasaCrawler extends CrawlerRankingKeywords {
 
@@ -19,132 +25,69 @@ public class BrasilSuperbomemcasaCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private JSONObject requestGet(String path) {
-      String url = "https://sb.superbomemcasa.com.br/"+ path;
+   @Override
+   protected Document fetchDocument(String url) {
+      this.currentDoc = new Document(url);
 
-      Map<String, String> headers = new HashMap<>();
-
-      headers.put("Accept", "*/*");
-      headers.put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36");
-      headers.put("Referer", "https://superbomemcasa.com.br/");
+      if (this.currentPage == 1) {
+         this.session.setOriginalURL(url);
+      }
 
       Request request = Request.RequestBuilder.create()
+         .setCookies(cookies)
          .setUrl(url)
-         .setHeaders(headers)
          .build();
 
-      Response response = dataFetcher.get(session, request);
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher()), session, "get");
 
-      return JSONUtils.stringToJson(response.getBody());
-   }
-
-   private JSONObject requestJsonId() {
-
-      String path = "rest/default/V1/search" +
-         "?searchCriteria[currentPage]=" + this.currentPage +
-         "&searchCriteria[requestName]=quick_search_container" +
-         "&searchCriteria[filterGroups][0][filters][0][field]=search_term" +
-         "&searchCriteria[filterGroups][0][filters][0][conditionType]=" +
-         "&searchCriteria[filterGroups][0][filters][0][value]=" + this.keywordEncoded +
-         "&searchCriteria[filterGroups][1][filters][0][field]=mostrar" +
-         "&searchCriteria[filterGroups][1][filters][0][conditionType]=eq" +
-         "&searchCriteria[filterGroups][1][filters][0][value]=0" +
-         "&searchCriteria[filterGroups][2][filters][0][field]=status" +
-         "&searchCriteria[filterGroups][2][filters][0][conditionType]=eq" +
-         "&searchCriteria[filterGroups][2][filters][0][value]=1";
-
-      return requestGet(path);
-   }
-
-   private JSONObject requestProducts(List<String> ids) {
-
-      String path = "rest/default/V1/products/" +
-         "?searchCriteria[currentPage]=1&searchCriteria[pageSize]=" + ids.size() +
-         "&searchCriteria[filterGroups][0][filters][0][field]=entity_id" +
-         "&searchCriteria[filterGroups][0][filters][0][conditionType]=in" +
-         "&searchCriteria[filterGroups][0][filters][0][value]=" + String.join(",", ids) +
-         "&searchCriteria[filterGroups][1][filters][0][field]=mostrar" +
-         "&searchCriteria[filterGroups][1][filters][0][conditionType]=eq" +
-         "&searchCriteria[filterGroups][1][filters][0][value]=0" +
-         "&searchCriteria[filterGroups][2][filters][0][field]=status" +
-         "&searchCriteria[filterGroups][2][filters][0][conditionType]=eq" +
-         "&searchCriteria[filterGroups][2][filters][0][value]=1";
-
-      return requestGet(path);
+      return Jsoup.parse(response.getBody());
    }
 
    @Override
    public void extractProductsFromCurrentPage() throws MalformedProductException {
 
-      JSONObject jsonIds = requestJsonId();
+      String url = "https://www.redesuperbom.com.br/busca/?q=" + this.keywordEncoded + "&page=" + this.currentPage;
 
-      List<String> ids = new ArrayList();
-      JSONUtils.getJSONArrayValue(jsonIds, "items").forEach(item -> {
-         if (item instanceof JSONObject) {
-            ids.add(((JSONObject) item).optString("id"));
-         }
-      });
+      Document doc = fetchDocument(url);
 
-      JSONObject jsonProducts = requestProducts(ids);
+      Elements products = doc.select(".products-list > .item-produto");
 
-      JSONArray products = JSONUtils.getJSONArrayValue(jsonProducts, "items");
+      for (Element product : products) {
+         String dataTrackingStr = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "> a", "data-tracking");
+         JSONObject dataTrackingJson = JSONUtils.stringToJson(dataTrackingStr);
+         String href = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "> a", "href");
 
-      Map<String, JSONObject> productsMap = new HashMap<>();
+         String productUrl = CrawlerUtils.completeUrl(href, "https", "www.redesuperbom.com.br");
+         String internalId = dataTrackingJson.optString("id");
+         String name = dataTrackingJson.optString("name");
+         Integer price = JSONUtils.getPriceInCents(dataTrackingJson, "price", Integer.class, null);
+         String imageUrl = scrapImage(product);
 
-      JSONUtils.getJSONArrayValue(jsonProducts, "items").forEach(item -> {
-         if (item instanceof JSONObject) {
-            productsMap.put(((JSONObject) item).optString("id"), (JSONObject) item);
-         }
-      });
+         RankingProduct productRanking = RankingProductBuilder.create()
+            .setUrl(productUrl)
+            .setInternalId(internalId)
+            .setName(name)
+            .setPriceInCents(price)
+            .setAvailability(price != null)
+            .setImageUrl(imageUrl)
+            .build();
 
-      totalProducts = products.length();
+         saveDataProduct(productRanking);
 
-      for (String internalId : ids) {
-         JSONObject product = productsMap.get(internalId);
-         if (product != null) {
-            String internalPid = product.optString("sku");
-            JSONArray jsonAtt = JSONUtils.getJSONArrayValue(product, "custom_attributes");
-            String pathUrl = scrapAttributes(jsonAtt);
-            String name = product.optString("name");
-            Integer price = product.optDouble("price", -1) == -1 ? null : (int) (product.optDouble("price") * 100);
-            String imageIncomplete = (String) product.optQuery("/media_gallery_entries/0/file");
-            String imageUrl = "https://superbom.s3-sa-east-1.amazonaws.com/catalog/product" + imageIncomplete;
-
-
-
-            if (!internalPid.isEmpty()) {
-               String productUrl = "https://superbomemcasa.com.br/" + pathUrl + "." + internalPid + "p";
-
-               RankingProduct productRanking = RankingProductBuilder.create()
-                  .setUrl(productUrl)
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPriceInCents(price)
-                  .setAvailability(price != null)
-                  .setImageUrl(imageUrl)
-                  .build();
-
-               saveDataProduct(productRanking);
-            }
+         if (this.arrayProducts.size() == productsLimit) {
+            break;
          }
       }
    }
 
-   private String scrapAttributes(JSONArray jsonArray) {
-      for (Object o : jsonArray) {
-         if (o instanceof JSONObject) {
-            JSONObject jsonObject = (JSONObject) o;
-            if (Objects.equals(jsonObject.optString("attribute_code"), "url_key")) {
-               return jsonObject.optString("value");
-            }
-         }
-      }
-      return null;
+   private String scrapImage(Element product) {
+      String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(product, "> a > .item-produto__img > img", List.of("src"), "https", "www.redesuperbom.com.br");
+
+      return imgUrl != null ? imgUrl.replace("media", "uploads").replaceFirst("/\\d{3,4}x\\d{3,4}", "") : null;
    }
 
    @Override
    protected boolean hasNextPage() {
-      return false;
+      return true;
    }
 }

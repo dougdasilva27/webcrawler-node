@@ -2,6 +2,8 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -100,10 +102,11 @@ public class MercadolivreCrawler extends Crawler {
    }
 
    @Override
-   protected Object fetch() {
-      Document doc = new Document("");
+   protected Response fetchResponse() {
+      Document doc;
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
+      Response response = null;
 
       if (acceptCatalog || isOwnProduct()) {
 
@@ -124,10 +127,10 @@ public class MercadolivreCrawler extends Crawler {
                .setHeaders(headers)
                .build();
 
-            Response response = this.dataFetcher.get(session, request);
+            response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher()), session);
 
             doc = Jsoup.parse(response.getBody());
-            String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-description", false);
+            String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-description__content", true);
             success = description != null && !description.isEmpty();
             if (success) {
                Logging.printLogInfo(logger, session, "HTML has description!");
@@ -135,19 +138,11 @@ public class MercadolivreCrawler extends Crawler {
                Logging.printLogError(logger, session, "HTML not have description. Attempt: " + tries);
             }
 
-            Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, ".ui-review-capability__rating__label", true, 0);
-            success = totalNumOfEvaluations > 0;
-            if (success) {
-               Logging.printLogInfo(logger, session, "HTML has rating and reviews!");
-            } else {
-               Logging.printLogError(logger, session, "HTML not have rating and reviews. Attempt: " + tries);
-            }
-
          } while (!success && tries++ <= 4);
 
       }
 
-      return doc;
+      return response;
    }
 
    private boolean isOwnProduct() {

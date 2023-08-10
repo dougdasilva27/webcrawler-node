@@ -215,6 +215,9 @@ public abstract class Crawler extends Task {
          case JSOUP:
             dataFetcher = new JsoupDataFetcher();
             break;
+         case HTTPCLIENT:
+            dataFetcher = new HttpClientFetcher();
+            break;
          default:
             dataFetcher = Boolean.TRUE.equals(GlobalConfigurations.executionParameters.getUseFetcher()) ? new FetcherDataFetcher() : new ApacheDataFetcher();
             break;

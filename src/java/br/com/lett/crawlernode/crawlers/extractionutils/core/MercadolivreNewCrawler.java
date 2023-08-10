@@ -91,7 +91,7 @@ public class MercadolivreNewCrawler {
                "http2.mlstatic.com");
             List<String> secondaryImages = crawlImages(primaryImage, doc);
             String description =
-               CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
+               CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description__content", ".ui-pdp-specs"));
 
             RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
             ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
@@ -257,6 +257,10 @@ public class MercadolivreNewCrawler {
 
       if (sellerFullName == null || sellerFullName.equalsIgnoreCase("Vendido por") || sellerFullName.equalsIgnoreCase("Loja oficial")) {
          sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, "a.ui-pdp-action-modal__link span", false);
+
+         if (sellerFullName == null) {
+            sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-reputation-title-link", false);
+         }
 
          if (sellerFullName == null || sellerFullName.contains("sem juros")) {
             String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".ui-pdp-container__row--seller-info a", "href");

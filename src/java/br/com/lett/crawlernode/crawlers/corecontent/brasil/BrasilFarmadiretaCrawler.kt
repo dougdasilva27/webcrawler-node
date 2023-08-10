@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil
 
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
@@ -40,12 +41,12 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
          .setUrl(url)
          .build()
 
-      val response = dataFetcher.get(session, request)
+      val response = CrawlerUtils.retryRequest(request, session, JsoupDataFetcher(), true);
+
 
       return response.body?.toDoc() ?: Document(url)
    }
 
-   //the product has no description
    override fun extractInformation(doc: Document): MutableList<Product> {
 
       if (!isProductPage(doc)) {
@@ -53,7 +54,7 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
          return mutableListOf()
       }
 
-      val name = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#NameProduto", "value")
+      val name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.dgf-titulo", true)
       val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#ID_SubProduto", "value")
       val primaryCategory = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#CategoriaProduto", "value")
       val secondaryCategory = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#SubCategoriaProduto", "value")
@@ -82,7 +83,6 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
       return doc.getElementById("ID_SubProduto") != null
    }
 
-   //the price is always there, even if the product is sold out
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
 
