@@ -1,9 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,7 +14,6 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -81,17 +77,6 @@ public class LeroymerlinCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   public LettProxy getFixedIp() throws IOException {
-
-      LettProxy lettProxy = new LettProxy();
-      lettProxy.setSource("fixed_ip");
-      lettProxy.setPort(3144);
-      lettProxy.setAddress("haproxy.lett.global");
-      lettProxy.setLocation("brazil");
-
-      return lettProxy;
-   }
-
    private String crawlUrl(JSONObject product) {
       String url = product.optString("url");
       if (!url.isEmpty()) {
@@ -110,16 +95,17 @@ public class LeroymerlinCrawler extends CrawlerRankingKeywords {
       if (hash == null) {
          url = "https://www.leroymerlin.com.br/api/boitata/v1/search?term=fresas&searchTerm=fresas&searchType=default";
       }
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setProxy(
-            getFixedIp()
-         )
-         .build();
-
-      Response response = dataFetcher.get(session, request);
-
-      return CrawlerUtils.stringToJSONObject(response.getBody());
+      try {
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(url))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return CrawlerUtils.stringToJson(response.body());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in scrape document: " + session.getOriginalURL(), e);
+      }
    }
 
    protected void setTotalProducts(int totalProducts) {
