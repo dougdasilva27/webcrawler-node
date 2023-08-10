@@ -36,15 +36,21 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Nestle Ate voce";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.ELO.toString());
 
-   private final String PASSWORD = getPassword();
    private final String LOGIN = getLogin();
 
    protected String getLogin() {
       return session.getOptions().optString("login");
    }
 
+   private final String PASSWORD = getPassword();
+
    protected String getPassword() {
       return session.getOptions().optString("password");
+   }
+
+   private final String GRAPHQLQUERY = getGraphqlQuery();
+   protected String getGraphqlQuery() {
+      return session.getOptions().optString("graphql_query");
    }
 
    @Override
@@ -107,10 +113,10 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
       if (urlKey != null) {
          String variables = "{\"urlKey\":\"" + urlKey + "\"}";
          String variablesEncoded = URLEncoder.encode(variables, StandardCharsets.UTF_8);
-         return "https://www.nestleatevoce.com.br/graphql?query=query+productDetail%28%24urlKey%3AString%29%7Bproducts%28filter%3A%7Burl_key%3A%7Beq%3A%24urlKey%7D%7D%29%7Bitems%7Bid+__typename+name+sku+is_regular_combo+brand+url_key+url_suffix+__typename+scales%7Bqty+discount_percentage+product_unit_price+product_final_unit_price+__typename%7Dcombo_nrab_data%7Bis_nrab+qty_take+qty_buy+__typename%7Ddescription%7Bhtml+__typename%7Dmedia_gallery_entries%7Bid+label+position+disabled+file+types+__typename%7Dprice%7BregularPrice%7Bamount%7Bcurrency+value+__typename%7D__typename%7D__typename%7Dz076_data%7Bis_z076+discount_percent+__typename%7Dmeta_title+meta_keyword+stock_status+...on+ConfigurableProduct%7Bis_best_seller+is_assortment+is_scaled+ean+variants%7Battributes%7Bcode+label+value_index+__typename%7Dproduct%7Bid+stock_status+sku+increments+units+z076_data%7Bis_z076+discount_percent+__typename%7Dmedia_gallery_entries%7Bid+label+position+disabled+file+__typename%7Dprice_range%7Bminimum_price%7Bdiscount%7Bamount_off+percent_off+__typename%7Dfinal_price%7Bvalue+currency+__typename%7Dregular_price%7Bvalue+currency+__typename%7D__typename%7D__typename%7D...on+SimpleProduct%7Bincrements+units+sku+__typename+best_seller_percentage+ean+price_range%7Bminimum_price%7Bregular_price%7Bvalue+currency+__typename%7Dfinal_price%7Bvalue+currency+__typename%7Ddiscount%7Bamount_off+percent_off+__typename%7D__typename%7D__typename%7D%7D__typename%7D__typename%7Dconfigurable_options%7Bid+label+attribute_id+attribute_code+product_id+values%7Bdefault_label+label+store_label+use_default_value+value_index+__typename%7D__typename%7D__typename%7D...on+BundleProduct%7Bprice_range%7Bminimum_price%7Bregular_price%7Bvalue+currency+__typename%7Dfinal_price%7Bvalue+currency+__typename%7Ddiscount%7Bamount_off+percent_off+__typename%7D__typename%7D__typename%7Ditems%7Btitle+sku+options%7Buid+quantity+position+price+price_type+can_change_quantity+label+product%7Buid+name+sku+__typename%7D__typename%7D__typename%7D__typename%7Dcategories%7Bid+name+url_key+__typename%7Dsmall_image%7Burl+__typename%7Dprice_range%7Bminimum_price%7Bfinal_price%7Bvalue+currency+__typename%7D__typename%7D__typename%7D%7D__typename%7D%7D&operationName=productDetail&variables=" + variablesEncoded;
+         return "https://www.nestleatevoce.com.br/graphql?query=" + GRAPHQLQUERY + "&variables=" + variablesEncoded;
       }
 
-      return null;
+      return "";
    }
 
    private String regexUrlKey() {
