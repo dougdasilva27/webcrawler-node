@@ -166,9 +166,9 @@ public class BrasilNestleAteVoceCrawler extends Crawler {
 
          } else {
             for (int i = 0; i < variants.length(); i++) {
-               JSONObject variantProduct = JSONUtils.getValueRecursive(variants, i + ".product", JSONObject.class);
-               JSONArray variantAttributes = JSONUtils.getValueRecursive(variants, i + ".attributes", JSONArray.class);
-               String internalId = variantProduct.optString("id");
+               JSONObject variantProduct = JSONUtils.getValueRecursive(variants, i + ".product", JSONObject.class, new JSONObject());
+               JSONArray variantAttributes = JSONUtils.getValueRecursive(variants, i + ".attributes", JSONArray.class, new JSONArray());
+               String internalId = variantProduct.optString("id", null);
                String variantName = assembleVariantName(variantAttributes, name);
 
                boolean available = variantProduct.optString("stock_status").equals("IN_STOCK");
