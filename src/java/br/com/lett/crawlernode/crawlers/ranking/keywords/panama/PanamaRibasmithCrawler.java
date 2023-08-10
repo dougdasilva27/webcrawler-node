@@ -23,7 +23,7 @@ public class PanamaRibasmithCrawler extends CrawlerRankingKeywords {
 
    private JSONObject searchJson() {
       Request request = Request.RequestBuilder.create()
-         .setUrl("https://api.fastsimon.com/full_text_search?q=" + keywordEncoded + "&page_num=" + currentPage + "&UUID=19f6f39a-57d5-470f-8795-84369d66b79e")
+         .setUrl("https://api.fastsimon.com/full_text_search?q=" + keywordEncoded.replaceAll(" ", "%20") + "&page_num=" + currentPage + "&UUID=19f6f39a-57d5-470f-8795-84369d66b79e")
          .build();
 
       String response = dataFetcher.get(session, request).getBody();
