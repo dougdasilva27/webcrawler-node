@@ -14,6 +14,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -34,7 +35,7 @@ public class LeroymerlinCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() throws Exception {
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       JSONObject data = fetchPage();
       JSONArray products = data.optJSONArray("products");
 
@@ -88,7 +89,7 @@ public class LeroymerlinCrawler extends CrawlerRankingKeywords {
       }
    }
 
-   protected JSONObject fetchPage() throws Exception {
+   protected JSONObject fetchPage() {
       String hash = getHashCategory();
       String url = "https://www.leroymerlin.com.br/api/boitata/v1/categories/" + hash + "/products?perPage=36&term=" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "&searchTerm=" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "&searchType=Shortcut&page=" + this.currentPage;
 
