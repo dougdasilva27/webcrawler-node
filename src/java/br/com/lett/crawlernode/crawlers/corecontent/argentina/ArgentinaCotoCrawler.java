@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -28,6 +29,8 @@ import org.jsoup.select.Elements;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Date: 07/12/2016
@@ -49,6 +52,7 @@ public class ArgentinaCotoCrawler extends Crawler {
 
    public ArgentinaCotoCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.MIRANHA);
    }
 
    @Override
@@ -66,7 +70,7 @@ public class ArgentinaCotoCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = crawlInternalId(doc);
-         String internalPid = crawlInternalPid(session.getOriginalURL());
+         String internalPid = crawlInternalPid(doc);
          String name = crawlName(doc);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
@@ -117,17 +121,15 @@ public class ArgentinaCotoCrawler extends Crawler {
       return internalId;
    }
 
-   private String crawlInternalPid(String url) {
-      String internalPid = null;
+   public String crawlInternalPid(Document doc) {
+      String href = doc.select("#zoomContent > a").first().attr("href");
 
-      String[] tokens = url.split("-");
-      String id = tokens[tokens.length - 2].replaceAll("[^0-9]", "").trim();
-
-      if (!id.isEmpty()) {
-         internalPid = id;
+      Pattern pattern = Pattern.compile("/(\\d{8})\\.jpg");
+      Matcher matcher = pattern.matcher(href);
+      if (matcher.find()) {
+         return matcher.group(1);
       }
-
-      return internalPid;
+      return null;
    }
 
    private String crawlName(Document document) {
