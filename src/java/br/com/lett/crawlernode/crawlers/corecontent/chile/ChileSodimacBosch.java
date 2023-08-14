@@ -13,7 +13,7 @@ public class ChileSodimacBosch extends FalabellaCrawler {
 
    @Override
    protected String crawlBrandName(Document doc) {
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div[data-name]", true);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-name", true);
       String brand = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-brand]", "data-brand");
       String model = CrawlerUtils.scrapStringSimpleInfo(doc, "#productInfoContainer tr:contains(Modelo)", false);
 
