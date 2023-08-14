@@ -1,24 +1,29 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.*;
-
-import br.com.lett.crawlernode.util.*;
-import com.google.common.collect.Sets;
-import exceptions.MalformedPricingException;
-import exceptions.OfferException;
-import models.*;
-import models.pricing.BankSlip;
-import models.pricing.CreditCards;
-import models.pricing.Pricing;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.BankSlip;
+import models.pricing.CreditCards;
+import models.pricing.Pricing;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Date: 20/08/2018
@@ -30,7 +35,7 @@ public class BrasilEnutriCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Enutri (Brasil)";
    private static final String HOME_PAGE = "https://www.enutri.com.br/";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.AMEX.toString(), Card.DINERS.toString(), Card.HIPERCARD.toString(), Card.AURA.toString(), Card.ELO.toString(),Card.DISCOVER.toString(), Card.JCB.toString());
+      Card.AMEX.toString(), Card.DINERS.toString(), Card.HIPERCARD.toString(), Card.AURA.toString(), Card.ELO.toString(), Card.DISCOVER.toString(), Card.JCB.toString());
 
    public BrasilEnutriCrawler(Session session) {
       super(session);
@@ -66,9 +71,9 @@ public class BrasilEnutriCrawler extends Crawler {
          String internalId = productJSON.optString("idProduct");
          String name = productJSON.optString("nameProduct");
          String primaryImage = productJSON.optString("urlImage");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".box-img .zoom > img", Collections.singletonList("data-src"), "https", "images.tcdn.com.br", primaryImage);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb-item:not(:first-child):not(:nth-child(2)):not(:last-child)", false);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".description"));
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".swiper-wrapper .thumb img", Collections.singletonList("src"), "https", "images.tcdn.com.br", primaryImage);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ol a[itemprop=\"item\"]", true);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("#descricao p"));
          List<String> eans = Collections.singletonList(productJSON.optString("EAN"));
          boolean availableToBuy = checkIfIsAvailable(doc);
 
@@ -92,16 +97,6 @@ public class BrasilEnutriCrawler extends Crawler {
       }
 
       return products;
-   }
-
-   private CategoryCollection crawlCategories(Document doc) {
-      CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, ".breadcrumb-item a", true);
-      if(!categoryCollection.isEmpty()) {
-         categoryCollection.remove(0);
-      } else {
-         return new CategoryCollection();
-      }
-      return categoryCollection;
    }
 
    private Offers scrapOffers(Document doc, JSONObject productJSON) throws MalformedPricingException, OfferException {
@@ -153,6 +148,6 @@ public class BrasilEnutriCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select(".box-col-product").isEmpty();
+      return !doc.select(".product-box").isEmpty();
    }
 }
