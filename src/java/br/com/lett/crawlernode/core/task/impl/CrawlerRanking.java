@@ -245,6 +245,9 @@ public abstract class CrawlerRanking extends Task {
       } else if (this.fetchMode == FetchMode.JSOUP) {
          dataFetcher = new JsoupDataFetcher();
       }
+      else if (this.fetchMode == FetchMode.HTTPCLIENT) {
+         dataFetcher = new HttpClientFetcher();
+      }
    }
 
    public void setProductsLimit(int productsLimit) {
