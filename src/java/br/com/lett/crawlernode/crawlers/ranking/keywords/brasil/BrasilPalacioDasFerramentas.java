@@ -40,7 +40,7 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".price-box.price-final_price", "data-product-id");
             String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product-item-link", false);
             String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "img.product-image-photo", Arrays.asList("srcset"), "https", "palaciodasferramentas.com.br");
-            Integer price = scrapPrice(e);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "ul > li > div > strong > span.price", null, true, ',', session, null);
             boolean isAvailable = e.selectFirst(".stock.unavailable") == null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -65,20 +65,6 @@ public class BrasilPalacioDasFerramentas extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-   }
-
-   private Integer scrapPrice(Element e) {
-      String priceDescription = CrawlerUtils.scrapStringSimpleInfo(e, "span .price", false);
-      Integer price;
-
-      if (priceDescription != null && !priceDescription.isEmpty()) {
-         priceDescription = priceDescription.replaceAll("[^0-9]", "");
-         price = !priceDescription.equals("") ? Integer.parseInt(priceDescription) : null;
-
-         return price;
-      }
-
-      return null;
    }
 
    @Override
