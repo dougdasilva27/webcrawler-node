@@ -20,7 +20,7 @@ import java.util.List;
 
 public class ArgentinaElabastecedorCrawler extends Crawler {
 
-   private static final String SELLER_FULL_NAME= "El Abastecedor";
+   private static final String SELLER_FULL_NAME = "El Abastecedor";
    private static final List<String> cards = Arrays.asList(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString());
 
    public ArgentinaElabastecedorCrawler(Session session) {
@@ -35,17 +35,16 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
       if (doc.selectFirst(".product-details-area") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalId = getInternalId();
-         String internalPid = internalId;
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc,".product-details-area .product-details-content h2",true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,".zoompro-border.zoompro-span .zoompro", Arrays.asList("src"),"https:","www.elabastecedor.com.ar");
-         List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(doc,".product-dec-slider-2.swiper-container .swiper-wrapper .swiper-slide .active",Arrays.asList("data-image"), "https:","www.elabastecedor.com.ar", primaryImage);
-         Boolean available = true;
-         Offers offers = available? scrapOffers(doc): new Offers();
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details-area .product-details-content h2", true);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".zoompro-border.zoompro-span .zoompro", Arrays.asList("src"), "https:", "www.elabastecedor.com.ar");
+         List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-dec-slider-2.swiper-container .swiper-wrapper .swiper-slide .active", Arrays.asList("data-image"), "https:", "www.elabastecedor.com.ar", primaryImage);
+         Boolean available = !doc.select(".BUTTON_VERDE").isEmpty();
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalPid)
+            .setInternalPid(internalId)
             .setSecondaryImages(productSecondaryImages)
             .setName(name)
             .setPrimaryImage(primaryImage)
@@ -53,16 +52,16 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
             .build();
 
          products.add(product);
-   } else {
-      Logging.printLogDebug(logger, session, "Not a product page:   " + this.session.getOriginalURL());
-   }
-      return  products;
+
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page:   " + this.session.getOriginalURL());
+      }
+
+      return products;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
-
       Offers offers = new Offers();
-
       Pricing pricing = scrapPricing(doc);
 
       offers.add(Offer.OfferBuilder.create()
@@ -78,33 +77,14 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double formatedPrice = 0.0;
-      Double formatedPriceFrom = 0.0;
-      String displayedPrice = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details-area .old-price", false);
-      String newPrice = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details-content .price", false);
-      String priceSale = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details-content .new-label", false);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price", null, true, '.', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".current-price", null, true, '.', session);
 
-      if (newPrice != null && priceSale != null) {
-         newPrice = newPrice.replaceAll("\\s+","");
-         priceSale = priceSale.replaceAll("\\s+","");
-
-         if (newPrice.equals(priceSale)) {
-            formatedPriceFrom = null;
-            formatedPrice = Double.parseDouble(displayedPrice.replaceAll("[^0-9.]", ""));
-         } else {
-            formatedPriceFrom = Double.parseDouble(displayedPrice.replaceAll("[^0-9.]", ""));
-            formatedPrice = Double.parseDouble(newPrice.replaceAll("[^0-9.]", ""));
-         }
-      } else {
-         formatedPriceFrom = null;
-         formatedPrice = Double.parseDouble(displayedPrice.replaceAll("[^0-9.]", ""));
-      }
-
-      CreditCards creditCards = scrapCreditcard(formatedPrice);
+      CreditCards creditCards = scrapCreditcard(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
-         .setPriceFrom(formatedPriceFrom)
-         .setSpotlightPrice(formatedPrice)
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
          .build();
    }
@@ -129,8 +109,7 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
    }
 
    private String getInternalId() {
-      String [] urlId = this.session.getOriginalURL().split("_");
-
+      String[] urlId = this.session.getOriginalURL().split("_");
       return urlId[0].replaceAll("[^0-9]", "");
    }
 }
