@@ -16,6 +16,7 @@ import java.util.List;
 public class BrasilDrogarianovaesperancaCrawler extends CrawlerRankingKeywords {
 
    private static final int PAGE_SIZE = 18;
+   private static final String homePage = "www.drogarianovaesperanca.com.br";
 
    public BrasilDrogarianovaesperancaCrawler(Session session) {
       super(session);
@@ -44,7 +45,7 @@ public class BrasilDrogarianovaesperancaCrawler extends CrawlerRankingKeywords {
 
       if (!products.isEmpty() && this.totalProducts > 0) {
          for (Element e : products) {
-            String productUrl = CrawlerUtils.scrapUrl(e, "h3.dg-boxproduto-titulo a", "href", "https", "www.drogarianovaesperanca.com.br");
+            String productUrl = CrawlerUtils.scrapUrl(e, "h3.dg-boxproduto-titulo a", "href", "https", homePage);
             String internalId = crawlInternalId(productUrl);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "h3.dg-boxproduto-titulo a", false);
             String imgUrl = scrapFullImage(e);
@@ -108,7 +109,7 @@ public class BrasilDrogarianovaesperancaCrawler extends CrawlerRankingKeywords {
    }
 
    private String scrapFullImage (Element e) {
-      String miniImage = CrawlerUtils.scrapSimplePrimaryImage(e, "a[class*=boxproduto-img] img", List.of("data-src"), "https", "www.drogarianovaesperanca.com.br");
+      String miniImage = CrawlerUtils.scrapSimplePrimaryImage(e, "a[class*=boxproduto-img] img", List.of("data-src-lazy"), "https", homePage);
 
       return miniImage.replaceAll("imagens/200x200/", "imagens-complete/445x445/");
    }
