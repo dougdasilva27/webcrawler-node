@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.argentina
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
@@ -22,11 +21,12 @@ import org.jsoup.nodes.Document
  * @author Fellype Layunne
  *
  */
-class ArgentinaLareinaCrawler (session: Session) : Crawler(session){
+class ArgentinaLareinaCrawler(session: Session) : Crawler(session) {
 
    init {
-       config.fetcher = FetchMode.FETCHER
+      config.fetcher = FetchMode.JSOUP
    }
+
    companion object {
       const val SELLER_NAME: String = "La Reina"
 
@@ -56,7 +56,7 @@ class ArgentinaLareinaCrawler (session: Session) : Crawler(session){
 
       val internalId = scrapInternalIdFromUrl() ?: return Document(session.originalURL)
 
-      val url =   "https://www.lareinaonline.com.ar/Detalle.asp?Pr=${internalId}&P="
+      val url = "https://www.lareinaonline.com.ar/Detalle.asp?Pr=${internalId}&P="
 
       val headers = HashMap<String, String>()
 
@@ -94,6 +94,7 @@ class ArgentinaLareinaCrawler (session: Session) : Crawler(session){
       val product = ProductBuilder()
          .setUrl(session.originalURL)
          .setInternalId(internalId)
+         .setInternalPid(internalId)
          .setName(name)
          .setPrimaryImage(primaryImage)
          .setOffers(offers)
@@ -105,6 +106,8 @@ class ArgentinaLareinaCrawler (session: Session) : Crawler(session){
    private fun scrapOffers(doc: Document): Offers {
 
       val offers = Offers()
+
+      val priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.DetallPrec > div", null, false, ',', session)
 
       val spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".DetallDesc .DetallPrec b", null, false, ',', session) ?: return offers
 
@@ -121,6 +124,7 @@ class ArgentinaLareinaCrawler (session: Session) : Crawler(session){
          Offer.OfferBuilder.create()
             .setPricing(
                Pricing.PricingBuilder.create()
+                  .setPriceFrom(priceFrom)
                   .setSpotlightPrice(spotlightPrice)
                   .setCreditCards(creditCards)
                   .setBankSlip(bankSlip)
