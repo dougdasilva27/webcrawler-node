@@ -38,7 +38,7 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details-area .product-details-content h2", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".zoompro-border.zoompro-span .zoompro", Arrays.asList("src"), "https:", "www.elabastecedor.com.ar");
          List<String> productSecondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-dec-slider-2.swiper-container .swiper-wrapper .swiper-slide .active", Arrays.asList("data-image"), "https:", "www.elabastecedor.com.ar", primaryImage);
-         Boolean available = true;
+         Boolean available = !doc.select(".BUTTON_VERDE").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
