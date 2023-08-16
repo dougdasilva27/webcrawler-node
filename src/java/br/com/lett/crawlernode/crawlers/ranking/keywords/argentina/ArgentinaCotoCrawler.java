@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
@@ -20,6 +21,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -102,6 +104,9 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
       int pagination = this.pageSize * this.currentPage;
       String url = "https://www.cotodigital3.com.ar" + getUrlKeyword();
       url += "?No=" + pagination;
+      if (!url.contains(this.keywordEncoded)) {
+         url += "&Ntt=" + this.keywordEncoded + "&atg_store_searchInput=" + this.keywordEncoded;
+      }
       url += "&Nr=AND%28product.language%3Aespa%C3%B1ol%2Cproduct.sDisp_" + this.idSucursal + "%3A1004%2COR%28product.siteId%3ACotoDigital%29%29";
       url += "&Nrpp=" + this.pageSize;
       return url;
@@ -114,17 +119,15 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
    }
 
    private Document currentDoc() {
-      try {
-         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
-         HttpRequest request = HttpRequest.newBuilder()
-            .GET()
-            .uri(URI.create("https://www.cotodigital3.com.ar/sitios/cdigi/browse?Ntt=" + this.keywordEncoded))
-            .build();
-         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-         return Jsoup.parse(response.body());
-      } catch (Exception e) {
-         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
-      }
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.cotodigital3.com.ar/sitios/cdigi/browse?Ntt=" + this.keywordEncoded)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+         .setFollowRedirects(true)
+         .build();
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true) ;
+      return Jsoup.parse(response.getBody());
    }
 
    @Override
