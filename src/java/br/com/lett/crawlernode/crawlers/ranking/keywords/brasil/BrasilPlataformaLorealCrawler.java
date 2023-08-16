@@ -38,6 +38,7 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
                CrawlerUtils.scrapStringSimpleInfo(product, ".c-product-tile .c-product-tile__caption .c-product-tile__name", false),
                CrawlerUtils.scrapStringSimpleInfo(product, ".c-product-tile__variations-group .c-product-tile__variations-single-text span", false)
             );
+            String imageUrl = getLargeImage(CrawlerUtils.scrapSimplePrimaryImage(product, ".c-product-image__primary img", List.of("src"), "https:", ""));
             if (price == null) {
                Element spanSelected = product.selectFirst(".c-product-price span:nth-child(4)");
                price = CrawlerUtils.scrapPriceInCentsFromHtml(spanSelected, ".c-product-price__value", null, false, ',', session, null);
@@ -72,4 +73,9 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
       } else {
          return name + " " + info;
       }
+}
+
+   private String getLargeImage(String image) {
+      return image.replaceAll("(\\?|&)sw=\\d+", "?sw=750").replaceAll("(\\?|&)sh=\\d+", "?sh=750");
+   }
 }
