@@ -21,9 +21,11 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
+   private String host = this.session.getOptions().optString("host");
+
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      String url = "https://www.lancome.com.br/procurar?q=" + this.keywordEncoded + "&start=0&sz=" + this.productsLimit;
+      String url = "https://" + host + "/procurar?q=" + this.keywordEncoded + "&start=0&sz=" + this.productsLimit;
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".c-product-grid .c-product-tile__wrapper");
@@ -31,12 +33,7 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
          if (this.totalProducts == 0) setTotalProducts();
          for (Element product : products) {
             String internalPid = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".c-product-tile .c-product-image", "href").split("/")).replaceAll(".html", "");
-            String productUrl = CrawlerUtils.scrapUrl(product, ".c-product-tile .c-product-tile__figure .c-product-image__link", "href", "https", "www.lancome.com.br");
-            String productName = CrawlerUtils.scrapStringSimpleInfo(
-               product, ".c-product-tile .c-product-tile__caption .c-product-tile__name", false);
-            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".c-product-image__primary img", List.of("src"), "https:", "");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(
-               product, ".c-product-tile .c-product-price .c-product-price__value.m-new", null, false, ',', session, null);
+            String productUrl = CrawlerUtils.scrapUrl(product, ".c-product-tile .c-product-tile__figure .c-product-image__link", "href", "https", host);
             if (price == null) {
                Element spanSelected = product.selectFirst(".c-product-price span:nth-child(4)");
                price = CrawlerUtils.scrapPriceInCentsFromHtml(spanSelected, ".c-product-price__value", null, false, ',', session, null);
