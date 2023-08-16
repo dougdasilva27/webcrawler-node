@@ -75,6 +75,8 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
                Document document = fetchNewDocument(productUrl);
                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".c-product-main", "data-js-pid");
                boolean isAvailable = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "a", "aria-disabled") == null;
+               assert productName != null;
+               String variationName = getVariationName(productName, CrawlerUtils.scrapStringSimpleInfo(element, ".c-variations-carousel__link .c-variations-carousel__value", false));
                primaryImage = getLargeImage(CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".c-product-main__image .c-product-detail-image__main .c-carousel__item img", "src"));
                Offers offers = isAvailable ? scrapOffers(document, element) : new Offers();
 
@@ -146,7 +148,14 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
       return secondaryImages;
    }
 
-   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+   private String getVariationName(String name, String info) {
+      if (info == null) return name;
+      if (name.matches("(?i).*\\d+(ml|g|mg).*")) {
+         return name.replaceAll("\\d+(ml|g|mg|ML|G|MG)", info);
+      } else {
+         return name + " " + info;
+      }
+   }
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
       List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
