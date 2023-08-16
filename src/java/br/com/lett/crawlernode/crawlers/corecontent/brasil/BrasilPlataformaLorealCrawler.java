@@ -71,11 +71,8 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
             products.add(product);
          } else {
             for (Element element : variations) {
-               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".c-product-main", "data-js-pid");
-               String available = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".c-swatch", "aria-disabled");
-               String variationName = productName + " " + CrawlerUtils.scrapStringSimpleInfo(element, ".c-variations-carousel__value", false);;
-//               String variationName = element.hasText() ? productName + " " + element.text().split(" ")[0].trim() : productName;
-               Offers offers = available == null ? scrapOffers(doc) : new Offers();
+               String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "a", "href");
+               Document document = fetchNewDocument(productUrl);
 
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
@@ -216,6 +213,27 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
 
       return ratingReviews;
+   }
+
+   private Document fetchNewDocument(String productUrl) {
+      Document doc;
+      HttpResponse<String> response;
+      int attempts = 0;
+      do {
+         try {
+            HttpClient client = HttpClient.newBuilder().build();
+            HttpRequest request = HttpRequest.newBuilder()
+               .GET()
+               .uri(URI.create(productUrl))
+               .build();
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            doc = Jsoup.parse(response.body());
+         } catch (Exception e) {
+            throw new RuntimeException("Failed in load document: " + productUrl, e);
+         }
+      } while (response.statusCode() != 200 && attempts++ < 3);
+
+      return doc;
    }
 }
 
