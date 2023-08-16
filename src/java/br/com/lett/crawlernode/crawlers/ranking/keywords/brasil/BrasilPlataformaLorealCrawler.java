@@ -7,9 +7,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import models.Offers;
-import models.RatingsReviews;
-import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.jsoup.nodes.Element;
 
@@ -39,12 +36,8 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
                CrawlerUtils.scrapStringSimpleInfo(product, ".c-product-tile__variations-group .c-product-tile__variations-single-text span", false)
             );
             String imageUrl = getLargeImage(CrawlerUtils.scrapSimplePrimaryImage(product, ".c-product-image__primary img", List.of("src"), "https:", ""));
-            if (price == null) {
-               Element spanSelected = product.selectFirst(".c-product-price span:nth-child(4)");
-               price = CrawlerUtils.scrapPriceInCentsFromHtml(spanSelected, ".c-product-price__value", null, false, ',', session, null);
-            }
-            String disable = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".c-product-tile .c-product-tile__caption .c-product-tile__variations-group .c-carousel ul li a", "aria-disabled");
-            boolean isAvailable = disable == null;
+            Integer price = getPrice(product, CrawlerUtils.scrapPriceInCentsFromHtml(product, ".c-product-tile__info-item .c-product-tile .c-product-price .c-product-price__value.m-new", null, false, ',', session, null));
+            boolean isAvailable = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".c-product-tile .c-product-tile__caption .c-product-tile__variations-group .c-carousel ul li a", "aria-disabled") == null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
@@ -73,9 +66,19 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
       } else {
          return name + " " + info;
       }
-}
+   }
 
    private String getLargeImage(String image) {
       return image.replaceAll("(\\?|&)sw=\\d+", "?sw=750").replaceAll("(\\?|&)sh=\\d+", "?sh=750");
    }
+
+   private Integer getPrice(Element product, Integer price) {
+      if (price == null) {
+         Element spanSelected = product.selectFirst(".c-product-tile__info-item .c-product-price span:nth-child(4)");
+         return CrawlerUtils.scrapPriceInCentsFromHtml(spanSelected, ".c-product-price__value", null, false, ',', session, null);
+      } else {
+         return price;
+      }
+   }
+   
 }
