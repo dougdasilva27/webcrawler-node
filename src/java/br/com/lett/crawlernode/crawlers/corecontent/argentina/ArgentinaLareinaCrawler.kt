@@ -107,9 +107,14 @@ class ArgentinaLareinaCrawler(session: Session) : Crawler(session) {
 
       val offers = Offers()
 
-      val priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.DetallPrec > div", null, false, ',', session)
+      var priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.DetallPrec > div", null, false, ',', session)
 
-      val spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".DetallDesc .DetallPrec b", null, false, ',', session) ?: return offers
+      var spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".DetallDesc .DetallPrec b", null, false, ',', session) ?: return offers
+
+      if (spotlightPrice == priceFrom) {
+         spotlightPrice = priceFrom
+         priceFrom = null
+      }
 
       val bankSlip = spotlightPrice.toBankSlip()
 
