@@ -138,9 +138,13 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
    private List<String> getSecondaryImages(Document doc) {
       List<String> secondaryImages = new ArrayList<>();
 
-      Elements imagesLi = doc.select(".c-product-detail-image__alternatives .c-carousel .c-carousel__content .c-carousel__item button img");
-      for (Element imageLi : imagesLi) {
-         secondaryImages.add(imageLi.attr("src"));
+      Elements imagesList = doc.select(".c-product-detail-image__alternatives .c-carousel__content .c-carousel__item img");
+      if (imagesList.size() == 0) {
+         imagesList = doc.select(".c-product-detail-image__mosaic .c-product-detail-image__mosaic-item img");
+      }
+      for (Element imageLi : imagesList) {
+         String image = imageLi.attr("src");
+         secondaryImages.add(getLargeImage(image));
       }
       if (secondaryImages.size() > 0) {
          secondaryImages.remove(0);
