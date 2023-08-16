@@ -80,5 +80,4 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
          return price;
       }
    }
-   
 }

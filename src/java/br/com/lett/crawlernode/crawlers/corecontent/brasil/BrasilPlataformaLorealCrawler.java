@@ -267,4 +267,3 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
       return doc;
    }
 }
-
