@@ -45,6 +45,7 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".c-product-main__name", false);
          String description = crawlDescription(doc);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".l-pdp .c-breadcrumbs .c-breadcrumbs__list .c-breadcrumbs__item .c-breadcrumbs__text", true);
+         String primaryImage = getLargeImage(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".c-product-main__image .c-product-detail-image__main .c-carousel__item img", "src"));
          List<String> secondaryImages = getSecondaryImages(doc);
          RatingsReviews ratingsReviews = ratingsReviews(doc);
 
@@ -125,6 +126,10 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
          description.append(descriptionTypeThree);
       }
       return description.toString();
+   }
+
+   private String getLargeImage(String image) {
+      return image.replaceAll("(\\?|&)sw=\\d+", "?sw=750").replaceAll("(\\?|&)sh=\\d+", "?sh=750");
    }
 
    private List<String> getSecondaryImages(Document doc) {
