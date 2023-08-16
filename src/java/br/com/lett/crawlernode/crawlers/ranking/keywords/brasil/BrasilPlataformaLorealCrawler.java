@@ -34,6 +34,10 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
          for (Element product : products) {
             String internalPid = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".c-product-tile .c-product-image", "href").split("/")).replaceAll(".html", "");
             String productUrl = CrawlerUtils.scrapUrl(product, ".c-product-tile .c-product-tile__figure .c-product-image__link", "href", "https", host);
+            String productName = getNameWithDetail(
+               CrawlerUtils.scrapStringSimpleInfo(product, ".c-product-tile .c-product-tile__caption .c-product-tile__name", false),
+               CrawlerUtils.scrapStringSimpleInfo(product, ".c-product-tile__variations-group .c-product-tile__variations-single-text span", false)
+            );
             if (price == null) {
                Element spanSelected = product.selectFirst(".c-product-price span:nth-child(4)");
                price = CrawlerUtils.scrapPriceInCentsFromHtml(spanSelected, ".c-product-price__value", null, false, ',', session, null);
@@ -60,4 +64,12 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
       }
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
+
+   private String getNameWithDetail(String name, String info) {
+      if (info == null) return name;
+      if (name.matches("(?i).*\\d+(ml|g|mg).*")) {
+         return name.replaceAll("\\d+(ml|g|mg|ML|G|MG)", info);
+      } else {
+         return name + " " + info;
+      }
 }
