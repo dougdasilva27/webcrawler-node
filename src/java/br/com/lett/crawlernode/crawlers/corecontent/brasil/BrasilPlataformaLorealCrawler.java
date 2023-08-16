@@ -43,12 +43,8 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalPid = CommonMethods.getLast(this.session.getOriginalURL().split("/")).replaceAll(".html", "");
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".c-product-main__name", false);
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".l-section .c-tabs.m-pdp .c-tabs__content", false);
-         List<String> categories = CrawlerUtils.crawlCategories(
-            doc, ".l-pdp .c-breadcrumbs .c-breadcrumbs__list .c-breadcrumbs__item .c-breadcrumbs__text");
-         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(
-            doc, ".c-product-main__image .c-product-detail-image__main .c-carousel__item img", "src");
-         /* SecundaryImages pequenas */
+         String description = crawlDescription(doc);
+         List<String> categories = CrawlerUtils.crawlCategories(doc, ".l-pdp .c-breadcrumbs .c-breadcrumbs__list .c-breadcrumbs__item .c-breadcrumbs__text", true);
          List<String> secondaryImages = getSecondaryImages(doc);
          RatingsReviews ratingsReviews = ratingsReviews(doc);
 
@@ -103,6 +99,32 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".c-product-main") != null;
+   }
+
+   public String crawlDescription(Document doc) {
+      StringBuilder description = new StringBuilder();
+      Element prodInfoElement = doc.selectFirst(".l-section__row");
+      String subtitle = CrawlerUtils.scrapStringSimpleInfo(doc, ".c-product-main__subtitle", false);
+      String descriptionTypeOne = CrawlerUtils.scrapStringSimpleInfo(doc, ".l-section .c-tabs .c-tabs__content", false);
+      String descriptionTypeTwo = CrawlerUtils.scrapStringSimpleInfo(doc, ".l-column.h-text-self-align-center-for-large", false);
+      String descriptionTypeThree = CrawlerUtils.scrapStringSimpleInfo(prodInfoElement, ".l-row div:nth-child(1)", false);
+
+      if (prodInfoElement != null) {
+         description.append(prodInfoElement);
+      }
+      if (descriptionTypeOne != null && !descriptionTypeOne.isEmpty()) {
+         descriptionTypeOne = subtitle + " " + descriptionTypeOne;
+         description.append(descriptionTypeOne);
+      }
+      if (descriptionTypeTwo != null && !descriptionTypeTwo.isEmpty()) {
+         descriptionTypeTwo = subtitle + " " + descriptionTypeTwo;
+         description.append(descriptionTypeTwo);
+      }
+      if (descriptionTypeThree != null && !descriptionTypeThree.isEmpty()) {
+         descriptionTypeThree = subtitle + " " + descriptionTypeThree;
+         description.append(descriptionTypeThree);
+      }
+      return description.toString();
    }
 
    private List<String> getSecondaryImages(Document doc) {
