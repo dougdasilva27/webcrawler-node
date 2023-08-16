@@ -26,8 +26,7 @@ import java.util.List;
 import java.util.Set;
 
 public class BrasilPlataformaLorealCrawler extends Crawler {
-//   private static String SELLER_NAME = this.something;
-   private static String SELLER_NAME = "Lâncome";
+   private String sellerName = this.session.getOptions().optString("sellerName");
 
    public Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.ELO.toString(), Card.AMEX.toString());
@@ -126,7 +125,7 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
 
       offers.add(new Offer.OfferBuilder()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(this.SELLER_NAME)
+         .setSellerFullName(this.sellerName)
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(true)
