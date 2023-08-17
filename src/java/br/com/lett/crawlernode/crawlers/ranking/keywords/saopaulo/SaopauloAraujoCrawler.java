@@ -23,7 +23,7 @@ public class SaopauloAraujoCrawler extends CrawlerRankingKeywords {
       String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
       this.log("Página " + this.currentPage);
-      String url = "https://www.araujo.com.br/busca?q=" + key + "&start=" + 50 * (this.currentPage - 1) + "&sz=50&page=" + this.currentPage;
+      String url = "https://www.araujo.com.br/busca?q=" + key + "&start=" + 50 * (this.currentPage  - 1) + "&sz=50&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
@@ -70,7 +70,7 @@ public class SaopauloAraujoCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      Element totalElement = this.currentDoc.select(".neemu-total-products-container").first();
+      Element totalElement = this.currentDoc.select(".quantity-products-found span").first();
 
       if (totalElement != null) {
          String total = totalElement.ownText().replaceAll("[^0-9]", "").trim();
