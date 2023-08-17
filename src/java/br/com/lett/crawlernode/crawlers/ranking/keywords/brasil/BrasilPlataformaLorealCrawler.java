@@ -31,12 +31,12 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
          for (Element product : products) {
             String internalPid = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".c-product-tile .c-product-image", "href").split("/")).replaceAll(".html", "");
             String productUrl = CrawlerUtils.scrapUrl(product, ".c-product-tile .c-product-tile__figure .c-product-image__link", "href", "https", host);
-            String productName = getNameWithDetail(
+            String productName = scrapNameWithDetail(
                CrawlerUtils.scrapStringSimpleInfo(product, ".c-product-tile .c-product-tile__caption .c-product-tile__name", false),
                CrawlerUtils.scrapStringSimpleInfo(product, ".c-product-tile__variations-group .c-product-tile__variations-single-text span", false)
             );
-            String imageUrl = getLargeImage(CrawlerUtils.scrapSimplePrimaryImage(product, ".c-product-image__primary img", List.of("src"), "https:", ""));
-            Integer price = getPrice(product, CrawlerUtils.scrapPriceInCentsFromHtml(product, ".c-product-tile__info-item .c-product-tile .c-product-price .c-product-price__value.m-new", null, false, ',', session, null));
+            String imageUrl = scrapLargeImage(CrawlerUtils.scrapSimplePrimaryImage(product, ".c-product-image__primary img", List.of("src"), "https:", ""));
+            Integer price = scrapPrice(product, CrawlerUtils.scrapPriceInCentsFromHtml(product, ".c-product-tile__info-item .c-product-tile .c-product-price .c-product-price__value.m-new", null, false, ',', session, null));
             boolean isAvailable = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".c-product-tile .c-product-tile__caption .c-product-tile__variations-group .c-carousel ul li a", "aria-disabled") == null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -59,7 +59,7 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private String getNameWithDetail(String name, String info) {
+   private String scrapNameWithDetail(String name, String info) {
       if (info == null) return name;
       if (name.matches("(?i).*\\d+(ml|g|mg).*")) {
          return name.replaceAll("\\d+(ml|g|mg|ML|G|MG)", info);
@@ -68,11 +68,11 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
       }
    }
 
-   private String getLargeImage(String image) {
+   private String scrapLargeImage(String image) {
       return image.replaceAll("(\\?|&)sw=\\d+", "?sw=750").replaceAll("(\\?|&)sh=\\d+", "?sh=750");
    }
 
-   private Integer getPrice(Element product, Integer price) {
+   private Integer scrapPrice(Element product, Integer price) {
       if (price == null) {
          Element spanSelected = product.selectFirst(".c-product-tile__info-item .c-product-price span:nth-child(4)");
          return CrawlerUtils.scrapPriceInCentsFromHtml(spanSelected, ".c-product-price__value", null, false, ',', session, null);
