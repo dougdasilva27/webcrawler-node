@@ -25,15 +25,16 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      this.pageSize = 15;
+      this.pageSize = 96;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.sondadelivery.com.br/" + this.locate + "/busca/" + this.keywordEncoded + "/" + this.currentPage + "/" + this.pageSize + "/0/";
+      String url =
+         "https://www.sondadelivery.com.br/"+this.locate+"/busca/" + this.keywordWithoutAccents.replace(" ", "%20") + "/" + this.currentPage + "/96/0/";
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".product-list .product");
+      Elements products = this.currentDoc.select(".product-list .product[itemtype=\"http://schema.org/Product\"]");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
