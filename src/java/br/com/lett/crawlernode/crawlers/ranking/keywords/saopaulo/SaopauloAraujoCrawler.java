@@ -28,7 +28,7 @@ public class SaopauloAraujoCrawler extends CrawlerRankingKeywords {
 
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select("div.productTile.js-product-tile");
+      Elements products = this.currentDoc.select(".searchResults__productGrid .productTile");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
