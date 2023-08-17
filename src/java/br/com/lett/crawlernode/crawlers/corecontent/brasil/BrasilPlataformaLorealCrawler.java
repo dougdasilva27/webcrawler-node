@@ -10,7 +10,6 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
-
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
@@ -18,13 +17,11 @@ import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import javax.print.Doc;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -83,12 +80,11 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
                String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "a", "href");
                Document document = fetchNewDocument(productUrl);
                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".c-product-main", "data-js-pid");
-//               boolean isAvailable = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "a", "aria-disabled") == null;
                boolean isAvailable = scrapAvailableFromJson(document);
                assert productName != null;
                String variationName = scrapVariationName(productName, CrawlerUtils.scrapStringSimpleInfo(element, ".c-variations-carousel__link .c-variations-carousel__value", false));
                primaryImage = scrapLargeImage(CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".c-product-main__image .c-product-detail-image__main .c-carousel__item img", "src"));
-               Offers offers = isAvailable ? scrapOffersVariations(document, element) : new Offers();
+               Offers offers = isAvailable ? scrapOffers(document) : new Offers();
 
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
@@ -189,114 +185,17 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
       return offers;
    }
 
-   private Offers scrapOffersVariations(Document doc, Element element) throws MalformedPricingException, OfferException {
-      Offers offers = new Offers();
-      Pricing pricing = scrapPricingVariations(doc, element);
-      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
-
-      offers.add(new Offer.OfferBuilder()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(this.sellerName)
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .setSales(sales)
-         .build());
-
-      return offers;
-   }
-
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = scrapPriceFromJson(doc);
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".c-product-sticky-bar .c-product-price .c-product-price__value.m-new", null, false, ',', session);
-      }
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".c-product-main__info .c-product-price .c-product-price__value.m-new", null, false, ',', session);
-      }
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "meta[property=\"product:price:amount\"]", "content", false, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "meta[property=\"product:price:amount\"]", "content", false, ',', session);
+
+      double tolerance = 1e-6;
+      if (Math.abs(spotlightPrice - priceFrom) < tolerance) {
+         priceFrom = null;
       }
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
-
-      Double priceFrom = scrapPriceFromJson(doc);
-      if (priceFrom == null || priceFrom <= spotlightPrice) {
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".c-product-sticky-bar .c-product-price .c-product-price__value.m-old", null, false, ',', session);
-      }
-      if (priceFrom == null  || priceFrom <= spotlightPrice) {
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".c-product-main__info .c-product-price .c-product-price__value.m-old", null, false, ',', session);
-      }
-      if (spotlightPrice != null && spotlightPrice <= priceFrom) {
-         Double auxPrice = spotlightPrice;
-         spotlightPrice = priceFrom;
-         priceFrom = auxPrice;
-      }
-      if (spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
-         priceFrom = null;
-      }
-
-      return Pricing.PricingBuilder.create()
-         .setSpotlightPrice(spotlightPrice)
-         .setPriceFrom(priceFrom)
-         .setCreditCards(creditCards)
-         .setBankSlip(bankSlip)
-         .build();
-   }
-
-   private Pricing scrapPricingVariations(Document doc, Element element) throws MalformedPricingException {
-      Double spotlightPrice = scrapPriceFromJson(doc);
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(element, ".c-carousel__item .c-product-price .c-product-price__value.m-new", null, false, ',', session);
-      }
-      if (spotlightPrice == null) {
-         Element spanSelected = element.selectFirst(".c-product-price span:nth-child(4)");
-         spotlightPrice = spanSelected != null ? CrawlerUtils.scrapDoublePriceFromHtml(spanSelected, ".c-product-price__value", null, false, ',', session) : null;
-      }
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".c-product-sticky-bar .c-product-price.c-product-main__price .c-product-price__value.m-new", null, false, ',', session);
-      }
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".c-product-main__info .c-product-price .c-product-price__value.m-new", null, false, ',', session);
-      }
-      if (spotlightPrice == null) {
-         Element spanSelected = doc.selectFirst(".c-product-price span:nth-child(4)");
-         spotlightPrice = spanSelected != null ? CrawlerUtils.scrapDoublePriceFromHtml(spanSelected, ".c-product-price__value", null, false, ',', session) : null;
-      }
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "meta[property=\"product:price:amount\"]", "content", false, '.', session);
-      }
-
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCards(spotlightPrice);
-
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "meta[property=\"product:price:amount\"]", "content", false, '.', session);
-      if (priceFrom == null) {
-         priceFrom = scrapPriceFromJson(doc);
-      }
-      if (priceFrom == null) {
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(element, ".c-carousel__item .c-product-price .c-product-price__value.m-old", null, false, ',', session);
-      }
-      if (priceFrom == null) {
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".c-product-sticky-bar .c-product-price .c-product-price__value.m-old", null, false, ',', session);
-      }
-      if (priceFrom == null) {
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".c-product-main__info .c-product-price .c-product-price__value.m-old", null, false, ',', session);
-      }
-      if (priceFrom == null) {
-         Element spanSelected = doc.selectFirst(".c-product-sticky-bar .c-product-price span:nth-child(4)");
-         priceFrom = spanSelected != null ? CrawlerUtils.scrapDoublePriceFromHtml(spanSelected, ".c-product-price__value", null, false, ',', session) : null;
-      }
-      if (spotlightPrice != null && spotlightPrice < priceFrom) {
-         Double auxPrice = spotlightPrice;
-         spotlightPrice = priceFrom;
-         priceFrom = auxPrice;
-      }
-      if (spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
-         priceFrom = null;
-      }
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
@@ -313,6 +212,12 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
          JSONArray array = JSONUtils.stringToJsonArray(jsonString);
          if (array != null) {
             Double price = JSONUtils.getValueRecursive(array, "0.offers.price", Double.class);
+            if (price == null) {
+               Integer priceInt = JSONUtils.getValueRecursive(array, "0.offers.price", Integer.class);
+               if (priceInt != null) {
+                  price = priceInt.doubleValue();
+               }
+            }
             if (price != null) {
                return price;
             }
