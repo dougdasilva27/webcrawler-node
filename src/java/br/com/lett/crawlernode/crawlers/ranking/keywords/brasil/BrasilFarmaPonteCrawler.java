@@ -22,15 +22,15 @@ public class BrasilFarmaPonteCrawler extends CrawlerRankingKeywords {
       String newKeywordEncoded = this.keywordEncoded.replace("+", "%20");
       String url = "https://www.farmaponte.com.br/" + newKeywordEncoded + "/?p=" + this.currentPage;
       this.currentDoc = fetchDocument(url);
-
-      Elements products = this.currentDoc.select(".list-products.page-content li");
+      
+      Elements products = this.currentDoc.select(".container .list-products.page-content .li");
       if (!products.isEmpty()) {
          for (Element product : products) {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".item-product", "data-sku");
-            String productUrl = CrawlerUtils.scrapUrl(product, ".item-product .link.image", "href", "https", "www.farmaponte.com.br");
+            String productUrl = CrawlerUtils.scrapUrl(product, ".item-product a.item-image", "href", "https", "www.farmaponte.com.br");
             String productName = CrawlerUtils.scrapStringSimpleInfo(product, ".item-product .desc .title", false);
-            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(product, ".item-product .link.image img", List.of("data-src"), "https:", "");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product,  ".item-product .desc .box-prices .prices .sale_price", null,  false, ',', session, null);
+            String imageUrl = scrapLargeImage(product);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(product,  ".item-product .desc .box-prices .prices .pix-price", null,  false, ',', session, null);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
