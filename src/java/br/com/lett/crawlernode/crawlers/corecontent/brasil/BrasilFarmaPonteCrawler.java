@@ -39,6 +39,12 @@ public class BrasilFarmaPonteCrawler extends Crawler {
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail .name", false);
          String internalId = scrapInternalId(doc);
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "meta[itemprop=\"sku\"]", "content");
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".card-body", false);
+         List<String> categories = CrawlerUtils.crawlCategories(doc, "#breadcrumb ul li a", true);
+         String primaryImage = scrapLargeImage(CrawlerUtils.scrapSimplePrimaryImage(doc, ".big-image .zoom .img-lazy", List.of("data-src"), "https:", ""));
+         List<String> secondaryImages = scrapSecondaryImages(doc, primaryImage);
+         boolean isAvailable = doc.selectFirst(".purchase .btn.btn-checkout.btn-let-me-know") == null;
+         Offers offers = isAvailable ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -84,7 +90,7 @@ public class BrasilFarmaPonteCrawler extends Crawler {
       }
       return secondaryImages;
    }
-
+   
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
@@ -104,8 +110,8 @@ public class BrasilFarmaPonteCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-detail .box-pricing .sale", null, false, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-detail .box-pricing .price_off", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .pix-price strong", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .unit-price span", null, false, ',', session);
       spotlightPrice = (spotlightPrice == null) ? priceFrom : spotlightPrice;
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
