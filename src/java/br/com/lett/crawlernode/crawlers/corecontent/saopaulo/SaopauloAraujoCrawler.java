@@ -1,142 +1,161 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import models.RatingsReviews;
-import models.pricing.Pricing;
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
-import java.io.UnsupportedEncodingException;
 import java.util.*;
 
-public class SaopauloAraujoCrawler extends VTEXOldScraper {
+public class SaopauloAraujoCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.araujo.com.br/";
-   private static final List<String> SELLERS = Arrays.asList("araujo");
+   private static final String SELLER = "araujo";
+
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.ELO.toString(), Card.MAESTRO.toString(), Card.MASTERCARD.toString(), Card.DINERS.toString(), Card.DISCOVER.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString());
 
    public SaopauloAraujoCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String getHomePage() {
-      return HOME_PAGE;
-   }
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-   @Override
-   protected List<String> getMainSellersNames() {
-      return SELLERS;
-   }
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-   private String decodeHtml(String html) {
-      return StringEscapeUtils.unescapeHtml4(html);
-   }
+         String internalPid = doc.select(".product-detail").attr("data-pid");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info-name h1", true);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadCrumb__content div a", false);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".productDetails__images__principal__img", Collections.singletonList("src"), "https:", "www.araujo.com.br");
+         List<String> secondaryImage = getSecondaryImages(doc, primaryImage);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".pdInfo")) + CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".pdSpecs"));
+         boolean availableToBuy = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prices .productPrice__price", null, false, ',', session) != null;
+         Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
-   @Override
-   protected Object fetch() {
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalPid)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImage)
+            .setDescription(description)
+            .setOffers(offers)
+            .build();
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "application/json");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+         products.add(product);
 
-      Request request = Request.RequestBuilder.create().setHeaders(headers).setCookies(cookies).setUrl(session.getOriginalURL()).build();
-      Response response = dataFetcher.get(session, request);
-
-      return response;
-   }
-
-   @Override
-   protected JSONObject crawlProductApi(String internalPid, String parameters) {
-      JSONObject productApi = new JSONObject();
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "application/json");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-
-      String url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid + (parameters == null ? "" : parameters);
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .setSendUserAgent(true)
-         .build();
-
-      JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
-
-      if (!array.isEmpty()) {
-         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
-      }
-
-      return productApi;
-   }
-
-   @Override
-   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
-      String description = "";
-      JSONArray descriptionArr = productJson.optJSONArray("Saiba Mais");
-
-      if (descriptionArr != null && !descriptionArr.isEmpty()) {
-         description = descriptionArr.toString();
       } else {
-         description = productJson.optString("description");
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-      description = decodeHtml(description);
-      description = description.replaceAll("\\<.*?\\>", "");
-      description = description.replaceAll("\"", "");
-      return description;
+      return products;
    }
 
-   @Override
-   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
-      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "78444", logger);
-      return trustVox.extractRatingAndReviews(internalPid, doc, dataFetcher);
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".product-detail") != null;
    }
 
-   @Override
-   protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid, Pricing pricing) {
+   private List<String> getSecondaryImages(Document doc, String primaryImage) {
+      List<String> secondaryImagesToChange = CrawlerUtils.scrapSecondaryImages(doc, ".images__indicator__button img", Arrays.asList("src"), "https", "www.araujo.com.br", primaryImage);
+      List<String> secondaryImages = new ArrayList<String>();
+      for (String imageUrl : secondaryImagesToChange) {
+         String newImageUrl = imageUrl.split("\\?sw=")[0];
+         secondaryImages.add(newImageUrl);
+      }
+      if (!secondaryImages.isEmpty()) {
+         secondaryImages.remove(0);
+      }
+      return secondaryImages;
+   }
+
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(doc, pricing);
+
+      if (pricing != null) {
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER)
+            .setSellersPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
+      }
+
+      return offers;
+   }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prices .productPrice__price", null, false, ',', session);
+
+      if (spotlightPrice != null) {
+         Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prices .productPrice__lineThrough", null, false, ',', session);
+         CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+         return Pricing.PricingBuilder.create()
+            .setSpotlightPrice(spotlightPrice)
+            .setPriceFrom(priceFrom)
+            .setCreditCards(creditCards)
+            .build();
+      }
+
+      return null;
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+      for (String brand : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(brand)
+            .setIsShopCard(false)
+            .setInstallments(installments)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+   protected List<String> scrapSales(Document doc, Pricing pricing) {
       List<String> sales = new ArrayList<>();
-      sales.add(CrawlerUtils.calculateSales(pricing));
 
-      Object teasers = offerJson.optQuery("/commertialOffer/Teasers");
-      if (teasers instanceof JSONArray) {
-         Object quantity = ((JSONArray) teasers).optQuery("/0/<Conditions>k__BackingField/<MinimumQuantity>k__BackingField");
+      Element economize = doc.selectFirst(".productDetails__buy_more_for_less-economize");
+      if (economize instanceof Element) {
+         Integer quantity = CrawlerUtils.scrapSimpleInteger(economize, ".productDetails__buy_more_for_less-economize .productDetails__kit-price-info span", true);
          if (quantity instanceof Integer) {
-            int salesQuantity = (int) quantity;
-            String sellerID = offerJson.optString("sellerId", "");
-            Double salesPrice = getSalesPrice(quantity, sellerID, internalId);
+            int salesQuantity = quantity;
+            Double salesPrice = CrawlerUtils.scrapDoublePriceFromHtml(economize, ".productDetails__buy_more_for_less-economize .productDetails__kit-price-info .kit-price", null, false, ',', session);
             if (salesPrice != null && salesPrice > 1) {
-               sales.add("Leve " + salesQuantity + " e pague R$ " + salesPrice + " cada");
+               sales.add("Leve " + salesQuantity + " e pague R$ " + salesPrice + " cada unidade");
             }
          }
       }
       return sales;
-   }
-
-   private Double getSalesPrice(Object quantity, String sellerID, String internalId) {
-      String url = homePage + "api/checkout/pub/orderForms/simulation";
-      String payload = "{\"items\":[{\"id\":\"" + internalId + "\",\"quantity\":" + quantity + ",\"seller\":\"" + sellerID + "\"}],\"postalCode\":\"\",\"country\":\"BRA\"}";
-      HashMap<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/json");
-
-      Request request = Request.RequestBuilder.create().setUrl(url).setPayload(payload).setHeaders(headers).setCookies(cookies).build();
-      JSONObject response = CrawlerUtils.stringToJSONObject(new FetcherDataFetcher().post(session, request).getBody());
-      if (response != null) {
-         Object priceInCents = response.optQuery("/items/0/sellingPrice");
-         if (priceInCents instanceof Integer) {
-            return ((Integer) priceInCents) / 100.0;
-         }
-      }
-      return null;
    }
 }
