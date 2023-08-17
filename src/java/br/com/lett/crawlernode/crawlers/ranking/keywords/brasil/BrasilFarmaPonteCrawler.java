@@ -57,4 +57,9 @@ public class BrasilFarmaPonteCrawler extends CrawlerRankingKeywords {
    protected boolean hasNextPage() {
       return !this.currentDoc.select(".pagination ul .next .active.link").isEmpty();
    }
+
+   private String scrapLargeImage(Element product) {
+      String url = CrawlerUtils.scrapSimplePrimaryImage(product, ".item-product a.item-image img", List.of("data-src"), "https:", "");
+      return url.replaceAll("/(small)/", "/large/");
+   }
 }
