@@ -69,6 +69,22 @@ public class BrasilFarmaPonteCrawler extends Crawler {
       return internalId.replaceAll("Cód: ", "");
    }
 
+   private String scrapLargeImage(String image) {
+      return image.replaceAll("/(mini|small|medium|large)/", "/large/");
+   }
+
+   private List<String> scrapSecondaryImages(Document doc, String primaryImage) {
+      List<String> imagesList = CrawlerUtils.scrapSecondaryImages(doc, ".thumbs .item img", List.of("data-src"),"https:", "", null);
+      List<String> secondaryImages = new ArrayList<>();
+      for (String image : imagesList) {
+         image = scrapLargeImage(image);
+         if (primaryImage == null || !primaryImage.equals(image)) {
+            secondaryImages.add(image);
+         }
+      }
+      return secondaryImages;
+   }
+
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
