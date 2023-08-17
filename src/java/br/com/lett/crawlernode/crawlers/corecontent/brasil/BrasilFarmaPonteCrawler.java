@@ -37,16 +37,8 @@ public class BrasilFarmaPonteCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail .name", false);
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail .code span", false);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-detail .box_df .tell_me .bt", "data-sku");
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".description_contents", false);
-         List<String> categories = CrawlerUtils.crawlCategories(doc, "#breadcrumb ul li a span", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .thumbs ul li a", List.of("big_img"), "https:", "");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image .thumbs ul li a", List.of("big_img"),
-            "https:", "", primaryImage);
-
-         boolean available = doc.selectFirst(".product-detail .box_df .hide-unavailable") != null;
-         Offers offers = available ? scrapOffers(doc) : new Offers();
+         String internalId = scrapInternalId(doc);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "meta[itemprop=\"sku\"]", "content");
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -68,7 +60,13 @@ public class BrasilFarmaPonteCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("#content_product") != null;
+      return doc.selectFirst("#content-product") != null;
+   }
+
+   private String scrapInternalId(Document doc) {
+      String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".mr-3", false);
+      assert internalId != null;
+      return internalId.replaceAll("Cód: ", "");
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
