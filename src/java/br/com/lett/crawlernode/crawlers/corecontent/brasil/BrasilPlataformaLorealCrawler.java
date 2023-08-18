@@ -136,10 +136,6 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
       return description.toString();
    }
 
-//   private String scrapLargeImage(String image) {
-//      return image.replaceAll("(\\?|&)sw=\\d+", "?sw=750").replaceAll("(\\?|&)sh=\\d+", "?sh=750");
-//   }
-
    private List<String> scrapSecondaryImages(Document doc) {
       List<String> secondaryImages = new ArrayList<>();
 
