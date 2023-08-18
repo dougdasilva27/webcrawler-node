@@ -33,7 +33,7 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
 
    public BrasilJustoCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.HTTPCLIENT;
    }
 
    private String getPostalCode() {
@@ -61,7 +61,6 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
       for (int i = 0; i < products.length(); i++) {
          JSONObject product = products.getJSONObject(i);
          String internalId = JSONUtils.getValueRecursive(product, "sku", String.class, "");
-         String internalPid = internalId;
          String productUrl = HOME_PAGE + JSONUtils.getValueRecursive(product, "url", String.class, "");
          String name = product.optString("name");
          String imageUrl = JSONUtils.getValueRecursive(product, "image_thumbnail_url", String.class, "");
@@ -72,7 +71,7 @@ public class BrasilJustoCrawler extends CrawlerRankingKeywords {
          RankingProduct productRanking = RankingProductBuilder.create()
             .setUrl(productUrl)
             .setInternalId(internalId)
-            .setInternalPid(internalPid)
+            .setInternalPid(internalId)
             .setName(name)
             .setImageUrl(imageUrl)
             .setPriceInCents(priceInCents)
