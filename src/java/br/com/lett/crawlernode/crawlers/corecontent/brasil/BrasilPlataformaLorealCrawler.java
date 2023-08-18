@@ -194,7 +194,7 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "meta[property=\"product:price:amount\"]", "content", false, '.', session);
 
       double tolerance = 1e-6;
-      if (Math.abs(spotlightPrice - priceFrom) < tolerance) {
+      if (spotlightPrice != null && priceFrom != null && Math.abs(spotlightPrice - priceFrom) < tolerance) {
          priceFrom = null;
       }
 
