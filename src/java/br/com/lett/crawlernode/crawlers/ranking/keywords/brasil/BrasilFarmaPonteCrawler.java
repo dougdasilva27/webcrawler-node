@@ -54,12 +54,12 @@ public class BrasilFarmaPonteCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected boolean hasNextPage() {
-      return !this.currentDoc.select(".pagination ul .next .active.link").isEmpty();
+   protected void setTotalProducts() {
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".container .page-template .text-center.pt-3", false, 0);
    }
 
    private String scrapLargeImage(Element product) {
       String url = CrawlerUtils.scrapSimplePrimaryImage(product, ".item-product a.item-image img", List.of("data-src"), "https:", "");
-      return url.replaceAll("/(small)/", "/large/");
+      return url.replaceAll("/(mini|small|medium)/", "/large/");
    }
 }
