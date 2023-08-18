@@ -44,7 +44,7 @@ public class SaopauloAraujoCrawler extends Crawler {
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".productDetails__images__principal__img", Collections.singletonList("src"), "https:", "www.araujo.com.br");
          List<String> secondaryImage = getSecondaryImages(doc, primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".pdInfo")) + CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".pdSpecs"));
-         boolean availableToBuy = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prices .productPrice__price", null, false, ',', session) != null;
+         boolean availableToBuy = CrawlerUtils.scrapStringSimpleInfo(doc, ".productDetails__unavailable", true) == null;;
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()

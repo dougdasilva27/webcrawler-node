@@ -41,7 +41,7 @@ public class SaopauloAraujoCrawler extends CrawlerRankingKeywords {
             String name = e.attr("title");
             String imageUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "img", "src"), "https", "");
             int price = crawlPrice(e);
-            boolean isAvailable = price != 0;
+            boolean isAvailable = CrawlerUtils.scrapStringSimpleInfo(e, ".productDetails__unavailable", true) == null;
 
             //New way to send products to save data product
             RankingProduct productRanking = RankingProductBuilder.create()
