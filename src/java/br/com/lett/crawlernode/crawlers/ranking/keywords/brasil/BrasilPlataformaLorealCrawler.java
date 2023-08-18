@@ -37,6 +37,7 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
                CrawlerUtils.scrapStringSimpleInfo(product, ".c-product-tile .c-product-tile__caption .c-product-tile__name", false),
                CrawlerUtils.scrapStringSimpleInfo(product, ".c-product-tile__variations-group .c-product-tile__variations-single-text span", false)
             );
+            productName = productName.isEmpty() ? getScrapName(product) : productName;
             String imageUrl = scrapLargeImage(CrawlerUtils.scrapSimplePrimaryImage(product, ".c-product-image__primary img", List.of("src"), "https:", ""));
             Integer priceInCents = scrapPrice(product, CrawlerUtils.scrapPriceInCentsFromHtml(product, ".c-product-tile__info-item .c-product-tile .c-product-price .c-product-price__value.m-new", null, false, ',', session, null));
             boolean isAvailable = isProductAvailable(product);
@@ -101,5 +102,19 @@ public class BrasilPlataformaLorealCrawler extends CrawlerRankingKeywords {
       }
 
       return true;
+   }
+
+   private String getScrapName(Element e) {
+      String scrapSelector = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[data-component=\"product/ProductTile\"]", "data-analytics");
+      JSONObject productObj = JSONUtils.stringToJson(scrapSelector);
+
+      if (productObj != null) {
+         String productName = JSONUtils.getValueRecursive(productObj, "products.0.productTopCategory", String.class, "");
+         if (productName != null) {
+            return productName;
+         }
+      }
+
+      return "";
    }
 }
