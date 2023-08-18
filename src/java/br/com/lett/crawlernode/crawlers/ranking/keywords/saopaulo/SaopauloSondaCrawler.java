@@ -34,7 +34,7 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".product-list .product:first-child");
+      Elements products = this.currentDoc.select(".product-list .product[itemtype=\"http://schema.org/Product\"]");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
