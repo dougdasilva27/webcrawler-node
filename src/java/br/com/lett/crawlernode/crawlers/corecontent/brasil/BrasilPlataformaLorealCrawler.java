@@ -78,12 +78,14 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
          } else {
             for (Element element : variations) {
                String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "a", "href");
-               Document document = fetchNewDocument(productUrl);
-               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".c-product-main", "data-js-pid");
-               boolean isAvailable = scrapAvailableFromJson(document);
+               Document newDocument = fetchNewDocument(productUrl);
+               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(newDocument, ".c-product-main", "data-js-pid");
+               boolean isAvailable = scrapAvailableFromJson(newDocument);
                assert productName != null;
                String variationName = scrapVariationName(productName, CrawlerUtils.scrapStringSimpleInfo(element, ".c-variations-carousel__link .c-variations-carousel__value", false)) + " " + getVariationSize(element);
-               Offers offers = isAvailable ? scrapOffers(document) : new Offers();
+               primaryImage = scrapPrimaryImage(newDocument);
+               secondaryImages = scrapSecondaryImages(newDocument);
+               Offers offers = isAvailable ? scrapOffers(newDocument) : new Offers();
 
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
