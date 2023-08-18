@@ -25,8 +25,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class BrasilAgrosoloCrawler extends Crawler {
 
@@ -49,7 +47,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
          Elements variations = doc.select(".product__infos--unique--wrapper .product__variants--item");
 
          for (Element element : variations) {
-            String internalId = getInternalId(doc);
+            String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__sku span", true);
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product-id", "value");
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__title", true);
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE);
@@ -63,7 +61,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
                String variationName = element.select("label").text();
                Document document = requestFromVariations(internalPid, variationName);
                name = name + " - " + variationName;
-               internalId = getInternalId(document);
+               internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__sku span", true);
 
                primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE);
                images = CrawlerUtils.scrapSecondaryImages(document, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
@@ -87,21 +85,6 @@ public class BrasilAgrosoloCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
       return products;
-   }
-
-   private String getInternalId(Document doc) {
-      String skuProduct = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__sku", true);
-      String regex = "SKU ([0-9]*)";
-
-      if (skuProduct != null) {
-         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-         Matcher matcher = pattern.matcher(skuProduct);
-
-         if (matcher.find()) {
-            return matcher.group(1);
-         }
-      }
-      return null;
    }
 
    private Document requestFromVariations(String internalPid, String variationName) {
