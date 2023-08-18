@@ -37,16 +37,14 @@ public class BrasilFarmaPonteCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail .name", false);
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail .code span", false);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-detail .box_df .tell_me .bt", "data-sku");
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".description_contents", false);
-         List<String> categories = CrawlerUtils.crawlCategories(doc, "#breadcrumb ul li a span", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .thumbs ul li a", List.of("big_img"), "https:", "");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image .thumbs ul li a", List.of("big_img"),
-            "https:", "", primaryImage);
-
-         boolean available = doc.selectFirst(".product-detail .box_df .hide-unavailable") != null;
-         Offers offers = available ? scrapOffers(doc) : new Offers();
+         String internalId = scrapInternalId(doc);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "meta[itemprop=\"sku\"]", "content");
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".card-body", false);
+         List<String> categories = CrawlerUtils.crawlCategories(doc, "#breadcrumb ul li a", true);
+         String primaryImage = scrapLargeImage(CrawlerUtils.scrapSimplePrimaryImage(doc, ".big-image .zoom .img-lazy", List.of("data-src"), "https:", ""));
+         List<String> secondaryImages = scrapSecondaryImages(doc, primaryImage);
+         boolean isAvailable = doc.selectFirst(".purchase .btn.btn-checkout.btn-let-me-know") == null;
+         Offers offers = isAvailable ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -68,9 +66,31 @@ public class BrasilFarmaPonteCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("#content_product") != null;
+      return doc.selectFirst("#content-product") != null;
    }
 
+   private String scrapInternalId(Document doc) {
+      String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".mr-3", false);
+      assert internalId != null;
+      return internalId.replaceAll("Cód: ", "");
+   }
+
+   private String scrapLargeImage(String image) {
+      return image.replaceAll("/(mini|small|medium|large)/", "/large/");
+   }
+
+   private List<String> scrapSecondaryImages(Document doc, String primaryImage) {
+      List<String> imagesList = CrawlerUtils.scrapSecondaryImages(doc, ".thumbs .item img", List.of("data-src"),"https:", "", null);
+      List<String> secondaryImages = new ArrayList<>();
+      for (String image : imagesList) {
+         image = scrapLargeImage(image);
+         if (primaryImage == null || !primaryImage.equals(image)) {
+            secondaryImages.add(image);
+         }
+      }
+      return secondaryImages;
+   }
+   
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
@@ -90,8 +110,8 @@ public class BrasilFarmaPonteCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-detail .box-pricing .sale", null, false, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-detail .box-pricing .price_off", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .pix-price strong", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-form .unit-price span", null, false, ',', session);
       spotlightPrice = (spotlightPrice == null) ? priceFrom : spotlightPrice;
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
