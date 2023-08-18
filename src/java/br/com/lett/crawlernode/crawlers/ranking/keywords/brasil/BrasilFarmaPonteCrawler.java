@@ -25,6 +25,9 @@ public class BrasilFarmaPonteCrawler extends CrawlerRankingKeywords {
       
       Elements products = this.currentDoc.select(".container .list-products.page-content .li");
       if (!products.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts();
+         }
          for (Element product : products) {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".item-product", "data-sku");
             String productUrl = CrawlerUtils.scrapUrl(product, ".item-product a.item-image", "href", "https", "www.farmaponte.com.br");
