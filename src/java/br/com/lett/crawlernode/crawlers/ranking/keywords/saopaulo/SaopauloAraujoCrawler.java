@@ -5,8 +5,8 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -18,17 +18,17 @@ public class SaopauloAraujoCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
-      this.pageSize = 32;
+      this.pageSize = 50;
 
       String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
       this.log("Página " + this.currentPage);
-      String url = "http://busca.araujo.com.br/busca?q=" + key + "&page=" + this.currentPage;
+      String url = "https://www.araujo.com.br/busca?q=" + key + "&start=" + 50 * (this.currentPage  - 1) + "&sz=50&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".neemu-products-container .nm-product-item");
+      Elements products = this.currentDoc.select(".searchResults__productGrid .productTile");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -36,12 +36,12 @@ public class SaopauloAraujoCrawler extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String internalPid = crawlInternalPid(e);
-            String productUrl = crawlProductUrl(e);
-            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".nm-product-name a", true);
-            String imageUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".nm-product-img-link img", "src"), "https","");
-            int price = CrawlerUtils.scrapIntegerFromHtml(e, ".nm-offer .nm-price-value", true, 0);
-            boolean isAvailable = price != 0;
+            String internalPid = e.attr("data-pid");
+            String productUrl = "https://www.araujo.com.br" + e.attr("data-url");
+            String name = e.attr("title");
+            String imageUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "img", "src"), "https", "");
+            int price = crawlPrice(e);
+            boolean isAvailable = CrawlerUtils.scrapStringSimpleInfo(e, ".productDetails__unavailable", true) == null;
 
             //New way to send products to save data product
             RankingProduct productRanking = RankingProductBuilder.create()
@@ -70,7 +70,7 @@ public class SaopauloAraujoCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      Element totalElement = this.currentDoc.select(".neemu-total-products-container").first();
+      Element totalElement = this.currentDoc.select(".quantity-products-found span").first();
 
       if (totalElement != null) {
          String total = totalElement.ownText().replaceAll("[^0-9]", "").trim();
@@ -83,29 +83,13 @@ public class SaopauloAraujoCrawler extends CrawlerRankingKeywords {
       this.log("Total da busca: " + this.totalProducts);
    }
 
-   private String crawlInternalPid(Element e) {
-      String internalPid = null;
-
-      String text = e.attr("id");
-      if (text.contains("-")) {
-         internalPid = CommonMethods.getLast(text.split("-"));
-      }
-
-      return internalPid;
+   private Integer crawlPrice(Element e) {
+      String gtmdata = e.attr("data-gtmdata");
+      String jsonData = gtmdata.replace("&quot;", "\"");
+      JSONObject jsonObject = new JSONObject(jsonData);
+      Double price = jsonObject.optDouble("price");
+      int priceInCents = (int) Math.round((Double) price * 100);
+      return priceInCents;
    }
 
-   private String crawlProductUrl(Element e) {
-      String productUrl = null;
-      Element urlElement = e.select(".nm-product-name > a").first();
-
-      if (urlElement != null) {
-         productUrl = urlElement.attr("href");
-
-         if (!productUrl.startsWith("http")) {
-            productUrl = "https:" + productUrl;
-         }
-      }
-
-      return productUrl;
-   }
 }
