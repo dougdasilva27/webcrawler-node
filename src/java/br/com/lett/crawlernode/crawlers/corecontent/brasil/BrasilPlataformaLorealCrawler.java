@@ -51,7 +51,7 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
          String productName = CrawlerUtils.scrapStringSimpleInfo(doc, ".c-product-main__name", false);
          String description = crawlDescription(doc);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".l-pdp .c-breadcrumbs .c-breadcrumbs__list .c-breadcrumbs__item .c-breadcrumbs__text", true);
-         String primaryImage = scrapLargeImage(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".c-product-main__image .c-product-detail-image__main .c-carousel__item img", "src"));
+         String primaryImage = scrapPrimaryImage(doc);
          List<String> secondaryImages = scrapSecondaryImages(doc);
          RatingsReviews ratingsReviews = ratingsReviews(doc);
 
@@ -59,7 +59,7 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
 
          if (variations.isEmpty()) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".c-product-main", "data-js-pid");
-            boolean isAvailable = doc.selectFirst(".c-product-main__quantity .c-stepper-input.m-disabled") == null;
+            boolean isAvailable = scrapAvailableFromJson(doc);
             Offers offers = isAvailable ? scrapOffers(doc) : new Offers();
 
             Product product = ProductBuilder.create()
@@ -82,8 +82,7 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".c-product-main", "data-js-pid");
                boolean isAvailable = scrapAvailableFromJson(document);
                assert productName != null;
-               String variationName = scrapVariationName(productName, CrawlerUtils.scrapStringSimpleInfo(element, ".c-variations-carousel__link .c-variations-carousel__value", false));
-               primaryImage = scrapLargeImage(CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".c-product-main__image .c-product-detail-image__main .c-carousel__item img", "src"));
+               String variationName = scrapVariationName(productName, CrawlerUtils.scrapStringSimpleInfo(element, ".c-variations-carousel__link .c-variations-carousel__value", false)) + " " + getVariationSize(element);
                Offers offers = isAvailable ? scrapOffers(document) : new Offers();
 
                Product product = ProductBuilder.create()
@@ -137,9 +136,9 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
       return description.toString();
    }
 
-   private String scrapLargeImage(String image) {
-      return image.replaceAll("(\\?|&)sw=\\d+", "?sw=750").replaceAll("(\\?|&)sh=\\d+", "?sh=750");
-   }
+//   private String scrapLargeImage(String image) {
+//      return image.replaceAll("(\\?|&)sw=\\d+", "?sw=750").replaceAll("(\\?|&)sh=\\d+", "?sh=750");
+//   }
 
    private List<String> scrapSecondaryImages(Document doc) {
       List<String> secondaryImages = new ArrayList<>();
@@ -150,12 +149,21 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
       }
       for (Element imageLi : imagesList) {
          String image = imageLi.attr("src");
-         secondaryImages.add(scrapLargeImage(image));
+         secondaryImages.add(image);
       }
       if (secondaryImages.size() > 0) {
          secondaryImages.remove(0);
       }
       return secondaryImages;
+   }
+
+   private String getVariationSize(Element element) {
+      Element link = element.selectFirst("a[data-js-value]");
+      if (link != null) {
+         return link.attr("title");
+      }
+
+      return "";
    }
 
    private String scrapVariationName(String name, String info) {
@@ -187,7 +195,7 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = scrapPriceFromJson(doc);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "meta[property=\"product:price:amount\"]", "content", false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "meta[property=\"product:price:amount\"]", "content", false, '.', session);
 
       double tolerance = 1e-6;
       if (Math.abs(spotlightPrice - priceFrom) < tolerance) {
@@ -203,6 +211,22 @@ public class BrasilPlataformaLorealCrawler extends Crawler {
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
+   }
+
+   private String scrapPrimaryImage(Document doc) {
+      Elements elements = doc.select("script[type=\"application/ld+json\"]");
+      for (Element element : elements) {
+         String jsonString = CrawlerUtils.scrapScriptFromHtml(element, "script[type=\"application/ld+json\"]");
+         JSONArray array = JSONUtils.stringToJsonArray(jsonString);
+         if (array != null) {
+            String imageUrl = JSONUtils.getValueRecursive(array, "0.image", String.class);
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+               return imageUrl;
+            }
+
+         }
+      }
+      return null;
    }
 
    private Double scrapPriceFromJson(Document doc) {
