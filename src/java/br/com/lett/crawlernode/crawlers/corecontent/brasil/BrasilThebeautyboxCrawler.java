@@ -22,9 +22,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -169,37 +166,6 @@ public class BrasilThebeautyboxCrawler extends Crawler {
       } catch (Exception e) {
          throw new RuntimeException("Failed In load page: " + url, e);
       }
-   }
-
-   public static HttpResponse retryRequest(String url, Session session) throws IOException, InterruptedException {
-      HttpResponse<String> response = null;
-      ArrayList<Integer> ipPort = new ArrayList<Integer>();
-      ipPort.add(3132); //netnut br haproxy
-      ipPort.add(3135); //buy haproxy
-      ipPort.add(3133); //netnut ES haproxy
-      ipPort.add(3138); //netnut AR haproxy
-
-      try {
-         for (int interable = 0; interable < ipPort.size(); interable++) {
-            response = RequestHandler(url, ipPort.get(interable));
-            if (response.statusCode() == 200) {
-               return response;
-            }
-         }
-      } catch (Exception e) {
-         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
-      }
-      return response;
-   }
-
-   private static HttpResponse RequestHandler(String url, Integer port) throws IOException, InterruptedException {
-      HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", port))).build();
-      HttpRequest request = HttpRequest.newBuilder()
-         .GET()
-         .uri(URI.create(url))
-         .build();
-      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      return response;
    }
 
    private RatingsReviews scrapRating(Document doc, String internalPid) {
