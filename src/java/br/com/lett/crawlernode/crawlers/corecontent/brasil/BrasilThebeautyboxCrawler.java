@@ -71,7 +71,7 @@ public class BrasilThebeautyboxCrawler extends Crawler {
       if (isProductPage(doc)) {
          String internalPid = scrapInternalPid(doc);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ol.breadcrumb > li.breadcrumb-item");
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-description-content.reset-allow-bold", true);
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-description-content.reset-allow-bold", true).isEmpty() ? CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-description-content.reset-allow-bold", false) : CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-description-content.reset-allow-bold", true);
          RatingsReviews ratingsReviews = scrapRating(doc, internalPid);
 
          Elements items = doc.select("div.product-group-items.row > a");
