@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
@@ -25,6 +22,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 
 public class BrasilThebeautyboxCrawler extends Crawler {
@@ -41,18 +45,23 @@ public class BrasilThebeautyboxCrawler extends Crawler {
    @Override
    protected Response fetchResponse() {
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
-            ProxyCollection.LUMINATI_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR))
-         .build();
+      String requestURL = session.getOriginalURL();
 
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
-
-      return response;
+      try {
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(requestURL))
+            .header("Cookie", "ak_bmsc=E18B99F73EAF300B8E194522621AFBFE~000000000000000000000000000000~YAAQyQHdWNT35/2JAQAAjpfiCRSehcm3oqJoiQsBiXSCI8tVHnZinM/tLJeMocEixFA+JUlfQyNzB2VDMOAz6M5MW9CgD5c8Y2Za/fPoeuQVls1PPVFEOxUFUUZZK4yqxzVzlIw3JyfJ9E1W+2V7ISegG0lTjWo6VIiioNRSZPkZhbkWKiU74mYi7dRKLAOf9EEAYRZe454URSEjpBJu/3+V/Odr2lUE0+2QsMskl5v7pnFzp1xoiMOKMd/WU3mMhV9mcbEBuuWyUkk4NWuMMZtBT33VtxQX+NAvRGPiduuz59QZTJIYJ6ya4IBX/UPJdcQFaXGnvG0Y9FshJnqDzlU+NZrs6FOPhwpbUILz4xhsVdBMjYzk8XTfDwPuAG9je6rwEg==; bm_mi=6BC1EC2C97CAE01FEB8B5CF4F8C4DE88~YAAQyQHdWOQR6P2JAQAAxEjlCRQjCkhmGNDLaycGM/3w9otkrH3kNqFmh5OXkDo/U+qs8zIHJ3Zj8CAFLeY7BVOA5e3V4QalKgPXx92Ui6huRb0Ieux+PhpqVTTbAr7x+nE1KmU77IqoIN4aX9qA6Q4ukgdz/o88xZ/zPll3X/WqhDbe/lw0Kopx92ehsw/Uc5PJiJfRDG1SFKTaWkZTEymLuaGwCIWWFlWMUvvuIS1PcCYCS18A3GgOvDDkB+yY//8ZTuhVYaFaIr9wyfZ+x5Nm72CbHj1sZ2Oov7F+lmiDC7tbe1QH2nD2zuCo14o7t3RZVZMsju9oL/jke6iu6fWuNrOJbgtvR8gTH2ese6OcsuFlf6So0VW9O2p6Dt0JecFOJdghHu8+wDP5A/FYtRbY2C2UpsHaAA==~1; bm_sv=1F3CBB169BAE574C896B450C9BCDC959~YAAQyQHdWOUR6P2JAQAAxEjlCRQqtsjXl01xQwGVZF3NXG712AWaKNkgHHBOAmUPi4t7SsDrYa4IUIg3P/eHq//Sp1go0citNnSEBfnGolOa6vAC0dHVoVeh8FRIS1C2VAEcXIL9jAKE/cIKWiHUE0QimbcKmPUcE95ry8GM4X/J0q9Mj1WbO1NasTKPrmcAVOnXcyQPDttJiLLyYv70ac610upchU2QtxyBPy4DfWAtVnG3Fxmyd+a8z22vDYl3AN3buCkG~1; featureToggleHash=e0d7f5d8f893b97de19dd966c0a4f3d6; lastVisitedSku=MjU1MDI%3D")
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return new Response.ResponseBuilder()
+            .setBody(response.body())
+            .setLastStatusCode(response.statusCode())
+            .build();
+      } catch (Exception e) {
+         throw new RuntimeException("Failed in load document: " + requestURL, e);
+      }
    }
 
    private static final String MAIN_SELLER_NAME_LOWER = "the beauty box brasil";
@@ -148,18 +157,49 @@ public class BrasilThebeautyboxCrawler extends Crawler {
    }
 
    private Document fetchPage(String url) {
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
-            ProxyCollection.LUMINATI_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+      try {
+         HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(url))
+            .header("Cookie", "ak_bmsc=E18B99F73EAF300B8E194522621AFBFE~000000000000000000000000000000~YAAQyQHdWNT35/2JAQAAjpfiCRSehcm3oqJoiQsBiXSCI8tVHnZinM/tLJeMocEixFA+JUlfQyNzB2VDMOAz6M5MW9CgD5c8Y2Za/fPoeuQVls1PPVFEOxUFUUZZK4yqxzVzlIw3JyfJ9E1W+2V7ISegG0lTjWo6VIiioNRSZPkZhbkWKiU74mYi7dRKLAOf9EEAYRZe454URSEjpBJu/3+V/Odr2lUE0+2QsMskl5v7pnFzp1xoiMOKMd/WU3mMhV9mcbEBuuWyUkk4NWuMMZtBT33VtxQX+NAvRGPiduuz59QZTJIYJ6ya4IBX/UPJdcQFaXGnvG0Y9FshJnqDzlU+NZrs6FOPhwpbUILz4xhsVdBMjYzk8XTfDwPuAG9je6rwEg==; bm_mi=6BC1EC2C97CAE01FEB8B5CF4F8C4DE88~YAAQyQHdWOQR6P2JAQAAxEjlCRQjCkhmGNDLaycGM/3w9otkrH3kNqFmh5OXkDo/U+qs8zIHJ3Zj8CAFLeY7BVOA5e3V4QalKgPXx92Ui6huRb0Ieux+PhpqVTTbAr7x+nE1KmU77IqoIN4aX9qA6Q4ukgdz/o88xZ/zPll3X/WqhDbe/lw0Kopx92ehsw/Uc5PJiJfRDG1SFKTaWkZTEymLuaGwCIWWFlWMUvvuIS1PcCYCS18A3GgOvDDkB+yY//8ZTuhVYaFaIr9wyfZ+x5Nm72CbHj1sZ2Oov7F+lmiDC7tbe1QH2nD2zuCo14o7t3RZVZMsju9oL/jke6iu6fWuNrOJbgtvR8gTH2ese6OcsuFlf6So0VW9O2p6Dt0JecFOJdghHu8+wDP5A/FYtRbY2C2UpsHaAA==~1; bm_sv=1F3CBB169BAE574C896B450C9BCDC959~YAAQyQHdWOUR6P2JAQAAxEjlCRQqtsjXl01xQwGVZF3NXG712AWaKNkgHHBOAmUPi4t7SsDrYa4IUIg3P/eHq//Sp1go0citNnSEBfnGolOa6vAC0dHVoVeh8FRIS1C2VAEcXIL9jAKE/cIKWiHUE0QimbcKmPUcE95ry8GM4X/J0q9Mj1WbO1NasTKPrmcAVOnXcyQPDttJiLLyYv70ac610upchU2QtxyBPy4DfWAtVnG3Fxmyd+a8z22vDYl3AN3buCkG~1; featureToggleHash=e0d7f5d8f893b97de19dd966c0a4f3d6; lastVisitedSku=MjU1MDI%3D")
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+         return Jsoup.parse(response.body());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load page: " + url, e);
+      }
+   }
+
+   public static HttpResponse retryRequest(String url, Session session) throws IOException, InterruptedException {
+      HttpResponse<String> response = null;
+      ArrayList<Integer> ipPort = new ArrayList<Integer>();
+      ipPort.add(3132); //netnut br haproxy
+      ipPort.add(3135); //buy haproxy
+      ipPort.add(3133); //netnut ES haproxy
+      ipPort.add(3138); //netnut AR haproxy
+
+      try {
+         for (int interable = 0; interable < ipPort.size(); interable++) {
+            response = RequestHandler(url, ipPort.get(interable));
+            if (response.statusCode() == 200) {
+               return response;
+            }
+         }
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
+      return response;
+   }
+
+   private static HttpResponse RequestHandler(String url, Integer port) throws IOException, InterruptedException {
+      HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", port))).build();
+      HttpRequest request = HttpRequest.newBuilder()
+         .GET()
+         .uri(URI.create(url))
          .build();
-
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
-
-      return Jsoup.parse(response.getBody());
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      return response;
    }
 
    private RatingsReviews scrapRating(Document doc, String internalPid) {
@@ -176,6 +216,7 @@ public class BrasilThebeautyboxCrawler extends Crawler {
 
       return ratingReviews;
    }
+
 
    private AdvancedRatingReview scrapAdvancedRating(String internalPid) {
       int page = 1;
