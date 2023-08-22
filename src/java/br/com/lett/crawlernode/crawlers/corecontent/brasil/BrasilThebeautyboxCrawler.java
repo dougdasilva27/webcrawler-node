@@ -40,14 +40,13 @@ public class BrasilThebeautyboxCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
-
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.LUMINATI_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
+            ProxyCollection.BUY))
          .build();
 
       Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
@@ -65,7 +64,7 @@ public class BrasilThebeautyboxCrawler extends Crawler {
       if (isProductPage(doc)) {
          String internalPid = scrapInternalPid(doc);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ol.breadcrumb > li.breadcrumb-item");
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-description-content.reset-allow-bold", true);
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-description-content.reset-allow-bold", true).isEmpty() ? CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-description-content.reset-allow-bold", false) : CrawlerUtils.scrapStringSimpleInfo(doc, "div.product-description-content.reset-allow-bold", true);
          RatingsReviews ratingsReviews = scrapRating(doc, internalPid);
 
          Elements items = doc.select("div.product-group-items.row > a");
@@ -151,10 +150,10 @@ public class BrasilThebeautyboxCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
             ProxyCollection.LUMINATI_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
+            ProxyCollection.BUY))
          .build();
 
       Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
@@ -176,6 +175,7 @@ public class BrasilThebeautyboxCrawler extends Crawler {
 
       return ratingReviews;
    }
+
 
    private AdvancedRatingReview scrapAdvancedRating(String internalPid) {
       int page = 1;

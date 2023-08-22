@@ -1,9 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,7 +13,14 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.Arrays;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.Collections;
 
 public class BrasilThebeautyboxCrawler extends CrawlerRankingKeywords {
@@ -28,18 +31,43 @@ public class BrasilThebeautyboxCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected Document fetchDocument(String url) {
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR,
-            ProxyCollection.LUMINATI_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+      try {
+         HttpResponse<String> response = retryRequest(url, session);
+         return Jsoup.parse(response.body());
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load page: " + url, e);
+      }
+   }
+
+   public static HttpResponse retryRequest(String url, Session session) throws IOException, InterruptedException {
+      HttpResponse<String> response = null;
+      ArrayList<Integer> ipPort = new ArrayList<Integer>();
+      ipPort.add(3132); //netnut br haproxy
+      ipPort.add(3135); //buy haproxy
+      ipPort.add(3133); //netnut ES haproxy
+      ipPort.add(3138); //netnut AR haproxy
+
+      try {
+         for (int interable = 0; interable < ipPort.size(); interable++) {
+            response = RequestHandler(url, ipPort.get(interable));
+            if (response.statusCode() == 200) {
+               return response;
+            }
+         }
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
+      return response;
+   }
+
+   private static HttpResponse RequestHandler(String url, Integer port) throws IOException, InterruptedException {
+      HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", port))).build();
+      HttpRequest request = HttpRequest.newBuilder()
+         .GET()
+         .uri(URI.create(url))
          .build();
-
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
-
-      return Jsoup.parse(response.getBody());
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      return response;
    }
 
    @Override
