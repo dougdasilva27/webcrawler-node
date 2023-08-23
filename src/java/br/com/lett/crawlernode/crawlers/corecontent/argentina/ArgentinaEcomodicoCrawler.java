@@ -123,6 +123,7 @@ public class ArgentinaEcomodicoCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ui-pdp-price__second-line .andes-money-amount__fraction", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ui-pdp-price__original-value .andes-money-amount__fraction", null, true, ',', session);
 
       if (spotlightPrice != null) {
          CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
@@ -132,7 +133,7 @@ public class ArgentinaEcomodicoCrawler extends Crawler {
 
          return Pricing.PricingBuilder.create()
             .setSpotlightPrice(spotlightPrice)
-            .setPriceFrom(null)
+            .setPriceFrom(priceFrom)
             .setCreditCards(creditCards)
             .setBankSlip(bankSlip)
             .build();
