@@ -9,7 +9,6 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,14 +17,12 @@ public class ArgentinaEcomodicoCrawler extends CrawlerRankingKeywords {
    public ArgentinaEcomodicoCrawler(Session session) {
       super(session);
    }
+
    int aux = 1;
 
    @Override
    protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 50;
-
-      //https://www.ecomodico.com.ar/bebe_NoIndex_True
-      //https://www.ecomodico.com.ar/bebe_Desde_51_NoIndex_True
 
       String url = "https://www.ecomodico.com.ar/" + this.keywordWithoutAccents.replace(" ", "-") + "_Desde_" + aux + "_NoIndex_True";
       aux = aux + 50;
