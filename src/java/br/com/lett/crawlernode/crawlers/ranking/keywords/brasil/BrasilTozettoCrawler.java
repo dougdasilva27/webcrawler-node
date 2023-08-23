@@ -22,11 +22,12 @@ public class BrasilTozettoCrawler extends CrawlerRankingKeywords {
    }
 
    private final String storeId = session.getOptions().optString("storeId");
+
    protected JSONObject fetchDocument() {
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
 
-      String payload = "{\"accountId\":58,\"storeId\":"+storeId+",\"categoryName\":null,\"first\":1000,\"promotion\":null,\"after\":null,\"search\":\""+this.keywordWithoutAccents+"\",\"brands\":[],\"categories\":[],\"tags\":[],\"personas\":[],\"sort\":{\"field\":\"_score\",\"order\":\"desc\"},\"pricingRange\":{},\"highlightEnabled\":true}";
+      String payload = "{\"accountId\":58,\"storeId\":" + storeId + ",\"categoryName\":null,\"first\":1000,\"promotion\":null,\"after\":null,\"search\":\"" + this.keywordWithoutAccents + "\",\"brands\":[],\"categories\":[],\"tags\":[],\"personas\":[],\"sort\":{\"field\":\"_score\",\"order\":\"desc\"},\"pricingRange\":{},\"highlightEnabled\":true}";
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://search.osuper.com.br/ecommerce_products_production/_search")
@@ -52,11 +53,12 @@ public class BrasilTozettoCrawler extends CrawlerRankingKeywords {
 
          for (Object product : productsArray) {
             JSONObject productObj = (JSONObject) product;
-            JSONObject productJson = JSONUtils.getValueRecursive(productObj, "node", JSONObject.class, new JSONObject());;
+            JSONObject productJson = JSONUtils.getValueRecursive(productObj, "node", JSONObject.class, new JSONObject());
+            ;
 
-            if(productJson != null) {
+            if (productJson != null) {
                String internalId = JSONUtils.getStringValue(productJson, "objectID");
-               String productUrl = "https://online.tozetto.com.br/produtos/" + internalId + "/" +JSONUtils.getStringValue(productJson, "slug");
+               String productUrl = "https://online.tozetto.com.br/produtos/" + internalId + "/" + JSONUtils.getStringValue(productJson, "slug");
                String name = JSONUtils.getStringValue(productJson, "name");
                String imageUrl = JSONUtils.getStringValue(productJson, "image");
                Double price = JSONUtils.getValueRecursive(productJson, "pricing.0.promotionalPrice", Double.class);

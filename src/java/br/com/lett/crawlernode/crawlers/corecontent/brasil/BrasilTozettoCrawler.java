@@ -16,7 +16,6 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
@@ -64,17 +63,15 @@ public class BrasilTozettoCrawler extends Crawler {
       Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
       return response;
 
-      //return CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
    }
 
-   private String getProductId (String url){
+   private String getProductId(String url) {
       String regex = "/produtos/(\\d+)/";
       Pattern pattern = Pattern.compile(regex);
       Matcher matcher = pattern.matcher(url);
       if (matcher.find()) {
          return matcher.group(1);
-      }
-      else{
+      } else {
          Logging.printLogDebug(logger, session, "productId not found!");
          return "";
       }
@@ -117,18 +114,19 @@ public class BrasilTozettoCrawler extends Crawler {
       return products;
 
    }
-   private  CategoryCollection getCategories(JSONObject productJson){
+
+   private CategoryCollection getCategories(JSONObject productJson) {
       CategoryCollection categories = new CategoryCollection();
       String categoryLvl1 = JSONUtils.getValueRecursive(productJson, "level1Category.name", String.class);
       String categoryLvl2 = JSONUtils.getValueRecursive(productJson, "level2Category.name", String.class);
       String categoryLvl3 = JSONUtils.getValueRecursive(productJson, "level3Category.name", String.class);
-      if (categoryLvl1 != null){
+      if (categoryLvl1 != null) {
          categories.add(categoryLvl1);
       }
-      if (categoryLvl2 != null){
+      if (categoryLvl2 != null) {
          categories.add(categoryLvl2);
       }
-      if (categoryLvl3 != null){
+      if (categoryLvl3 != null) {
          categories.add(categoryLvl3);
       }
       return categories;
@@ -157,12 +155,12 @@ public class BrasilTozettoCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
       Boolean isOnSale = JSONUtils.getValueRecursive(productJson, "pricing.promotion", Boolean.class);
       Double spotlightPrice = isOnSale ? JSONUtils.getValueRecursive(productJson, "pricing.promotionalPrice", Double.class) : JSONUtils.getValueRecursive(productJson, "pricing.price", Double.class);
-      if (spotlightPrice == null){
-         Integer intSpotlightPrice =  isOnSale ? JSONUtils.getValueRecursive(productJson, "pricing.promotionalPrice", Integer.class) : JSONUtils.getValueRecursive(productJson, "pricing.price", Integer.class);
+      if (spotlightPrice == null) {
+         Integer intSpotlightPrice = isOnSale ? JSONUtils.getValueRecursive(productJson, "pricing.promotionalPrice", Integer.class) : JSONUtils.getValueRecursive(productJson, "pricing.price", Integer.class);
          spotlightPrice = (double) intSpotlightPrice;
       }
       Double priceFrom = isOnSale ? JSONUtils.getValueRecursive(productJson, "pricing.price", Double.class) : null;
-      if (isOnSale && priceFrom == null){
+      if (isOnSale && priceFrom == null) {
          Integer intPriceFrom = JSONUtils.getValueRecursive(productJson, "pricing.price", Integer.class);
          priceFrom = (double) intPriceFrom;
       }
@@ -175,6 +173,7 @@ public class BrasilTozettoCrawler extends Crawler {
          .setCreditCards(creditCards)
          .build();
    }
+
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
