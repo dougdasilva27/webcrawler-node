@@ -127,7 +127,7 @@ public class TausteCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price > span > span > span.price", null, true, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".special-price > span > span > span.price", null, true, ',', session);
 
-      if(spotlightPrice == null){
+      if (spotlightPrice == null) {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-final_price > span > span > span", null, true, ',', session);
       }
 
