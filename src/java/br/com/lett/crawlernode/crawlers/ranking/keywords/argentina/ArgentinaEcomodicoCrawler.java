@@ -41,7 +41,7 @@ public class ArgentinaEcomodicoCrawler extends CrawlerRankingKeywords {
             String internalPid = regexInternalId(productUrl);
             String name = CrawlerUtils.scrapStringSimpleInfo(e, "h2.ui-search-item__title", true);
             String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".ui-search-result-image__element", Collections.singletonList("src"), "https", "http2.mlstatic.com");
-            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".andes-money-amount__fraction", null, false, ',', session, null);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "span.andes-money-amount .andes-money-amount__fraction", null, false, ',', session, null);
             boolean isAvailable = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
