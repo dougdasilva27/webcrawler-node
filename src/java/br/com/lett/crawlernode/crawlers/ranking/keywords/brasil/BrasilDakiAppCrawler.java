@@ -86,7 +86,7 @@ public class BrasilDakiAppCrawler extends CrawlerRankingKeywords {
 
    private Integer getPriceJson(JSONObject jsonObject) {
       Double spotlightPrice = jsonObject.optDouble("amount");
-      return (int) Math.round((Double) spotlightPrice * 100);
+      return (int) Math.round(spotlightPrice * 100);
    }
 
    private Map<String, JSONObject> getOffersSku(JSONObject jsonObject) {

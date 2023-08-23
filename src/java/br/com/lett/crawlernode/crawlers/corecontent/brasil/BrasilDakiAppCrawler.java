@@ -30,7 +30,6 @@ public class BrasilDakiAppCrawler extends Crawler {
       super.config.setParser(Parser.JSON);
    }
 
-   String SELLER_NAME = "daki";
    private final String hubId = getHubId();
 
    protected String getHubId() {
@@ -70,7 +69,7 @@ public class BrasilDakiAppCrawler extends Crawler {
          ))
          .build();
 
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false); //new ApacheDataFetcher().post(session, request);//CrawlerUtils.retryRequestWithListDataFetcher(request, Arrays.asList(new ApacheDataFetcher(), new FetcherDataFetcher(), new JsoupDataFetcher()), session, "post");
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
       return response;
    }
 
@@ -120,7 +119,7 @@ public class BrasilDakiAppCrawler extends Crawler {
       Response response = postApiRequest(payload);
       JSONObject json = JSONUtils.stringToJson(response.getBody());
 
-      return JSONUtils.getValueRecursive(json, "data.products.0.name", String.class);
+      return JSONUtils.getValueRecursive(json, "data.products.0.name", String.class, "");
    }
 
    private String getPrimaryImage(JSONObject productSku) {
@@ -220,7 +219,7 @@ public class BrasilDakiAppCrawler extends Crawler {
          .setIsBuybox(false)
          .setPricing(pricing)
          .setSales(sales)
-         .setSellerFullName(SELLER_NAME)
+         .setSellerFullName("daki")
          .setIsMainRetailer(true)
          .setUseSlugNameAsInternalSellerId(true)
          .build());
