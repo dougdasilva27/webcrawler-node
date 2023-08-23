@@ -17,11 +17,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -42,7 +37,7 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
          .setUrl(url)
          .setProxyservice(Arrays.asList(
             ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .build();
       Response response = dataFetcher.get(session, request);
       Document doc = Jsoup.parse(response.getBody());
@@ -101,7 +96,8 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
    }
 
    private String getPageUrl() {
-      int pagination = this.pageSize * this.currentPage;
+      int numberPage = currentPage - 1;
+      int pagination = this.pageSize * numberPage;
       String url = "https://www.cotodigital3.com.ar" + getUrlKeyword();
       url += "?No=" + pagination;
       if (!url.contains(this.keywordEncoded)) {
@@ -126,7 +122,7 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .setFollowRedirects(true)
          .build();
-      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true) ;
+      Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), true);
       return Jsoup.parse(response.getBody());
    }
 

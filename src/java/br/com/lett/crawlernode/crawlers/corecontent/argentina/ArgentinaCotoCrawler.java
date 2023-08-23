@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -52,7 +51,6 @@ public class ArgentinaCotoCrawler extends Crawler {
 
    public ArgentinaCotoCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.MIRANHA);
    }
 
    @Override
@@ -194,7 +192,7 @@ public class ArgentinaCotoCrawler extends Crawler {
       String haveDescription = CrawlerUtils.scrapStringSimpleInfo(document, ".product_detail_comentario #txtComentario", true);
 
       if (haveDescription != null && !haveDescription.equals("----")) {
-            description.append(haveDescription);
+         description.append(haveDescription);
       }
 
       String haveCarac = CrawlerUtils.scrapStringSimpleInfo(document, ".mute .tbldatatextie span", true);
