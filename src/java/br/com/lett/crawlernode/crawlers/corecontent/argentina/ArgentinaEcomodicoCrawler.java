@@ -150,8 +150,8 @@ public class ArgentinaEcomodicoCrawler extends Crawler {
 
       String installmentString = CrawlerUtils.scrapStringSimpleInfo(doc, "#pricing_subtitle", true);
       if (installmentString != null) {
-         installmentString = installmentString.replace("x", "");
-         installmentNumber = Integer.parseInt(installmentString);
+         String sanitizedInstallmentString = installmentString.replaceAll("[^0-9]", "");
+         installmentNumber = !sanitizedInstallmentString.isEmpty() ? Integer.parseInt(sanitizedInstallmentString) : 0;
       }
       Double installmentPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#pricing_subtitle .andes-money-amount__fraction", null, true, ',', session);
 
