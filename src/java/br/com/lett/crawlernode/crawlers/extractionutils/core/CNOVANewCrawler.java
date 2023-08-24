@@ -423,6 +423,12 @@ public abstract class CNOVANewCrawler extends Crawler {
 
                   if (installment != null && installment.has("qtyParcels") && installment.has("price")) {
                      installments.add(scrapInstallment(installment, offersJson));
+                  } else {
+                     installments.add(InstallmentBuilder.create()
+                        .setInstallmentNumber(1)
+                        .setInstallmentPrice(installment.optDouble("price", 0d))
+                        .setFinalPrice(installment.optDouble("price", 0d))
+                        .build());
                   }
                }
 
