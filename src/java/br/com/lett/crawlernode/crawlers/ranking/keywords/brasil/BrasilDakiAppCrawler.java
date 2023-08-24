@@ -63,7 +63,7 @@ public class BrasilDakiAppCrawler extends CrawlerRankingKeywords {
             Integer price = isAvailable ? getPriceJson(productSkuPrice.get(internalPid)) : null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
-               .setUrl(internalPid)
+               .setUrl(session.getOptions().optString("preLink", "") + internalPid)
                .setInternalId(internalPid)
                .setInternalPid(internalPid)
                .setName(name)

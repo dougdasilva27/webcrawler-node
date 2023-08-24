@@ -38,10 +38,12 @@ public class BrasilDakiAppCrawler extends Crawler {
 
    @Override
    protected Response fetchResponse() {
+      String idProduct = session.getOriginalURL().split("#").length > 1 ? session.getOriginalURL().split("#")[1] : session.getOriginalURL();
+
       String payload = "{\n" +
          "  \"operationName\": \"singleProduct\",\n" +
          "  \"variables\": {\n" +
-         "    \"sku\": \"" + session.getOriginalURL() + "\"\n" +
+         "    \"sku\": \"" + idProduct + "\"\n" +
          "  },\n" +
          "  \"query\": \"query singleProduct($sku: String!) {\\n  products(where: {sku_in: [$sku]}) {\\n    ...AdditionalProductDetailFields\\n    __typename\\n  }\\n}\\n\\nfragment AdditionalProductDetailFields on Product {\\n  sku\\n  vendor_name\\n  alcohol_percent_by_volume\\n  packshot1_front_grid {\\n    url\\n    __typename\\n  }\\n  optimized2_other\\n  optimized1_packshot_prop\\n  innerpack1\\n  packshot3_back\\n  ingredients1_cutout\\n  ingredients2_cutout\\n  ingredients3_cutout\\n  nutritional1_cutout\\n  nutritional2_cutout\\n  nutritional3_cutout\\n  additional1_cutout\\n  additional2_cutout\\n  additional3_cutout\\n  additional4_cutout\\n  packshot4_left\\n  packshot5_right\\n  packshot6_top\\n  packshot7_bottom\\n  long_description\\n  __typename\\n}\\n\"\n" +
          "}";
