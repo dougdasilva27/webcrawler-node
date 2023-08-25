@@ -42,7 +42,7 @@ public class ArgentinaCentraloesteCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, " ", false, false);
+         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".gallery-wrapper script[type=\"text/x-magento-init\"]", null, " ", false, false);
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".price-box", "data-product-id");
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute.sku .value", true);
