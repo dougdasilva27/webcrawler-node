@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -11,7 +14,7 @@ import java.util.Arrays;
 public class ArgentinaCentraloesteCrawler extends CrawlerRankingKeywords {
 
 
-   private static final String HOME_PAGE = "centraloeste.com.ar";
+   private static final String HOME_PAGE = "www.centraloeste.com.ar";
 
    public ArgentinaCentraloesteCrawler(Session session) {
       super(session);
@@ -20,7 +23,7 @@ public class ArgentinaCentraloesteCrawler extends CrawlerRankingKeywords {
    private String categoryUrl;
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
 
@@ -45,17 +48,25 @@ public class ArgentinaCentraloesteCrawler extends CrawlerRankingKeywords {
       if (!products.isEmpty()) {
 
          for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "data-product-id");
-            String productUrl = CrawlerUtils.scrapUrl(e, ".product-item-image a", Arrays.asList("href"), "https:", HOME_PAGE);
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".actions-secondary a", "data-sku-for-testing");
+            String internalId = e.selectFirst(".product-item-info > .product.details > .price-box").attr("data-product-id");
+            String internalPid = e.selectFirst("form.tocart-form").attr("data-product-sku");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, ".product.name.product-item-name", false);
+            String imgUrl = CrawlerUtils.scrapSimplePrimaryImage(e, "img.product-image-photo", Arrays.asList("src"), "https", HOME_PAGE);
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "span[data-price-type=\"finalPrice\"] > .price", null, false, ',', session, null);
+            boolean isAvailable = price != null;
+            String productUrl = CrawlerUtils.scrapUrl(e, ".product.photo.product-item-photo", "href", "https", HOME_PAGE);
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            this.log(
-               "Position: " + this.position +
-                  " - InternalId: " + internalId +
-                  " - InternalPid: " + internalPid +
-                  " - Url: " + productUrl);
+            saveDataProduct(productRanking);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
