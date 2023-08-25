@@ -35,7 +35,7 @@ import java.util.Set;
 public class BrasilOxxoCrawler extends Crawler {
    private static final String SELLER_NAME_LOWER = "Oxxo";
    private String hostName = "https://www.oxxo.com.br";
-   private String locationId = this.session.getOptions().optString("locationId", "1097153");
+   private String locationId = this.session.getOptions().optString("locationId", "1094871");
    private static final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.DINERS.toString(), Card.AMEX.toString(), Card.ELO.toString());
 
@@ -206,7 +206,7 @@ public class BrasilOxxoCrawler extends Crawler {
          priceFrom = null;
       }
 
-      if (priceFrom.equals(spotlightPrice)) {
+      if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
          priceFrom = null;
       }
 
