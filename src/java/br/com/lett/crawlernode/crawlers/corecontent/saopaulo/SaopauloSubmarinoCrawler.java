@@ -1,8 +1,18 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.apache.http.cookie.Cookie;
 
 import java.net.HttpCookie;
 import java.net.InetSocketAddress;
@@ -12,7 +22,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static br.com.lett.crawlernode.util.CrawlerUtils.setCookie;
 
@@ -52,5 +64,35 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       } catch (Exception e) {
          throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
       }
+   }
+
+   @Override
+   public String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setSendUserAgent(false)
+         .setFetcheroptions(
+            FetcherOptions.FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .setForbiddenCssSelector("#px-captcha")
+               .build()
+         )
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.SMART_PROXY_BR_HAPROXY,
+               ProxyCollection.SMART_PROXY_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            )
+         )
+         .build();
+
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new ApacheDataFetcher(), new FetcherDataFetcher()), session);
+
+      return response.getBody();
    }
 }
