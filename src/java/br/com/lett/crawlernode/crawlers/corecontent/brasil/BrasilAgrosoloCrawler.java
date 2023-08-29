@@ -25,6 +25,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilAgrosoloCrawler extends Crawler {
 
@@ -61,9 +63,8 @@ public class BrasilAgrosoloCrawler extends Crawler {
                String variationName = element.select("label").text();
                Document document = requestFromVariations(internalPid, variationName);
                name = name + " - " + variationName;
-               internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__sku span", true);
-
                primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE);
+               internalId = getInternalIdVariation(primaryImage);
                images = CrawlerUtils.scrapSecondaryImages(document, ".product__gallery--main img", Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
                isAvailable = checkIfIsAvailable(document);
                offers = isAvailable ? scrapOffers(document) : new Offers();
@@ -111,6 +112,16 @@ public class BrasilAgrosoloCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst("div.product") != null;
+   }
+
+   private String getInternalIdVariation(String imageUrl) {
+      Pattern pattern = Pattern.compile("/([^/]+)\\.jpg");
+      Matcher matcher = pattern.matcher(imageUrl);
+
+      if (matcher.find()) {
+         return matcher.group(1);
+      }
+      return null;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
