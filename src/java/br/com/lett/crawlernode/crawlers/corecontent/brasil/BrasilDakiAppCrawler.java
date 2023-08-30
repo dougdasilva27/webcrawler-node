@@ -169,14 +169,10 @@ public class BrasilDakiAppCrawler extends Crawler {
                   String content2 = cmsProduct.optString("ui_content_2", "");
                   String content2UOM = cmsProduct.optString("ui_content_2_uom", "");
 
-                  if (!content1.equals("") && !content1UOM.equals("")) {
-                     title = title + " - " + content1 + content1UOM;
-                  }
-                  if (!content2.equals("") && !content2UOM.equals("")) {
-                     title = title + " - " + content2 + content2UOM;
-                  }
+                  StringBuilder titleBuilder = new StringBuilder(title);
+                  titleBuilder.append(" - ").append(content1).append(content1UOM).append(" ").append(content2).append(content2UOM);
 
-                  return title;
+                  return titleBuilder.toString();
                }
             }
          }
