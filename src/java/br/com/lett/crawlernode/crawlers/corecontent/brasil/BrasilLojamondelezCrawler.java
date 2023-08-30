@@ -349,8 +349,8 @@ public class BrasilLojamondelezCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Element doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, null, "data-preco-de", true, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, null, "data-preco-por", true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, null, "data-preco-unit", true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, null, "data-preco-unit", true, ',', session);
 
       if (spotlightPrice.equals(priceFrom)) {
          priceFrom = null;
