@@ -54,6 +54,7 @@ public class ProxyCollection {
    public static final String NETNUT_RESIDENTIAL_MX_HAPROXY = "netnut_residential_cl_haproxy";
    public static final String NETNUT_RESIDENTIAL_AR_HAPROXY = "netnut_residential_ar_haproxy";
    public static final String NETNUT_RESIDENTIAL_ANY_HAPROXY = "netnut_residential_any_haproxy";
+   public static final String FIXED_IP_HAPROXY = "fixed_ip_haproxy";
    public static final String NETNUT_RESIDENTIAL_DE_HAPROXY = "netnut_residential_uk_haproxy";
    public static final String NETNUT_RESIDENTIAL_US_HAPROXY = "netnut_residential_us_haproxy";
    public static final String NETNUT_RESIDENTIAL_PT_HAPROXY = "netnut_residential_pt_haproxy";

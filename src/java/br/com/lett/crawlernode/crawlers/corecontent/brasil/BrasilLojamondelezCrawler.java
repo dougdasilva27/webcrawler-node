@@ -1,10 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -91,7 +87,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
          e.printStackTrace();
       }
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE,"application/x-www-form-urlencoded");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
       headers.put(HttpHeaders.REFERER, "https://www.lojamondelez.com.br/");
       Response response = new Response();
       String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
@@ -133,7 +129,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
       payload.append("usuario_cnpj=" + this.CNPJ);
 
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE,"application/x-www-form-urlencoded");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
       headers.put("referer", "https://www.lojamondelez.com.br/VendaAssistida");
       headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
       Response response = new Response();
@@ -349,8 +345,8 @@ public class BrasilLojamondelezCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Element doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, null, "data-preco-de", true, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, null, "data-preco-por", true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, null, "data-preco-unit", true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, null, "data-preco-unit", true, ',', session);
 
       if (spotlightPrice.equals(priceFrom)) {
          priceFrom = null;

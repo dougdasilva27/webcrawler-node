@@ -2,10 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -14,19 +10,13 @@ import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.jooq.tools.json.JSONObject;
+import org.json.JSONArray;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
@@ -34,120 +24,36 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
 
    public BrasilLojamondelezCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.APACHE;
+      super.fetchMode = FetchMode.HTTPCLIENT;
    }
-
-   private static final String LOGIN_URL = "https://www.lojamondelez.com.br/Cliente/Logar";
-   private static final String ADMIN_URL = "https://www.lojamondelez.com.br/VendaAssistida/login";
-   private String SITE_ID;
 
    private final String CNPJ = session.getOptions().optString("cnpj");
-   private final String PASSWORD = session.getOptions().optString("password");
-   private final String MASTER_USER = session.getOptions().optString("master_user");
+   private final String AUTHORIZATION = session.getOptions().optString("Authorization");
 
-   private void loginMasterAccount() {
+   protected String fetchJson(String url) {
+
+      JSONObject obj = new JSONObject();
+      obj.put("Documento", this.CNPJ);
+      obj.put("Keyword", this.keywordEncoded.replace("+", " "));
+
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      headers.put(HttpHeaders.AUTHORIZATION, "Basic " + AUTHORIZATION);
       headers.put(HttpHeaders.REFERER, "https://www.lojamondelez.com.br/");
-      Response response = new Response();
-      String payloadString = "usuario=" + this.MASTER_USER + "&Senha=" + this.PASSWORD;
-      try {
-         Thread.sleep(5000);
-      } catch (InterruptedException e) {
-         e.printStackTrace();
-      }
-      try {
+      headers.put(HttpHeaders.ACCEPT, "application/json");
+
       Request request = RequestBuilder.create()
-         .setUrl(ADMIN_URL)
-         .setPayload(payloadString)
-         .setHeaders(headers)
-         .setProxy(
-            getFixedIp()
-         )
-         .build();
-         response = this.dataFetcher.post(session, request);
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
-      List<Cookie> cookiesResponse = response.getCookies();
-
-      for (Cookie cookieResponse : cookiesResponse) {
-         if (cookieResponse.getName().equalsIgnoreCase("PHPSESSID")) {
-            this.cookiePHPSESSID = cookieResponse.getValue();
-         }
-      }
-   }
-   public LettProxy getFixedIp() throws IOException {
-
-      LettProxy lettProxy = new LettProxy();
-      lettProxy.setSource("fixed_ip");
-      lettProxy.setPort(3144);
-      lettProxy.setAddress("haproxy.lett.global");
-      lettProxy.setLocation("brazil");
-
-      return lettProxy;
-   }
-   @Override
-   protected void processBeforeFetch() {
-      loginMasterAccount();
-      try {
-         Thread.sleep(5000);
-      } catch (InterruptedException e) {
-         e.printStackTrace();
-      }
-      StringBuilder payload = new StringBuilder();
-      payload.append("usuario_cnpj=" + this.CNPJ);
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
-      headers.put("referer", "https://www.lojamondelez.com.br/VendaAssistida");
-      headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
-      Response response = new Response();
-      try {
-      Request request = RequestBuilder.create()
-         .setUrl(LOGIN_URL)
-         .setPayload(payload.toString())
-         .setProxy(
-            getFixedIp()
-         )
-         .setHeaders(headers)
-         .build();
-
-         response = this.dataFetcher.post(session, request);
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
-      BasicClientCookie cookie = new BasicClientCookie("PHPSESSID", this.cookiePHPSESSID);
-      cookie.setDomain("www.lojamondelez.com.br");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-   }
-
-   @Override
-   protected Document fetchDocument(String url, List<Cookie> cookies) {
-      String response = "";
-      try {
-         Thread.sleep(5000);
-      } catch (InterruptedException e) {
-         e.printStackTrace();
-      }
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", "PHPSESSID=" + this.cookiePHPSESSID + ";");
-      try {
-      Request request = RequestBuilder
-         .create()
-         .setHeaders(headers)
          .setUrl(url)
-         .setProxy(
-            getFixedIp()
-         )
+         .setPayload(obj.toString())
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.FIXED_IP_HAPROXY
+         ))
+         .setHeaders(headers)
          .build();
 
-    response = this.dataFetcher.get(session, request).getBody();
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
-      return Jsoup.parse(response);
+      Response response = this.dataFetcher.post(session, request);
+
+      return response.getBody();
    }
 
    @Override
@@ -155,98 +61,45 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       this.pageSize = 24;
-      String url = "https://www.lojamondelez.com.br/Busca/Resultado/?p=" + this.currentPage + "&loja=&q=" + this.keywordEncoded
-         + "&ordenacao=6&limit=24";
+      String url = "https://www.lojamondelez.com.br/api/products/ranking";
 
       this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = fetchDocument(url, this.cookies);
-
-      Elements products = this.currentDoc.select(".card-product");
+      String response = fetchJson(url);
+      JSONArray products = JSONUtils.stringToJsonArray(response);
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
-            setTotalProducts();
+            this.totalProducts = products.length();
          }
+         for (int i = (currentPage - 1) * pageSize; i < this.totalProducts && i < pageSize * currentPage; i++) {
+            org.json.JSONObject product = (org.json.JSONObject) products.get(i);
+            String productUrl = product.optString("product_url", null);
+            String internalId = JSONUtils.getValueRecursive(product, "sku_variations.0.sku", String.class, "");
+            String name = product.optString("name");
+            String imageUrl = JSONUtils.getValueRecursive(product, "sku_variations[0].images.gg", String.class);
+            Integer price = JSONUtils.getValueRecursive(product, "sku_variations[0].bestPrice", Integer.class);
+            boolean isAvailable = price != null;
 
-         int alternativePosition = 1;
-         for (Element product : products) {
-            String internalPid = String.valueOf(CrawlerUtils.scrapIntegerFromHtmlAttr(product, null, "id", null));
-            String name = CrawlerUtils.scrapStringSimpleInfo(product, ".product-name", false);
-            String productUrl = getUrl(product, internalPid, name);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setPageNumber(this.currentPage)
+               .setImageUrl(imageUrl)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
 
-            Elements variations = product.select(".sku-variation-content .picking");
-            if (!variations.isEmpty()) {
-               for (Element variation : variations) {
-                  String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, null, "data-sku-id");
-                  Integer price = CrawlerUtils.scrapIntegerFromHtmlAttr(variation, null, "data-preco-por", null);
-                  String imageUrl = scrapImageUrl(variation);
-                  String variationName = assembleName(name, variation);
-                  boolean available = !variation.classNames().contains("sem-estoque");
-
-                  if (!available) price = null;
-
-                  RankingProduct productRanking = RankingProductBuilder.create()
-                     .setUrl(productUrl)
-                     .setInternalId(internalId)
-                     .setInternalPid(internalPid)
-                     .setImageUrl(imageUrl)
-                     .setName(variationName)
-                     .setPriceInCents(price)
-                     .setAvailability(available)
-                     .setPosition(alternativePosition)
-                     .build();
-
-                  saveDataProduct(productRanking);
-               }
-            }
-
-            alternativePosition++;
-
-            if (this.arrayProducts.size() == productsLimit)
+            saveDataProduct(productRanking);
+            if (this.arrayProducts.size() == productsLimit) {
                break;
+            }
          }
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
       }
-
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-   }
-
-   private String getUrl(Element product, String internalPid, String name) {
-      String productUrl = CrawlerUtils.scrapUrl(product, "> a", "href", "https", "www.lojamondelez.com.br");
-      if (productUrl != null && !productUrl.contains("/Produto/")) {
-         if (SITE_ID == null) {
-            SITE_ID = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".card-footer button", "data-siteid");
-         }
-         productUrl = "https://www.lojamondelez.com.br/Produto/" + name.replace(" ", "-") + "/10-10-" + internalPid + "?site_id=" + SITE_ID;
-      }
-
-      return productUrl;
-
-   }
-
-   private String assembleName(String name, Element variation) {
-      String variationName = CrawlerUtils.scrapStringSimpleInfo(variation, ".caixa-com", false);
-      if (variationName != null && !variationName.isEmpty()) {
-         name += " " + variationName;
-      }
-      return name.trim();
-   }
-
-   private String scrapImageUrl(Element variation) {
-      String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, null, "data-foto");
-
-      if (imageUrl != null && !imageUrl.isEmpty()) {
-         imageUrl = imageUrl.replace("/200x200/", "/1000x1000/");
-      }
-
-      return imageUrl;
    }
 
    @Override
-   protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".qtd-produtos", true, 0);
-      this.log("Total da busca: " + this.totalProducts);
+   protected boolean hasNextPage() {
+      return (arrayProducts.size() < this.totalProducts);
    }
 }
