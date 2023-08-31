@@ -88,15 +88,11 @@ public class ArgentinaHiperlibertadCrawler extends VTEXNewImpl {
    }
 
    private JSONObject scrapJsonFromHtml(Document doc) {
-      Elements elements = doc.select("script[type=\"application/ld+json\"]");
-      for (Element element : elements) {
-         String jsonString = CrawlerUtils.scrapScriptFromHtml(element, "script[type=\"application/ld+json\"]");
+      String jsonString = CrawlerUtils.scrapScriptFromHtml(doc, "script[type=\"application/ld+json\"]:containsData(sku)");
+      if (jsonString != null && !jsonString.isEmpty()) {
          JSONArray array = CrawlerUtils.stringToJsonArray(jsonString);
          if (array != null) {
-            JSONObject jsonFromHtml = (JSONObject) array.get(0);
-            if (jsonFromHtml.has("sku")) {
-               return jsonFromHtml;
-            }
+            return (JSONObject) array.get(0);
          }
       }
       return null;
@@ -125,7 +121,9 @@ public class ArgentinaHiperlibertadCrawler extends VTEXNewImpl {
       Double spotlightPrice = JSONUtils.getValueRecursive(skuInfo, "offers.offers.0.price", Double.class, null);
       if (spotlightPrice == null) {
          Integer priceInt = JSONUtils.getValueRecursive(skuInfo, "offers.offers.0.price", Integer.class, null);
-         spotlightPrice = priceInt.doubleValue();
+         if (priceInt != null) {
+            spotlightPrice = priceInt.doubleValue();
+         }
       }
 
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
