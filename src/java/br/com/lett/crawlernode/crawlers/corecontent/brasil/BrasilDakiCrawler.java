@@ -37,16 +37,8 @@ public class BrasilDakiCrawler extends Crawler {
          "variables\":{\"hubId\":\"" + hubId + "\",\"where\":{\"sku_in\":[\"" + skuProduct + "\"]}},\"" +
          "query\":\"query ProductDetails($where: ProductFilters!, $hubId: String!) {\\n  products(where: $where) {\\n    brand\\n    category {\\n      cmsMainCategory {\\n        title\\n        __typename\\n      }\\n      __typename\\n    }\\n    inventory(hubId: $hubId) {\\n      quantity\\n      showOutOfStock\\n      status\\n      maxQuantity\\n      __typename\\n    }\\n    long_description\\n    ui_content_1\\n    packshot1_front_grid {\\n      url\\n      __typename\\n    }\\n    product_status\\n    price(hubId: $hubId) {\\n      amount\\n      compareAtPrice\\n      discount\\n      id\\n      sku\\n      __typename\\n    }\\n    name\\n    title\\n    sku\\n    tags\\n    __typename\\n  }\\n}\"}";
 
-      Response response = postApiRequest(payload);
-      return response;
-   }
-
-   private Response postApiRequest(String payload) {
       HashMap<String, String> headers = new HashMap<>();
-
       headers.put("Content-Type", "application/json");
-      headers.put("Content-Length", "<calculated when request is sent>");
-      headers.put("Host", "<calculated when request is sent>");
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://api-prd-br.jokrtech.com/")
@@ -55,6 +47,7 @@ public class BrasilDakiCrawler extends Crawler {
          .build();
 
       Response response = CrawlerUtils.retryRequest(request, session, new JsoupDataFetcher(), false);
+
       return response;
    }
 
@@ -65,7 +58,6 @@ public class BrasilDakiCrawler extends Crawler {
       if (json.has("data")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          JSONObject productSku = JSONUtils.getValueRecursive(json, "data.products.0", JSONObject.class);
-         Map<String, JSONObject> productSkuPrice = new HashMap<>();
 
          String internalPid = productSku.optString("sku");
          String description = productSku.optString("long_description");
