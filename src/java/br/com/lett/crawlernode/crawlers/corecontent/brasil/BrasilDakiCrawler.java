@@ -28,7 +28,7 @@ public class BrasilDakiCrawler extends Crawler {
       super.config.setParser(Parser.JSON);
    }
 
-   private final String hubId = session.getOptions().optString("hubId");
+   private final String hubId = session.getOptions().optString("hub_id");
 
    protected Response fetchResponse() {
       String skuProduct = session.getOriginalURL().split("__")[1].split("/")[0];

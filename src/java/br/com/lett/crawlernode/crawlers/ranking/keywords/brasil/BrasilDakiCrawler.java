@@ -24,7 +24,7 @@ public class BrasilDakiCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private final String hubId = session.getOptions().optString("hubId");
+   private final String hubId = session.getOptions().optString("hub_id");
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
