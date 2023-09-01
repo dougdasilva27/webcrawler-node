@@ -30,8 +30,7 @@ public class BrasilDakiCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.log("Extracting products from page " + this.currentPage);
 
-      String payloadRanking = "{\"operationName\":\"searchProducts\",\"variables\":{\"searchTerm\":\"" + this.keywordEncoded + "\",\"hubId\":\"" + hubId + "\",\"priceHubId2\":\"" + hubId + "\"},\"query\":\"query searchProducts($searchTerm: String!, $hubId: String!, $priceHubId2: String!) {\\n  searchProducts(searchTerm: $searchTerm, hubId: $hubId) {\\n    products {\\n      sku\\n      cmsProduct {\\n        category {\\n          categoryName\\n          __typename\\n        }\\n        name\\n        title\\n        title2\\n        packshot1_front_grid {\\n          url\\n          __typename\\n        }\\n        ui_content_1\\n        subCategory {\\n          cmsSubCategory {\\n            title\\n            __typename\\n          }\\n          __typename\\n        }\\n        price(hubId: $priceHubId2) {\\n          amount\\n          compareAtPrice\\n          discount\\n          id\\n          sku\\n          __typename\\n        }\\n        product_status\\n        inventory(hubId: $hubId) {\\n          quantity\\n          status\\n          showOutOfStock\\n          __typename\\n        }\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n}\"}";
-      JSONObject jsonRanking = fetchJsonAPi(payloadRanking);
+      JSONObject jsonRanking = fetchJsonAPi();
 
       if (!jsonRanking.isEmpty()) {
          JSONArray productsArray = JSONUtils.getValueRecursive(jsonRanking, "data.searchProducts.products", JSONArray.class);
@@ -42,8 +41,6 @@ public class BrasilDakiCrawler extends CrawlerRankingKeywords {
             String internalPid = product.optString("sku");
             String name = JSONUtils.getValueRecursive(product, "cmsProduct.name", String.class);
 
-            String title = JSONUtils.getValueRecursive(product, "cmsProduct.title", String.class);
-            String content = JSONUtils.getValueRecursive(product, "cmsProduct.ui_content_1", String.class);
             String productUrl = generateProductUrl(name, internalPid);
 
             String imageUrl = JSONUtils.getValueRecursive(product, "cmsProduct.packshot1_front_grid.url", String.class);
@@ -71,12 +68,14 @@ public class BrasilDakiCrawler extends CrawlerRankingKeywords {
       }
    }
 
-   private JSONObject fetchJsonAPi(String payload) {
+   private JSONObject fetchJsonAPi() {
+      
+      String payload = "{\"operationName\":\"searchProducts\",\"variables\":{\"searchTerm\":\"" + this.keywordEncoded + "\",\"hubId\":\"" + hubId + "\",\"priceHubId2\":\"" + hubId + "\"},\"query\":\"query searchProducts($searchTerm: String!, $hubId: String!, $priceHubId2: String!) {\\n  searchProducts(searchTerm: $searchTerm, hubId: $hubId) {\\n    products {\\n      sku\\n      cmsProduct {\\n        category {\\n          categoryName\\n          __typename\\n        }\\n        name\\n        title\\n        title2\\n        packshot1_front_grid {\\n          url\\n          __typename\\n        }\\n        ui_content_1\\n        subCategory {\\n          cmsSubCategory {\\n            title\\n            __typename\\n          }\\n          __typename\\n        }\\n        price(hubId: $priceHubId2) {\\n          amount\\n          compareAtPrice\\n          discount\\n          id\\n          sku\\n          __typename\\n        }\\n        product_status\\n        inventory(hubId: $hubId) {\\n          quantity\\n          status\\n          showOutOfStock\\n          maxQuantity\\n          __typename\\n        }\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n}\"}";
+
+
       HashMap<String, String> headers = new HashMap<>();
 
       headers.put("Content-Type", "application/json");
-      headers.put("Content-Length", "<calculated when request is sent>");
-      headers.put("Host", "<calculated when request is sent>");
 
       Request request = Request.RequestBuilder.create()
          .setUrl("https://api-prd-br.jokrtech.com/")
