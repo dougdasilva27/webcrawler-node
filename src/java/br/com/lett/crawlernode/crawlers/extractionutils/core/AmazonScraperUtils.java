@@ -579,6 +579,10 @@ public class AmazonScraperUtils {
       if (spotlightPrice == null) {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price .a-offscreen", null, false, ',', session);
       }
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-size-medium.a-color-base", null, false, ',', session);
+      }
+
       CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
