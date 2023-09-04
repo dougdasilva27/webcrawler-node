@@ -1,13 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.Collections;
 
 public class SaopauloTrimaisCrawler extends CrawlerRankingKeywords {
 
@@ -15,54 +17,44 @@ public class SaopauloTrimaisCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private Document fetchApi(){
-
-      StringBuilder searchApi = new StringBuilder();
-
-      searchApi.append("https://www.trimais.com.br/")
-         .append(this.keywordEncoded)
-         .append("?PageNumber=")
-         .append(this.currentPage);
-
-      String apiUrl = searchApi.toString().replace("+", "%20");
-
-      this.log("Link onde são feitos os crawlers: " + searchApi.toString());
-
-      Request request = Request.RequestBuilder.create().setUrl(apiUrl).build();
-
-      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-   }
-
    @Override
-   protected void extractProductsFromCurrentPage() {
-
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
+      this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
-      this.currentDoc = fetchApi();
+      String url = "https://www.trimais.com.br/" + this.location.replace(" ", "%20") + "/?p=" + this.currentPage;
 
-      Elements products = this.currentDoc.select(".prateleira ul li .product-big");
+      this.log("Link onde são feitos os crawlers: " + url);
+      this.currentDoc = fetchDocument(url);
+      Elements products = this.currentDoc.select(".item-product");
 
-      if(products.size() > 0){
+      if (!products.isEmpty()) {
+         if (this.totalProducts == 0)
+            setTotalProducts();
+         for (Element e : products) {
+            String productUrl = CrawlerUtils.scrapUrl(e, ".item-image", "href", "https", "www.trimais.com.br");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".item-product", "data-sku");
+            String name = CrawlerUtils.scrapStringSimpleInfo(e, "h2.title a", true);
+            String imageUrl = CrawlerUtils.scrapSimplePrimaryImage(e, ".item-image", Collections.singletonList("src"), "https", "io.convertiez.com.br");
+            Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".sale-price strong", null, true, ',', session, null);
+            boolean isAvailable = price != null;
 
-         if(this.totalProducts == 0){
-            this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".resultado-busca-numero span.value", true, 0);
-            this.log("Total da busca: " + this.totalProducts);
+            RankingProduct productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .setImageUrl(imageUrl)
+               .build();
+
+            saveDataProduct(productRanking);
+
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
          }
-
-         for(Element product:products){
-
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, null, "item");
-
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, null, "rel");
-
-            String urlProduct = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "figure a", "href");
-
-            saveDataProduct(internalId, internalPid, urlProduct);
-
-            if (this.arrayProducts.size() == productsLimit) break;
-         }
-
-      } else{
+      } else {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
@@ -71,7 +63,8 @@ public class SaopauloTrimaisCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected boolean hasNextPage() {
-      return arrayProducts.size() < this.totalProducts;
+   protected void setTotalProducts() {
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".page-template .text-center", true, 0);
+      this.log("Total: " + this.totalProducts);
    }
 }
