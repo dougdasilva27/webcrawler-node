@@ -22,7 +22,7 @@ public class SaopauloTrimaisCrawler extends CrawlerRankingKeywords {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.trimais.com.br/" + this.keywordEncoded + "/?p=" + this.currentPage;
+      String url = "https://www.trimais.com.br/" + this.location.replace(" ", "%20") + "/?p=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
