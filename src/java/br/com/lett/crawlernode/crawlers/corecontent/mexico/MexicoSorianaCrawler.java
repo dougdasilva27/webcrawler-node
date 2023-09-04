@@ -111,6 +111,7 @@ public class MexicoSorianaCrawler extends Crawler {
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".carousel-indicators li:not(:first-child) img", Collections.singletonList("src"), "https", "www.soriana.com", primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".description-and-detail"));
          CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:last-child) a", true);
+         List<String> ean = scrapEan(doc);
          boolean availableToBuy = doc.select(".cart-icon.d-none").isEmpty();
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
 
@@ -125,6 +126,7 @@ public class MexicoSorianaCrawler extends Crawler {
             .setCategories(categoryCollection)
             .setDescription(description)
             .setOffers(offers)
+            .setEans(ean)
             .build();
 
          products.add(product);
@@ -205,5 +207,15 @@ public class MexicoSorianaCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   protected List<String> scrapEan(Document doc) {
+      List<String> eans = new ArrayList<>();
+      String ean = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".container.product-detail.product-wrapper", "data-ean");
+      if (ean != null) {
+         eans.add(ean);
+      }
+      return eans;
+
    }
 }
