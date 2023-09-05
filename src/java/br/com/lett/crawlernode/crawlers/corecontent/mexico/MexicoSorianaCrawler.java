@@ -2,8 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.HttpClientFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -61,7 +59,7 @@ public class MexicoSorianaCrawler extends Crawler {
          .setHeaders(headers)
          .build();
 
-      return CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new HttpClientFetcher(), new JsoupDataFetcher()), session, "get");
+      return this.dataFetcher.get(session, request);
    }
 
    private String fetchCookieSession() {
