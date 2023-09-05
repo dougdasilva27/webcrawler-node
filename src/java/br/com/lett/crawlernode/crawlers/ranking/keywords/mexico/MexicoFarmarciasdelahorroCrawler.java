@@ -37,8 +37,8 @@ public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
          .setUrl(url)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.SMART_PROXY_MX_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.SMART_PROXY_MX_HAPROXY
          ))
          .build();
 
