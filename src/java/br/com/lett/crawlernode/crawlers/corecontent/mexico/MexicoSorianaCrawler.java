@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
@@ -15,6 +17,7 @@ import models.Offers;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
 
+import java.net.HttpCookie;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
@@ -25,39 +28,70 @@ import java.util.*;
 
 public class MexicoSorianaCrawler extends Crawler {
 
-   private String dwsidCookie = this.session.getOptions().optString("dwsid");
-
+   private final String storeId = session.getOptions().optString("storeId");
+   private final String postalCode = session.getOptions().optString("postalCode");
+   private final String storeName = session.getOptions().optString("storeName");
    private static final String SELLER_FULL_NAME = "soriana";
+
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public MexicoSorianaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.HTTPCLIENT);
       super.config.setParser(Parser.HTML);
    }
 
    @Override
    protected Response fetchResponse() {
-      try {
-         HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", 3130))).followRedirects(HttpClient.Redirect.NORMAL).build();
-         HttpRequest request = HttpRequest.newBuilder()
-            .GET()
-            .uri(URI.create(session.getOriginalURL()))
-            .header("authority", "www.soriana.com")
-            .header("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
-            .header("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7")
-            .header("cache-control", "max-age=0")
-            .header("cookie", dwsidCookie)
-            .build();
-         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-         return new Response.ResponseBuilder()
-            .setBody(response.body())
-            .setLastStatusCode(response.statusCode())
-            .build();
-      } catch (Exception e) {
-         throw new RuntimeException("Failed in load document: " + session.getOriginalURL(), e);
-      }
+      String cookieSession = fetchCookieSession();
+      Map<String, String> headers = new HashMap<>();
+      headers.put("authority", "www.soriana.com");
+      headers.put("cookie", cookieSession);
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setProxyservice(List.of(
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.SMART_PROXY_MX_HAPROXY
+         ))
+         .setHeaders(headers)
+         .build();
+
+      return this.dataFetcher.get(session, request);
+   }
+
+   private String fetchCookieSession() {
+      String cookieDwsid = null;
+      HttpResponse<String> response;
+      List<Integer> idPort = Arrays.asList(3137, 3149, 3138);
+      int attempts = 0;
+
+      do {
+         try {
+            HttpClient client = HttpClient.newBuilder().proxy(ProxySelector.of(new InetSocketAddress("haproxy.lett.global", idPort.get(attempts)))).build();
+            HttpRequest request = HttpRequest.newBuilder()
+               .GET()
+               .uri(URI.create("https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Stores-SelectStore?isStoreModal=true&id=" + storeId + "&postalCode=" + postalCode + "&storeName=" + storeName + "&methodid=pickup"))
+               .build();
+
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            List<String> cookiesResponse = response.headers().map().get("Set-Cookie");
+            for (String cookieStr : cookiesResponse) {
+               HttpCookie cookie = HttpCookie.parse(cookieStr).get(0);
+               if (cookie.getName().equalsIgnoreCase("dwsid")) {
+                  cookieDwsid = "dwsid=" + cookie.getValue();
+                  break;
+               }
+            }
+         } catch (Exception e) {
+            throw new RuntimeException("Failed in load document: " + session.getOriginalURL(), e);
+         }
+      } while (attempts++ < 2 && response.statusCode() != 200);
+
+      return cookieDwsid;
    }
 
    @Override
@@ -75,6 +109,7 @@ public class MexicoSorianaCrawler extends Crawler {
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".carousel-indicators li:not(:first-child) img", Collections.singletonList("src"), "https", "www.soriana.com", primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".description-and-detail"));
          CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:last-child) a", true);
+         List<String> ean = scrapEan(doc);
          boolean availableToBuy = doc.select(".cart-icon.d-none").isEmpty();
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
 
@@ -89,6 +124,7 @@ public class MexicoSorianaCrawler extends Crawler {
             .setCategories(categoryCollection)
             .setDescription(description)
             .setOffers(offers)
+            .setEans(ean)
             .build();
 
          products.add(product);
@@ -169,5 +205,15 @@ public class MexicoSorianaCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   protected List<String> scrapEan(Document doc) {
+      List<String> eans = new ArrayList<>();
+      String ean = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".container.product-detail.product-wrapper", "data-ean");
+      if (ean != null) {
+         eans.add(ean);
+      }
+      return eans;
+
    }
 }
