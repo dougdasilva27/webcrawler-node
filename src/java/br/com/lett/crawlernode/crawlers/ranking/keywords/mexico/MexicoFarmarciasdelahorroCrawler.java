@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.HttpClientFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -22,9 +21,10 @@ import java.util.List;
 import java.util.Map;
 
 public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
+
+   String idUrl = session.getOptions().optString("idUrl");
    public MexicoFarmarciasdelahorroCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.HTTPCLIENT;
    }
 
    @Override
@@ -48,7 +48,7 @@ public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
 
-      String url = "https://www.fahorro.com/catalogsearch/result/index/?form_key=9W1u7nPBsl8bofER&p=" + this.currentPage + "&q=" + this.keywordEncoded;
+      String url = "https://www.fahorro.com/catalogsearch/result/index/?form_key=" + idUrl + this.currentPage + "&q=" + this.keywordEncoded;
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".products.wrapper.grid.products-grid li");
