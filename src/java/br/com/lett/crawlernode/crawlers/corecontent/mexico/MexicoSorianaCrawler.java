@@ -89,7 +89,7 @@ public class MexicoSorianaCrawler extends Crawler {
          } catch (Exception e) {
             throw new RuntimeException("Failed in load document: " + session.getOriginalURL(), e);
          }
-      } while (attempts++ < 3 && response.statusCode() != 200);
+      } while (attempts++ < 2 && response.statusCode() != 200);
 
       return cookieDwsid;
    }
