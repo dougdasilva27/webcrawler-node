@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class MexicoFarmarciasdelahorroCrawler extends CrawlerRankingKeywords {
 
-   String idUrl = session.getOptions().optString("idUrl");
+   private final String idUrl = session.getOptions().optString("idUrl");
    public MexicoFarmarciasdelahorroCrawler(Session session) {
       super(session);
    }
