@@ -8,7 +8,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -19,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Documentação oficial LinxImpulseAPI: (https://docs.linximpulse.com/v3-search/docs/search)
@@ -82,7 +80,6 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
                RankingProduct rankingProduct = RankingProductBuilder.create()
                   .setUrl(productUrl)
                   .setInternalId(internalId)
-                  .setInternalPid(internalPid)
                   .setName(name)
                   .setImageUrl(image)
                   .setPriceInCents(priceInCents)
@@ -162,10 +159,10 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
          }
       }
 
-      if(salesChannel != null && !salesChannel.isEmpty()) {
+      if (salesChannel != null && !salesChannel.isEmpty()) {
          String finalInternalId = internalId;
          String matchChannel = salesChannel.stream().filter(channel -> finalInternalId.startsWith(channel + "_")).findFirst().orElse(null);
-         if(matchChannel != null && !matchChannel.isEmpty()) {
+         if (matchChannel != null && !matchChannel.isEmpty()) {
             internalId = internalId.replaceAll(matchChannel + "_", "");
          }
       }
@@ -179,7 +176,7 @@ public class LinxImpulseRanking extends CrawlerRankingKeywords {
          url = "https:" + url;
       } else if (url.startsWith("www.")) {
          url = "https://" + url;
-      } else if(!url.startsWith(this.homePage)) {
+      } else if (!url.startsWith(this.homePage)) {
          url = this.homePage + url;
       }
       return url;
