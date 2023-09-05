@@ -77,14 +77,17 @@ public class FalabellaCrawler extends Crawler {
       Map<String, String> head = new HashMap<>();
       String headerCookieString = "userSelectedZone=userselected;IS_ZONE_SELECTED=true;isPoliticalIdExists=true;";
       String localeOptions = session.getOptions().optString("localeOptions");
+
       if (localeOptions != null && !localeOptions.isEmpty()) {
          head.put("cookie", headerCookieString + localeOptions);
       }
+
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(head)
          .setFollowRedirects(false)
          .build();
+
       Response response = dataFetcher.get(session, request);
       return Jsoup.parse(response.getBody());
    }
@@ -93,33 +96,36 @@ public class FalabellaCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
       doc = fetchDocument(session.getOriginalURL());
+
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
          String sellerFullName = scrapSellerFullName(doc, session.getOriginalURL());
          boolean isMainSeller = sellerFullName.equalsIgnoreCase(SELLER_FULL_NAME);
 
          if (isMainSeller || allow3pSeller) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-id]", "data-id");
+            String internalId = crawlInternalId(doc);
+
             if (internalId == null) {
                internalId = getReviewId(session.getOriginalURL());
             }
-            String internalPid = internalId;
-            String name = crawlBrandName(doc);
-            boolean available = doc.select(".availability span").size() > 1;
-            Offers offers = available ? scrapOffers(doc, sellerFullName, isMainSeller) : null;
-            CategoryCollection categories = getCategories(doc, sellerFullName);
-            List<String> images = scrapImages(doc);
-            JSONObject obj = requestImage();
-            String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : JSONUtils.getValueRecursive(obj, "Results.0.ImageUrl", String.class);
 
+            String name = crawlBrandName(doc);
             String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#productInfoContainer"));
 
+            JSONObject obj = requestImage();
+            List<String> images = scrapImages(doc);
+            String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : JSONUtils.getValueRecursive(obj, "Results.0.ImageUrl", String.class);
+
+            CategoryCollection categories = getCategories(doc, sellerFullName);
             RatingsReviews ratingsReviews = scrapRatingsReviews(internalId, session.getOriginalURL());
+            boolean available = doc.select(".availability span").size() > 1;
+            Offers offers = available ? scrapOffers(doc, sellerFullName, isMainSeller) : null;
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
-               .setInternalPid(internalPid)
+               .setInternalPid(internalId)
                .setName(name)
                .setOffers(offers)
                .setCategories(categories)
@@ -139,24 +145,46 @@ public class FalabellaCrawler extends Crawler {
       return products;
    }
 
+   private String crawlInternalId(Document doc) {
+      String docInternalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-id]", "data-id");
+
+      if (docInternalId == null) {
+         String regex = "/(\\d+)\\?exp";
+
+         Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+         Matcher matcher = pattern.matcher(session.getOriginalURL());
+
+         if (matcher.find()) {
+            return matcher.group(1);
+         }
+
+         return null;
+      }
+
+      return docInternalId;
+   }
+
    private CategoryCollection getCategories(Document doc, String seller) {
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".Breadcrumbs-module_breadcrumb__3lLwJ li", true);
-      if (categories != null && !categories.isEmpty()) {
+
+      if (!categories.isEmpty()) {
          String firstCategory = categories.getCategory(0);
          if (firstCategory != null && !firstCategory.isEmpty() && firstCategory.equals(seller)) {
             categories.remove(0);
          }
       }
+
       return categories;
    }
 
    protected String crawlBrandName(Document doc) {
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "section.pdp-detail-section h1", true);
       String brand = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-brand]", "data-brand");
-      if (brand != null || brand.isEmpty()) {
+
+      if (brand != null && !brand.isEmpty()) {
          name = name + " - " + brand;
-         return name;
       }
+
       return name;
    }
 
@@ -177,7 +205,7 @@ public class FalabellaCrawler extends Crawler {
 
    private AdvancedRatingReview scrapAdvancedRatingsReviews(String url) {
       AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
-      String idProductReview = getReviewId(url);
+      String idProductReview = getReviewId(url); // pega o id da url
       String urlReview = "https://api.bazaarvoice.com/data/display/0.2alpha/product/summary?PassKey=m8bzx1s49996pkz12xvk6gh2e&productid=" + idProductReview + "&contentType=reviews&reviewDistribution=primaryRating&rev=0";
 
       Request request = Request.RequestBuilder.create()
@@ -205,11 +233,13 @@ public class FalabellaCrawler extends Crawler {
       if (matcher.find()) {
          return matcher.group(1);
       }
+
       return null;
    }
 
    private List<String> scrapImages(Document doc) {
       Element imageScript = doc.selectFirst("script#__NEXT_DATA__");
+
       if (imageScript != null) {
          JSONObject imageToJson = CrawlerUtils.stringToJson(imageScript.html());
          JSONArray imageArray = JSONUtils.getValueRecursive(imageToJson, "props.pageProps.productData.variants.0.medias", JSONArray.class);
@@ -225,6 +255,7 @@ public class FalabellaCrawler extends Crawler {
             return images;
          }
       }
+
       return null;
    }
 
@@ -242,7 +273,6 @@ public class FalabellaCrawler extends Crawler {
 
    private Offers scrapOffers(Document doc, String sellerFullName, Boolean isMainSeller) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-
       Pricing pricing = scrapPricing(doc);
 
       offers.add(Offer.OfferBuilder.create()
