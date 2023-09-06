@@ -48,7 +48,7 @@ public class MexicoBodegaaurreraCrawler extends WalmartSuperCrawler {
 
       for (Cookie cookie : response.getCookies()) {
          BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
-         basicClientCookie.setDomain(".walmart.com.mx");
+         basicClientCookie.setDomain(".bodegaaurrera.com.mx");
          this.cookies.add(basicClientCookie);
       }
    }
