@@ -68,8 +68,8 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
 
          for (Object e : products) {
             JSONObject product = (JSONObject) e;
-            String internalPid = product.optString("sku");
-            String productUrl = "https://preunic.cl/products/" + product.optString("product_slug") + "?default_sku=" + internalPid;
+            String internalId = product.optString("sku");
+            String productUrl = "https://preunic.cl/products/" + product.optString("product_slug") + "?default_sku=" + internalId;
             String name = product.optString("brand") + product.optString("name");
 
             Boolean isAvailable = getAvaiability(product);
@@ -79,7 +79,7 @@ public class ChilePreunicCrawler extends CrawlerRankingKeywords {
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalPid(internalPid)
+               .setInternalId(internalId)
                .setName(name)
                .setImageUrl(imgUrl)
                .setPriceInCents(price)

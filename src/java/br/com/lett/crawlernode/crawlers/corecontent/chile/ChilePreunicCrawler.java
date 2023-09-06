@@ -53,7 +53,7 @@ public class ChilePreunicCrawler extends Crawler {
                String name = scrapNameWithBrand(variation, jsonScript);
                String primaryImage = crawlPrimaryImage(variation);
                List<String> secondaryImages = crawlSecondaryImages(variation, doc);
-               boolean available = variation.optBoolean("isAvailable");
+               boolean available = jsonScript.optBoolean("isAvailable");
                Offers offers = available ? scrapOffers(variation) : new Offers();
 
                Product product = ProductBuilder.create()
