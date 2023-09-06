@@ -105,13 +105,12 @@ public class ChileFarmaciasahumadaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,".product-info-main .special-price .price-container.price-final_price .price", null,false,'.',session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc,".product-info-main .old-price .price-container .price", null,false,'.',session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,".product-info-main .special-price .price-container.price-final_price .price", null,false,',',session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc,".product-info-main .old-price .price-container .price", null,false,',',session);
 
       if(spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,".product-info-main .price-container.price-final_price .price", null,false,'.',session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,".product-info-main .price-container.price-final_price .price", null,false,',',session);
       }
-
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
