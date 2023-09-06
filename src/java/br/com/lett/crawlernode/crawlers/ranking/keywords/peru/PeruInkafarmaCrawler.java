@@ -1,10 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.peru;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.HttpClientFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -28,7 +26,6 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
 
    public PeruInkafarmaCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.APACHE;
    }
 
    public static final String GOOGLE_KEY = "AIzaSyC2fWm7Vfph5CCXorWQnFqepO8emsycHPc";
@@ -51,16 +48,15 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
          .setUrl("https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=" + GOOGLE_KEY)
          .setPayload("{\"returnSecureToken\":true}")
          .setProxyservice(Arrays.asList(
-            ProxyCollection.BUY,
-            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          ))
          .setHeaders(headersToken)
          .build();
 
-      Response responseToken = CrawlerUtils.retryRequestWithListDataFetcher(requestToken, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+      Response responseToken = CrawlerUtils.retryRequestWithListDataFetcher(requestToken, List.of(new HttpClientFetcher(), new ApacheDataFetcher()), session, "post");
       JSONObject apiTokenJson = JSONUtils.stringToJson(responseToken.getBody());
 
 
@@ -149,7 +145,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
          headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
          headers.put("x-access-token", this.accessToken);
          headers.put("AndroidVersion", "100000");
-         if(storeID != null) {
+         if (storeID != null) {
             headers.put("drugstore-stock", storeID);
          }
 
@@ -158,15 +154,15 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
             .setHeaders(headers)
             .mustSendContentEncoding(false)
             .setProxyservice(Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.BUY_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
             ))
             .setPayload(payload.toString())
             .build();
 
-         Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+         Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new HttpClientFetcher(), new ApacheDataFetcher()), session, "post");
          searchApi = JSONUtils.stringToJson(response.getBody());
 
       }
@@ -184,7 +180,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
       headers.put("x-access-token", this.accessToken);
-      if(storeID != null) {
+      if (storeID != null) {
          headers.put("drugstore-stock", storeID);
       }
 
@@ -192,15 +188,15 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
          .setUrl(url)
          .setHeaders(headers)
          .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          ))
          .setPayload(payload.toString())
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new HttpClientFetcher(), new ApacheDataFetcher()), session, "post");
       JSONObject result = JSONUtils.stringToJson(response.getBody());
 
       return result.optJSONArray("productsId");
