@@ -134,7 +134,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
    public void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 40;
       this.log("Página " + this.currentPage);
-      String url = "https://super.walmart.com.mx/search?q=" + this.keywordEncoded + "&page=" + this.currentPage;
+      String url = HOME_PAGE + "/search?q=" + this.keywordEncoded + "&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
@@ -186,7 +186,7 @@ public class WalmartSuperCrawler extends CrawlerRankingKeywords {
    private String getOriginalUrl(JSONObject productJson) {
       String suffixUrl = productJson.optString("canonicalUrl");
       if (suffixUrl != null && !suffixUrl.isEmpty()) {
-         return "https://super.walmart.com.mx" + suffixUrl;
+         return HOME_PAGE + suffixUrl;
       }
       return null;
    }
