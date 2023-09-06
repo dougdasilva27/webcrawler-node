@@ -1,228 +1,55 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.WalmartSuperCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import com.google.common.collect.Sets;
-import exceptions.MalformedPricingException;
-import exceptions.OfferException;
-import jdk.jfr.Category;
-import models.Offer;
-import models.Offers;
-import models.pricing.*;
-import org.apache.kafka.common.protocol.types.Field;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
+import com.google.common.net.HttpHeaders;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 
 import java.util.*;
 
-public class MexicoBodegaaurreraCrawler extends Crawler {
+public class MexicoBodegaaurreraCrawler extends WalmartSuperCrawler {
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public MexicoBodegaaurreraCrawler(Session session) {
       super(session);
-      }
+      super.SELLER_FULL_NAME = "bodega aurrera";
+   }
+
+   private static final String HOME_PAGE = "https://www.bodegaaurrera.com.mx";
 
    @Override
-   protected JSONObject fetch() {
+   public void handleCookiesBeforeFetch() {
       Map<String, String> headers = new HashMap<>();
-      String id = CommonMethods.getLast(session.getOriginalURL().split("_"));
+      headers.put(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+      headers.put(HttpHeaders.ORIGIN, HOME_PAGE);
+      headers.put(HttpHeaders.REFERER, HOME_PAGE);
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      headers.put("accept-language", "en-US,en;q=0.9,pt;q=0.8,pt-PT;q=0.7");
 
-      String url = "https://www.bodegaaurrera.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getProduct?id=" + id;
+      String payload = "{\"query\":\"mutation MergeAndGetCart( $input:MergeAndGetCartInput! $detailed:Boolean! $includeExtras:Boolean! = false $includePartialFulfillmentSwitching:Boolean! = false $enableAEBadge:Boolean! = false $enableBadges:Boolean! = false $includeQueueing:Boolean! = false $includeExpressSla:Boolean! = false $enableACCScheduling:Boolean! = false $includeWeeklyReservation:Boolean! = false $enableWalmartPlusFreeDiscountedExpress:Boolean! = false $enableWalmartPlusFreeDiscountedExpressProgram:Boolean! = false $enableCartBookslotShortcut:Boolean! = false $enableFutureInventoryCartBookslot:Boolean! = false $enableWeightedItems:Boolean! = false $includeOtherDetailed:Boolean! = true $enableExpressReservationEndTime:Boolean! = false $enableBenefitSavings:Boolean! = false $enableUnifiedBadges:Boolean! = false $enableCartLevelMSI:Boolean! = false $enableIntentControl:Boolean! = false $enableReturnsLabel:Boolean! = false $enableStarRatings:Boolean! = false $enableSpendLimit:Boolean! = false $includeGrandAndSavedSubtotal:Boolean! = false $enablePickupNotAvailable:Boolean! = false $enableMsiMci:Boolean! = false $includeClipRewards:Boolean! = false $enableI18nWave1:Boolean = false $enableWplusPetBenefit:Boolean! = false $enableCartLevelPromotions:Boolean! = false $enablePetRxManualRefill:Boolean! = false $enableLocalizedStringForReservation:Boolean! = false $enableOrderCutOffTime:Boolean! = false $enableHotCartFeature:Boolean! = false $enableSuggestedSlotAvailability:Boolean! = true $enablePFS:Boolean! = false $enableTaxBreakdown:Boolean! = false $enableSubscriptionsInTransaction:Boolean! = false $enableSubscriptionDiscounts:Boolean! = false $enablePromoDiscount:Boolean! = false ){mergeAndGetCart(input:$input){id checkoutable itemFulfillmentTypes fulfillmentMode @include(if:$enableHotCartFeature) showShipFreeForPickupUnavailable @include(if:$enablePickupNotAvailable) installmentDetails @include(if:$enableCartLevelMSI){bankInstallmentOptions{bank installments payments{displayValue value}minAmount{displayValue value}currencyUnit}}basketSwitch @include(if:$enableIntentControl){collapsed switchOptions{fulfillmentOption itemIds switchableQuantity selected}}customer{id isGuest}cartGiftingDetails{isGiftOrder hasGiftEligibleItem isAddOnServiceAdjustmentNeeded isWalmartProtectionPlanPresent isAppleCarePresent}selectedACCInstallationPackage @include(if:$enablePFS){offerId quantity groupType isExplicitPackageSelection name pricePerTire linePrice bundleComponents{offerId quantity}}addressMode lineItems{id quantity quantityString quantityLabel orderedSalesUnit rxDetails{profileId prescriptionId isPrescriptionRequired itemRXType}hasShippingRestriction @include(if:$detailed) isGiftEligible @include(if:$detailed) createdDateTime isWplusEarlyAccess isEventActive isSubstitutionSelected eventType shippingDeliveryDate @include(if:$enablePickupNotAvailable) petItemType @include(if:$enablePetRxManualRefill) refillPrescriptionDetails @include(if:$enablePetRxManualRefill){petName prescribedQShow more";
 
       Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setFollowRedirects(false)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_MX,
-            ProxyCollection.BUY,
-            ProxyCollection.SMART_PROXY_MX_HAPROXY))
+         .setUrl(HOME_PAGE + "/orchestra/graphql")
+         .setPayload(payload)
          .setHeaders(headers)
+         .setProxyservice(PROXIES)
          .build();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher()), session, "post");
 
-      Response response = CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), true);
-      return JSONUtils.stringToJson(response.getBody());
-   }
-
-   @Override
-   public List<Product> extractInformation(JSONObject json) throws Exception {
-      super.extractInformation(json);
-      List<Product> products = new ArrayList<>();
-
-      if (json.has("product")) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         JSONObject jsonProduct = json.optJSONObject("product");
-         JSONObject jsonSku = JSONUtils.getValueRecursive(jsonProduct, "childSKUs.0", JSONObject.class);
-
-         String internalPid = jsonSku.optString("id");
-         String name = jsonProduct.optString("displayName");
-         CategoryCollection categories = scrapCategories(jsonProduct);
-         String primaryImage = "https://www.bodegaaurrera.com.mx" + JSONUtils.getValueRecursive(jsonSku, "images.large", String.class);
-         List<String> secondaryImages = scrapSecondaryImages(jsonSku);
-         String description = scrapDescription(jsonSku);
-         Offers offers = scrapOffers(jsonSku);
-
-         // Creating the product
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalPid)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setOffers(offers)
-            .build();
-
-         products.add(product);
-
-      } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+      for (Cookie cookie : response.getCookies()) {
+         BasicClientCookie basicClientCookie = new BasicClientCookie(cookie.getName(), cookie.getValue());
+         basicClientCookie.setDomain(".walmart.com.mx");
+         this.cookies.add(basicClientCookie);
       }
-
-      return products;
-
    }
-
-   protected CategoryCollection scrapCategories(JSONObject json) {
-      CategoryCollection categories = new CategoryCollection();
-
-      JSONObject categoriesJson = json.optJSONObject("breadcrumb");
-      if (categoriesJson != null) {
-         categories.add(categoriesJson.optString("departmentName"));
-         categories.add(categoriesJson.optString("familyName"));
-         categories.add(categoriesJson.optString("fineLineName"));
-      }
-
-      return categories;
-   }
-
-   protected List<String> scrapSecondaryImages(JSONObject json) {
-      List<String> imgsList = new ArrayList<>();
-
-      JSONArray imgsArray = json.optJSONArray("secondaryImages");
-
-      if (imgsArray != null && !imgsArray.isEmpty()) {
-         for (Object o : imgsArray) {
-            JSONObject imgJson = (JSONObject) o;
-            imgsList.add(imgJson.optString("large"));
-         }
-      }
-
-      return imgsList;
-   }
-
-   protected String scrapDescription(JSONObject json) {
-      StringBuilder description = new StringBuilder();
-
-      description.append("Descripción\n");
-      description.append(json.optString("seoDescription"));
-      description.append("\nCaracterísticas\n");
-
-      JSONObject longDescriptionJson = json.optJSONObject("dynamicFacets");
-
-      Set<String> jsonKeySet = longDescriptionJson.keySet();
-
-      if (!jsonKeySet.isEmpty()) {
-         for (String key : jsonKeySet) {
-            JSONObject attr = longDescriptionJson.optJSONObject(key);
-
-            description.append(attr.optString("attrDesc") + ": ");
-            description.append(attr.optString("value") + "\n");
-         }
-      }
-
-      return description.toString();
-   }
-
-   private Offers scrapOffers(JSONObject jsonObject) throws OfferException, MalformedPricingException {
-      Offers offers = new Offers();
-
-      JSONArray offersList = jsonObject.optJSONArray("offerList");
-
-      for (Object o : offersList) {
-         JSONObject offerJson = (JSONObject) o;
-
-         if (offerJson.optBoolean("isInvAvailable")) {
-            List<String> sales = new ArrayList<>();
-            Pricing pricing = scrapPricing(offerJson);
-            sales.add(CrawlerUtils.calculateSales(pricing));
-
-            boolean isMainSeller = offerJson.optString("offerType").equals("1P");
-            String sellerName = offerJson.optString("sellerName");
-
-            offers.add(Offer.OfferBuilder.create()
-               .setUseSlugNameAsInternalSellerId(true)
-               .setSellerFullName(sellerName)
-               .setMainPagePosition(1)
-               .setIsBuybox(true)
-               .setIsMainRetailer(isMainSeller)
-               .setPricing(pricing)
-               .setSales(sales)
-               .build());
-         }
-      }
-
-      return offers;
-   }
-
-   private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
-      JSONObject jsonPrices = json.optJSONObject("priceInfo");
-
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonPrices, "specialPrice", false);
-      Double priceFrom = JSONUtils.getDoubleValueFromJSON(jsonPrices, "originalPrice", false);
-
-      if(priceFrom.equals(spotlightPrice)){
-         priceFrom = null;
-      }
-
-      CreditCards creditCards = scrapCreditCards(spotlightPrice);
-
-      return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom)
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(creditCards)
-         .build();
-   }
-
-
-   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
-      CreditCards creditCards = new CreditCards();
-
-      Installments installments = new Installments();
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
-      }
-
-      for (String card : cards) {
-         creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
-      }
-
-      return creditCards;
-   }
-
-
 }
