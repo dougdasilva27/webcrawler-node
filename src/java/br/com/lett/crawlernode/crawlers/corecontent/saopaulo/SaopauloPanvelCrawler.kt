@@ -58,7 +58,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
       if (json != null && !json.isEmpty) {
          val internalId = URL(session.originalURL).path.substringAfterLast("-")
 
-         val categories = json.optJSONArray("categories").map { (it as JSONObject).optString("description") }
+         val categories = if (json.optJSONArray("categories") != null) json.optJSONArray("categories").map { (it as JSONObject).optString("description") } else emptyList()
          val jsonImages = json.optJSONArray("images").sortedBy { (it as JSONObject).optInt("number") }.toMutableList()
          val primaryImage = (jsonImages.removeFirst() as JSONObject).optString("url")
          val secondaryImages = jsonImages.map { (it as JSONObject).optString("url") }
