@@ -63,10 +63,13 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          val primaryImage = (jsonImages.removeFirst() as JSONObject).optString("url")
          val secondaryImages = jsonImages.map { (it as JSONObject).optString("url") }
          val name = json.optString("name")
+         val ean = json.optString("ean")
          val productUrl = getProductUrl(session.originalURL.replace("'", "&apos;"))
          val isAvailable = json.optString("stockStatus", "").contains("InStock")
          val offers = if (isAvailable) scrapOffers(json) else Offers()
          val rating = crawlRating(json)
+         val eans: MutableList<String> = java.util.ArrayList()
+         eans.add(ean)
 
          val product = ProductBuilder.create()
             .setUrl(productUrl)
@@ -78,6 +81,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setRatingReviews(rating)
+            .setEans(eans)
             .build()
          products.add(product)
       }
