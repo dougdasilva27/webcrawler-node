@@ -80,7 +80,9 @@ public class ChileFarmaciasahumadaCrawler extends CrawlerRankingKeywords {
 
    protected Integer scrapPrice(Element e) {
       Integer spotlightPrice = CrawlerUtils.scrapPriceInCentsFromHtml(e, "[data-price-type=\"finalPrice\"] .price", null, false, ',', session, null);
-
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapPriceInCentsFromHtml(e,".special-price .price-container.price-final_price .price", null,false,',',session, null);
+      }
       if (spotlightPrice == null) {
          spotlightPrice = CrawlerUtils.scrapPriceInCentsFromHtml(e, ".prueba .price", null, false, ',', session, 0);
       }
