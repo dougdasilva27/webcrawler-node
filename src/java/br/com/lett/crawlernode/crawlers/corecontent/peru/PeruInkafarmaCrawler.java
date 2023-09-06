@@ -92,7 +92,7 @@ public class PeruInkafarmaCrawler extends Crawler {
                "\"ranking\":0,\"page\":0,\"rows\":8,\"order\":\"ASC\",\"sort\":\"ranking\",\"productsFilter\":[\"" + parameterSku + "\"]}";
 
             Request request = RequestBuilder.create()
-               .setUrl("https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/PROD/filtered-products")
+               .setUrl("https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/MMPROD/filtered-products")
                .setHeaders(headers)
                .setPayload(payload)
                .mustSendContentEncoding(false)

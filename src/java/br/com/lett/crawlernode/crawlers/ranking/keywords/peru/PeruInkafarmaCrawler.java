@@ -76,7 +76,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
          JSONArray products = search.getJSONArray("rows");
 
          if (this.totalProducts == 0) {
-            setTotalProducts(search);
+            this.totalProducts = search.optInt("totalRecords", 0);
          }
 
          for (Object o : products) {
@@ -116,35 +116,30 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   protected void setTotalProducts(JSONObject search) {
-      this.totalProducts = JSONUtils.getIntegerValueFromJSON(search, "totalRecords", 0);
-      this.log("Total da busca: " + this.totalProducts);
-   }
-
    private JSONObject crawlSearchApi() {
       JSONObject searchApi = new JSONObject();
       JSONArray searchFilters = getProductsFilter();
 
       if (this.accessToken != null && searchFilters != null && !searchFilters.isEmpty()) {
-         String url = "https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/PROD/filtered-products";
+         String url = "https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/MMPROD/filtered-products";
          this.log("Link onde são feitos os crawlers: " + url);
 
          JSONObject payload = new JSONObject();
          payload.put("brandsFilter", new JSONArray());
          payload.put("categoriesFilter", new JSONArray());
          payload.put("departmentsFilter", new JSONArray());
-         payload.put("order", "ASC");
          payload.put("page", this.currentPage - 1);
-         payload.put("productsFilter", searchFilters);
          payload.put("rows", 24);
-         payload.put("sort", "ranking");
+         payload.put("productsFilter", searchFilters);
+
+         payload.put("sort", "");
          payload.put("subcategoriesFilter", new JSONArray());
 
 
          Map<String, String> headers = new HashMap<>();
          headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
          headers.put("x-access-token", this.accessToken);
-         headers.put("AndroidVersion", "100000");
+         headers.put("androidversion", "100000");
          if (storeID != null) {
             headers.put("drugstore-stock", storeID);
          }
