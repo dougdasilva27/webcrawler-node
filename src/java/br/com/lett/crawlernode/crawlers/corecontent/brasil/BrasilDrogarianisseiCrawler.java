@@ -1,11 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.HttpClientFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -32,7 +31,14 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.net.HttpCookie;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
+
+import static br.com.lett.crawlernode.util.CrawlerUtils.setCookie;
 
 public class BrasilDrogarianisseiCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.farmaciasnissei.com.br/";
@@ -40,8 +46,27 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
    public BrasilDrogarianisseiCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
       super.config.setParser(Parser.HTML);
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      try {
+         HttpClient client = HttpClient.newBuilder().build();
+         HttpRequest request = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create(this.session.getOriginalURL()))
+            .build();
+         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+         List<String> cookiesResponse = response.headers().map().get("Set-Cookie");
+         for (String cookieStr : cookiesResponse) {
+            HttpCookie cookie = HttpCookie.parse(cookieStr).get(0);
+            cookies.add(setCookie(cookie.getName(), cookie.getValue(), "www.farmaciasnissei.com.br", "/"));
+         }
+      } catch (Exception e) {
+         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
+      }
    }
 
    @Override
@@ -54,15 +79,13 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
-         .setProxyservice(List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.SMART_PROXY_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.BUY))
+         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
          .setSendUserAgent(false)
          .setCookies(cookies)
          .setHeaders(headers)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
-
-      this.cookies = response.getCookies();
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new HttpClientFetcher(), new ApacheDataFetcher()), session, "get");
 
       return response;
    }
@@ -141,7 +164,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          .setPayload(payload)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
 
       JSONObject json = CrawlerUtils.stringToJson(response.getBody());
       JSONArray availableStores = JSONUtils.getJSONArrayValue(json, "lista_estoque");
@@ -181,7 +204,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          .setPayload(payload)
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new FetcherDataFetcher()), session, "post");
 
       JSONObject json = CrawlerUtils.stringToJson(response.getBody());
 
@@ -317,8 +340,13 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject jsonInfo) throws MalformedPricingException {
       Double priceFrom = !scrapSales(jsonInfo).isEmpty() ? jsonInfo.optDouble("valor_ini") : null;
       Double spotlightPrice = jsonInfo.optDouble("valor_fim");
-      if (spotlightPrice.equals(0.0)){
-         spotlightPrice = jsonInfo.optDouble("valor_ini");
+      if (spotlightPrice.equals(0.0) || spotlightPrice.isNaN()) {
+         spotlightPrice = JSONUtils.getValueRecursive(jsonInfo, "progressivos.0.vlr_final", Double.class, 0d);
+      }
+
+      if (spotlightPrice.equals(0.0)) {
+         spotlightPrice = priceFrom;
+         priceFrom = null;
       }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
