@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.HttpClientFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -50,7 +50,6 @@ public class PeruInkafarmaCrawler extends Crawler {
 
    public PeruInkafarmaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
@@ -66,15 +65,15 @@ public class PeruInkafarmaCrawler extends Crawler {
             .setUrl("https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=" + GOOGLE_KEY)
             .setPayload("{\"returnSecureToken\":true}")
             .setProxyservice(Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.BUY_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
             ))
             .setHeaders(headersToken)
             .build();
 
-         Response responseToken = CrawlerUtils.retryRequestWithListDataFetcher(requestToken, List.of(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher()), session, "post");
+         Response responseToken = CrawlerUtils.retryRequestWithListDataFetcher(requestToken, List.of(new HttpClientFetcher(), new ApacheDataFetcher()), session, "post");
          JSONObject apiTokenJson = JSONUtils.stringToJson(responseToken.getBody());
 
          if (apiTokenJson.has("idToken") && !apiTokenJson.isNull("idToken")) {
@@ -93,7 +92,7 @@ public class PeruInkafarmaCrawler extends Crawler {
                "\"ranking\":0,\"page\":0,\"rows\":8,\"order\":\"ASC\",\"sort\":\"ranking\",\"productsFilter\":[\"" + parameterSku + "\"]}";
 
             Request request = RequestBuilder.create()
-               .setUrl("https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/PROD/filtered-products")
+               .setUrl("https://5doa19p9r7.execute-api.us-east-1.amazonaws.com/MMPROD/filtered-products")
                .setHeaders(headers)
                .setPayload(payload)
                .mustSendContentEncoding(false)
