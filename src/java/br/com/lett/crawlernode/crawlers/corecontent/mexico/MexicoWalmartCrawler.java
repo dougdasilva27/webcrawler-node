@@ -7,22 +7,27 @@ import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offers;
 import models.prices.Prices;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class MexicoWalmartCrawler extends Crawler {
@@ -32,18 +37,11 @@ public class MexicoWalmartCrawler extends Crawler {
 
    public MexicoWalmartCrawler(Session session) {
       super(session);
+      super.config.setParser(Parser.JSON);
    }
 
    @Override
-   public boolean shouldVisit() {
-      String href = session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-   }
-
-   @Override
-   public List<Product> extractInformation(Document document) throws Exception {
-      super.extractInformation(document);
-      List<Product> products = new ArrayList<>();
+   protected Response fetchResponse() {
       String internalId = crawlInternalId(session.getOriginalURL());
 
       String url = "https://www.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getProduct?id=" + internalId;
@@ -56,21 +54,35 @@ public class MexicoWalmartCrawler extends Crawler {
       Request request = RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_MX, ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+         ))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create()
             .setForbiddenCssSelector("#px-captcha")
             .mustUseMovingAverage(false)
             .mustRetrieveStatistics(true).build())
          .build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(this.dataFetcher, new JsoupDataFetcher(), new FetcherDataFetcher()), session, "get");
+      return CrawlerUtils.retryRequest(request, session, new FetcherDataFetcher(), true);
+   }
 
-      JSONObject apiJson = CrawlerUtils.stringToJson(response.getBody());
+   @Override
+   public boolean shouldVisit() {
+      String href = session.getOriginalURL().toLowerCase();
+      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
 
-      if (apiJson.has("product")) {
+   @Override
+   public List<Product> extractInformation(JSONObject json) throws Exception {
+      super.extractInformation(json);
+      List<Product> products = new ArrayList<>();
+
+      if (json.has("product")) {
 
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         JSONObject productJson = apiJson.getJSONObject("product");
+         JSONObject productJson = json.getJSONObject("product");
 
          CategoryCollection categories = crawlCategories(productJson);
 
@@ -83,22 +95,22 @@ public class MexicoWalmartCrawler extends Crawler {
             String primaryImage = CrawlerUtils.completeUrl(JSONUtils.getValueRecursive(sku, "images.large", String.class), "https", "res.cloudinary.com/walmart-labs/image/upload/w_960,dpr_auto,f_auto,q_auto:best/mg/");
             List<String> secondaryImages = crawlSecondaryImages(sku);
             String description = crawlDescription(sku);
-            Integer stock = null;
             String ean = scrapEan(sku);
-            List<String> eans = new ArrayList<>();
-            eans.add(ean);
-
-            Map<String, Prices> marketplaceMap = crawlMarketplace(sku);
-            Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER), Arrays.asList(Card.AMEX), session);
-            boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, Arrays.asList(SELLER));
-            Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(SELLER));
-            Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.AMEX);
+            Offers offers = scrapOffers(sku);
+            List<String> eans = List.of(ean);
 
             // Creating the product
-            Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-               .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(crawlInternalId(session.getOriginalURL()))
+               .setName(name)
+               .setCategories(categories)
+               .setOffers(offers)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setEans(eans)
+               .build();
 
             products.add(product);
          }
@@ -112,43 +124,43 @@ public class MexicoWalmartCrawler extends Crawler {
 
    }
 
-   private Map<String, Prices> crawlMarketplace(JSONObject sku) {
+   private Offers scrapOffers(JSONObject sku) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      List<String> sales = new ArrayList<>();
 
-      Map<String, Prices> map = new HashMap<>();
-      String name = null;
-      Float price = null;
+      String sellerFullName = JSONUtils.getValueRecursive(sku, "offerList.0.sellerName", ".", String.class, null);
+      boolean isMainRetailer = SELLER.toLowerCase(Locale.ROOT).equalsIgnoreCase(sellerFullName);
 
-      if (sku.has("offerList")) {
-         JSONArray offerList = sku.getJSONArray("offerList");
+      Pricing pricing = scrapPricing(sku);
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
-         for (Object object2 : offerList) {
-            Prices prices = new Prices();
-            JSONObject list = (JSONObject) object2;
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(sellerFullName)
+         .setMainPagePosition(1)
+         .setIsBuybox(true)
+         .setIsMainRetailer(isMainRetailer)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
-            if (list.has("sellerName")) {
-               name = list.getString("sellerName").toLowerCase().trim();
+      return offers;
+   }
 
-               if (list.has("priceInfo")) {
-                  JSONObject priceInfo = list.getJSONObject("priceInfo");
-                  price = priceInfo.getFloat("specialPrice");
+   private Pricing scrapPricing(JSONObject sku) throws MalformedPricingException {
+      JSONObject priceInfo = JSONUtils.getValueRecursive(sku, "offerList.0.priceInfo", JSONObject.class, new JSONObject());
 
-                  if (price != null) {
-                     Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-                     installmentPriceMap.put(1, price);
-                     prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+      Double spotlightPrice = priceInfo.optDouble("specialPrice");
+      Double priceFrom = priceInfo.optDouble("originalPrice");
 
-                  }
-
-                  if (priceInfo.has("originalPrice")) {
-                     prices.setPriceFrom(priceInfo.getDouble("originalPrice"));
-                  }
-
-               }
-            }
-            map.put(name, prices);
-         }
+      if (priceFrom.equals(spotlightPrice)) {
+         priceFrom = null;
       }
-      return map;
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .build();
    }
 
    private String scrapEan(JSONObject sku) {
@@ -162,18 +174,12 @@ public class MexicoWalmartCrawler extends Crawler {
    }
 
    private String crawlInternalId(String url) {
-      String internalId = null;
+      String regex = "ip\\/[a-z0-9-]+\\/[a-z0-9-]+\\/(\\d+)";
 
-      if (url.contains("_")) {
-         if (url.contains("?")) {
-            url = url.split("\\?")[0];
-         }
+      final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+      final Matcher matcher = pattern.matcher(url);
 
-         String[] tokens = url.split("_");
-         internalId = tokens[tokens.length - 1].replaceAll("[^0-9]", "").trim();
-      }
-
-      return internalId;
+      return matcher.find() ? matcher.group(1) : null;
    }
 
    private String crawlName(JSONObject sku) {
@@ -185,7 +191,6 @@ public class MexicoWalmartCrawler extends Crawler {
 
       return name;
    }
-
 
    private List<String> crawlSecondaryImages(JSONObject sku) {
       List<String> secondaryImages = new ArrayList<>();
@@ -205,7 +210,6 @@ public class MexicoWalmartCrawler extends Crawler {
 
       return secondaryImages;
    }
-
 
    private CategoryCollection crawlCategories(JSONObject sku) {
       CategoryCollection categories = new CategoryCollection();
