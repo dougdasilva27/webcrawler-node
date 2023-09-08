@@ -1,16 +1,24 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
-import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.apache.kafka.common.protocol.types.Field;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
 
@@ -20,27 +28,48 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
 
    private final String succId = session.getOptions().optString("succId");
 
+   private JSONObject fetchSearchJson(String url) {
+      String clientKey = "client-key 061cbdb5-fbcd-4a50-a70d-945d85a7de2f";
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "application/json, text/plain, */*");
+      headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
+      headers.put("content-type", "application/json");
+      headers.put("authorization", clientKey);
+      headers.put("X-Groupby-Customer-ID", "lacomer");
+      headers.put("origin", "https://www.lacomer.com.mx");
+      headers.put("referer", "https://www.lacomer.com.mx/");
+
+      String payload = "{\"query\": \"" + this.keywordEncoded + "\",\"collection\": \"Production\",\"area\": \"Production\",\"pageSize\": 20,\"skip\": " + (this.currentPage - 1) * this.pageSize + ",\"dynamicFacet\": false,\"sorts\": null,\"preFilter\": \"attributes.sponsored:IN(*,0.5e) AND attributes.storeIds:ANY(\\\"" + succId + "\\\")\",\"refinements\": [],\"variantRollupKeys\": [\"inventory(" + succId + ",price)\",\"inventory(" + succId + ",originalPrice)\",\"inventory(" + succId + ",attributes.promotionPrice)\",\"inventory(" + succId + ",attributes.promotion_type)\",\"inventory(" + succId + ",attributes.promotionJSON)\",\"inventory(" + succId + ",attributes.promotion_description)\"]}";
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setPayload(payload)
+         .setProxyservice(List.of(
+            ProxyCollection.BUY_HAPROXY
+         ))
+         .build();
+
+      String body = new JsoupDataFetcher().post(session, request).getBody();
+
+      return CrawlerUtils.stringToJSONObject(body);
+   }
+
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
-      // número de produtos por página do market
-      this.pageSize = 30;
+      this.pageSize = 20;
 
       this.log("Página " + this.currentPage);
 
-      // monta a url com a keyword e a página
-      // primeira página começa em 0 e assim vai.
-      String url = "https://lacomer.buscador.amarello.com.mx/searchArtPrior?col=lacomer_2&npagel=20&p=" + this.currentPage + "&pasilloId=false&s=" + this.keywordEncoded + "&succId=" + succId;
-
+      String url = "https://search.lacomer.groupbycloud.com/api/search";
       this.log("Link onde são feitos os crawlers: " + url);
 
-      // chama função de pegar a url
-      JSONObject search = fetchJSONObject(url);
+      JSONObject search = fetchSearchJson(url);
 
-      // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-      if (search.has("res") && search.getJSONArray("res").length() > 0) {
-         JSONArray products = search.getJSONArray("res");
+      if (search.has("records") && search.getJSONArray("records").length() > 0) {
+         JSONArray products = search.getJSONArray("records");
 
-         // se o total de busca não foi setado ainda, chama a função para setar
          if (this.totalProducts == 0) {
             setTotalBusca(search);
          }
@@ -48,27 +77,15 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
          for (int i = 0; i < products.length(); i++) {
 
             JSONObject product = products.getJSONObject(i);
-
-            // InternalPid
-            String internalPid = crawlInternalPid();
-
-            // InternalId
-            String internalId = crawlInternalId(product);
-
-            // Url do produto
+            String internalPid = JSONUtils.getValueRecursive(product, "allMeta.id", ".", String.class, null);
             String productUrl = crawlProductUrl(product);
-
-            String name = product.optString("artDes") + " " + product.optString("marDes");
-//
-            String imgUrl = "https://www.lacomer.com.mx/superc/img_art/" + product.optString("artEan")+"_1.jpg";
-
+            String name = JSONUtils.getValueRecursive(product, "allMeta.title", ".", String.class, "") + " " + JSONUtils.getValueRecursive(product, "allMeta.description", ".", String.class, "");
+            String imgUrl = JSONUtils.getValueRecursive(product, "allMeta.images.0.uri", ".", String.class, null);
             Integer price = getPrice(product);
-
-            boolean  isAvailable  = price != 0;
+            boolean  isAvailable  = price != null;
 
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
-               .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
                .setImageUrl(imgUrl)
@@ -96,42 +113,37 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
       return this.arrayProducts.size() < this.totalProducts;
    }
 
-   protected Integer getPrice( JSONObject product){
-      try {
-         Double priceDouble = product.getDouble("artPrlin")*100;
-         return priceDouble.intValue();
-      } catch (NullPointerException e) {
-         return 0;
+   protected Integer getPrice(JSONObject product){
+      JSONArray variantRollUpValues = JSONUtils.getValueRecursive(product, "allMeta.variantRollUpValues", ".", JSONArray.class, new JSONArray());
+      JSONArray prices = JSONUtils.filterItemsByKeyValue(variantRollUpValues, new Pair<>("key", "inventory(" + succId + ",price)"));
+
+      if (!prices.isEmpty()) {
+         Double price = JSONUtils.getValueRecursive(prices, "0.value.0", ".", Double.class, null);
+         return price != null ? MathUtils.parseInt(price * 100) : null;
       }
 
+      return null;
    }
-   protected void setTotalBusca(JSONObject search) {
-      if (search.has("total")) {
 
-         this.totalProducts = search.getInt("total");
+   protected void setTotalBusca(JSONObject search) {
+      if (search.has("totalRecordCount")) {
+
+         this.totalProducts = search.getInt("totalRecordCount");
 
 
          this.log("Total da busca: " + this.totalProducts);
       }
    }
 
-   private String crawlInternalId(JSONObject product) {
-      String internalId = null;
+   private String crawlProductUrl(JSONObject product) {
+      String ean = JSONUtils.getValueRecursive(product, "allMeta.id", ".", String.class, null);
+      Double aisle = JSONUtils.getValueRecursive(product, "allMeta.attributes.aisle.numbers.0", ".", Double.class, null);
+      int aisleInt = aisle != null ? aisle.intValue() : 0;
 
-      if (product.has("artCod")) {
-         internalId = String.valueOf(product.getInt("artCod"));
+      if (aisleInt == 0) {
+         return null;
       }
 
-      return internalId;
-   }
-
-   private String crawlInternalPid() {
-      return null;
-   }
-
-   private String crawlProductUrl(JSONObject product) {
-      String ean = product.optString("artEan");
-      String gruid = product.optString("agruId");
-      return "https://www.lacomer.com.mx/lacomer/#!/detarticulo/"+ean+"/0/"+gruid+"/1///"+gruid+"?succId="+succId+"&succFmt=100";
+      return "https://www.lacomer.com.mx/lacomer/#!/detarticulo/" + ean + "/0/" + aisleInt + "/1///" + aisleInt + "?succId=" + succId + "&succFmt=100";
    }
 }

@@ -96,6 +96,7 @@ public class MexicoLacomerCrawler extends Crawler {
          if (!data.isEmpty()) {
 
             String internalId = JSONUtils.getIntegerValueFromJSON(data, "artCod", 0).toString();
+            String internalPid = scrapEan();
             String name = scrapProductName(data);
             CategoryCollection categories = crawlCategories(data);
             List<String> images = scrapImages(json);
@@ -110,7 +111,7 @@ public class MexicoLacomerCrawler extends Crawler {
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
-               .setInternalPid(internalId)
+               .setInternalPid(internalPid)
                .setName(name)
                .setCategories(categories)
                .setPrimaryImage(primaryImage)
