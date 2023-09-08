@@ -2,7 +2,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.HttpClientFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -127,7 +127,7 @@ public class MercadolivreCrawler extends Crawler {
                .setHeaders(headers)
                .build();
 
-            response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher()), session);
+            response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new HttpClientFetcher()), session);
 
             doc = Jsoup.parse(response.getBody());
             String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-description__content", true);
