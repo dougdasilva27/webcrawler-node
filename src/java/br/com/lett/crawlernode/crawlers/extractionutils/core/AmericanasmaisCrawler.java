@@ -102,15 +102,11 @@ public class AmericanasmaisCrawler extends Crawler {
                .build()
          ).setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
-
+               ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR
             )
          ).build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new ApacheDataFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequest(request, session, new ApacheDataFetcher(), true);
       String content = response.getBody();
 
       return Jsoup.parse(content);
