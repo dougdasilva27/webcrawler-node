@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.HttpClientFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
@@ -93,14 +94,11 @@ public class AmericanasmaisCrawler extends CrawlerRankingKeywords {
                .build()
          ).setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+               ProxyCollection.NETNUT_RESIDENTIAL_ROTATE_BR
             )
          ).build();
 
-      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new JsoupDataFetcher(), new HttpClientFetcher()), session, "get");
+      Response response = CrawlerUtils.retryRequest(request, session, new ApacheDataFetcher(), true);
       String content = response.getBody();
 
       return Jsoup.parse(content);
