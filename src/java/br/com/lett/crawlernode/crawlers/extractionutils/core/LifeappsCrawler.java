@@ -1,8 +1,12 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.HttpClientFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -31,7 +35,7 @@ public abstract class LifeappsCrawler extends Crawler {
 
    protected LifeappsCrawler(Session session) {
       super(session);
-      this.config.setFetcher(FetchMode.JSOUP);
+      this.config.setParser(Parser.JSON);
    }
 
    protected abstract String getHomePage();
@@ -45,7 +49,7 @@ public abstract class LifeappsCrawler extends Crawler {
    protected abstract String getSellerName();
 
    @Override
-   protected Object fetch() {
+   protected Response fetchResponse() {
       // url must be in this format:
       // https://jcdistribuicao.superon.app/commerce/6f0ae38d-50cd-4873-89a5-6861467b5f52/produto/AGUA-MIN-SAO-LOURENCO-300ML-PET-S-GAS-3xlPvs5V/
       // api exemple:
@@ -72,15 +76,14 @@ public abstract class LifeappsCrawler extends Crawler {
             .concat("&disableSimilares=false&canalVenda=WEB");
       }
 
-
       Request request = Request.RequestBuilder.create()
          .setUrl(apiUrl)
          .setCookies(cookies)
+         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY))
          .mustSendContentEncoding(false)
          .build();
 
-
-      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      return CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new HttpClientFetcher(), new JsoupDataFetcher()), session);
    }
 
    @Override
