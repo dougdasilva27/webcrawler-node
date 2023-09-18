@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.HttpClientFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -31,14 +32,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.net.HttpCookie;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.*;
-
-import static br.com.lett.crawlernode.util.CrawlerUtils.setCookie;
 
 public class BrasilDrogarianisseiCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.farmaciasnissei.com.br/";
@@ -51,22 +45,14 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
    @Override
    public void handleCookiesBeforeFetch() {
-      try {
-         HttpClient client = HttpClient.newBuilder().build();
-         HttpRequest request = HttpRequest.newBuilder()
-            .GET()
-            .uri(URI.create(this.session.getOriginalURL()))
-            .build();
-         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.farmaciasnissei.com.br/")
+         .setProxyservice(List.of(ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY))
+         .build();
 
-         List<String> cookiesResponse = response.headers().map().get("Set-Cookie");
-         for (String cookieStr : cookiesResponse) {
-            HttpCookie cookie = HttpCookie.parse(cookieStr).get(0);
-            cookies.add(setCookie(cookie.getName(), cookie.getValue(), "www.farmaciasnissei.com.br", "/"));
-         }
-      } catch (Exception e) {
-         throw new RuntimeException("Failed In load document: " + session.getOriginalURL(), e);
-      }
+      Response response = CrawlerUtils.retryRequestWithListDataFetcher(request, List.of(new ApacheDataFetcher(), new JsoupDataFetcher()), session, "get");
+
+      this.cookies = response.getCookies();
    }
 
    @Override
@@ -230,7 +216,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       Document doc = new Document("");
       int attempt = 0;
-      boolean sucess = false;
+      boolean success = false;
       List<String> proxies = List.of(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY, ProxyCollection.BUY_HAPROXY);
       do {
          try {
@@ -240,7 +226,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
             webdriver.waitLoad(1000);
 
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
-            sucess = doc.selectFirst("div[data-produto_id]") != null;
+            success = doc.selectFirst("div[data-produto_id]") != null;
             webdriver.terminate();
             attempt++;
 
@@ -249,7 +235,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
             Logging.printLogWarn(logger, "Página não capturada");
          }
 
-      } while (attempt < 3 && !sucess);
+      } while (attempt < 3 && !success);
 
       return doc;
    }
